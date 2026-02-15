@@ -1,0 +1,19 @@
+includes:
+    - vendor/phpat/phpat/extension.neon
+    - phpstan-baseline.neon
+
+services:
+    - class: App\Tests\Architecture\ArchitectureTest
+      tags:
+          - phpat.test
+
+parameters:
+    level: 6
+    paths:
+        - bin/
+        - config/
+        - public/
+        - src/
+        - tests/
+    phpat:
+        show_rule_names: true

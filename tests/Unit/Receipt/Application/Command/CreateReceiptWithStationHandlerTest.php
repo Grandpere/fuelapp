@@ -1,0 +1,208 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of a FuelApp project.
+ *
+ * (c) Lorenzo Marozzo <lorenzo.marozzo@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Tests\Unit\Receipt\Application\Command;
+
+use App\Receipt\Application\Command\CreateReceiptHandler;
+use App\Receipt\Application\Command\CreateReceiptLineCommand;
+use App\Receipt\Application\Command\CreateReceiptWithStationCommand;
+use App\Receipt\Application\Command\CreateReceiptWithStationHandler;
+use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Receipt\Domain\Enum\FuelType;
+use App\Receipt\Domain\Receipt;
+use App\Station\Application\Command\CreateStationCommand;
+use App\Station\Application\Command\CreateStationHandler;
+use App\Station\Application\Repository\StationRepository;
+use App\Station\Domain\Station;
+use App\Station\Domain\ValueObject\StationId;
+use DateTimeImmutable;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+
+final class CreateReceiptWithStationHandlerTest extends TestCase
+{
+    public function testItCreatesReceiptWithExistingStation(): void
+    {
+        $station = Station::reconstitute(
+            StationId::fromString('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01'),
+            'Total',
+            'Rue A',
+            '75001',
+            'Paris',
+            null,
+            null,
+        );
+
+        $stationRepo = new InMemoryStationRepository($station);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $receiptHandler = new CreateReceiptHandler($receiptRepo);
+        $stationHandler = new CreateStationHandler($stationRepo);
+
+        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler);
+
+        $command = new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-02-16T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Total',
+            'Rue A',
+            '75001',
+            'Paris',
+            null,
+            null,
+        );
+
+        $receipt = ($handler)($command);
+
+        self::assertInstanceOf(Receipt::class, $receipt);
+        self::assertSame('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01', $receipt->stationId()?->toString());
+    }
+
+    public function testItCreatesStationIfMissing(): void
+    {
+        $stationRepo = new InMemoryStationRepository(null);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $receiptHandler = new CreateReceiptHandler($receiptRepo);
+        $stationHandler = new CreateStationHandler($stationRepo);
+
+        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler);
+
+        $command = new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-02-16T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Total',
+            'Rue A',
+            '75001',
+            'Paris',
+            null,
+            null,
+        );
+
+        $receipt = ($handler)($command);
+
+        self::assertInstanceOf(Receipt::class, $receipt);
+        self::assertNotNull($receipt->stationId());
+    }
+
+    public function testItIsIdempotentOnStationCreationRace(): void
+    {
+        $existingStation = Station::reconstitute(
+            StationId::fromString('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01'),
+            'Total',
+            'Rue A',
+            '75001',
+            'Paris',
+            null,
+            null,
+        );
+
+        $stationRepo = new InMemoryStationRepository(null);
+        $stationRepo->setFallback($existingStation);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $receiptHandler = new CreateReceiptHandler($receiptRepo);
+        $stationHandler = new FailingCreateStationHandler($stationRepo);
+
+        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler);
+
+        $command = new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-02-16T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Total',
+            'Rue A',
+            '75001',
+            'Paris',
+            null,
+            null,
+        );
+
+        $receipt = ($handler)($command);
+
+        self::assertSame('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01', $receipt->stationId()?->toString());
+    }
+}
+
+final class InMemoryStationRepository implements StationRepository
+{
+    private ?Station $station;
+    private ?Station $fallback = null;
+
+    public function __construct(?Station $station)
+    {
+        $this->station = $station;
+    }
+
+    public function setFallback(Station $station): void
+    {
+        $this->fallback = $station;
+    }
+
+    public function save(Station $station): void
+    {
+        $this->station = $station;
+    }
+
+    public function get(string $id): ?Station
+    {
+        return $this->station && $this->station->id()->toString() === $id ? $this->station : null;
+    }
+
+    public function findByIdentity(string $name, string $streetName, string $postalCode, string $city): ?Station
+    {
+        if (null !== $this->station) {
+            return $this->station;
+        }
+
+        return $this->fallback;
+    }
+
+    public function all(): iterable
+    {
+        return $this->station ? [$this->station] : [];
+    }
+}
+
+final class InMemoryReceiptRepository implements ReceiptRepository
+{
+    /** @var array<string, Receipt> */
+    private array $items = [];
+
+    public function save(Receipt $receipt): void
+    {
+        $this->items[$receipt->id()->toString()] = $receipt;
+    }
+
+    public function get(string $id): ?Receipt
+    {
+        return $this->items[$id] ?? null;
+    }
+
+    public function all(): iterable
+    {
+        return array_values($this->items);
+    }
+}
+
+final readonly class FailingCreateStationHandler extends CreateStationHandler
+{
+    public function __construct(StationRepository $repository)
+    {
+        parent::__construct($repository);
+    }
+
+    public function __invoke(CreateStationCommand $command): Station
+    {
+        throw new RuntimeException('Unique constraint violation');
+    }
+}

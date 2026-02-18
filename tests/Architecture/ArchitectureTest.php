@@ -14,15 +14,15 @@ declare(strict_types=1);
 namespace App\Tests\Architecture;
 
 use PHPat\Selector\Selector;
+use PHPat\Test\Builder\Rule;
 use PHPat\Test\PHPat;
-use PHPat\Test\Rule;
 
 final class ArchitectureTest
 {
-    public function test_app_does_not_depend_on_tests(): Rule
+    public function testAppDoesNotDependOnTests(): Rule
     {
         return PHPat::rule()
-            ->classes(Selector::inNamespace('App'))
+            ->classes(Selector::inNamespace('/^App\\\\(?!Tests\\\\)/', true))
             ->shouldNotDependOn()
             ->classes(Selector::inNamespace('App\\Tests'))
             ->because('production code should not depend on test code');

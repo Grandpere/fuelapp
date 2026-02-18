@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 
-DC := docker compose -f resources/docker/docker-compose.yml --env-file resources/docker/.env
+DC := docker compose -f resources/docker/compose.yml --env-file resources/docker/.env
 DC_EXEC := $(DC) exec -T app
 
 .PHONY: help
@@ -52,10 +52,6 @@ shell: ## Open a shell in app container
 ## Composer
 ##---------------------------------------------------------------------------
 
-.PHONY: composer
-composer: ## Run composer inside app container (ARGS="...")
-	$(DC_EXEC) composer $(ARGS)
-
 .PHONY: composer-install
 composer-install: ## Install composer dependencies
 	$(DC_EXEC) composer install --no-progress
@@ -78,7 +74,7 @@ cache-clear: ## Clear Symfony cache (dev)
 
 .PHONY: db-init
 db-init: ## Drop schema, create schema, run migrations, setup messenger transports
-	$(DC_EXEC) php bin/console doctrine:schema:drop --force --full-database --if-exists
+	$(DC_EXEC) php bin/console doctrine:schema:drop --force --full-database
 	$(DC_EXEC) php bin/console doctrine:database:create --if-not-exists
 	$(DC_EXEC) php bin/console doctrine:migrations:migrate --no-interaction
 	-$(DC_EXEC) php bin/console messenger:setup-transports 2>/dev/null
@@ -87,13 +83,36 @@ db-init: ## Drop schema, create schema, run migrations, setup messenger transpor
 db-migrate: ## Run migrations (no interaction)
 	$(DC_EXEC) php bin/console doctrine:migrations:migrate --no-interaction
 
+.PHONY: db-diff
+db-diff: ## Generate migration (only if DB is up to date)
+	$(DC_EXEC) php bin/console doctrine:migrations:up-to-date
+	$(DC_EXEC) php bin/console doctrine:migrations:diff
+
+.PHONY: db-test-init
+db-test-init: ## Create/migrate test database
+	-$(DC_EXEC) php bin/console doctrine:database:drop --env=test --if-exists --force --no-interaction
+	$(DC_EXEC) php bin/console doctrine:database:create --env=test --if-not-exists
+	$(DC_EXEC) php bin/console doctrine:migrations:migrate --env=test --no-interaction
+
 ##
 ## Tests
 ##---------------------------------------------------------------------------
 
-.PHONY: phpunit
-phpunit: ## Run PHPUnit
-	$(DC_EXEC) vendor/bin/phpunit
+.PHONY: phpunit-all
+phpunit-all: ## Run all PHPUnit tests
+	$(DC_EXEC) vendor/bin/phpunit --configuration phpunit.xml --testsuite Unit,Functional,Integration
+
+.PHONY: phpunit-unit
+phpunit-unit: ## Run PHPUnit Unit suite
+	$(DC_EXEC) vendor/bin/phpunit --configuration phpunit.xml --testsuite Unit
+
+.PHONY: phpunit-integration
+phpunit-integration: db-test-init ## Run PHPUnit Integration suite
+	$(DC_EXEC) vendor/bin/phpunit --configuration phpunit.xml --testsuite Integration
+
+.PHONY: phpunit-functional
+phpunit-functional: db-test-init ## Run PHPUnit Functional suite
+	$(DC_EXEC) vendor/bin/phpunit --configuration phpunit.xml --testsuite Functional
 
 ##
 ## Quality
@@ -101,11 +120,11 @@ phpunit: ## Run PHPUnit
 
 .PHONY: phpstan
 phpstan: ## Run PHPStan
-	$(DC_EXEC) vendor/bin/phpstan analyse -c phpstan.dist.neon
+	$(DC_EXEC) vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit 2G
 
 .PHONY: phpstan-baseline
 phpstan-baseline: ## Generate PHPStan baseline
-	$(DC_EXEC) vendor/bin/phpstan analyse -c phpstan.dist.neon --generate-baseline
+	$(DC_EXEC) vendor/bin/phpstan analyse -c phpstan.dist.neon --generate-baseline --memory-limit 2G
 
 .PHONY: php-cs-fixer
 php-cs-fixer: ## Run PHP-CS-Fixer (apply fixes)

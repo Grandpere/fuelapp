@@ -19,5 +19,11 @@ services:
     App\:
         resource: '../src/'
 
+    App\Shared\Infrastructure\Serializer\UuidNormalizer:
+        tags:
+            - { name: 'serializer.normalizer', priority: 100 }
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Receipt\Application\Repository\ReceiptRepository: '@App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository'
+    App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'

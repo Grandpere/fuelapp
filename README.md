@@ -12,7 +12,7 @@
 
 ## Run
 ```bash
-docker compose -f resources/docker/docker-compose.yml --env-file resources/docker/.env up -d --build
+docker compose -f resources/docker/compose.yml --env-file resources/docker/.env up -d --build
 ```
 
 ## Docker env

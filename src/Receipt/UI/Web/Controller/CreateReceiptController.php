@@ -17,9 +17,9 @@ use App\Receipt\Application\Command\CreateReceiptLineCommand;
 use App\Receipt\Application\Command\CreateReceiptWithStationCommand;
 use App\Receipt\Application\Command\CreateReceiptWithStationHandler;
 use App\Receipt\Domain\Enum\FuelType;
-use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Receipt\UI\Api\Resource\Input\ReceiptInput;
 use App\Receipt\UI\Api\Resource\Input\ReceiptLineInput;
+use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Station\Application\Repository\StationRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,6 +29,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use UnexpectedValueException;
 
 final class CreateReceiptController extends AbstractController
 {
@@ -77,11 +78,11 @@ final class CreateReceiptController extends AbstractController
         return $response;
     }
 
-    /** @return array<string, mixed> */
+    /** @return array<string, string> */
     private function defaultFormData(): array
     {
         return [
-            'issuedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i'),
+            'issuedAt' => new DateTimeImmutable()->format('Y-m-d\TH:i'),
             'fuelType' => FuelType::DIESEL->value,
             'quantityMilliLiters' => '',
             'unitPriceDeciCentsPerLiter' => '',
@@ -96,24 +97,25 @@ final class CreateReceiptController extends AbstractController
         ];
     }
 
-    /** @return array<string, mixed> */
+    /** @return array<string, string> */
     private function extractFormData(Request $request): array
     {
         $data = $this->defaultFormData();
 
         foreach (array_keys($data) as $key) {
-            $data[$key] = (string) $request->request->get($key, '');
+            $value = $request->request->get($key, '');
+            $data[$key] = is_scalar($value) ? (string) $value : '';
         }
 
         return $data;
     }
 
-    /** @param array<string, mixed> $formData
+    /** @param array<string, string> $formData
      * @return list<string>
      */
     private function validateFormData(array $formData): array
     {
-        $issuedAt = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', (string) $formData['issuedAt']) ?: null;
+        $issuedAt = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $formData['issuedAt']) ?: null;
 
         $lineInput = new ReceiptLineInput(
             $this->nullIfEmpty($formData['fuelType']),
@@ -145,23 +147,23 @@ final class CreateReceiptController extends AbstractController
         return array_values(array_unique($errors));
     }
 
-    /** @param array<string, mixed> $formData */
+    /** @param array<string, string> $formData */
     private function persistReceiptFromForm(array $formData): void
     {
         $line = new CreateReceiptLineCommand(
-            FuelType::from((string) $formData['fuelType']),
-            (int) $formData['quantityMilliLiters'],
-            (int) $formData['unitPriceDeciCentsPerLiter'],
-            (int) $formData['vatRatePercent'],
+            FuelType::from($formData['fuelType']),
+            $this->toRequiredInt($formData['quantityMilliLiters'], 'quantityMilliLiters'),
+            $this->toRequiredInt($formData['unitPriceDeciCentsPerLiter'], 'unitPriceDeciCentsPerLiter'),
+            $this->toRequiredInt($formData['vatRatePercent'], 'vatRatePercent'),
         );
 
         $command = new CreateReceiptWithStationCommand(
-            DateTimeImmutable::createFromFormat('Y-m-d\TH:i', (string) $formData['issuedAt']) ?: new DateTimeImmutable(),
+            DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $formData['issuedAt']) ?: new DateTimeImmutable(),
             [$line],
-            (string) $formData['stationName'],
-            (string) $formData['stationStreetName'],
-            (string) $formData['stationPostalCode'],
-            (string) $formData['stationCity'],
+            $formData['stationName'],
+            $formData['stationStreetName'],
+            $formData['stationPostalCode'],
+            $formData['stationCity'],
             $this->toNullableInt($formData['latitudeMicroDegrees']),
             $this->toNullableInt($formData['longitudeMicroDegrees']),
         );
@@ -175,18 +177,37 @@ final class CreateReceiptController extends AbstractController
         $this->streamPublisher->publishCreated($receipt, $station);
     }
 
-    private function toNullableInt(mixed $value): ?int
+    private function toNullableInt(?string $value): ?int
     {
-        if (null === $value || '' === trim((string) $value)) {
+        if (null === $value || '' === trim($value)) {
             return null;
         }
 
-        return filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+        $int = filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+        if (null === $int) {
+            return null;
+        }
+
+        return $int;
     }
 
-    private function nullIfEmpty(mixed $value): ?string
+    private function toRequiredInt(string $value, string $field): int
     {
-        $stringValue = trim((string) $value);
+        $int = filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+        if (null === $int) {
+            throw new UnexpectedValueException(sprintf('Expected integer for %s.', $field));
+        }
+
+        return $int;
+    }
+
+    private function nullIfEmpty(?string $value): ?string
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        $stringValue = trim($value);
 
         return '' === $stringValue ? null : $stringValue;
     }

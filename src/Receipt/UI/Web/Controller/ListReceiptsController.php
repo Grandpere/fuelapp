@@ -114,6 +114,10 @@ final class ListReceiptsController extends AbstractController
 
     private function nullableString(mixed $value): ?string
     {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
         $stringValue = trim((string) $value);
 
         return '' === $stringValue ? null : $stringValue;
@@ -121,6 +125,10 @@ final class ListReceiptsController extends AbstractController
 
     private function parseDate(mixed $value): ?DateTimeImmutable
     {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
         $date = trim((string) $value);
         if ('' === $date) {
             return null;

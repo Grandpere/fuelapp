@@ -64,7 +64,15 @@ final readonly class DoctrineStationRepository implements StationRepository
             ->getResult();
 
         $stationsById = [];
+        if (!is_iterable($entities)) {
+            return $stationsById;
+        }
+
         foreach ($entities as $entity) {
+            if (!$entity instanceof StationEntity) {
+                continue;
+            }
+
             $station = $this->mapEntityToDomain($entity);
             $stationsById[$station->id()->toString()] = $station;
         }

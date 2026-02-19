@@ -23,9 +23,11 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Domain\ValueObject\StationId;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Uid\Uuid;
+use UnexpectedValueException;
 
 final readonly class DoctrineReceiptRepository implements ReceiptRepository
 {
@@ -87,7 +89,15 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
     public function all(): iterable
     {
         $entities = $this->baseListQuery()->getQuery()->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
         foreach ($entities as $entity) {
+            if (!$entity instanceof ReceiptEntity) {
+                continue;
+            }
+
             yield $this->mapEntityToDomain($entity);
         }
     }
@@ -103,8 +113,15 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->setMaxResults($safePerPage)
             ->getQuery()
             ->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
 
         foreach ($entities as $entity) {
+            if (!$entity instanceof ReceiptEntity) {
+                continue;
+            }
+
             yield $this->mapEntityToDomain($entity);
         }
     }
@@ -145,7 +162,15 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->setMaxResults($safePerPage);
 
         $entities = $qb->getQuery()->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
         foreach ($entities as $entity) {
+            if (!$entity instanceof ReceiptEntity) {
+                continue;
+            }
+
             yield $this->mapEntityToDomain($entity);
         }
     }
@@ -195,9 +220,9 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
         /** @var list<array{
          *     id: string,
-         *     issuedAt: DateTimeImmutable,
-         *     totalCents: int|string,
-         *     vatAmountCents: int|string,
+         *     issuedAt: mixed,
+         *     totalCents: mixed,
+         *     vatAmountCents: mixed,
          *     stationName: ?string,
          *     stationStreetName: ?string,
          *     stationPostalCode: ?string,
@@ -206,16 +231,69 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
          */
         $result = $rows->getQuery()->getArrayResult();
 
-        foreach ($result as &$row) {
-            if (is_string($row['issuedAt'])) {
-                $row['issuedAt'] = new DateTimeImmutable($row['issuedAt']);
-            }
-            $row['totalCents'] = (int) $row['totalCents'];
-            $row['vatAmountCents'] = (int) $row['vatAmountCents'];
+        $normalized = [];
+        foreach ($result as $row) {
+            $normalized[] = [
+                'id' => $this->toStringValue($row['id'], 'id'),
+                'issuedAt' => $this->toDateTimeImmutableValue($row['issuedAt'], 'issuedAt'),
+                'totalCents' => $this->toIntValue($row['totalCents'], 'totalCents'),
+                'vatAmountCents' => $this->toIntValue($row['vatAmountCents'], 'vatAmountCents'),
+                'stationName' => $this->toNullableStringValue($row['stationName'], 'stationName'),
+                'stationStreetName' => $this->toNullableStringValue($row['stationStreetName'], 'stationStreetName'),
+                'stationPostalCode' => $this->toNullableStringValue($row['stationPostalCode'], 'stationPostalCode'),
+                'stationCity' => $this->toNullableStringValue($row['stationCity'], 'stationCity'),
+            ];
         }
-        unset($row);
 
-        return $result;
+        return $normalized;
+    }
+
+    private function toDateTimeImmutableValue(mixed $value, string $field): DateTimeImmutable
+    {
+        if ($value instanceof DateTimeImmutable) {
+            return $value;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return DateTimeImmutable::createFromInterface($value);
+        }
+
+        if (is_string($value)) {
+            return new DateTimeImmutable($value);
+        }
+
+        throw new UnexpectedValueException(sprintf('Expected %s to be a datetime, got %s.', $field, get_debug_type($value)));
+    }
+
+    private function toIntValue(mixed $value, string $field): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && 1 === preg_match('/^-?\d+$/', $value)) {
+            return (int) $value;
+        }
+
+        throw new UnexpectedValueException(sprintf('Expected %s to be an int, got %s.', $field, get_debug_type($value)));
+    }
+
+    private function toStringValue(mixed $value, string $field): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        throw new UnexpectedValueException(sprintf('Expected %s to be a string, got %s.', $field, get_debug_type($value)));
+    }
+
+    private function toNullableStringValue(mixed $value, string $field): ?string
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        return $this->toStringValue($value, $field);
     }
 
     private function baseListQuery(): QueryBuilder

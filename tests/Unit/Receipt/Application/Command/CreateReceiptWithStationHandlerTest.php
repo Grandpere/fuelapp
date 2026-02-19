@@ -158,6 +158,13 @@ final class InMemoryStationRepository implements StationRepository
         return $this->station && $this->station->id()->toString() === $id ? $this->station : null;
     }
 
+    public function delete(string $id): void
+    {
+        if (null !== $this->station && $this->station->id()->toString() === $id) {
+            $this->station = null;
+        }
+    }
+
     public function getByIds(array $ids): array
     {
         if (null === $this->station) {

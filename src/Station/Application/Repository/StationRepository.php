@@ -21,6 +21,8 @@ interface StationRepository
 
     public function get(string $id): ?Station;
 
+    public function delete(string $id): void;
+
     /** @param list<string> $ids
      * @return array<string, Station>
      */

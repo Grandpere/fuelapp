@@ -22,6 +22,7 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Domain\ValueObject\StationId;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Uid\Uuid;
@@ -106,6 +107,49 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->getSingleScalarResult();
     }
 
+    public function paginateFiltered(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): iterable {
+        $safePage = max(1, $page);
+        $safePerPage = max(1, $perPage);
+        $offset = ($safePage - 1) * $safePerPage;
+
+        $sortField = match ($sortBy) {
+            'total' => 'r.totalCents',
+            default => 'r.issuedAt',
+        };
+        $safeSortDirection = 'asc' === strtolower($sortDirection) ? 'ASC' : 'DESC';
+
+        $qb = $this->filteredQuery($stationId, $issuedFrom, $issuedTo)
+            ->orderBy($sortField, $safeSortDirection)
+            ->addOrderBy('r.id', $safeSortDirection)
+            ->setFirstResult($offset)
+            ->setMaxResults($safePerPage);
+
+        $entities = $qb->getQuery()->getResult();
+        foreach ($entities as $entity) {
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int
+    {
+        $qb = $this->em
+            ->createQueryBuilder()
+            ->select('COUNT(r.id)')
+            ->from(ReceiptEntity::class, 'r');
+
+        $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
     private function baseListQuery(): QueryBuilder
     {
         return $this->em
@@ -114,6 +158,43 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->from(ReceiptEntity::class, 'r')
             ->orderBy('r.issuedAt', 'DESC')
             ->addOrderBy('r.id', 'DESC');
+    }
+
+    private function filteredQuery(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): QueryBuilder
+    {
+        $qb = $this->em
+            ->createQueryBuilder()
+            ->select('r')
+            ->from(ReceiptEntity::class, 'r');
+
+        $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
+
+        return $qb;
+    }
+
+    private function applyFilters(
+        QueryBuilder $qb,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+    ): void {
+        if (null !== $stationId && '' !== $stationId) {
+            $qb
+                ->andWhere('IDENTITY(r.station) = :stationId')
+                ->setParameter('stationId', $stationId);
+        }
+
+        if (null !== $issuedFrom) {
+            $qb
+                ->andWhere('r.issuedAt >= :issuedFrom')
+                ->setParameter('issuedFrom', $issuedFrom->setTime(0, 0, 0));
+        }
+
+        if (null !== $issuedTo) {
+            $qb
+                ->andWhere('r.issuedAt <= :issuedTo')
+                ->setParameter('issuedTo', $issuedTo->setTime(23, 59, 59));
+        }
     }
 
     private function mapEntityToDomain(ReceiptEntity $entity): Receipt

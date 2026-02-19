@@ -15,6 +15,56 @@
             </div>
         {% endfor %}
 
+        <form method="get" action="{{ path('ui_receipt_index') }}" style="display: grid; gap: 0.75rem; margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+            <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(3, minmax(0, 1fr));">
+                <label>
+                    Station
+                    <select name="station_id" style="width: 100%; padding: 0.4rem;">
+                        <option value="">All</option>
+                        {% for option in stationOptions %}
+                            <option value="{{ option.id }}" {% if filters.stationId == option.id %}selected{% endif %}>{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Issued from
+                    <input type="date" name="issued_from" value="{{ filters.issuedFrom }}" style="width: 100%; padding: 0.4rem;">
+                </label>
+                <label>
+                    Issued to
+                    <input type="date" name="issued_to" value="{{ filters.issuedTo }}" style="width: 100%; padding: 0.4rem;">
+                </label>
+            </div>
+            <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(3, minmax(0, 1fr));">
+                <label>
+                    Sort by
+                    <select name="sort_by" style="width: 100%; padding: 0.4rem;">
+                        <option value="date" {% if filters.sortBy == 'date' %}selected{% endif %}>Date</option>
+                        <option value="total" {% if filters.sortBy == 'total' %}selected{% endif %}>Total</option>
+                    </select>
+                </label>
+                <label>
+                    Direction
+                    <select name="sort_direction" style="width: 100%; padding: 0.4rem;">
+                        <option value="desc" {% if filters.sortDirection == 'desc' %}selected{% endif %}>Descending</option>
+                        <option value="asc" {% if filters.sortDirection == 'asc' %}selected{% endif %}>Ascending</option>
+                    </select>
+                </label>
+                <label>
+                    Per page
+                    <select name="per_page" style="width: 100%; padding: 0.4rem;">
+                        {% for size in [10, 25, 50, 100] %}
+                            <option value="{{ size }}" {% if perPage == size %}selected{% endif %}>{{ size }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="submit" style="padding: 0.5rem 0.8rem;">Apply</button>
+                <a href="{{ path('ui_receipt_index') }}" style="padding: 0.5rem 0.8rem; border: 1px solid #ccc; text-decoration: none; color: #111;">Reset</a>
+            </div>
+        </form>
+
         {% if receipts is empty %}
             <p>No receipt yet.</p>
         {% else %}
@@ -56,10 +106,10 @@
                 </div>
                 <div style="display: flex; gap: 0.75rem;">
                     {% if page > 1 %}
-                        <a href="{{ path('ui_receipt_index', {page: page - 1, per_page: perPage}) }}">Previous</a>
+                        <a href="{{ path('ui_receipt_index', queryParams|merge({page: page - 1})) }}">Previous</a>
                     {% endif %}
                     {% if page < lastPage %}
-                        <a href="{{ path('ui_receipt_index', {page: page + 1, per_page: perPage}) }}">Next</a>
+                        <a href="{{ path('ui_receipt_index', queryParams|merge({page: page + 1})) }}">Next</a>
                     {% endif %}
                 </div>
             </div>

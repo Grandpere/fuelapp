@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Receipt\Application\Repository;
 
 use App\Receipt\Domain\Receipt;
+use DateTimeImmutable;
 
 interface ReceiptRepository
 {
@@ -28,4 +29,17 @@ interface ReceiptRepository
     public function paginate(int $page, int $perPage): iterable;
 
     public function countAll(): int;
+
+    /** @return iterable<Receipt> */
+    public function paginateFiltered(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): iterable;
+
+    public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int;
 }

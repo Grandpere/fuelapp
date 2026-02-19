@@ -215,6 +215,23 @@ final class InMemoryReceiptRepository implements ReceiptRepository
     {
         return count($this->items);
     }
+
+    public function paginateFiltered(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): iterable {
+        return $this->paginate($page, $perPage);
+    }
+
+    public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int
+    {
+        return $this->countAll();
+    }
 }
 
 final readonly class FailingCreateStationHandler extends CreateStationHandler

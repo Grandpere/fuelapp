@@ -40,6 +40,7 @@ final class CreateReceiptController extends AbstractController
     #[Route('/ui/receipts/new', name: 'ui_receipt_new', methods: ['GET', 'POST'])]
     public function __invoke(Request $request): Response
     {
+        $isTurboFrameRequest = $request->headers->has('Turbo-Frame');
         $formData = $this->defaultFormData();
         $errors = [];
 
@@ -53,17 +54,23 @@ final class CreateReceiptController extends AbstractController
                     $this->persistReceiptFromForm($formData);
                     $this->addFlash('success', 'Receipt created.');
 
-                    return new RedirectResponse($this->generateUrl('ui_receipt_index'));
+                    return new RedirectResponse($this->generateUrl('ui_receipt_index'), Response::HTTP_SEE_OTHER);
                 }
             }
         }
 
-        return $this->render('receipt/new.html.twig', [
+        $response = $this->render($isTurboFrameRequest ? 'receipt/_form.html.twig' : 'receipt/new.html.twig', [
             'formData' => $formData,
             'errors' => $errors,
             'fuelTypes' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
             'csrfToken' => $this->csrfTokenManager->getToken('receipt_new')->getValue(),
         ]);
+
+        if ([] !== $errors) {
+            $response->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return $response;
     }
 
     /** @return array<string, mixed> */

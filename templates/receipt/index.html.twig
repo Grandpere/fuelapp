@@ -3,10 +3,10 @@
 {% block title %}Receipts{% endblock %}
 
 {% block body %}
-    <main style="max-width: 1000px; margin: 2rem auto; padding: 0 1rem;">
+    <main style="max-width: 1300px; margin: 2rem auto; padding: 0 1rem;">
         <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h1 style="margin: 0;">Receipts</h1>
-            <a href="{{ path('ui_receipt_new') }}" style="display: inline-block; padding: 0.6rem 1rem; border: 1px solid #111; border-radius: 8px; text-decoration: none; color: #111;">Add receipt</a>
+            <a href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame" style="display: inline-block; padding: 0.6rem 1rem; border: 1px solid #111; border-radius: 8px; text-decoration: none; color: #111;">Add receipt</a>
         </header>
 
         {% for message in app.flashes('success') %}
@@ -65,6 +65,8 @@
             </div>
         </form>
 
+        <div style="display: grid; gap: 1rem; grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); align-items: start;">
+            <section>
         {% if receipts is empty %}
             <p>No receipt yet.</p>
         {% else %}
@@ -114,5 +116,15 @@
                 </div>
             </div>
         {% endif %}
+            </section>
+
+            <section style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="margin-top: 0;">New receipt</h2>
+                <turbo-frame id="receipt_form_frame">
+                    <p style="margin: 0 0 0.5rem 0;">Click "Add receipt" to load the form here.</p>
+                    <a href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Load form</a>
+                </turbo-frame>
+            </section>
+        </div>
     </main>
 {% endblock %}

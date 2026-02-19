@@ -18,7 +18,7 @@ final class ReceiptLineOutput
     public function __construct(
         public string $fuelType,
         public int $quantityMilliLiters,
-        public int $unitPriceCentsPerLiter,
+        public int $unitPriceDeciCentsPerLiter,
         public int $lineTotalCents,
         public int $vatRatePercent,
         public int $vatAmountCents,

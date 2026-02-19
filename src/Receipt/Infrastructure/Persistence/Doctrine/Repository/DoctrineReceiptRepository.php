@@ -52,7 +52,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $lineEntity->setId(Uuid::v7());
             $lineEntity->setFuelType($line->fuelType()->value);
             $lineEntity->setQuantityMilliLiters($line->quantityMilliLiters());
-            $lineEntity->setUnitPriceCentsPerLiter($line->unitPriceCentsPerLiter());
+            $lineEntity->setUnitPriceDeciCentsPerLiter($line->unitPriceDeciCentsPerLiter());
             $lineEntity->setVatRatePercent($line->vatRatePercent());
             $entity->addLine($lineEntity);
         }
@@ -123,7 +123,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $lines[] = ReceiptLine::reconstitute(
                 FuelType::from($lineEntity->getFuelType()),
                 $lineEntity->getQuantityMilliLiters(),
-                $lineEntity->getUnitPriceCentsPerLiter(),
+                $lineEntity->getUnitPriceDeciCentsPerLiter(),
                 $lineEntity->getVatRatePercent(),
             );
         }

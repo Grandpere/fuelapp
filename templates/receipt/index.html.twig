@@ -25,11 +25,12 @@
                         <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Station</th>
                         <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Total</th>
                         <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">VAT</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for receipt in receipts %}
-                        <tr>
+                        <tr style="cursor: pointer;" onclick="window.location.href='{{ path('ui_receipt_show', {id: receipt.id}) }}'">
                             <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ receipt.issuedAt|date('d/m/Y H:i') }}</td>
                             <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">
                                 {% if receipt.stationName %}
@@ -41,6 +42,9 @@
                             </td>
                             <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} €</td>
                             <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">
+                                <a href="{{ path('ui_receipt_show', {id: receipt.id}) }}" onclick="event.stopPropagation();" style="text-decoration: none;">View</a>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

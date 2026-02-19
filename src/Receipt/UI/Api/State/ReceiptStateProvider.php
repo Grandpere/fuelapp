@@ -54,7 +54,7 @@ final readonly class ReceiptStateProvider implements ProviderInterface
             $lines[] = new ReceiptLineOutput(
                 $line->fuelType()->value,
                 $line->quantityMilliLiters(),
-                $line->unitPriceCentsPerLiter(),
+                $line->unitPriceDeciCentsPerLiter(),
                 $line->lineTotalCents(),
                 $line->vatRatePercent(),
                 $line->vatAmountCents(),

@@ -43,8 +43,9 @@
                         <input type="number" min="1" step="1" name="quantityMilliLiters" value="{{ formData.quantityMilliLiters }}" required style="width: 100%; padding: 0.5rem;">
                     </label>
                     <label>
-                        Unit price (cents/L)
-                        <input type="number" min="0" step="1" name="unitPriceCentsPerLiter" value="{{ formData.unitPriceCentsPerLiter }}" required style="width: 100%; padding: 0.5rem;">
+                        Unit price (deci-cents/L)
+                        <input type="number" min="0" step="1" name="unitPriceDeciCentsPerLiter" value="{{ formData.unitPriceDeciCentsPerLiter }}" required style="width: 100%; padding: 0.5rem;">
+                        <small>Example: 1.879 €/L = 1879</small>
                     </label>
                     <label>
                         VAT (%)

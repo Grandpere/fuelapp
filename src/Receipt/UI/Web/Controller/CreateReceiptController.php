@@ -73,7 +73,7 @@ final class CreateReceiptController extends AbstractController
             'issuedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i'),
             'fuelType' => FuelType::DIESEL->value,
             'quantityMilliLiters' => '',
-            'unitPriceCentsPerLiter' => '',
+            'unitPriceDeciCentsPerLiter' => '',
             'vatRatePercent' => '20',
             'stationName' => '',
             'stationStreetName' => '',
@@ -107,7 +107,7 @@ final class CreateReceiptController extends AbstractController
         $lineInput = new ReceiptLineInput(
             $this->nullIfEmpty($formData['fuelType']),
             $this->toNullableInt($formData['quantityMilliLiters']),
-            $this->toNullableInt($formData['unitPriceCentsPerLiter']),
+            $this->toNullableInt($formData['unitPriceDeciCentsPerLiter']),
             $this->toNullableInt($formData['vatRatePercent']),
         );
 
@@ -140,7 +140,7 @@ final class CreateReceiptController extends AbstractController
         $line = new CreateReceiptLineCommand(
             FuelType::from((string) $formData['fuelType']),
             (int) $formData['quantityMilliLiters'],
-            (int) $formData['unitPriceCentsPerLiter'],
+            (int) $formData['unitPriceDeciCentsPerLiter'],
             (int) $formData['vatRatePercent'],
         );
 

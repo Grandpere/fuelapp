@@ -36,7 +36,7 @@ class ReceiptLineEntity
     private int $quantityMilliLiters;
 
     #[ORM\Column(type: 'integer')]
-    private int $unitPriceCentsPerLiter;
+    private int $unitPriceDeciCentsPerLiter;
 
     #[ORM\Column(type: 'integer')]
     private int $vatRatePercent;
@@ -81,14 +81,14 @@ class ReceiptLineEntity
         $this->quantityMilliLiters = $quantityMilliLiters;
     }
 
-    public function getUnitPriceCentsPerLiter(): int
+    public function getUnitPriceDeciCentsPerLiter(): int
     {
-        return $this->unitPriceCentsPerLiter;
+        return $this->unitPriceDeciCentsPerLiter;
     }
 
-    public function setUnitPriceCentsPerLiter(int $unitPriceCentsPerLiter): void
+    public function setUnitPriceDeciCentsPerLiter(int $unitPriceDeciCentsPerLiter): void
     {
-        $this->unitPriceCentsPerLiter = $unitPriceCentsPerLiter;
+        $this->unitPriceDeciCentsPerLiter = $unitPriceDeciCentsPerLiter;
     }
 
     public function getVatRatePercent(): int

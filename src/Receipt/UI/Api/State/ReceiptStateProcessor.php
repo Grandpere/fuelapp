@@ -43,7 +43,7 @@ final readonly class ReceiptStateProcessor implements ProcessorInterface
             if (
                 null === $line->fuelType
                 || null === $line->quantityMilliLiters
-                || null === $line->unitPriceCentsPerLiter
+                || null === $line->unitPriceDeciCentsPerLiter
                 || null === $line->vatRatePercent
             ) {
                 throw new InvalidArgumentException('Receipt line fields are required');
@@ -52,7 +52,7 @@ final readonly class ReceiptStateProcessor implements ProcessorInterface
             $lines[] = new CreateReceiptLineCommand(
                 FuelType::from($line->fuelType),
                 $line->quantityMilliLiters,
-                $line->unitPriceCentsPerLiter,
+                $line->unitPriceDeciCentsPerLiter,
                 $line->vatRatePercent,
             );
         }
@@ -73,7 +73,7 @@ final readonly class ReceiptStateProcessor implements ProcessorInterface
             $outputLines[] = new ReceiptLineOutput(
                 $line->fuelType()->value,
                 $line->quantityMilliLiters(),
-                $line->unitPriceCentsPerLiter(),
+                $line->unitPriceDeciCentsPerLiter(),
                 $line->lineTotalCents(),
                 $line->vatRatePercent(),
                 $line->vatAmountCents(),

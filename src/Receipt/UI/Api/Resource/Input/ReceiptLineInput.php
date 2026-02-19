@@ -27,7 +27,7 @@ final class ReceiptLineInput
         public ?int $quantityMilliLiters = null,
         #[Assert\NotNull]
         #[Assert\PositiveOrZero]
-        public ?int $unitPriceCentsPerLiter = null,
+        public ?int $unitPriceDeciCentsPerLiter = null,
         #[Assert\NotNull]
         #[Assert\Range(min: 0, max: 100)]
         public ?int $vatRatePercent = null,

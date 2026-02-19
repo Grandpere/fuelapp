@@ -25,4 +25,10 @@ return [
     '@hotwired/turbo' => [
         'version' => '7.3.0',
     ],
+    'flatpickr' => [
+        'version' => '4.6.13',
+    ],
+    'flatpickr/dist/l10n/fr.js' => [
+        'version' => '4.6.13',
+    ],
 ];

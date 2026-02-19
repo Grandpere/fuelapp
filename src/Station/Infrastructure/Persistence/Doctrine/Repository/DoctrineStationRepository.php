@@ -51,6 +51,17 @@ final readonly class DoctrineStationRepository implements StationRepository
         return $this->mapEntityToDomain($entity);
     }
 
+    public function delete(string $id): void
+    {
+        $entity = $this->em->find(StationEntity::class, $id);
+        if (null === $entity) {
+            return;
+        }
+
+        $this->em->remove($entity);
+        $this->em->flush();
+    }
+
     public function getByIds(array $ids): array
     {
         if ([] === $ids) {

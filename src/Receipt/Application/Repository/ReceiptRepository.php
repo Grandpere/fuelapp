@@ -41,9 +41,25 @@ interface ReceiptRepository
         ?DateTimeImmutable $issuedTo,
         string $sortBy,
         string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
     ): iterable;
 
-    public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int;
+    public function countFiltered(
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
+    ): int;
 
     /** @return list<array{
      *     id: string,
@@ -53,7 +69,11 @@ interface ReceiptRepository
      *     stationName: ?string,
      *     stationStreetName: ?string,
      *     stationPostalCode: ?string,
-     *     stationCity: ?string
+     *     stationCity: ?string,
+     *     fuelType: ?string,
+     *     quantityMilliLiters: ?int,
+     *     unitPriceDeciCentsPerLiter: ?int,
+     *     vatRatePercent: ?int
      * }> */
     public function paginateFilteredListRows(
         int $page,
@@ -63,5 +83,39 @@ interface ReceiptRepository
         ?DateTimeImmutable $issuedTo,
         string $sortBy,
         string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
+    ): array;
+
+    /** @return list<array{
+     *     id: string,
+     *     issuedAt: DateTimeImmutable,
+     *     totalCents: int,
+     *     vatAmountCents: int,
+     *     stationName: ?string,
+     *     stationStreetName: ?string,
+     *     stationPostalCode: ?string,
+     *     stationCity: ?string,
+     *     fuelType: ?string,
+     *     quantityMilliLiters: ?int,
+     *     unitPriceDeciCentsPerLiter: ?int,
+     *     vatRatePercent: ?int
+     * }> */
+    public function listFilteredRowsForExport(
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
     ): array;
 }

@@ -158,6 +158,13 @@ final class InMemoryStationRepository implements StationRepository
         return $this->station && $this->station->id()->toString() === $id ? $this->station : null;
     }
 
+    public function delete(string $id): void
+    {
+        if (null !== $this->station && $this->station->id()->toString() === $id) {
+            $this->station = null;
+        }
+    }
+
     public function getByIds(array $ids): array
     {
         if (null === $this->station) {
@@ -229,12 +236,27 @@ final class InMemoryReceiptRepository implements ReceiptRepository
         ?DateTimeImmutable $issuedTo,
         string $sortBy,
         string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
     ): iterable {
         return $this->paginate($page, $perPage);
     }
 
-    public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int
-    {
+    public function countFiltered(
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
+    ): int {
         return $this->countAll();
     }
 
@@ -246,10 +268,17 @@ final class InMemoryReceiptRepository implements ReceiptRepository
         ?DateTimeImmutable $issuedTo,
         string $sortBy,
         string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
     ): array {
         $receipts = $this->paginate($page, $perPage);
         $rows = [];
         foreach ($receipts as $receipt) {
+            $line = $receipt->lines()[0] ?? null;
             $rows[] = [
                 'id' => $receipt->id()->toString(),
                 'issuedAt' => $receipt->issuedAt(),
@@ -259,10 +288,44 @@ final class InMemoryReceiptRepository implements ReceiptRepository
                 'stationStreetName' => null,
                 'stationPostalCode' => null,
                 'stationCity' => null,
+                'fuelType' => $line?->fuelType()->value,
+                'quantityMilliLiters' => $line?->quantityMilliLiters(),
+                'unitPriceDeciCentsPerLiter' => $line?->unitPriceDeciCentsPerLiter(),
+                'vatRatePercent' => $line?->vatRatePercent(),
             ];
         }
 
         return $rows;
+    }
+
+    public function listFilteredRowsForExport(
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
+    ): array {
+        return $this->paginateFilteredListRows(
+            1,
+            1000000,
+            $stationId,
+            $issuedFrom,
+            $issuedTo,
+            $sortBy,
+            $sortDirection,
+            $fuelType,
+            $quantityMilliLitersMin,
+            $quantityMilliLitersMax,
+            $unitPriceDeciCentsPerLiterMin,
+            $unitPriceDeciCentsPerLiterMax,
+            $vatRatePercent,
+        );
     }
 }
 

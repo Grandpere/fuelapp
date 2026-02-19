@@ -26,6 +26,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
+use Stringable;
 use Symfony\Component\Uid\Uuid;
 use UnexpectedValueException;
 
@@ -144,6 +145,12 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         ?DateTimeImmutable $issuedTo,
         string $sortBy,
         string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
     ): iterable {
         $safePage = max(1, $page);
         $safePerPage = max(1, $perPage);
@@ -151,6 +158,10 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
         $sortField = match ($sortBy) {
             'total' => 'r.totalCents',
+            'fuel_type' => 'rl.fuelType',
+            'quantity' => 'rl.quantityMilliLiters',
+            'unit_price' => 'rl.unitPriceDeciCentsPerLiter',
+            'vat_rate' => 'rl.vatRatePercent',
             default => 'r.issuedAt',
         };
         $safeSortDirection = 'asc' === strtolower($sortDirection) ? 'ASC' : 'DESC';
@@ -160,6 +171,15 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->addOrderBy('r.id', $safeSortDirection)
             ->setFirstResult($offset)
             ->setMaxResults($safePerPage);
+        $this->applyLineFilters(
+            $qb,
+            $fuelType,
+            $quantityMilliLitersMin,
+            $quantityMilliLitersMax,
+            $unitPriceDeciCentsPerLiterMin,
+            $unitPriceDeciCentsPerLiterMax,
+            $vatRatePercent,
+        );
 
         $entities = $qb->getQuery()->getResult();
         if (!is_iterable($entities)) {
@@ -175,14 +195,33 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         }
     }
 
-    public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int
-    {
+    public function countFiltered(
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
+    ): int {
         $qb = $this->em
             ->createQueryBuilder()
-            ->select('COUNT(r.id)')
-            ->from(ReceiptEntity::class, 'r');
+            ->select('COUNT(DISTINCT r.id)')
+            ->from(ReceiptEntity::class, 'r')
+            ->leftJoin('r.lines', 'rl');
 
         $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
+        $this->applyLineFilters(
+            $qb,
+            $fuelType,
+            $quantityMilliLitersMin,
+            $quantityMilliLitersMax,
+            $unitPriceDeciCentsPerLiterMin,
+            $unitPriceDeciCentsPerLiterMax,
+            $vatRatePercent,
+        );
 
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
@@ -195,6 +234,12 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         ?DateTimeImmutable $issuedTo,
         string $sortBy,
         string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
     ): array {
         $safePage = max(1, $page);
         $safePerPage = max(1, $perPage);
@@ -202,21 +247,35 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
         $sortField = match ($sortBy) {
             'total' => 'r.totalCents',
+            'fuel_type' => 'rl.fuelType',
+            'quantity' => 'rl.quantityMilliLiters',
+            'unit_price' => 'rl.unitPriceDeciCentsPerLiter',
+            'vat_rate' => 'rl.vatRatePercent',
             default => 'r.issuedAt',
         };
         $safeSortDirection = 'asc' === strtolower($sortDirection) ? 'ASC' : 'DESC';
 
         $rows = $this->em
             ->createQueryBuilder()
-            ->select('r.id AS id, r.issuedAt AS issuedAt, r.totalCents AS totalCents, r.vatAmountCents AS vatAmountCents, s.name AS stationName, s.streetName AS stationStreetName, s.postalCode AS stationPostalCode, s.city AS stationCity')
+            ->select('r.id AS id, r.issuedAt AS issuedAt, r.totalCents AS totalCents, r.vatAmountCents AS vatAmountCents, s.name AS stationName, s.streetName AS stationStreetName, s.postalCode AS stationPostalCode, s.city AS stationCity, rl.fuelType AS fuelType, rl.quantityMilliLiters AS quantityMilliLiters, rl.unitPriceDeciCentsPerLiter AS unitPriceDeciCentsPerLiter, rl.vatRatePercent AS vatRatePercent')
             ->from(ReceiptEntity::class, 'r')
             ->leftJoin('r.station', 's')
+            ->leftJoin('r.lines', 'rl')
             ->orderBy($sortField, $safeSortDirection)
             ->addOrderBy('r.id', $safeSortDirection)
             ->setFirstResult($offset)
             ->setMaxResults($safePerPage);
 
         $this->applyFilters($rows, $stationId, $issuedFrom, $issuedTo);
+        $this->applyLineFilters(
+            $rows,
+            $fuelType,
+            $quantityMilliLitersMin,
+            $quantityMilliLitersMax,
+            $unitPriceDeciCentsPerLiterMin,
+            $unitPriceDeciCentsPerLiterMax,
+            $vatRatePercent,
+        );
 
         /** @var list<array{
          *     id: string,
@@ -226,7 +285,11 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
          *     stationName: ?string,
          *     stationStreetName: ?string,
          *     stationPostalCode: ?string,
-         *     stationCity: ?string
+         *     stationCity: ?string,
+         *     fuelType: mixed,
+         *     quantityMilliLiters: mixed,
+         *     unitPriceDeciCentsPerLiter: mixed,
+         *     vatRatePercent: mixed
          * }> $result
          */
         $result = $rows->getQuery()->getArrayResult();
@@ -242,10 +305,44 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
                 'stationStreetName' => $this->toNullableStringValue($row['stationStreetName'], 'stationStreetName'),
                 'stationPostalCode' => $this->toNullableStringValue($row['stationPostalCode'], 'stationPostalCode'),
                 'stationCity' => $this->toNullableStringValue($row['stationCity'], 'stationCity'),
+                'fuelType' => $this->toNullableStringValue($row['fuelType'], 'fuelType'),
+                'quantityMilliLiters' => $this->toNullableIntValue($row['quantityMilliLiters'], 'quantityMilliLiters'),
+                'unitPriceDeciCentsPerLiter' => $this->toNullableIntValue($row['unitPriceDeciCentsPerLiter'], 'unitPriceDeciCentsPerLiter'),
+                'vatRatePercent' => $this->toNullableIntValue($row['vatRatePercent'], 'vatRatePercent'),
             ];
         }
 
         return $normalized;
+    }
+
+    public function listFilteredRowsForExport(
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+        ?string $fuelType = null,
+        ?int $quantityMilliLitersMin = null,
+        ?int $quantityMilliLitersMax = null,
+        ?int $unitPriceDeciCentsPerLiterMin = null,
+        ?int $unitPriceDeciCentsPerLiterMax = null,
+        ?int $vatRatePercent = null,
+    ): array {
+        return $this->paginateFilteredListRows(
+            1,
+            2000000000,
+            $stationId,
+            $issuedFrom,
+            $issuedTo,
+            $sortBy,
+            $sortDirection,
+            $fuelType,
+            $quantityMilliLitersMin,
+            $quantityMilliLitersMax,
+            $unitPriceDeciCentsPerLiterMin,
+            $unitPriceDeciCentsPerLiterMax,
+            $vatRatePercent,
+        );
     }
 
     private function toDateTimeImmutableValue(mixed $value, string $field): DateTimeImmutable
@@ -284,6 +381,10 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             return $value;
         }
 
+        if ($value instanceof Stringable) {
+            return (string) $value;
+        }
+
         throw new UnexpectedValueException(sprintf('Expected %s to be a string, got %s.', $field, get_debug_type($value)));
     }
 
@@ -294,6 +395,15 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         }
 
         return $this->toStringValue($value, $field);
+    }
+
+    private function toNullableIntValue(mixed $value, string $field): ?int
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        return $this->toIntValue($value, $field);
     }
 
     private function baseListQuery(): QueryBuilder
@@ -311,11 +421,46 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $qb = $this->em
             ->createQueryBuilder()
             ->select('r')
-            ->from(ReceiptEntity::class, 'r');
+            ->from(ReceiptEntity::class, 'r')
+            ->leftJoin('r.lines', 'rl');
 
         $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
 
         return $qb;
+    }
+
+    private function applyLineFilters(
+        QueryBuilder $qb,
+        ?string $fuelType,
+        ?int $quantityMilliLitersMin,
+        ?int $quantityMilliLitersMax,
+        ?int $unitPriceDeciCentsPerLiterMin,
+        ?int $unitPriceDeciCentsPerLiterMax,
+        ?int $vatRatePercent,
+    ): void {
+        if (null !== $fuelType && '' !== $fuelType) {
+            $qb->andWhere('rl.fuelType = :fuelType')->setParameter('fuelType', $fuelType);
+        }
+
+        if (null !== $quantityMilliLitersMin) {
+            $qb->andWhere('rl.quantityMilliLiters >= :quantityMin')->setParameter('quantityMin', $quantityMilliLitersMin);
+        }
+
+        if (null !== $quantityMilliLitersMax) {
+            $qb->andWhere('rl.quantityMilliLiters <= :quantityMax')->setParameter('quantityMax', $quantityMilliLitersMax);
+        }
+
+        if (null !== $unitPriceDeciCentsPerLiterMin) {
+            $qb->andWhere('rl.unitPriceDeciCentsPerLiter >= :unitPriceMin')->setParameter('unitPriceMin', $unitPriceDeciCentsPerLiterMin);
+        }
+
+        if (null !== $unitPriceDeciCentsPerLiterMax) {
+            $qb->andWhere('rl.unitPriceDeciCentsPerLiter <= :unitPriceMax')->setParameter('unitPriceMax', $unitPriceDeciCentsPerLiterMax);
+        }
+
+        if (null !== $vatRatePercent) {
+            $qb->andWhere('rl.vatRatePercent = :vatRatePercent')->setParameter('vatRatePercent', $vatRatePercent);
+        }
     }
 
     private function applyFilters(

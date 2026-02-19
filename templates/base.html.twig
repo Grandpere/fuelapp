@@ -2,9 +2,291 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}Welcome!{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
         {% block stylesheets %}
+            <style>
+                :root {
+                    --bg: #07151f;
+                    --bg-muted: #0f2332;
+                    --panel: #102b3e;
+                    --panel-strong: #14384f;
+                    --line: #2e5067;
+                    --text: #e5eef5;
+                    --text-soft: #9bb1c2;
+                    --primary: #f7b500;
+                    --primary-strong: #f08a00;
+                    --success: #2ecc71;
+                    --danger: #ff5f56;
+                    --radius: 14px;
+                    --radius-sm: 10px;
+                    --shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+                }
+
+                * {
+                    box-sizing: border-box;
+                }
+
+                html,
+                body {
+                    margin: 0;
+                    min-height: 100%;
+                }
+
+                body {
+                    font-family: "Manrope", sans-serif;
+                    background:
+                        radial-gradient(circle at 16% -2%, rgba(247, 181, 0, 0.2), transparent 32%),
+                        radial-gradient(circle at 92% 0%, rgba(54, 180, 252, 0.18), transparent 24%),
+                        linear-gradient(180deg, #07151f 0%, #081a26 45%, #06131c 100%);
+                    color: var(--text);
+                    line-height: 1.45;
+                }
+
+                a {
+                    color: inherit;
+                }
+
+                .app-shell {
+                    max-width: 1360px;
+                    margin: 0 auto;
+                    padding: 1.25rem 1rem 2.5rem;
+                }
+
+                .page-title {
+                    margin: 0;
+                    font-family: "Space Grotesk", sans-serif;
+                    font-size: clamp(1.45rem, 2.8vw, 2.2rem);
+                    letter-spacing: 0.01em;
+                }
+
+                .muted {
+                    color: var(--text-soft);
+                }
+
+                .card {
+                    background: linear-gradient(170deg, rgba(24, 58, 83, 0.9), rgba(13, 37, 54, 0.9));
+                    border: 1px solid rgba(102, 145, 171, 0.28);
+                    border-radius: var(--radius);
+                    box-shadow: var(--shadow);
+                }
+
+                .card-subtle {
+                    background: rgba(17, 43, 61, 0.78);
+                    border: 1px solid rgba(101, 146, 174, 0.2);
+                    border-radius: var(--radius-sm);
+                }
+
+                .btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.4rem;
+                    border-radius: 999px;
+                    padding: 0.56rem 1rem;
+                    border: 1px solid transparent;
+                    text-decoration: none;
+                    font-weight: 700;
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                    transition: transform 120ms ease, box-shadow 150ms ease, border-color 120ms ease, background-color 120ms ease;
+                }
+
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+
+                .btn:active {
+                    transform: translateY(0);
+                }
+
+                .btn-primary {
+                    color: #0b1d2b;
+                    background: linear-gradient(120deg, var(--primary) 0%, var(--primary-strong) 100%);
+                    box-shadow: 0 8px 18px rgba(240, 138, 0, 0.28);
+                }
+
+                .btn-secondary {
+                    color: var(--text);
+                    border-color: rgba(147, 178, 200, 0.35);
+                    background: rgba(17, 40, 58, 0.72);
+                }
+
+                .btn-danger {
+                    color: #ffd6d4;
+                    border-color: rgba(255, 95, 86, 0.45);
+                    background: rgba(103, 33, 40, 0.45);
+                }
+
+                .input,
+                .select {
+                    width: 100%;
+                    appearance: none;
+                    border: 1px solid rgba(142, 175, 199, 0.34);
+                    border-radius: 10px;
+                    background: rgba(5, 20, 30, 0.6);
+                    color: var(--text);
+                    padding: 0.56rem 0.7rem;
+                    font: inherit;
+                }
+
+                .input:focus,
+                .select:focus {
+                    outline: none;
+                    border-color: rgba(247, 181, 0, 0.85);
+                    box-shadow: 0 0 0 3px rgba(247, 181, 0, 0.2);
+                }
+
+                .label {
+                    display: grid;
+                    gap: 0.3rem;
+                    font-size: 0.82rem;
+                    color: #b9cbda;
+                    font-weight: 600;
+                }
+
+                .pill {
+                    display: inline-flex;
+                    align-items: center;
+                    border-radius: 999px;
+                    padding: 0.22rem 0.56rem;
+                    font-size: 0.73rem;
+                    font-weight: 700;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                }
+
+                .pill-energy {
+                    color: #1a2b08;
+                    background: linear-gradient(120deg, #b5f05c, #86d81a);
+                }
+
+                .table-wrap {
+                    overflow-x: auto;
+                    border-radius: 12px;
+                    border: 1px solid rgba(108, 149, 176, 0.27);
+                    background: rgba(4, 16, 25, 0.36);
+                }
+
+                table.app-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    min-width: 980px;
+                }
+
+                table.app-table th {
+                    text-align: left;
+                    font-size: 0.73rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    color: #a8bfd0;
+                    padding: 0.72rem;
+                    border-bottom: 1px solid rgba(118, 155, 179, 0.26);
+                }
+
+                table.app-table td {
+                    padding: 0.72rem;
+                    border-bottom: 1px solid rgba(98, 137, 162, 0.22);
+                    vertical-align: middle;
+                }
+
+                .table-row {
+                    transition: background-color 110ms ease;
+                }
+
+                .table-row:hover {
+                    background: rgba(56, 92, 114, 0.22);
+                }
+
+                .flash {
+                    padding: 0.85rem 1rem;
+                    border-radius: 10px;
+                    margin-bottom: 1rem;
+                    border: 1px solid rgba(66, 169, 113, 0.5);
+                    background: rgba(31, 112, 66, 0.22);
+                    color: #aaf4c8;
+                }
+
+                .flatpickr-calendar {
+                    background: #0f2738;
+                    border: 1px solid rgba(126, 164, 190, 0.35);
+                    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
+                    border-radius: 12px;
+                    color: var(--text);
+                }
+
+                .flatpickr-months .flatpickr-month,
+                .flatpickr-weekdays,
+                .flatpickr-current-month .flatpickr-monthDropdown-months,
+                .flatpickr-current-month input.cur-year {
+                    color: var(--text);
+                    background: transparent;
+                }
+
+                .flatpickr-weekday {
+                    color: #acc2d1;
+                    font-weight: 600;
+                }
+
+                .flatpickr-day {
+                    color: #dce7ef;
+                    border-radius: 8px;
+                }
+
+                .flatpickr-day:hover {
+                    background: rgba(247, 181, 0, 0.2);
+                    border-color: rgba(247, 181, 0, 0.2);
+                }
+
+                .flatpickr-day.selected,
+                .flatpickr-day.startRange,
+                .flatpickr-day.endRange {
+                    background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+                    border-color: var(--primary-strong);
+                    color: #0b1d2b;
+                }
+
+                .flatpickr-time input,
+                .flatpickr-time .flatpickr-am-pm {
+                    color: var(--text);
+                }
+
+                .flatpickr-time input:hover,
+                .flatpickr-time .flatpickr-am-pm:hover {
+                    background: rgba(250, 250, 250, 0.06);
+                }
+
+                .numInputWrapper span.arrowUp:after {
+                    border-bottom-color: #dbe8f2;
+                }
+
+                .numInputWrapper span.arrowDown:after {
+                    border-top-color: #dbe8f2;
+                }
+
+                .form-grid-2 {
+                    display: grid;
+                    gap: 0.8rem;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                @media (max-width: 980px) {
+                    .app-shell {
+                        padding-top: 0.85rem;
+                    }
+                }
+
+                @media (max-width: 720px) {
+                    .form-grid-2 {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            </style>
         {% endblock %}
 
         {% block javascripts %}

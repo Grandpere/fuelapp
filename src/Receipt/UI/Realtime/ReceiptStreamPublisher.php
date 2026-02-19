@@ -31,6 +31,8 @@ final readonly class ReceiptStreamPublisher
 
     public function publishCreated(Receipt $receipt, ?Station $station): void
     {
+        $firstLine = $receipt->lines()[0] ?? null;
+
         $receiptRow = [
             'id' => $receipt->id()->toString(),
             'issuedAt' => $receipt->issuedAt(),
@@ -40,6 +42,10 @@ final readonly class ReceiptStreamPublisher
             'stationStreetName' => $station?->streetName(),
             'stationPostalCode' => $station?->postalCode(),
             'stationCity' => $station?->city(),
+            'fuelType' => $firstLine?->fuelType()->value,
+            'quantityMilliLiters' => $firstLine?->quantityMilliLiters(),
+            'unitPriceDeciCentsPerLiter' => $firstLine?->unitPriceDeciCentsPerLiter(),
+            'vatRatePercent' => $firstLine?->vatRatePercent(),
         ];
 
         $content = $this->twig->render('receipt/stream/created.stream.html.twig', [

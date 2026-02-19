@@ -17,6 +17,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @implements ProcessorInterface<mixed, void>
@@ -32,7 +33,7 @@ final readonly class ReceiptDeleteStateProcessor implements ProcessorInterface
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): void
     {
         $id = $uriVariables['id'] ?? null;
-        if (is_string($id) && '' !== $id) {
+        if (is_string($id) && '' !== $id && Uuid::isValid($id)) {
             $this->repository->delete($id);
             $this->streamPublisher->publishDeleted($id);
         }

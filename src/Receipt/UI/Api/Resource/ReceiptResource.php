@@ -28,13 +28,24 @@ use App\Receipt\UI\Api\State\ReceiptStateProvider;
 #[ApiResource(
     operations: [
         new GetCollection(uriTemplate: '/receipts', output: ReceiptOutput::class, provider: ReceiptStateProvider::class),
-        new Get(uriTemplate: '/receipts/{id}', output: ReceiptOutput::class, provider: ReceiptStateProvider::class),
+        new Get(
+            uriTemplate: '/receipts/{id}',
+            output: ReceiptOutput::class,
+            provider: ReceiptStateProvider::class,
+            requirements: ['id' => self::UUID_ROUTE_REQUIREMENT],
+        ),
         new Post(uriTemplate: '/receipts', input: ReceiptInput::class, output: ReceiptOutput::class, processor: ReceiptStateProcessor::class),
-        new Delete(uriTemplate: '/receipts/{id}', processor: ReceiptDeleteStateProcessor::class),
+        new Delete(
+            uriTemplate: '/receipts/{id}',
+            processor: ReceiptDeleteStateProcessor::class,
+            requirements: ['id' => self::UUID_ROUTE_REQUIREMENT],
+        ),
     ],
 )]
 final class ReceiptResource
 {
+    private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';
+
     #[ApiProperty(identifier: true)]
     public ?string $id = null;
 }

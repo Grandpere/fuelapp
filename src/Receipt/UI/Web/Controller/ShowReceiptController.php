@@ -21,13 +21,15 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class ShowReceiptController extends AbstractController
 {
+    private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';
+
     public function __construct(
         private readonly ReceiptRepository $receiptRepository,
         private readonly StationRepository $stationRepository,
     ) {
     }
 
-    #[Route('/ui/receipts/{id}', name: 'ui_receipt_show', methods: ['GET'], requirements: ['id' => '[0-9a-fA-F-]{36}'])]
+    #[Route('/ui/receipts/{id}', name: 'ui_receipt_show', methods: ['GET'], requirements: ['id' => self::UUID_ROUTE_REQUIREMENT])]
     public function __invoke(string $id): Response
     {
         $receipt = $this->receiptRepository->get($id);

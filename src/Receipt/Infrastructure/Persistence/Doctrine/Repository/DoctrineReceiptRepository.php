@@ -325,6 +325,12 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         ?DateTimeImmutable $issuedTo,
     ): void {
         if (null !== $stationId && '' !== $stationId) {
+            if (!Uuid::isValid($stationId)) {
+                $qb->andWhere('1 = 0');
+
+                return;
+            }
+
             $qb
                 ->andWhere('IDENTITY(r.station) = :stationId')
                 ->setParameter('stationId', $stationId);

@@ -34,6 +34,10 @@ final readonly class ReceiptStateProvider implements ProviderInterface
     {
         $id = $uriVariables['id'] ?? null;
         if (is_string($id)) {
+            if (!Uuid::isValid($id)) {
+                return null;
+            }
+
             $receipt = $this->repository->get($id);
 
             return $receipt ? $this->toOutput($receipt) : null;

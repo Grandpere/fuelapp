@@ -134,8 +134,17 @@ final class ListReceiptsController extends AbstractController
             return null;
         }
 
-        $parsed = DateTimeImmutable::createFromFormat('Y-m-d', $date);
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        $errors = DateTimeImmutable::getLastErrors();
         if (false === $parsed) {
+            return null;
+        }
+
+        if (false !== $errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
+            return null;
+        }
+
+        if ($parsed->format('Y-m-d') !== $date) {
             return null;
         }
 

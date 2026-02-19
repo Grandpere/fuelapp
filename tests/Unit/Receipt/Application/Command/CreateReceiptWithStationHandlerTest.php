@@ -201,6 +201,11 @@ final class InMemoryReceiptRepository implements ReceiptRepository
         return $this->items[$id] ?? null;
     }
 
+    public function delete(string $id): void
+    {
+        unset($this->items[$id]);
+    }
+
     public function all(): iterable
     {
         return array_values($this->items);

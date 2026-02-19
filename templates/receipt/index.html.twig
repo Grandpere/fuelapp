@@ -77,7 +77,7 @@
                         <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Station</th>
                         <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Total</th>
                         <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">VAT</th>
-                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Action</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,7 +95,14 @@
                             <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} €</td>
                             <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>
                             <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">
-                                <a href="{{ path('ui_receipt_show', {id: receipt.id}) }}" onclick="event.stopPropagation();" style="text-decoration: none;">View</a>
+                                <div style="display: inline-flex; gap: 0.5rem; align-items: center;">
+                                    <a href="{{ path('ui_receipt_show', {id: receipt.id}) }}" onclick="event.stopPropagation();" style="text-decoration: none;">View</a>
+                                    <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id}) }}" onsubmit="event.stopPropagation(); return confirm('Delete this receipt?');" style="display: inline;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id) }}">
+                                        <input type="hidden" name="_redirect" value="{{ app.request.uri }}">
+                                        <button type="submit" style="border: 1px solid #c00; background: #fff; color: #c00; padding: 0.2rem 0.45rem; border-radius: 4px; cursor: pointer;">Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}

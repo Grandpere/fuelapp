@@ -72,6 +72,17 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         return $this->mapEntityToDomain($entity);
     }
 
+    public function delete(string $id): void
+    {
+        $entity = $this->em->find(ReceiptEntity::class, $id);
+        if (null === $entity) {
+            return;
+        }
+
+        $this->em->remove($entity);
+        $this->em->flush();
+    }
+
     public function all(): iterable
     {
         $entities = $this->baseListQuery()->getQuery()->getResult();

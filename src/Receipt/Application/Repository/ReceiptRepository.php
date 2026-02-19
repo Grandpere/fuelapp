@@ -22,6 +22,8 @@ interface ReceiptRepository
 
     public function get(string $id): ?Receipt;
 
+    public function delete(string $id): void;
+
     /** @return iterable<Receipt> */
     public function all(): iterable;
 

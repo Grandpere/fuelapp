@@ -6,7 +6,14 @@
     <main style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
         <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h1 style="margin: 0;">Receipt detail</h1>
-            <a href="{{ path('ui_receipt_index') }}" style="text-decoration: none; color: #444;">Back to list</a>
+            <div style="display: inline-flex; gap: 0.75rem; align-items: center;">
+                <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');" style="display: inline;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">
+                    <input type="hidden" name="_redirect" value="{{ path('ui_receipt_index') }}">
+                    <button type="submit" style="border: 1px solid #c00; background: #fff; color: #c00; padding: 0.35rem 0.65rem; border-radius: 4px; cursor: pointer;">Delete</button>
+                </form>
+                <a href="{{ path('ui_receipt_index') }}" style="text-decoration: none; color: #444;">Back to list</a>
+            </div>
         </header>
 
         <section style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">

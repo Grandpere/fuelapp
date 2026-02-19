@@ -44,4 +44,24 @@ interface ReceiptRepository
     ): iterable;
 
     public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int;
+
+    /** @return list<array{
+     *     id: string,
+     *     issuedAt: DateTimeImmutable,
+     *     totalCents: int,
+     *     vatAmountCents: int,
+     *     stationName: ?string,
+     *     stationStreetName: ?string,
+     *     stationPostalCode: ?string,
+     *     stationCity: ?string
+     * }> */
+    public function paginateFilteredListRows(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): array;
 }

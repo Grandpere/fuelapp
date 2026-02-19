@@ -237,6 +237,33 @@ final class InMemoryReceiptRepository implements ReceiptRepository
     {
         return $this->countAll();
     }
+
+    public function paginateFilteredListRows(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): array {
+        $receipts = $this->paginate($page, $perPage);
+        $rows = [];
+        foreach ($receipts as $receipt) {
+            $rows[] = [
+                'id' => $receipt->id()->toString(),
+                'issuedAt' => $receipt->issuedAt(),
+                'totalCents' => $receipt->totalCents(),
+                'vatAmountCents' => $receipt->vatAmountCents(),
+                'stationName' => null,
+                'stationStreetName' => null,
+                'stationPostalCode' => null,
+                'stationCity' => null,
+            ];
+        }
+
+        return $rows;
+    }
 }
 
 final readonly class FailingCreateStationHandler extends CreateStationHandler

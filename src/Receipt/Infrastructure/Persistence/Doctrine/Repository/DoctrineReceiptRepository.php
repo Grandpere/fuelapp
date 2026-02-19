@@ -39,6 +39,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $entity->setId(Uuid::fromString($receipt->id()->toString()));
         $entity->setIssuedAt($receipt->issuedAt());
         $entity->setTotalCents($receipt->totalCents());
+        $entity->setVatAmountCents($receipt->vatAmountCents());
 
         if (null !== $receipt->stationId()) {
             $stationRef = $this->em->getReference(StationEntity::class, $receipt->stationId()->toString());
@@ -159,6 +160,62 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
 
         return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function paginateFilteredListRows(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): array {
+        $safePage = max(1, $page);
+        $safePerPage = max(1, $perPage);
+        $offset = ($safePage - 1) * $safePerPage;
+
+        $sortField = match ($sortBy) {
+            'total' => 'r.totalCents',
+            default => 'r.issuedAt',
+        };
+        $safeSortDirection = 'asc' === strtolower($sortDirection) ? 'ASC' : 'DESC';
+
+        $rows = $this->em
+            ->createQueryBuilder()
+            ->select('r.id AS id, r.issuedAt AS issuedAt, r.totalCents AS totalCents, r.vatAmountCents AS vatAmountCents, s.name AS stationName, s.streetName AS stationStreetName, s.postalCode AS stationPostalCode, s.city AS stationCity')
+            ->from(ReceiptEntity::class, 'r')
+            ->leftJoin('r.station', 's')
+            ->orderBy($sortField, $safeSortDirection)
+            ->addOrderBy('r.id', $safeSortDirection)
+            ->setFirstResult($offset)
+            ->setMaxResults($safePerPage);
+
+        $this->applyFilters($rows, $stationId, $issuedFrom, $issuedTo);
+
+        /** @var list<array{
+         *     id: string,
+         *     issuedAt: DateTimeImmutable,
+         *     totalCents: int|string,
+         *     vatAmountCents: int|string,
+         *     stationName: ?string,
+         *     stationStreetName: ?string,
+         *     stationPostalCode: ?string,
+         *     stationCity: ?string
+         * }> $result
+         */
+        $result = $rows->getQuery()->getArrayResult();
+
+        foreach ($result as &$row) {
+            if (is_string($row['issuedAt'])) {
+                $row['issuedAt'] = new DateTimeImmutable($row['issuedAt']);
+            }
+            $row['totalCents'] = (int) $row['totalCents'];
+            $row['vatAmountCents'] = (int) $row['vatAmountCents'];
+        }
+        unset($row);
+
+        return $result;
     }
 
     private function baseListQuery(): QueryBuilder

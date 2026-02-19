@@ -47,46 +47,15 @@ final class ListReceiptsController extends AbstractController
         $lastPage = max(1, (int) ceil($total / $perPage));
         $page = min($page, $lastPage);
 
-        $receipts = iterator_to_array(
-            $this->receiptRepository->paginateFiltered(
-                $page,
-                $perPage,
-                $stationId,
-                $issuedFrom,
-                $issuedTo,
-                $sortBy,
-                $sortDirection,
-            ),
-            false,
+        $rows = $this->receiptRepository->paginateFilteredListRows(
+            $page,
+            $perPage,
+            $stationId,
+            $issuedFrom,
+            $issuedTo,
+            $sortBy,
+            $sortDirection,
         );
-
-        $stationIds = [];
-        foreach ($receipts as $receipt) {
-            if (null !== $receipt->stationId()) {
-                $stationIds[] = $receipt->stationId()->toString();
-            }
-        }
-        $stationIds = array_values(array_unique($stationIds));
-        $stationsById = $this->stationRepository->getByIds($stationIds);
-
-        $rows = [];
-        foreach ($receipts as $receipt) {
-            $station = null;
-            if (null !== $receipt->stationId()) {
-                $station = $stationsById[$receipt->stationId()->toString()] ?? null;
-            }
-
-            $rows[] = [
-                'id' => $receipt->id()->toString(),
-                'issuedAt' => $receipt->issuedAt(),
-                'totalCents' => $receipt->totalCents(),
-                'vatAmountCents' => $receipt->vatAmountCents(),
-                'stationName' => $station?->name(),
-                'stationStreetName' => $station?->streetName(),
-                'stationPostalCode' => $station?->postalCode(),
-                'stationCity' => $station?->city(),
-            ];
-        }
 
         $stationOptions = [];
         foreach ($this->stationRepository->all() as $stationOption) {

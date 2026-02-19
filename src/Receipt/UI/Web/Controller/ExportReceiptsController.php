@@ -15,17 +15,14 @@ namespace App\Receipt\UI\Web\Controller;
 
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
-use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
-use App\Station\Application\Repository\StationRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-final class ListReceiptsController extends AbstractController
+final class ExportReceiptsController extends AbstractController
 {
-    private const PRESET_CUSTOM = 'custom';
     private const PRESET_COMPACT = 'compact';
     private const PRESET_MOBILE = 'mobile';
     private const PRESET_FULL = 'full';
@@ -49,18 +46,18 @@ final class ListReceiptsController extends AbstractController
 
     /** @var array<string, string> */
     private const COLUMN_LABELS = [
-        'id' => 'Receipt ID',
-        'issued_at' => 'Date',
-        'station_name' => 'Station name',
-        'station_street_name' => 'Station street',
-        'station_postal_code' => 'Station postal code',
-        'station_city' => 'Station city',
-        'fuel_type' => 'Fuel type',
-        'quantity_milli_liters' => 'Quantity (mL)',
-        'unit_price_deci_cents_per_liter' => 'Unit price (deci-cents/L)',
-        'vat_rate_percent' => 'VAT rate (%)',
-        'total_cents' => 'Total (cents)',
-        'vat_amount_cents' => 'VAT amount (cents)',
+        'id' => 'receipt_id',
+        'issued_at' => 'issued_at',
+        'station_name' => 'station_name',
+        'station_street_name' => 'station_street_name',
+        'station_postal_code' => 'station_postal_code',
+        'station_city' => 'station_city',
+        'fuel_type' => 'fuel_type',
+        'quantity_milli_liters' => 'quantity_milli_liters',
+        'unit_price_deci_cents_per_liter' => 'unit_price_deci_cents_per_liter',
+        'vat_rate_percent' => 'vat_rate_percent',
+        'total_cents' => 'total_cents',
+        'vat_amount_cents' => 'vat_amount_cents',
     ];
 
     /** @var array<string, list<string>> */
@@ -91,61 +88,30 @@ final class ListReceiptsController extends AbstractController
         ],
     ];
 
-    /** @var array<string, string> */
-    private const PRESET_LABELS = [
-        self::PRESET_CUSTOM => 'Custom',
-        self::PRESET_COMPACT => 'Compact',
-        self::PRESET_MOBILE => 'Mobile',
-        self::PRESET_FULL => 'Full',
-        self::PRESET_EXPORT_ACCOUNTING => 'Export accounting',
-    ];
-
-    public function __construct(
-        private readonly ReceiptRepository $receiptRepository,
-        private readonly StationRepository $stationRepository,
-    ) {
+    public function __construct(private readonly ReceiptRepository $receiptRepository)
+    {
     }
 
-    #[Route('/ui/receipts', name: 'ui_receipt_index', methods: ['GET'])]
+    #[Route('/ui/receipts/export', name: 'ui_receipt_export', methods: ['GET'])]
     public function __invoke(Request $request): Response
     {
-        $page = max(1, $request->query->getInt('page', 1));
-        $perPage = min(100, max(1, $request->query->getInt('per_page', 25)));
         $stationId = $this->nullableString($request->query->get('station_id'));
         $issuedFrom = $this->parseDate($request->query->get('issued_from'));
         $issuedTo = $this->parseDate($request->query->get('issued_to'));
         $columnsPreset = $this->parsePreset($request->query->get('columns_preset'));
-        $visibleColumns = $this->resolveColumns($request->query->all('columns'), $columnsPreset);
-        $selectedColumnsPreset = $columnsPreset ?? $this->detectPreset($visibleColumns);
+        $columns = $this->resolveColumns($request->query->all('columns'), $columnsPreset);
         $fuelType = $this->parseFuelType($request->query->get('fuel_type'));
         $quantityMilliLitersMin = $this->parseInt($request->query->get('quantity_min'));
         $quantityMilliLitersMax = $this->parseInt($request->query->get('quantity_max'));
         $unitPriceDeciCentsPerLiterMin = $this->parseInt($request->query->get('unit_price_min'));
         $unitPriceDeciCentsPerLiterMax = $this->parseInt($request->query->get('unit_price_max'));
         $vatRatePercent = $this->parseInt($request->query->get('vat_rate'));
-
         $sortBy = in_array((string) $request->query->get('sort_by'), ['date', 'total', 'fuel_type', 'quantity', 'unit_price', 'vat_rate'], true)
             ? (string) $request->query->get('sort_by')
             : 'date';
         $sortDirection = 'asc' === strtolower((string) $request->query->get('sort_direction')) ? 'asc' : 'desc';
 
-        $total = $this->receiptRepository->countFiltered(
-            $stationId,
-            $issuedFrom,
-            $issuedTo,
-            $fuelType,
-            $quantityMilliLitersMin,
-            $quantityMilliLitersMax,
-            $unitPriceDeciCentsPerLiterMin,
-            $unitPriceDeciCentsPerLiterMax,
-            $vatRatePercent,
-        );
-        $lastPage = max(1, (int) ceil($total / $perPage));
-        $page = min($page, $lastPage);
-
-        $rows = $this->receiptRepository->paginateFilteredListRows(
-            $page,
-            $perPage,
+        $rows = $this->receiptRepository->listFilteredRowsForExport(
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -159,87 +125,53 @@ final class ListReceiptsController extends AbstractController
             $vatRatePercent,
         );
 
-        $stationOptions = [];
-        foreach ($this->stationRepository->all() as $stationOption) {
-            $stationOptions[] = [
-                'id' => $stationOption->id()->toString(),
-                'label' => sprintf(
-                    '%s - %s, %s %s',
-                    $stationOption->name(),
-                    $stationOption->streetName(),
-                    $stationOption->postalCode(),
-                    $stationOption->city(),
-                ),
-            ];
+        $stream = fopen('php://temp', 'w+');
+        if (false === $stream) {
+            throw $this->createNotFoundException('Cannot create export stream.');
         }
 
-        usort(
-            $stationOptions,
-            static fn (array $a, array $b): int => strcmp((string) $a['label'], (string) $b['label']),
-        );
+        $headers = [];
+        foreach ($columns as $column) {
+            $headers[] = self::COLUMN_LABELS[$column];
+        }
+        fputcsv($stream, $headers);
 
-        $queryParams = [
-            'per_page' => $perPage,
-            'station_id' => $stationId,
-            'issued_from' => $issuedFrom?->format('Y-m-d'),
-            'issued_to' => $issuedTo?->format('Y-m-d'),
-            'fuel_type' => $fuelType,
-            'columns_preset' => $selectedColumnsPreset,
-            'columns' => $visibleColumns,
-            'quantity_min' => $quantityMilliLitersMin,
-            'quantity_max' => $quantityMilliLitersMax,
-            'unit_price_min' => $unitPriceDeciCentsPerLiterMin,
-            'unit_price_max' => $unitPriceDeciCentsPerLiterMax,
-            'vat_rate' => $vatRatePercent,
-            'sort_by' => $sortBy,
-            'sort_direction' => $sortDirection,
-        ];
+        foreach ($rows as $row) {
+            $line = [];
+            foreach ($columns as $column) {
+                $line[] = match ($column) {
+                    'id' => $row['id'],
+                    'issued_at' => $row['issuedAt']->format('Y-m-d H:i:s'),
+                    'station_name' => $row['stationName'] ?? '',
+                    'station_street_name' => $row['stationStreetName'] ?? '',
+                    'station_postal_code' => $row['stationPostalCode'] ?? '',
+                    'station_city' => $row['stationCity'] ?? '',
+                    'fuel_type' => $row['fuelType'] ?? '',
+                    'quantity_milli_liters' => null === $row['quantityMilliLiters'] ? '' : (string) $row['quantityMilliLiters'],
+                    'unit_price_deci_cents_per_liter' => null === $row['unitPriceDeciCentsPerLiter'] ? '' : (string) $row['unitPriceDeciCentsPerLiter'],
+                    'vat_rate_percent' => null === $row['vatRatePercent'] ? '' : (string) $row['vatRatePercent'],
+                    'total_cents' => (string) $row['totalCents'],
+                    'vat_amount_cents' => (string) $row['vatAmountCents'],
+                    default => '',
+                };
+            }
 
-        $enableRealtime = 1 === $page
-            && null === $stationId
-            && null === $issuedFrom
-            && null === $issuedTo
-            && null === $fuelType
-            && null === $quantityMilliLitersMin
-            && null === $quantityMilliLitersMax
-            && null === $unitPriceDeciCentsPerLiterMin
-            && null === $unitPriceDeciCentsPerLiterMax
-            && null === $vatRatePercent
-            && self::DEFAULT_COLUMNS === $visibleColumns
-            && 'date' === $sortBy
-            && 'desc' === $sortDirection;
+            fputcsv($stream, $line);
+        }
 
-        return $this->render('receipt/index.html.twig', [
-            'receipts' => $rows,
-            'page' => $page,
-            'perPage' => $perPage,
-            'total' => $total,
-            'lastPage' => $lastPage,
-            'stationOptions' => $stationOptions,
-            'filters' => [
-                'stationId' => $stationId,
-                'issuedFrom' => $issuedFrom?->format('Y-m-d'),
-                'issuedTo' => $issuedTo?->format('Y-m-d'),
-                'fuelType' => $fuelType,
-                'columnsPreset' => $selectedColumnsPreset,
-                'columns' => $visibleColumns,
-                'quantityMin' => $quantityMilliLitersMin,
-                'quantityMax' => $quantityMilliLitersMax,
-                'unitPriceMin' => $unitPriceDeciCentsPerLiterMin,
-                'unitPriceMax' => $unitPriceDeciCentsPerLiterMax,
-                'vatRate' => $vatRatePercent,
-                'sortBy' => $sortBy,
-                'sortDirection' => $sortDirection,
-            ],
-            'queryParams' => $queryParams,
-            'exportQueryParams' => $queryParams,
-            'columnOptions' => self::COLUMN_LABELS,
-            'columnPresetOptions' => self::PRESET_LABELS,
-            'visibleColumns' => $visibleColumns,
-            'fuelTypeChoices' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
-            'enableRealtime' => $enableRealtime,
-            'mercureTopic' => ReceiptStreamPublisher::TOPIC,
-        ]);
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+
+        if (false === $csv) {
+            throw $this->createNotFoundException('Cannot read export stream.');
+        }
+
+        $response = new Response($csv, Response::HTTP_OK);
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', 'attachment; filename="receipts-export.csv"');
+
+        return $response;
     }
 
     private function nullableString(mixed $value): ?string
@@ -358,17 +290,5 @@ final class ListReceiptsController extends AbstractController
         }
 
         return $this->parseColumns($columnsValue);
-    }
-
-    /** @param list<string> $columns */
-    private function detectPreset(array $columns): string
-    {
-        foreach (self::PRESET_COLUMNS as $preset => $presetColumns) {
-            if ($columns === $presetColumns) {
-                return $preset;
-            }
-        }
-
-        return self::PRESET_CUSTOM;
     }
 }

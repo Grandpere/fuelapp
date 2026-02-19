@@ -2,63 +2,136 @@
 
 {% block title %}Receipt {{ receipt.id.toString() }}{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .show-page {
+            max-width: 1080px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .show-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .show-actions {
+            display: inline-flex;
+            gap: 0.55rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .show-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .show-card {
+            padding: 1rem;
+        }
+
+        .show-card h2 {
+            margin: 0 0 0.7rem;
+            font-size: 1.05rem;
+            font-family: "Space Grotesk", sans-serif;
+        }
+
+        .show-kv {
+            display: grid;
+            gap: 0.45rem;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 900px) {
+            .show-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .show-header {
+                flex-direction: column;
+            }
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
-    <main style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h1 style="margin: 0;">Receipt detail</h1>
-            <div style="display: inline-flex; gap: 0.75rem; align-items: center;">
-                <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');" style="display: inline;">
+    <main class="app-shell show-page">
+        <header class="show-header">
+            <div>
+                <h1 class="page-title">Receipt detail</h1>
+                <p class="muted" style="margin: 0.35rem 0 0;">Traceable fuel purchase snapshot.</p>
+            </div>
+            <div class="show-actions">
+                <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');" style="display:inline;">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">
                     <input type="hidden" name="_redirect" value="{{ path('ui_receipt_index') }}">
-                    <button type="submit" style="border: 1px solid #c00; background: #fff; color: #c00; padding: 0.35rem 0.65rem; border-radius: 4px; cursor: pointer;">Delete</button>
+                    <button class="btn btn-danger" type="submit">Delete</button>
                 </form>
-                <a href="{{ path('ui_receipt_index') }}" style="text-decoration: none; color: #444;">Back to list</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Back to list</a>
             </div>
         </header>
 
-        <section style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
-            <p style="margin: 0 0 0.5rem 0;"><strong>ID:</strong> {{ receipt.id.toString() }}</p>
-            <p style="margin: 0 0 0.5rem 0;"><strong>Date:</strong> {{ receipt.issuedAt|date('d/m/Y H:i') }}</p>
-            <p style="margin: 0 0 0.5rem 0;"><strong>Total:</strong> {{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} €</p>
-            <p style="margin: 0;"><strong>VAT:</strong> {{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</p>
+        <section class="show-grid">
+            <article class="card show-card">
+                <h2>Summary</h2>
+                <div class="show-kv">
+                    <div><strong>ID:</strong> {{ receipt.id.toString() }}</div>
+                    <div><strong>Date:</strong> {{ receipt.issuedAt|date('d/m/Y H:i') }}</div>
+                    <div><strong>Total:</strong> {{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</div>
+                    <div><strong>VAT:</strong> {{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</div>
+                </div>
+            </article>
+
+            <article class="card show-card">
+                <h2>Station</h2>
+                {% if station %}
+                    <div class="show-kv">
+                        <div><strong>{{ station.name }}</strong></div>
+                        <div>{{ station.streetName }}</div>
+                        <div>{{ station.postalCode }} {{ station.city }}</div>
+                    </div>
+                {% else %}
+                    <p class="muted" style="margin: 0;">No station associated.</p>
+                {% endif %}
+            </article>
         </section>
 
-        <section style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
-            <h2 style="margin-top: 0;">Station</h2>
-            {% if station %}
-                <p style="margin: 0 0 0.5rem 0;"><strong>{{ station.name }}</strong></p>
-                <p style="margin: 0;">{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}</p>
-            {% else %}
-                <p style="margin: 0;">No station associated.</p>
-            {% endif %}
-        </section>
-
-        <section style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
-            <h2 style="margin-top: 0;">Lines</h2>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Fuel</th>
-                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Quantity</th>
-                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Unit price</th>
-                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">VAT %</th>
-                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">VAT</th>
-                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Line total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for line in receipt.lines %}
+        <section class="card show-card">
+            <h2>Lines</h2>
+            <div class="table-wrap">
+                <table class="app-table" style="min-width: 740px;">
+                    <thead>
                         <tr>
-                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ line.fuelType.value|upper }}</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (line.quantityMilliLiters / 1000)|number_format(3, ',', ' ') }} L</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (line.unitPriceDeciCentsPerLiter / 1000)|number_format(3, ',', ' ') }} €/L</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ line.vatRatePercent }}%</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (line.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>
-                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (line.lineTotalCents / 100)|number_format(2, ',', ' ') }} €</td>
+                            <th>Fuel</th>
+                            <th style="text-align:right;">Quantity</th>
+                            <th style="text-align:right;">Unit price</th>
+                            <th style="text-align:right;">VAT %</th>
+                            <th style="text-align:right;">VAT</th>
+                            <th style="text-align:right;">Line total</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for line in receipt.lines %}
+                            <tr class="table-row">
+                                <td><span class="pill pill-energy">{{ line.fuelType.value|upper }}</span></td>
+                                <td style="text-align:right;">{{ (line.quantityMilliLiters / 1000)|number_format(3, ',', ' ') }} L</td>
+                                <td style="text-align:right;">{{ (line.unitPriceDeciCentsPerLiter / 1000)|number_format(3, ',', ' ') }} EUR/L</td>
+                                <td style="text-align:right;">{{ line.vatRatePercent }}%</td>
+                                <td style="text-align:right;">{{ (line.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</td>
+                                <td style="text-align:right; font-weight:700;">{{ (line.lineTotalCents / 100)|number_format(2, ',', ' ') }} EUR</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </section>
     </main>
 {% endblock %}

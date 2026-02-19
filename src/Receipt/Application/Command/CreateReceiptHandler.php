@@ -30,7 +30,7 @@ final readonly class CreateReceiptHandler
             $lines[] = ReceiptLine::create(
                 $line->fuelType,
                 $line->quantityMilliLiters,
-                $line->unitPriceCentsPerLiter,
+                $line->unitPriceDeciCentsPerLiter,
                 $line->vatRatePercent,
             );
         }

@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Receipt {{ receipt.id.toString() }}{% endblock %}
+
+{% block body %}
+    <main style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h1 style="margin: 0;">Receipt detail</h1>
+            <div style="display: inline-flex; gap: 0.75rem; align-items: center;">
+                <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');" style="display: inline;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">
+                    <input type="hidden" name="_redirect" value="{{ path('ui_receipt_index') }}">
+                    <button type="submit" style="border: 1px solid #c00; background: #fff; color: #c00; padding: 0.35rem 0.65rem; border-radius: 4px; cursor: pointer;">Delete</button>
+                </form>
+                <a href="{{ path('ui_receipt_index') }}" style="text-decoration: none; color: #444;">Back to list</a>
+            </div>
+        </header>
+
+        <section style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+            <p style="margin: 0 0 0.5rem 0;"><strong>ID:</strong> {{ receipt.id.toString() }}</p>
+            <p style="margin: 0 0 0.5rem 0;"><strong>Date:</strong> {{ receipt.issuedAt|date('d/m/Y H:i') }}</p>
+            <p style="margin: 0 0 0.5rem 0;"><strong>Total:</strong> {{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} €</p>
+            <p style="margin: 0;"><strong>VAT:</strong> {{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</p>
+        </section>
+
+        <section style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="margin-top: 0;">Station</h2>
+            {% if station %}
+                <p style="margin: 0 0 0.5rem 0;"><strong>{{ station.name }}</strong></p>
+                <p style="margin: 0;">{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}</p>
+            {% else %}
+                <p style="margin: 0;">No station associated.</p>
+            {% endif %}
+        </section>
+
+        <section style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="margin-top: 0;">Lines</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Fuel</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Quantity</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Unit price</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">VAT %</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">VAT</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Line total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in receipt.lines %}
+                        <tr>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ line.fuelType.value|upper }}</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (line.quantityMilliLiters / 1000)|number_format(3, ',', ' ') }} L</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (line.unitPriceDeciCentsPerLiter / 1000)|number_format(3, ',', ' ') }} €/L</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ line.vatRatePercent }}%</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (line.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (line.lineTotalCents / 100)|number_format(2, ',', ' ') }} €</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+{% endblock %}

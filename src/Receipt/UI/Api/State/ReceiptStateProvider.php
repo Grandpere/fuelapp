@@ -34,6 +34,10 @@ final readonly class ReceiptStateProvider implements ProviderInterface
     {
         $id = $uriVariables['id'] ?? null;
         if (is_string($id)) {
+            if (!Uuid::isValid($id)) {
+                return null;
+            }
+
             $receipt = $this->repository->get($id);
 
             return $receipt ? $this->toOutput($receipt) : null;
@@ -54,7 +58,7 @@ final readonly class ReceiptStateProvider implements ProviderInterface
             $lines[] = new ReceiptLineOutput(
                 $line->fuelType()->value,
                 $line->quantityMilliLiters(),
-                $line->unitPriceCentsPerLiter(),
+                $line->unitPriceDeciCentsPerLiter(),
                 $line->lineTotalCents(),
                 $line->vatRatePercent(),
                 $line->vatAmountCents(),

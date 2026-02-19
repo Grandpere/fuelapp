@@ -20,7 +20,7 @@ final readonly class CreateReceiptLineCommand
     public function __construct(
         public FuelType $fuelType,
         public int $quantityMilliLiters,
-        public int $unitPriceCentsPerLiter,
+        public int $unitPriceDeciCentsPerLiter,
         public int $vatRatePercent,
     ) {
     }

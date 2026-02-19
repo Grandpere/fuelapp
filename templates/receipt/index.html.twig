@@ -1,0 +1,119 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Receipts{% endblock %}
+
+{% block body %}
+    <main style="max-width: 1300px; margin: 2rem auto; padding: 0 1rem;">
+        {% if enableRealtime %}
+            <turbo-stream-source src="{{ mercure(mercureTopic) }}"></turbo-stream-source>
+        {% endif %}
+
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h1 style="margin: 0;">Receipts</h1>
+            <a href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame" style="display: inline-block; padding: 0.6rem 1rem; border: 1px solid #111; border-radius: 8px; text-decoration: none; color: #111;">Add receipt</a>
+        </header>
+
+        {% for message in app.flashes('success') %}
+            <div style="margin-bottom: 1rem; padding: 0.75rem 1rem; border: 1px solid #176b3a; background: #eaf8f0; color: #176b3a;">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <form method="get" action="{{ path('ui_receipt_index') }}" style="display: grid; gap: 0.75rem; margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+            <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(3, minmax(0, 1fr));">
+                <label>
+                    Station
+                    <select name="station_id" style="width: 100%; padding: 0.4rem;">
+                        <option value="">All</option>
+                        {% for option in stationOptions %}
+                            <option value="{{ option.id }}" {% if filters.stationId == option.id %}selected{% endif %}>{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Issued from
+                    <input type="date" name="issued_from" value="{{ filters.issuedFrom }}" style="width: 100%; padding: 0.4rem;">
+                </label>
+                <label>
+                    Issued to
+                    <input type="date" name="issued_to" value="{{ filters.issuedTo }}" style="width: 100%; padding: 0.4rem;">
+                </label>
+            </div>
+            <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(3, minmax(0, 1fr));">
+                <label>
+                    Sort by
+                    <select name="sort_by" style="width: 100%; padding: 0.4rem;">
+                        <option value="date" {% if filters.sortBy == 'date' %}selected{% endif %}>Date</option>
+                        <option value="total" {% if filters.sortBy == 'total' %}selected{% endif %}>Total</option>
+                    </select>
+                </label>
+                <label>
+                    Direction
+                    <select name="sort_direction" style="width: 100%; padding: 0.4rem;">
+                        <option value="desc" {% if filters.sortDirection == 'desc' %}selected{% endif %}>Descending</option>
+                        <option value="asc" {% if filters.sortDirection == 'asc' %}selected{% endif %}>Ascending</option>
+                    </select>
+                </label>
+                <label>
+                    Per page
+                    <select name="per_page" style="width: 100%; padding: 0.4rem;">
+                        {% for size in [10, 25, 50, 100] %}
+                            <option value="{{ size }}" {% if perPage == size %}selected{% endif %}>{{ size }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="submit" style="padding: 0.5rem 0.8rem;">Apply</button>
+                <a href="{{ path('ui_receipt_index') }}" style="padding: 0.5rem 0.8rem; border: 1px solid #ccc; text-decoration: none; color: #111;">Reset</a>
+            </div>
+        </form>
+
+        <div style="display: grid; gap: 1rem; grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); align-items: start;">
+            <section>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Date</th>
+                        <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Station</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Total</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">VAT</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="receipts_rows">
+                    {% for receipt in receipts %}
+                        {% include 'receipt/_row.html.twig' with { receipt: receipt, redirectUrl: app.request.uri } only %}
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        {% if receipts is empty %}
+            <p id="receipts-empty">No receipt yet.</p>
+        {% endif %}
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                <div>
+                    {{ total }} receipt(s) - page {{ page }} / {{ lastPage }}
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    {% if page > 1 %}
+                        <a href="{{ path('ui_receipt_index', queryParams|merge({page: page - 1})) }}">Previous</a>
+                    {% endif %}
+                    {% if page < lastPage %}
+                        <a href="{{ path('ui_receipt_index', queryParams|merge({page: page + 1})) }}">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+            </section>
+
+            <section style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="margin-top: 0;">New receipt</h2>
+                <turbo-frame id="receipt_form_frame">
+                    <p style="margin: 0 0 0.5rem 0;">Click "Add receipt" to load the form here.</p>
+                    <a href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Load form</a>
+                </turbo-frame>
+            </section>
+        </div>
+    </main>
+{% endblock %}

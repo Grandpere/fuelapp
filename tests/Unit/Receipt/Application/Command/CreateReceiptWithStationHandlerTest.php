@@ -158,6 +158,19 @@ final class InMemoryStationRepository implements StationRepository
         return $this->station && $this->station->id()->toString() === $id ? $this->station : null;
     }
 
+    public function getByIds(array $ids): array
+    {
+        if (null === $this->station) {
+            return [];
+        }
+
+        if (!in_array($this->station->id()->toString(), $ids, true)) {
+            return [];
+        }
+
+        return [$this->station->id()->toString() => $this->station];
+    }
+
     public function findByIdentity(string $name, string $streetName, string $postalCode, string $city): ?Station
     {
         if (null !== $this->station) {
@@ -188,9 +201,68 @@ final class InMemoryReceiptRepository implements ReceiptRepository
         return $this->items[$id] ?? null;
     }
 
+    public function delete(string $id): void
+    {
+        unset($this->items[$id]);
+    }
+
     public function all(): iterable
     {
         return array_values($this->items);
+    }
+
+    public function paginate(int $page, int $perPage): iterable
+    {
+        return array_slice(array_values($this->items), max(0, ($page - 1) * $perPage), $perPage);
+    }
+
+    public function countAll(): int
+    {
+        return count($this->items);
+    }
+
+    public function paginateFiltered(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): iterable {
+        return $this->paginate($page, $perPage);
+    }
+
+    public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int
+    {
+        return $this->countAll();
+    }
+
+    public function paginateFilteredListRows(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): array {
+        $receipts = $this->paginate($page, $perPage);
+        $rows = [];
+        foreach ($receipts as $receipt) {
+            $rows[] = [
+                'id' => $receipt->id()->toString(),
+                'issuedAt' => $receipt->issuedAt(),
+                'totalCents' => $receipt->totalCents(),
+                'vatAmountCents' => $receipt->vatAmountCents(),
+                'stationName' => null,
+                'stationStreetName' => null,
+                'stationPostalCode' => null,
+                'stationCity' => null,
+            ];
+        }
+
+        return $rows;
     }
 }
 

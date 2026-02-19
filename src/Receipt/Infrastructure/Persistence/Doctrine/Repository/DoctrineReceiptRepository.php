@@ -22,8 +22,12 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Domain\ValueObject\StationId;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Uid\Uuid;
+use UnexpectedValueException;
 
 final readonly class DoctrineReceiptRepository implements ReceiptRepository
 {
@@ -37,6 +41,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $entity->setId(Uuid::fromString($receipt->id()->toString()));
         $entity->setIssuedAt($receipt->issuedAt());
         $entity->setTotalCents($receipt->totalCents());
+        $entity->setVatAmountCents($receipt->vatAmountCents());
 
         if (null !== $receipt->stationId()) {
             $stationRef = $this->em->getReference(StationEntity::class, $receipt->stationId()->toString());
@@ -51,7 +56,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $lineEntity->setId(Uuid::v7());
             $lineEntity->setFuelType($line->fuelType()->value);
             $lineEntity->setQuantityMilliLiters($line->quantityMilliLiters());
-            $lineEntity->setUnitPriceCentsPerLiter($line->unitPriceCentsPerLiter());
+            $lineEntity->setUnitPriceDeciCentsPerLiter($line->unitPriceDeciCentsPerLiter());
             $lineEntity->setVatRatePercent($line->vatRatePercent());
             $entity->addLine($lineEntity);
         }
@@ -67,12 +72,291 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             return null;
         }
 
+        return $this->mapEntityToDomain($entity);
+    }
+
+    public function delete(string $id): void
+    {
+        $entity = $this->em->find(ReceiptEntity::class, $id);
+        if (null === $entity) {
+            return;
+        }
+
+        $this->em->remove($entity);
+        $this->em->flush();
+    }
+
+    public function all(): iterable
+    {
+        $entities = $this->baseListQuery()->getQuery()->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
+        foreach ($entities as $entity) {
+            if (!$entity instanceof ReceiptEntity) {
+                continue;
+            }
+
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    public function paginate(int $page, int $perPage): iterable
+    {
+        $safePage = max(1, $page);
+        $safePerPage = max(1, $perPage);
+        $offset = ($safePage - 1) * $safePerPage;
+
+        $entities = $this->baseListQuery()
+            ->setFirstResult($offset)
+            ->setMaxResults($safePerPage)
+            ->getQuery()
+            ->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
+        foreach ($entities as $entity) {
+            if (!$entity instanceof ReceiptEntity) {
+                continue;
+            }
+
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    public function countAll(): int
+    {
+        return (int) $this->em
+            ->createQueryBuilder()
+            ->select('COUNT(r.id)')
+            ->from(ReceiptEntity::class, 'r')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function paginateFiltered(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): iterable {
+        $safePage = max(1, $page);
+        $safePerPage = max(1, $perPage);
+        $offset = ($safePage - 1) * $safePerPage;
+
+        $sortField = match ($sortBy) {
+            'total' => 'r.totalCents',
+            default => 'r.issuedAt',
+        };
+        $safeSortDirection = 'asc' === strtolower($sortDirection) ? 'ASC' : 'DESC';
+
+        $qb = $this->filteredQuery($stationId, $issuedFrom, $issuedTo)
+            ->orderBy($sortField, $safeSortDirection)
+            ->addOrderBy('r.id', $safeSortDirection)
+            ->setFirstResult($offset)
+            ->setMaxResults($safePerPage);
+
+        $entities = $qb->getQuery()->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
+        foreach ($entities as $entity) {
+            if (!$entity instanceof ReceiptEntity) {
+                continue;
+            }
+
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    public function countFiltered(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): int
+    {
+        $qb = $this->em
+            ->createQueryBuilder()
+            ->select('COUNT(r.id)')
+            ->from(ReceiptEntity::class, 'r');
+
+        $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function paginateFilteredListRows(
+        int $page,
+        int $perPage,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+    ): array {
+        $safePage = max(1, $page);
+        $safePerPage = max(1, $perPage);
+        $offset = ($safePage - 1) * $safePerPage;
+
+        $sortField = match ($sortBy) {
+            'total' => 'r.totalCents',
+            default => 'r.issuedAt',
+        };
+        $safeSortDirection = 'asc' === strtolower($sortDirection) ? 'ASC' : 'DESC';
+
+        $rows = $this->em
+            ->createQueryBuilder()
+            ->select('r.id AS id, r.issuedAt AS issuedAt, r.totalCents AS totalCents, r.vatAmountCents AS vatAmountCents, s.name AS stationName, s.streetName AS stationStreetName, s.postalCode AS stationPostalCode, s.city AS stationCity')
+            ->from(ReceiptEntity::class, 'r')
+            ->leftJoin('r.station', 's')
+            ->orderBy($sortField, $safeSortDirection)
+            ->addOrderBy('r.id', $safeSortDirection)
+            ->setFirstResult($offset)
+            ->setMaxResults($safePerPage);
+
+        $this->applyFilters($rows, $stationId, $issuedFrom, $issuedTo);
+
+        /** @var list<array{
+         *     id: string,
+         *     issuedAt: mixed,
+         *     totalCents: mixed,
+         *     vatAmountCents: mixed,
+         *     stationName: ?string,
+         *     stationStreetName: ?string,
+         *     stationPostalCode: ?string,
+         *     stationCity: ?string
+         * }> $result
+         */
+        $result = $rows->getQuery()->getArrayResult();
+
+        $normalized = [];
+        foreach ($result as $row) {
+            $normalized[] = [
+                'id' => $this->toStringValue($row['id'], 'id'),
+                'issuedAt' => $this->toDateTimeImmutableValue($row['issuedAt'], 'issuedAt'),
+                'totalCents' => $this->toIntValue($row['totalCents'], 'totalCents'),
+                'vatAmountCents' => $this->toIntValue($row['vatAmountCents'], 'vatAmountCents'),
+                'stationName' => $this->toNullableStringValue($row['stationName'], 'stationName'),
+                'stationStreetName' => $this->toNullableStringValue($row['stationStreetName'], 'stationStreetName'),
+                'stationPostalCode' => $this->toNullableStringValue($row['stationPostalCode'], 'stationPostalCode'),
+                'stationCity' => $this->toNullableStringValue($row['stationCity'], 'stationCity'),
+            ];
+        }
+
+        return $normalized;
+    }
+
+    private function toDateTimeImmutableValue(mixed $value, string $field): DateTimeImmutable
+    {
+        if ($value instanceof DateTimeImmutable) {
+            return $value;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return DateTimeImmutable::createFromInterface($value);
+        }
+
+        if (is_string($value)) {
+            return new DateTimeImmutable($value);
+        }
+
+        throw new UnexpectedValueException(sprintf('Expected %s to be a datetime, got %s.', $field, get_debug_type($value)));
+    }
+
+    private function toIntValue(mixed $value, string $field): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && 1 === preg_match('/^-?\d+$/', $value)) {
+            return (int) $value;
+        }
+
+        throw new UnexpectedValueException(sprintf('Expected %s to be an int, got %s.', $field, get_debug_type($value)));
+    }
+
+    private function toStringValue(mixed $value, string $field): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        throw new UnexpectedValueException(sprintf('Expected %s to be a string, got %s.', $field, get_debug_type($value)));
+    }
+
+    private function toNullableStringValue(mixed $value, string $field): ?string
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        return $this->toStringValue($value, $field);
+    }
+
+    private function baseListQuery(): QueryBuilder
+    {
+        return $this->em
+            ->createQueryBuilder()
+            ->select('r')
+            ->from(ReceiptEntity::class, 'r')
+            ->orderBy('r.issuedAt', 'DESC')
+            ->addOrderBy('r.id', 'DESC');
+    }
+
+    private function filteredQuery(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): QueryBuilder
+    {
+        $qb = $this->em
+            ->createQueryBuilder()
+            ->select('r')
+            ->from(ReceiptEntity::class, 'r');
+
+        $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
+
+        return $qb;
+    }
+
+    private function applyFilters(
+        QueryBuilder $qb,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+    ): void {
+        if (null !== $stationId && '' !== $stationId) {
+            if (!Uuid::isValid($stationId)) {
+                $qb->andWhere('1 = 0');
+
+                return;
+            }
+
+            $qb
+                ->andWhere('IDENTITY(r.station) = :stationId')
+                ->setParameter('stationId', $stationId);
+        }
+
+        if (null !== $issuedFrom) {
+            $qb
+                ->andWhere('r.issuedAt >= :issuedFrom')
+                ->setParameter('issuedFrom', $issuedFrom->setTime(0, 0, 0));
+        }
+
+        if (null !== $issuedTo) {
+            $qb
+                ->andWhere('r.issuedAt <= :issuedTo')
+                ->setParameter('issuedTo', $issuedTo->setTime(23, 59, 59));
+        }
+    }
+
+    private function mapEntityToDomain(ReceiptEntity $entity): Receipt
+    {
         $lines = [];
         foreach ($entity->getLines() as $lineEntity) {
             $lines[] = ReceiptLine::reconstitute(
                 FuelType::from($lineEntity->getFuelType()),
                 $lineEntity->getQuantityMilliLiters(),
-                $lineEntity->getUnitPriceCentsPerLiter(),
+                $lineEntity->getUnitPriceDeciCentsPerLiter(),
                 $lineEntity->getVatRatePercent(),
             );
         }
@@ -85,30 +369,5 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $lines,
             $stationId,
         );
-    }
-
-    public function all(): iterable
-    {
-        $entities = $this->em->getRepository(ReceiptEntity::class)->findAll();
-        foreach ($entities as $entity) {
-            $lines = [];
-            foreach ($entity->getLines() as $lineEntity) {
-                $lines[] = ReceiptLine::reconstitute(
-                    FuelType::from($lineEntity->getFuelType()),
-                    $lineEntity->getQuantityMilliLiters(),
-                    $lineEntity->getUnitPriceCentsPerLiter(),
-                    $lineEntity->getVatRatePercent(),
-                );
-            }
-
-            $stationId = $entity->getStation() ? StationId::fromString($entity->getStation()->getId()->toRfc4122()) : null;
-
-            yield Receipt::reconstitute(
-                ReceiptId::fromString($entity->getId()->toRfc4122()),
-                $entity->getIssuedAt(),
-                $lines,
-                $stationId,
-            );
-        }
     }
 }

@@ -44,6 +44,10 @@ logs: ## Follow logs
 ps: ## List containers
 	$(DC) ps
 
+.PHONY: restart-app
+restart-app: ## Restart app container only
+	$(DC) restart app
+
 .PHONY: shell
 shell: ## Open a shell in app container
 	$(DC_EXEC) sh

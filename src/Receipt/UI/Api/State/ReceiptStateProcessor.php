@@ -22,6 +22,8 @@ use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\UI\Api\Resource\Input\ReceiptInput;
 use App\Receipt\UI\Api\Resource\Output\ReceiptLineOutput;
 use App\Receipt\UI\Api\Resource\Output\ReceiptOutput;
+use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
+use App\Station\Application\Repository\StationRepository;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Symfony\Component\Uid\Uuid;
@@ -31,8 +33,11 @@ use Symfony\Component\Uid\Uuid;
  */
 final readonly class ReceiptStateProcessor implements ProcessorInterface
 {
-    public function __construct(private CreateReceiptWithStationHandler $handler)
-    {
+    public function __construct(
+        private CreateReceiptWithStationHandler $handler,
+        private StationRepository $stationRepository,
+        private ReceiptStreamPublisher $streamPublisher,
+    ) {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ReceiptOutput
@@ -43,7 +48,7 @@ final readonly class ReceiptStateProcessor implements ProcessorInterface
             if (
                 null === $line->fuelType
                 || null === $line->quantityMilliLiters
-                || null === $line->unitPriceCentsPerLiter
+                || null === $line->unitPriceDeciCentsPerLiter
                 || null === $line->vatRatePercent
             ) {
                 throw new InvalidArgumentException('Receipt line fields are required');
@@ -52,7 +57,7 @@ final readonly class ReceiptStateProcessor implements ProcessorInterface
             $lines[] = new CreateReceiptLineCommand(
                 FuelType::from($line->fuelType),
                 $line->quantityMilliLiters,
-                $line->unitPriceCentsPerLiter,
+                $line->unitPriceDeciCentsPerLiter,
                 $line->vatRatePercent,
             );
         }
@@ -68,12 +73,18 @@ final readonly class ReceiptStateProcessor implements ProcessorInterface
             $data->longitudeMicroDegrees,
         ));
 
+        $station = null;
+        if (null !== $receipt->stationId()) {
+            $station = $this->stationRepository->get($receipt->stationId()->toString());
+        }
+        $this->streamPublisher->publishCreated($receipt, $station);
+
         $outputLines = [];
         foreach ($receipt->lines() as $line) {
             $outputLines[] = new ReceiptLineOutput(
                 $line->fuelType()->value,
                 $line->quantityMilliLiters(),
-                $line->unitPriceCentsPerLiter(),
+                $line->unitPriceDeciCentsPerLiter(),
                 $line->lineTotalCents(),
                 $line->vatRatePercent(),
                 $line->vatAmountCents(),

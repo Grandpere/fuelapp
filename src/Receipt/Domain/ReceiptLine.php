@@ -20,15 +20,15 @@ final class ReceiptLine
 {
     private FuelType $fuelType;
     private int $quantityMilliLiters;
-    private int $unitPriceCentsPerLiter;
+    private int $unitPriceDeciCentsPerLiter;
     private int $vatRatePercent;
 
-    private function __construct(FuelType $fuelType, int $quantityMilliLiters, int $unitPriceCentsPerLiter, int $vatRatePercent)
+    private function __construct(FuelType $fuelType, int $quantityMilliLiters, int $unitPriceDeciCentsPerLiter, int $vatRatePercent)
     {
         if ($quantityMilliLiters <= 0) {
             throw new InvalidArgumentException('Quantity must be positive');
         }
-        if ($unitPriceCentsPerLiter < 0) {
+        if ($unitPriceDeciCentsPerLiter < 0) {
             throw new InvalidArgumentException('Unit price cannot be negative');
         }
         if ($vatRatePercent < 0 || $vatRatePercent > 100) {
@@ -37,18 +37,18 @@ final class ReceiptLine
 
         $this->fuelType = $fuelType;
         $this->quantityMilliLiters = $quantityMilliLiters;
-        $this->unitPriceCentsPerLiter = $unitPriceCentsPerLiter;
+        $this->unitPriceDeciCentsPerLiter = $unitPriceDeciCentsPerLiter;
         $this->vatRatePercent = $vatRatePercent;
     }
 
-    public static function create(FuelType $fuelType, int $quantityMilliLiters, int $unitPriceCentsPerLiter, int $vatRatePercent): self
+    public static function create(FuelType $fuelType, int $quantityMilliLiters, int $unitPriceDeciCentsPerLiter, int $vatRatePercent): self
     {
-        return new self($fuelType, $quantityMilliLiters, $unitPriceCentsPerLiter, $vatRatePercent);
+        return new self($fuelType, $quantityMilliLiters, $unitPriceDeciCentsPerLiter, $vatRatePercent);
     }
 
-    public static function reconstitute(FuelType $fuelType, int $quantityMilliLiters, int $unitPriceCentsPerLiter, int $vatRatePercent): self
+    public static function reconstitute(FuelType $fuelType, int $quantityMilliLiters, int $unitPriceDeciCentsPerLiter, int $vatRatePercent): self
     {
-        return new self($fuelType, $quantityMilliLiters, $unitPriceCentsPerLiter, $vatRatePercent);
+        return new self($fuelType, $quantityMilliLiters, $unitPriceDeciCentsPerLiter, $vatRatePercent);
     }
 
     public function fuelType(): FuelType
@@ -61,9 +61,9 @@ final class ReceiptLine
         return $this->quantityMilliLiters;
     }
 
-    public function unitPriceCentsPerLiter(): int
+    public function unitPriceDeciCentsPerLiter(): int
     {
-        return $this->unitPriceCentsPerLiter;
+        return $this->unitPriceDeciCentsPerLiter;
     }
 
     public function vatRatePercent(): int
@@ -73,12 +73,22 @@ final class ReceiptLine
 
     public function lineTotalCents(): int
     {
-        // cents per liter * milliliters / 1000
-        return (int) round(($this->unitPriceCentsPerLiter * $this->quantityMilliLiters) / 1000, 0, PHP_ROUND_HALF_UP);
+        // deci-cents per liter * milliliters / 10000 => cents
+        return (int) round(($this->unitPriceDeciCentsPerLiter * $this->quantityMilliLiters) / 10000, 0, PHP_ROUND_HALF_UP);
     }
 
     public function vatAmountCents(): int
     {
-        return (int) round($this->lineTotalCents() * $this->vatRatePercent / 100, 0, PHP_ROUND_HALF_UP);
+        if (0 === $this->vatRatePercent) {
+            return 0;
+        }
+
+        // Fuel prices are TTC on receipts, so VAT is the included part:
+        // VAT = TTC * rate / (100 + rate)
+        return (int) round(
+            $this->lineTotalCents() * $this->vatRatePercent / (100 + $this->vatRatePercent),
+            0,
+            PHP_ROUND_HALF_UP,
+        );
     }
 }

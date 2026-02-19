@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Receipt{% endblock %}
+
+{% block body %}
+    <main style="max-width: 760px; margin: 2rem auto; padding: 0 1rem;">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h1 style="margin: 0;">Add receipt</h1>
+            <a href="{{ path('ui_receipt_index') }}" style="text-decoration: none; color: #444;">Back to list</a>
+        </header>
+
+        {% include 'receipt/_form.html.twig' %}
+    </main>
+{% endblock %}

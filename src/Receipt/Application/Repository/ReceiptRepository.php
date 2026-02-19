@@ -23,4 +23,9 @@ interface ReceiptRepository
 
     /** @return iterable<Receipt> */
     public function all(): iterable;
+
+    /** @return iterable<Receipt> */
+    public function paginate(int $page, int $perPage): iterable;
+
+    public function countAll(): int;
 }

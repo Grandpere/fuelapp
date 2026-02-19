@@ -158,6 +158,19 @@ final class InMemoryStationRepository implements StationRepository
         return $this->station && $this->station->id()->toString() === $id ? $this->station : null;
     }
 
+    public function getByIds(array $ids): array
+    {
+        if (null === $this->station) {
+            return [];
+        }
+
+        if (!in_array($this->station->id()->toString(), $ids, true)) {
+            return [];
+        }
+
+        return [$this->station->id()->toString() => $this->station];
+    }
+
     public function findByIdentity(string $name, string $streetName, string $postalCode, string $city): ?Station
     {
         if (null !== $this->station) {
@@ -191,6 +204,16 @@ final class InMemoryReceiptRepository implements ReceiptRepository
     public function all(): iterable
     {
         return array_values($this->items);
+    }
+
+    public function paginate(int $page, int $perPage): iterable
+    {
+        return array_slice(array_values($this->items), max(0, ($page - 1) * $perPage), $perPage);
+    }
+
+    public function countAll(): int
+    {
+        return count($this->items);
     }
 }
 

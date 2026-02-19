@@ -48,15 +48,28 @@ final readonly class DoctrineStationRepository implements StationRepository
             return null;
         }
 
-        return Station::reconstitute(
-            StationId::fromString($entity->getId()->toRfc4122()),
-            $entity->getName(),
-            $entity->getStreetName(),
-            $entity->getPostalCode(),
-            $entity->getCity(),
-            $entity->getLatitudeMicroDegrees(),
-            $entity->getLongitudeMicroDegrees(),
-        );
+        return $this->mapEntityToDomain($entity);
+    }
+
+    public function getByIds(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        $entities = $this->em->getRepository(StationEntity::class)->createQueryBuilder('s')
+            ->where('s.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+
+        $stationsById = [];
+        foreach ($entities as $entity) {
+            $station = $this->mapEntityToDomain($entity);
+            $stationsById[$station->id()->toString()] = $station;
+        }
+
+        return $stationsById;
     }
 
     public function findByIdentity(string $name, string $streetName, string $postalCode, string $city): ?Station
@@ -72,6 +85,19 @@ final readonly class DoctrineStationRepository implements StationRepository
             return null;
         }
 
+        return $this->mapEntityToDomain($entity);
+    }
+
+    public function all(): iterable
+    {
+        $entities = $this->em->getRepository(StationEntity::class)->findAll();
+        foreach ($entities as $entity) {
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    private function mapEntityToDomain(StationEntity $entity): Station
+    {
         return Station::reconstitute(
             StationId::fromString($entity->getId()->toRfc4122()),
             $entity->getName(),
@@ -81,21 +107,5 @@ final readonly class DoctrineStationRepository implements StationRepository
             $entity->getLatitudeMicroDegrees(),
             $entity->getLongitudeMicroDegrees(),
         );
-    }
-
-    public function all(): iterable
-    {
-        $entities = $this->em->getRepository(StationEntity::class)->findAll();
-        foreach ($entities as $entity) {
-            yield Station::reconstitute(
-                StationId::fromString($entity->getId()->toRfc4122()),
-                $entity->getName(),
-                $entity->getStreetName(),
-                $entity->getPostalCode(),
-                $entity->getCity(),
-                $entity->getLatitudeMicroDegrees(),
-                $entity->getLongitudeMicroDegrees(),
-            );
-        }
     }
 }

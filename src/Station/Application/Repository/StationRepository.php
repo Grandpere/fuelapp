@@ -21,6 +21,11 @@ interface StationRepository
 
     public function get(string $id): ?Station;
 
+    /** @param list<string> $ids
+     * @return array<string, Station>
+     */
+    public function getByIds(array $ids): array;
+
     public function findByIdentity(string $name, string $streetName, string $postalCode, string $city): ?Station;
 
     /** @return iterable<Station> */

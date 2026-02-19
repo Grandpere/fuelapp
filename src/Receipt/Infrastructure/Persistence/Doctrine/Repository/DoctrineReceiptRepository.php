@@ -23,6 +23,7 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Domain\ValueObject\StationId;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Uid\Uuid;
 
 final readonly class DoctrineReceiptRepository implements ReceiptRepository
@@ -67,6 +68,56 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             return null;
         }
 
+        return $this->mapEntityToDomain($entity);
+    }
+
+    public function all(): iterable
+    {
+        $entities = $this->baseListQuery()->getQuery()->getResult();
+        foreach ($entities as $entity) {
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    public function paginate(int $page, int $perPage): iterable
+    {
+        $safePage = max(1, $page);
+        $safePerPage = max(1, $perPage);
+        $offset = ($safePage - 1) * $safePerPage;
+
+        $entities = $this->baseListQuery()
+            ->setFirstResult($offset)
+            ->setMaxResults($safePerPage)
+            ->getQuery()
+            ->getResult();
+
+        foreach ($entities as $entity) {
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    public function countAll(): int
+    {
+        return (int) $this->em
+            ->createQueryBuilder()
+            ->select('COUNT(r.id)')
+            ->from(ReceiptEntity::class, 'r')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function baseListQuery(): QueryBuilder
+    {
+        return $this->em
+            ->createQueryBuilder()
+            ->select('r')
+            ->from(ReceiptEntity::class, 'r')
+            ->orderBy('r.issuedAt', 'DESC')
+            ->addOrderBy('r.id', 'DESC');
+    }
+
+    private function mapEntityToDomain(ReceiptEntity $entity): Receipt
+    {
         $lines = [];
         foreach ($entity->getLines() as $lineEntity) {
             $lines[] = ReceiptLine::reconstitute(
@@ -85,30 +136,5 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $lines,
             $stationId,
         );
-    }
-
-    public function all(): iterable
-    {
-        $entities = $this->em->getRepository(ReceiptEntity::class)->findAll();
-        foreach ($entities as $entity) {
-            $lines = [];
-            foreach ($entity->getLines() as $lineEntity) {
-                $lines[] = ReceiptLine::reconstitute(
-                    FuelType::from($lineEntity->getFuelType()),
-                    $lineEntity->getQuantityMilliLiters(),
-                    $lineEntity->getUnitPriceCentsPerLiter(),
-                    $lineEntity->getVatRatePercent(),
-                );
-            }
-
-            $stationId = $entity->getStation() ? StationId::fromString($entity->getStation()->getId()->toRfc4122()) : null;
-
-            yield Receipt::reconstitute(
-                ReceiptId::fromString($entity->getId()->toRfc4122()),
-                $entity->getIssuedAt(),
-                $lines,
-                $stationId,
-            );
-        }
     }
 }

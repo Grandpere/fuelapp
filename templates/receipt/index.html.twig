@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Receipts{% endblock %}
+
+{% block body %}
+    <main style="max-width: 1000px; margin: 2rem auto; padding: 0 1rem;">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h1 style="margin: 0;">Receipts</h1>
+            <a href="{{ path('ui_receipt_new') }}" style="display: inline-block; padding: 0.6rem 1rem; border: 1px solid #111; border-radius: 8px; text-decoration: none; color: #111;">Add receipt</a>
+        </header>
+
+        {% for message in app.flashes('success') %}
+            <div style="margin-bottom: 1rem; padding: 0.75rem 1rem; border: 1px solid #176b3a; background: #eaf8f0; color: #176b3a;">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% if receipts is empty %}
+            <p>No receipt yet.</p>
+        {% else %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Date</th>
+                        <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 0.5rem;">Station</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">Total</th>
+                        <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 0.5rem;">VAT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt in receipts %}
+                        <tr>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">{{ receipt.issuedAt|date('d/m/Y H:i') }}</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem;">
+                                {% if receipt.stationName %}
+                                    <div>{{ receipt.stationName }}</div>
+                                    <small>{{ receipt.stationStreetName }}, {{ receipt.stationPostalCode }} {{ receipt.stationCity }}</small>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} €</td>
+                            <td style="border-bottom: 1px solid #eee; padding: 0.5rem; text-align: right;">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                <div>
+                    {{ total }} receipt(s) - page {{ page }} / {{ lastPage }}
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    {% if page > 1 %}
+                        <a href="{{ path('ui_receipt_index', {page: page - 1, per_page: perPage}) }}">Previous</a>
+                    {% endif %}
+                    {% if page < lastPage %}
+                        <a href="{{ path('ui_receipt_index', {page: page + 1, per_page: perPage}) }}">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </main>
+{% endblock %}

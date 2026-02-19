@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Receipt\UI\Web\Controller;
 
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Station\Application\Repository\StationRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -115,6 +116,13 @@ final class ListReceiptsController extends AbstractController
             'sort_direction' => $sortDirection,
         ];
 
+        $enableRealtime = 1 === $page
+            && null === $stationId
+            && null === $issuedFrom
+            && null === $issuedTo
+            && 'date' === $sortBy
+            && 'desc' === $sortDirection;
+
         return $this->render('receipt/index.html.twig', [
             'receipts' => $rows,
             'page' => $page,
@@ -130,6 +138,8 @@ final class ListReceiptsController extends AbstractController
                 'sortDirection' => $sortDirection,
             ],
             'queryParams' => $queryParams,
+            'enableRealtime' => $enableRealtime,
+            'mercureTopic' => ReceiptStreamPublisher::TOPIC,
         ]);
     }
 

@@ -17,8 +17,10 @@ use App\Receipt\Application\Command\CreateReceiptLineCommand;
 use App\Receipt\Application\Command\CreateReceiptWithStationCommand;
 use App\Receipt\Application\Command\CreateReceiptWithStationHandler;
 use App\Receipt\Domain\Enum\FuelType;
+use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Receipt\UI\Api\Resource\Input\ReceiptInput;
 use App\Receipt\UI\Api\Resource\Input\ReceiptLineInput;
+use App\Station\Application\Repository\StationRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -32,6 +34,8 @@ final class CreateReceiptController extends AbstractController
 {
     public function __construct(
         private readonly CreateReceiptWithStationHandler $createReceiptWithStationHandler,
+        private readonly StationRepository $stationRepository,
+        private readonly ReceiptStreamPublisher $streamPublisher,
         private readonly ValidatorInterface $validator,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
     ) {
@@ -162,7 +166,13 @@ final class CreateReceiptController extends AbstractController
             $this->toNullableInt($formData['longitudeMicroDegrees']),
         );
 
-        ($this->createReceiptWithStationHandler)($command);
+        $receipt = ($this->createReceiptWithStationHandler)($command);
+        $station = null;
+        if (null !== $receipt->stationId()) {
+            $station = $this->stationRepository->get($receipt->stationId()->toString());
+        }
+
+        $this->streamPublisher->publishCreated($receipt, $station);
     }
 
     private function toNullableInt(mixed $value): ?int

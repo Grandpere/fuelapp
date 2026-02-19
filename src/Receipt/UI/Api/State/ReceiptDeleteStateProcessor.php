@@ -16,14 +16,17 @@ namespace App\Receipt\UI\Api\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 
 /**
  * @implements ProcessorInterface<mixed, void>
  */
 final readonly class ReceiptDeleteStateProcessor implements ProcessorInterface
 {
-    public function __construct(private ReceiptRepository $repository)
-    {
+    public function __construct(
+        private ReceiptRepository $repository,
+        private ReceiptStreamPublisher $streamPublisher,
+    ) {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): void
@@ -31,6 +34,7 @@ final readonly class ReceiptDeleteStateProcessor implements ProcessorInterface
         $id = $uriVariables['id'] ?? null;
         if (is_string($id) && '' !== $id) {
             $this->repository->delete($id);
+            $this->streamPublisher->publishDeleted($id);
         }
     }
 }

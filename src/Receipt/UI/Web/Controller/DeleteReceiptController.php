@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Receipt\UI\Web\Controller;
 
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,8 +23,10 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class DeleteReceiptController extends AbstractController
 {
-    public function __construct(private readonly ReceiptRepository $receiptRepository)
-    {
+    public function __construct(
+        private readonly ReceiptRepository $receiptRepository,
+        private readonly ReceiptStreamPublisher $streamPublisher,
+    ) {
     }
 
     #[Route('/ui/receipts/{id}/delete', name: 'ui_receipt_delete', methods: ['POST'], requirements: ['id' => '[0-9a-fA-F-]{36}'])]
@@ -34,6 +37,7 @@ final class DeleteReceiptController extends AbstractController
         }
 
         $this->receiptRepository->delete($id);
+        $this->streamPublisher->publishDeleted($id);
         $this->addFlash('success', 'Receipt deleted.');
 
         $redirectUrl = (string) $request->request->get('_redirect', '');

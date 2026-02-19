@@ -1,0 +1,8 @@
+<turbo-stream action="prepend" target="receipts_rows">
+    <template>
+        {% include 'receipt/_row.html.twig' with { receipt: receipt } only %}
+    </template>
+</turbo-stream>
+<turbo-stream action="remove" target="receipts-empty">
+    <template></template>
+</turbo-stream>

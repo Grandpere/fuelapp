@@ -20,7 +20,7 @@ final class Version20260217203857 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Init receipts, receipt_lines and stations tables';
     }
 
     public function up(Schema $schema): void

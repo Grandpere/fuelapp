@@ -51,6 +51,21 @@
 
                 <button class="btn btn-primary" type="submit">Sign in</button>
             </form>
+
+            {% if oidcProviders is not empty %}
+                <div class="muted" style="display: flex; align-items: center; gap: .7rem;">
+                    <span style="height:1px;background:rgba(255,255,255,.2);flex:1;"></span>
+                    <span>or continue with</span>
+                    <span style="height:1px;background:rgba(255,255,255,.2);flex:1;"></span>
+                </div>
+                <div style="display:grid; gap:.5rem;">
+                    {% for provider in oidcProviders %}
+                        <a class="btn btn-secondary" href="{{ path('ui_oidc_start', {provider: provider.name}) }}">
+                            Continue with {{ provider.label }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </section>
     </main>
 {% endblock %}

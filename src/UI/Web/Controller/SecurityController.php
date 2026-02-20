@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\UI\Web\Controller;
 
+use App\Security\Oidc\OidcProviderRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -20,6 +21,10 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 final class SecurityController extends AbstractController
 {
+    public function __construct(private readonly OidcProviderRegistry $oidcProviderRegistry)
+    {
+    }
+
     #[Route('/ui/login', name: 'ui_login', methods: ['GET', 'POST'])]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
@@ -30,6 +35,7 @@ final class SecurityController extends AbstractController
         return $this->render('security/login.html.twig', [
             'lastUsername' => $authenticationUtils->getLastUsername(),
             'error' => $authenticationUtils->getLastAuthenticationError(),
+            'oidcProviders' => $this->oidcProviderRegistry->enabledProviders(),
         ]);
     }
 

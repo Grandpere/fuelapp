@@ -22,4 +22,16 @@ Need future-proof SSO support without provider-specific lock-in.
 - SP1-009.
 
 ## Status
-- todo
+- done
+
+## Delivered
+- Generic OIDC provider registry (config-driven, provider-agnostic contract).
+- UI OIDC login flow endpoints:
+- start: `/ui/login/oidc/{provider}`
+- callback: `/ui/login/oidc/{provider}/callback`
+- Generic OIDC client using discovery + token + userinfo endpoints.
+- Safe account linking:
+- link by `(provider, subject)` first,
+- fallback by normalized email,
+- create local user if not found, then persist identity link.
+- First provider ready through generic layer: Auth0 (config keys present, disabled by default).

@@ -77,6 +77,14 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
     }
 
+    public function testOidcLoginRoutesArePublic(): void
+    {
+        $response = $this->request('GET', '/ui/login/oidc/unknown');
+
+        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $response->headers->get('Location'));
+    }
+
     public function testUserCannotAccessAnotherUsersReceiptFromApi(): void
     {
         $owner = $this->createUser('owner2@example.com', 'test1234');

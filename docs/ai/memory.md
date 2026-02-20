@@ -111,6 +111,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: implement functional HTTP tests with `KernelTestCase` + kernel `Request` handling.
 - Prevention: if BrowserKit is not installed, avoid `WebTestCase` and test endpoints via kernel requests.
 
+## 2026-02-20 - OIDC callback login requires explicit authenticator + firewall
+- Symptom: programmatic login can fail or bind to wrong firewall when using generic `Security::login`.
+- Root cause: passing only one string argument can be interpreted as authenticator name, not firewall.
+- Fix: call `Security::login($user, LoginFormAuthenticator::class, 'main')`.
+- Prevention: for programmatic UI login, always pass both authenticator class and firewall name explicitly.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

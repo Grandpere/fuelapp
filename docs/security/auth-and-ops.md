@@ -3,9 +3,12 @@
 ## 1) Current authentication strategy
 - UI (`/ui/*`): session authentication via local email/password (`LoginFormAuthenticator`).
 - API (`/api/*`): stateless JWT Bearer authentication (`ApiTokenAuthenticator`).
+- OIDC SSO (`/ui/login/oidc/*`): provider-agnostic OIDC code flow for UI login.
 - Public endpoints:
 - `POST /api/login`
 - `/ui/login`
+- `/ui/login/oidc/{provider}`
+- `/ui/login/oidc/{provider}/callback`
 
 ## 2) Authorization perimeter
 - Ownership model:
@@ -22,6 +25,10 @@
 - API JWT:
 - `JWT_SECRET` (HS256 signing key, must be long/high entropy).
 - `JWT_TTL_SECONDS` (token lifetime).
+- OIDC clients:
+- `OIDC_AUTH0_CLIENT_SECRET`
+- `OIDC_GOOGLE_CLIENT_SECRET`
+- `OIDC_MICROSOFT_CLIENT_SECRET`
 - Mercure:
 - `MERCURE_JWT_SECRET` (publisher/subscriber token signing key).
 - Infrastructure credentials (also rotate):
@@ -45,6 +52,9 @@
 - `.env` has non-empty `APP_SECRET`, `JWT_SECRET`.
 - UI login reachable at `/ui/login`.
 - JWT flow validated via `/api/login`.
+- If OIDC is enabled for a provider:
+- verify redirect to provider works from `/ui/login`.
+- verify callback logs user in and links identity (`user_identities` row).
 
 ## 6) Dev/staging checklist
 - Never use default placeholder secrets.

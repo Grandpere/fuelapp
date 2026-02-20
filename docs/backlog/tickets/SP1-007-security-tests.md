@@ -18,4 +18,12 @@ Security regressions must be caught by CI.
 - SP1-002 to SP1-006.
 
 ## Status
-- in_progress
+- done
+
+## Delivered
+- Added functional security tests for:
+- anonymous access redirect on `/ui/*`.
+- anonymous access rejection on `/api/*`.
+- cross-user access denial on receipt and station API item endpoints.
+- Added integration test for repository ownership scoping:
+- `ReceiptRepository` returns only data for current authenticated user token.

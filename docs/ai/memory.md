@@ -105,6 +105,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: add `@extends Voter<string, string>` and include optional `?Vote $vote` arg in `voteOnAttribute`.
 - Prevention: scaffold new voters from Symfony 8 signature template.
 
+## 2026-02-20 - Functional tests without BrowserKit
+- Symptom: functional suite failed with `Class Symfony\Component\BrowserKit\AbstractBrowser not found`.
+- Root cause: project does not include `symfony/browser-kit`, so `WebTestCase::createClient()` is unavailable.
+- Fix: implement functional HTTP tests with `KernelTestCase` + kernel `Request` handling.
+- Prevention: if BrowserKit is not installed, avoid `WebTestCase` and test endpoints via kernel requests.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

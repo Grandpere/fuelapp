@@ -48,7 +48,7 @@ final readonly class JwtTokenManager
         }
 
         [$headerEncoded, $payloadEncoded, $signatureEncoded] = $parts;
-        $expected = $this->sign($headerEncoded . '.' . $payloadEncoded);
+        $expected = $this->sign($headerEncoded.'.'.$payloadEncoded);
         if (!hash_equals($expected, $signatureEncoded)) {
             throw new RuntimeException('Invalid token signature.');
         }
@@ -90,7 +90,7 @@ final readonly class JwtTokenManager
             throw new RuntimeException('Failed to encode token payload.', 0, $e);
         }
 
-        return sprintf('%s.%s.%s', $headerEncoded, $payloadEncoded, $this->sign($headerEncoded . '.' . $payloadEncoded));
+        return sprintf('%s.%s.%s', $headerEncoded, $payloadEncoded, $this->sign($headerEncoded.'.'.$payloadEncoded));
     }
 
     private function sign(string $data): string

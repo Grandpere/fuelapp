@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use RuntimeException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -57,7 +58,7 @@ final class ApiTokenAuthenticator extends AbstractAuthenticator implements Authe
 
         try {
             $claims = $this->jwtTokenManager->parseAndValidate($token);
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             throw new CustomUserMessageAuthenticationException('Invalid token.', [], 0, $e);
         }
 

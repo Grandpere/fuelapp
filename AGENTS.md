@@ -51,6 +51,11 @@ Project collaboration rules for coding agents.
 - Do not revert unrelated user changes.
 - Avoid destructive git commands (`reset --hard`, etc.) unless explicitly requested.
 - `config/reference.php` may be auto-updated by Symfony tooling; include it in commits by default without blocking for confirmation.
+- Mandatory duplicate-suffix control before each commit:
+- scan for files and directories matching `* 2*` (excluding `vendor/` and `var/`),
+- if exact duplicates: remove immediately,
+- if content differs: stop and ask user which one to keep,
+- run the scan again to confirm zero `* 2*` paths remain before commit.
 
 ## 8) Quality Gate (Before PR)
 Run at least:

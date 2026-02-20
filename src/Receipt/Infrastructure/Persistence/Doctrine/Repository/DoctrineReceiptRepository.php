@@ -29,8 +29,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use RuntimeException;
 use Stringable;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Uid\Uuid;
 use UnexpectedValueException;
 
 final readonly class DoctrineReceiptRepository implements ReceiptRepository
@@ -38,8 +38,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
     public function __construct(
         private EntityManagerInterface $em,
         private TokenStorageInterface $tokenStorage,
-    )
-    {
+    ) {
     }
 
     public function save(Receipt $receipt): void

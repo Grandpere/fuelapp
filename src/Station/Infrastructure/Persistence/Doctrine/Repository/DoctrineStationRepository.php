@@ -18,19 +18,18 @@ use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\Station;
 use App\Station\Domain\ValueObject\StationId;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
+use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Uid\Uuid;
-use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 
 final readonly class DoctrineStationRepository implements StationRepository
 {
     public function __construct(
         private EntityManagerInterface $em,
         private TokenStorageInterface $tokenStorage,
-    )
-    {
+    ) {
     }
 
     public function save(Station $station): void

@@ -21,4 +21,11 @@ Provider sprawl can quickly break maintainability.
 - SP1-010.
 
 ## Status
-- todo
+- done
+
+## Delivered
+- Provider catalog documented (`auth0`, `google`, `microsoft`) with stable key conventions.
+- Standard claims mapping documented (`sub`, `email`, `name`, `picture`).
+- Required claims and fallback behavior documented (existing identity vs first link/create).
+- Provider onboarding checklist documented (env/config/callback/test steps).
+- Provider-specific notes captured for Auth0, Google, Microsoft.

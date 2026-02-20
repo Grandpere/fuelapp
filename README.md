@@ -58,6 +58,8 @@ curl -s "http://localhost:${APP_PORT:-8081}/api/receipts" \
 ## Security runbook
 - Auth/ops documentation and local/dev/prod checklist:
 - `docs/security/auth-and-ops.md`
+- OIDC provider catalog, claims mapping conventions, onboarding:
+- `docs/security/oidc-provider-catalog.md`
 
 ## Prod (future)
 This project currently targets a dev-first Docker setup. A dedicated prod profile can be added later if needed.

@@ -16,10 +16,10 @@ namespace App\Receipt\UI\Api\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\Receipt\Application\Repository\ReceiptRepository;
-use App\Security\Voter\ReceiptVoter;
 use App\Receipt\Domain\Receipt;
 use App\Receipt\UI\Api\Resource\Output\ReceiptLineOutput;
 use App\Receipt\UI\Api\Resource\Output\ReceiptOutput;
+use App\Security\Voter\ReceiptVoter;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Uid\Uuid;
 

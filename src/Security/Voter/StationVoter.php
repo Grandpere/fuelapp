@@ -15,8 +15,8 @@ namespace App\Security\Voter;
 
 use App\Station\Application\Repository\StationRepository;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
+use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /** @extends Voter<string, string> */
 final class StationVoter extends Voter

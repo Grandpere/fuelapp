@@ -17,6 +17,7 @@ use App\Security\Oidc\OidcUserLinker;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserIdentityEntity;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Uid\Uuid;
@@ -36,19 +37,19 @@ final class OidcUserLinkerTest extends KernelTestCase
 
         $em = $container->get(EntityManagerInterface::class);
         if (!$em instanceof EntityManagerInterface) {
-            throw new \RuntimeException('EntityManager service is invalid.');
+            throw new RuntimeException('EntityManager service is invalid.');
         }
         $this->em = $em;
 
         $linker = $container->get(OidcUserLinker::class);
         if (!$linker instanceof OidcUserLinker) {
-            throw new \RuntimeException('OidcUserLinker service is invalid.');
+            throw new RuntimeException('OidcUserLinker service is invalid.');
         }
         $this->linker = $linker;
 
         $passwordHasher = $container->get(UserPasswordHasherInterface::class);
         if (!$passwordHasher instanceof UserPasswordHasherInterface) {
-            throw new \RuntimeException('PasswordHasher service is invalid.');
+            throw new RuntimeException('PasswordHasher service is invalid.');
         }
         $this->passwordHasher = $passwordHasher;
 

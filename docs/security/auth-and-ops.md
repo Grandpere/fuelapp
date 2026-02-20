@@ -10,6 +10,9 @@
 - `/ui/login/oidc/{provider}`
 - `/ui/login/oidc/{provider}/callback`
 
+OIDC provider conventions and onboarding:
+- `docs/security/oidc-provider-catalog.md`
+
 ## 2) Authorization perimeter
 - Ownership model:
 - Users own `receipts`.

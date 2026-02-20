@@ -16,8 +16,8 @@ namespace App\Receipt\UI\Api\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Receipt\Application\Repository\ReceiptRepository;
-use App\Security\Voter\ReceiptVoter;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
+use App\Security\Voter\ReceiptVoter;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Uid\Uuid;
 

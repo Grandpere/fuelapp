@@ -7,11 +7,11 @@
 - Put strong authentication/authorization foundations before async geocoding and import pipeline.
 
 ## In progress
-- `SP1-011` - OIDC provider catalog and conventions.
+- `SP2-001` - Geocoding contract and statuses.
 
 ## Next tickets (ordered)
-1. `SP1-011` - OIDC provider catalog and conventions
-2. `SP2-001` - Geocoding contract and statuses
+1. `SP2-001` - Geocoding contract and statuses
+2. `SP2-002` - Messenger job geocoding
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -27,6 +27,7 @@
 - Security tests baseline delivered (integration + functional) for auth/ownership boundaries.
 - Security runbook and local/dev/prod security checklist delivered.
 - Generic OIDC SSO integration layer delivered (Auth0-ready, provider-agnostic).
+- OIDC provider catalog/conventions delivered (claims mapping + onboarding checklist).
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

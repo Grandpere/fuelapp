@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -eu
+
+duplicates="$(find . \
+  -path './vendor' -prune -o \
+  -path './var' -prune -o \
+  \( -type f -o -type d \) -name '* 2*' -print)"
+
+if [ -n "$duplicates" ]; then
+  echo "ERROR: duplicate-suffix paths detected (\" 2\")."
+  echo "Remove or rename these paths before commit:"
+  echo "$duplicates"
+  exit 1
+fi
+
+exit 0

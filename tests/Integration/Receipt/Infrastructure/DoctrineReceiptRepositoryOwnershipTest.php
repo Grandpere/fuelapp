@@ -18,7 +18,9 @@ use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\Domain\Receipt;
 use App\Receipt\Domain\ReceiptLine;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -41,25 +43,25 @@ final class DoctrineReceiptRepositoryOwnershipTest extends KernelTestCase
 
         $em = $container->get(EntityManagerInterface::class);
         if (!$em instanceof EntityManagerInterface) {
-            throw new \RuntimeException('EntityManager service is invalid.');
+            throw new RuntimeException('EntityManager service is invalid.');
         }
         $this->em = $em;
 
         $receiptRepository = $container->get(ReceiptRepository::class);
         if (!$receiptRepository instanceof ReceiptRepository) {
-            throw new \RuntimeException('ReceiptRepository service is invalid.');
+            throw new RuntimeException('ReceiptRepository service is invalid.');
         }
         $this->receiptRepository = $receiptRepository;
 
         $tokenStorage = $container->get(TokenStorageInterface::class);
         if (!$tokenStorage instanceof TokenStorageInterface) {
-            throw new \RuntimeException('TokenStorage service is invalid.');
+            throw new RuntimeException('TokenStorage service is invalid.');
         }
         $this->tokenStorage = $tokenStorage;
 
         $passwordHasher = $container->get(UserPasswordHasherInterface::class);
         if (!$passwordHasher instanceof UserPasswordHasherInterface) {
-            throw new \RuntimeException('Password hasher service is invalid.');
+            throw new RuntimeException('Password hasher service is invalid.');
         }
         $this->passwordHasher = $passwordHasher;
 
@@ -74,7 +76,7 @@ final class DoctrineReceiptRepositoryOwnershipTest extends KernelTestCase
 
         $this->authenticate($owner);
         $receipt = Receipt::create(
-            new \DateTimeImmutable('2026-02-20 09:00:00'),
+            new DateTimeImmutable('2026-02-20 09:00:00'),
             [ReceiptLine::create(FuelType::DIESEL, 10_000, 1800, 20)],
             null,
         );

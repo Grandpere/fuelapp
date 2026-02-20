@@ -57,7 +57,6 @@ final readonly class OidcClient
             ],
         ])->toArray(false);
         /** @var array<string, mixed> $tokenResponse */
-
         $accessToken = $this->requiredString($tokenResponse, 'access_token');
 
         $claims = $this->httpClient->request('GET', $userInfoEndpoint, [
@@ -84,6 +83,7 @@ final readonly class OidcClient
             sprintf('%s/.well-known/openid-configuration', $provider->issuer),
             ['headers' => ['Accept' => 'application/json']],
         )->toArray(false);
+
         /** @var array<string, mixed> $response */
         return $response;
     }

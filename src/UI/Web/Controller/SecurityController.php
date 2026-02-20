@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\UI\Web\Controller;
 
 use App\Security\Oidc\OidcProviderRegistry;
+use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -42,6 +43,6 @@ final class SecurityController extends AbstractController
     #[Route('/ui/logout', name: 'ui_logout', methods: ['POST'])]
     public function logout(): never
     {
-        throw new \LogicException('This method is intercepted by the firewall logout.');
+        throw new LogicException('This method is intercepted by the firewall logout.');
     }
 }

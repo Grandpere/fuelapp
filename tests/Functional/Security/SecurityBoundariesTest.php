@@ -19,6 +19,7 @@ use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -42,20 +43,20 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::bootKernel();
         $kernel = static::getContainer()->get(HttpKernelInterface::class);
         if (!$kernel instanceof HttpKernelInterface) {
-            throw new \RuntimeException('HttpKernel service is invalid.');
+            throw new RuntimeException('HttpKernel service is invalid.');
         }
         $this->httpKernel = $kernel;
         $this->terminableKernel = $kernel instanceof TerminableInterface ? $kernel : null;
 
         $em = static::getContainer()->get(EntityManagerInterface::class);
         if (!$em instanceof EntityManagerInterface) {
-            throw new \RuntimeException('EntityManager service is invalid.');
+            throw new RuntimeException('EntityManager service is invalid.');
         }
         $this->em = $em;
 
         $passwordHasher = static::getContainer()->get(UserPasswordHasherInterface::class);
         if (!$passwordHasher instanceof UserPasswordHasherInterface) {
-            throw new \RuntimeException('Password hasher service is invalid.');
+            throw new RuntimeException('Password hasher service is invalid.');
         }
         $this->passwordHasher = $passwordHasher;
 

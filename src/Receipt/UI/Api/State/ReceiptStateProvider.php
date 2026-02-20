@@ -16,9 +16,11 @@ namespace App\Receipt\UI\Api\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Security\Voter\ReceiptVoter;
 use App\Receipt\Domain\Receipt;
 use App\Receipt\UI\Api\Resource\Output\ReceiptLineOutput;
 use App\Receipt\UI\Api\Resource\Output\ReceiptOutput;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -26,8 +28,10 @@ use Symfony\Component\Uid\Uuid;
  */
 final readonly class ReceiptStateProvider implements ProviderInterface
 {
-    public function __construct(private ReceiptRepository $repository)
-    {
+    public function __construct(
+        private ReceiptRepository $repository,
+        private AuthorizationCheckerInterface $authorizationChecker,
+    ) {
     }
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -35,6 +39,10 @@ final readonly class ReceiptStateProvider implements ProviderInterface
         $id = $uriVariables['id'] ?? null;
         if (is_string($id)) {
             if (!Uuid::isValid($id)) {
+                return null;
+            }
+
+            if (!$this->authorizationChecker->isGranted(ReceiptVoter::VIEW, $id)) {
                 return null;
             }
 

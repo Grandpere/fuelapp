@@ -99,6 +99,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: provide `app:receipts:claim-unowned <email>` operational command.
 - Prevention: include backfill/claim path when introducing ownership constraints.
 
+## 2026-02-20 - Symfony 8 voter signatures and generics
+- Symptom: static analysis errors on custom voters (missing generics, wrong method signature).
+- Root cause: voters not aligned with Symfony 8 `Voter` generic/signature expectations.
+- Fix: add `@extends Voter<string, string>` and include optional `?Vote $vote` arg in `voteOnAttribute`.
+- Prevention: scaffold new voters from Symfony 8 signature template.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of a FuelApp project.
+ *
+ * (c) Lorenzo Marozzo <lorenzo.marozzo@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Security\Voter;
+
+use App\Receipt\Application\Repository\ReceiptRepository;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Voter;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
+
+/** @extends Voter<string, string> */
+final class ReceiptVoter extends Voter
+{
+    public const VIEW = 'RECEIPT_VIEW';
+    public const DELETE = 'RECEIPT_DELETE';
+
+    public function __construct(private readonly ReceiptRepository $repository)
+    {
+    }
+
+    protected function supports(string $attribute, mixed $subject): bool
+    {
+        if (!in_array($attribute, [self::VIEW, self::DELETE], true)) {
+            return false;
+        }
+
+        return is_string($subject) && '' !== $subject;
+    }
+
+    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
+    {
+        return null !== $this->repository->get($subject);
+    }
+}

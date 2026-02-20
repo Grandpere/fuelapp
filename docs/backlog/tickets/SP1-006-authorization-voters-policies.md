@@ -18,4 +18,4 @@ Route-level auth is not enough for object-level access.
 - SP1-004, SP1-005.
 
 ## Status
-- todo
+- done

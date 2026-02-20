@@ -16,7 +16,9 @@ namespace App\Receipt\UI\Api\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Security\Voter\ReceiptVoter;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -27,6 +29,7 @@ final readonly class ReceiptDeleteStateProcessor implements ProcessorInterface
     public function __construct(
         private ReceiptRepository $repository,
         private ReceiptStreamPublisher $streamPublisher,
+        private AuthorizationCheckerInterface $authorizationChecker,
     ) {
     }
 
@@ -34,6 +37,10 @@ final readonly class ReceiptDeleteStateProcessor implements ProcessorInterface
     {
         $id = $uriVariables['id'] ?? null;
         if (is_string($id) && '' !== $id && Uuid::isValid($id)) {
+            if (!$this->authorizationChecker->isGranted(ReceiptVoter::DELETE, $id)) {
+                return;
+            }
+
             $this->repository->delete($id);
             $this->streamPublisher->publishDeleted($id);
         }

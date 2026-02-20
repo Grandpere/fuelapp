@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Receipt\UI\Web\Controller;
 
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Security\Voter\ReceiptVoter;
 use App\Station\Application\Repository\StationRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,6 +33,8 @@ final class ShowReceiptController extends AbstractController
     #[Route('/ui/receipts/{id}', name: 'ui_receipt_show', methods: ['GET'], requirements: ['id' => self::UUID_ROUTE_REQUIREMENT])]
     public function __invoke(string $id): Response
     {
+        $this->denyAccessUnlessGranted(ReceiptVoter::VIEW, $id);
+
         $receipt = $this->receiptRepository->get($id);
         if (null === $receipt) {
             throw $this->createNotFoundException('Receipt not found.');

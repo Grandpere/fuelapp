@@ -15,6 +15,7 @@ namespace App\Receipt\UI\Web\Controller;
 
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
+use App\Security\Voter\ReceiptVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,6 +38,8 @@ final class DeleteReceiptController extends AbstractController
         if (!$this->isCsrfTokenValid('delete_receipt_'.$id, (string) $request->request->get('_token'))) {
             throw $this->createAccessDeniedException('Invalid CSRF token.');
         }
+
+        $this->denyAccessUnlessGranted(ReceiptVoter::DELETE, $id);
 
         $this->receiptRepository->delete($id);
         $this->streamPublisher->publishDeleted($id);

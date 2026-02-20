@@ -8,18 +8,19 @@
 
 ## In progress
 - `SP1-001` - User model and ownership columns (baseline committed, final constraints pending).
-- `SP1-002` - API authentication setup (next implementation focus).
+- `SP1-003` - UI authentication and protected routes (in progress).
 
 ## Next tickets (ordered)
-1. `SP1-002` - API authentication setup
-2. `SP1-003` - UI authentication and protected routes (hardening after auth baseline)
-3. `SP1-001` - Finalize user/ownership baseline constraints
-4. `SP1-010` - Generic OIDC SSO integration layer
+1. `SP1-003` - UI authentication and protected routes (hardening)
+2. `SP1-001` - Finalize user/ownership baseline constraints
+3. `SP1-010` - Generic OIDC SSO integration layer
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
 - Sprint 01 target is local auth baseline + resource protection + ownership isolation.
 - Local auth baseline delivered: login page, authenticator, logout, user creation command.
+- API auth strategy for Sprint 1: JWT bearer on `/api` with dedicated login endpoint.
+- API JWT baseline delivered: `/api/login` + Bearer authenticator on `/api/*`.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

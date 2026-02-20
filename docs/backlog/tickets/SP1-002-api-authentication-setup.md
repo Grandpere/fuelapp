@@ -4,7 +4,7 @@
 API must be protected before new features.
 
 ## Scope
-- Configure API auth (JWT or token strategy to confirm).
+- Configure API auth with JWT bearer tokens.
 - Secure `/api/*` endpoints by default.
 - Return proper `401/403` semantics.
 
@@ -20,4 +20,4 @@ API must be protected before new features.
 - SP1-001.
 
 ## Status
-- todo
+- done

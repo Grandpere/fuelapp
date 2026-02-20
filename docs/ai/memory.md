@@ -75,6 +75,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: implement `AuthenticationEntryPointInterface` and `start()` in login authenticator.
 - Prevention: when declaring `entry_point`, ensure service explicitly implements the expected interface.
 
+## 2026-02-20 - API auth strategy switched from Basic to JWT
+- Symptom: Basic auth considered unsuitable for front/mobile usage.
+- Root cause: temporary baseline did not match product auth target.
+- Fix: implement `/api/login` and Bearer token authenticator for `/api/*`.
+- Prevention: align interim security design with expected client architecture early.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -5,8 +5,8 @@ Secure API/UI and isolate data per user.
 
 ## Tickets
 - [SP1-001 - User model and ownership columns](tickets/SP1-001-user-model-and-ownership-columns.md) - P0 - in_progress
-- [SP1-002 - API authentication setup](tickets/SP1-002-api-authentication-setup.md) - P0 - todo
-- [SP1-003 - UI authentication and protected routes](tickets/SP1-003-ui-authentication-and-protected-routes.md) - P0 - todo
+- [SP1-002 - API authentication setup](tickets/SP1-002-api-authentication-setup.md) - P0 - done
+- [SP1-003 - UI authentication and protected routes](tickets/SP1-003-ui-authentication-and-protected-routes.md) - P0 - in_progress
 - [SP1-004 - Receipt repository ownership filtering](tickets/SP1-004-receipt-repository-ownership-filtering.md) - P0 - todo
 - [SP1-005 - Station repository ownership filtering](tickets/SP1-005-station-repository-ownership-filtering.md) - P0 - todo
 - [SP1-006 - Authorization voters/policies](tickets/SP1-006-authorization-voters-policies.md) - P1 - todo

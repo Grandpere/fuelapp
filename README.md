@@ -18,5 +18,25 @@ docker compose -f resources/docker/compose.yml --env-file resources/docker/.env 
 ## Docker env
 The Compose env file lives at `resources/docker/.env` (example at `resources/docker/.env.example`).
 
+## Local auth
+- Create a local user:
+```bash
+make user-create EMAIL=you@example.com PASSWORD='StrongPassword'
+```
+- UI login page: `http://localhost:${APP_PORT:-8081}/ui/login`
+
+## API auth (JWT)
+- Get token:
+```bash
+curl -s -X POST "http://localhost:${APP_PORT:-8081}/api/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"StrongPassword"}'
+```
+- Use token:
+```bash
+curl -s "http://localhost:${APP_PORT:-8081}/api/receipts" \
+  -H "Authorization: Bearer <token>"
+```
+
 ## Prod (future)
 This project currently targets a dev-first Docker setup. A dedicated prod profile can be added later if needed.

@@ -71,6 +71,20 @@ final readonly class DoctrineStationRepository implements StationRepository
         return $entity instanceof StationEntity ? $this->mapEntityToDomain($entity) : null;
     }
 
+    public function getForSystem(string $id): ?Station
+    {
+        if (!Uuid::isValid($id)) {
+            return null;
+        }
+
+        $entity = $this->em->find(StationEntity::class, $id);
+        if (!$entity instanceof StationEntity) {
+            return null;
+        }
+
+        return $this->mapEntityToDomain($entity);
+    }
+
     public function delete(string $id): void
     {
         if (!Uuid::isValid($id)) {

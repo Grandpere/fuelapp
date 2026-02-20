@@ -117,6 +117,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: call `Security::login($user, LoginFormAuthenticator::class, 'main')`.
 - Prevention: for programmatic UI login, always pass both authenticator class and firewall name explicitly.
 
+## 2026-02-20 - Worker access must bypass user-scoped repository reads
+- Symptom: async worker could not load station entities for background processing.
+- Root cause: `StationRepository::get()` enforces current-user ownership scope, but Messenger workers have no authenticated user context.
+- Fix: add explicit system-level read method (`getForSystem`) for internal jobs and use it in geocoding handler.
+- Prevention: for background jobs, always use explicit internal repository methods rather than user-scoped read APIs.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -28,6 +28,8 @@ use App\Station\Domain\ValueObject\StationId;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class CreateReceiptWithStationHandlerTest extends TestCase
 {
@@ -47,7 +49,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         $receiptRepo = new InMemoryReceiptRepository();
 
         $receiptHandler = new CreateReceiptHandler($receiptRepo);
-        $stationHandler = new CreateStationHandler($stationRepo);
+        $stationHandler = new CreateStationHandler($stationRepo, new NullMessageBus());
 
         $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler);
 
@@ -74,7 +76,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         $receiptRepo = new InMemoryReceiptRepository();
 
         $receiptHandler = new CreateReceiptHandler($receiptRepo);
-        $stationHandler = new CreateStationHandler($stationRepo);
+        $stationHandler = new CreateStationHandler($stationRepo, new NullMessageBus());
 
         $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler);
 
@@ -156,6 +158,11 @@ final class InMemoryStationRepository implements StationRepository
     public function get(string $id): ?Station
     {
         return $this->station && $this->station->id()->toString() === $id ? $this->station : null;
+    }
+
+    public function getForSystem(string $id): ?Station
+    {
+        return $this->get($id);
     }
 
     public function delete(string $id): void
@@ -333,11 +340,19 @@ final readonly class FailingCreateStationHandler extends CreateStationHandler
 {
     public function __construct(StationRepository $repository)
     {
-        parent::__construct($repository);
+        parent::__construct($repository, new NullMessageBus());
     }
 
     public function __invoke(CreateStationCommand $command): Station
     {
         throw new RuntimeException('Unique constraint violation');
+    }
+}
+
+final class NullMessageBus implements MessageBusInterface
+{
+    public function dispatch(object $message, array $stamps = []): Envelope
+    {
+        return new Envelope($message, $stamps);
     }
 }

@@ -50,6 +50,7 @@ Project collaboration rules for coding agents.
 - If rename/replace is needed, update/move existing path instead of parallel duplicates.
 - Do not revert unrelated user changes.
 - Avoid destructive git commands (`reset --hard`, etc.) unless explicitly requested.
+- `config/reference.php` may be auto-updated by Symfony tooling; include it in commits by default without blocking for confirmation.
 
 ## 8) Quality Gate (Before PR)
 Run at least:

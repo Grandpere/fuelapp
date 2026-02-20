@@ -42,5 +42,9 @@ curl -s "http://localhost:${APP_PORT:-8081}/api/receipts" \
   -H "Authorization: Bearer <token>"
 ```
 
+## Security runbook
+- Auth/ops documentation and local/dev/prod checklist:
+- `docs/security/auth-and-ops.md`
+
 ## Prod (future)
 This project currently targets a dev-first Docker setup. A dedicated prod profile can be added later if needed.

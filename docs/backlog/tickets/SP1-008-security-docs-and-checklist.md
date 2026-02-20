@@ -18,4 +18,12 @@ Security setup needs operational clarity.
 - SP1-002, SP1-003.
 
 ## Status
-- todo
+- done
+
+## Delivered
+- Security runbook added:
+- auth strategy (UI session + API JWT),
+- authorization perimeter and ownership model,
+- sensitive variables and rotation points,
+- local/dev/prod operational checklists.
+- README updated with runbook reference.

@@ -7,11 +7,11 @@
 - Put strong authentication/authorization foundations before async geocoding and import pipeline.
 
 ## In progress
-- `SP1-008` - Security docs and operational checklist.
+- `SP1-010` - Generic OIDC SSO integration layer.
 
 ## Next tickets (ordered)
-1. `SP1-008` - Security docs and operational checklist
-2. `SP1-010` - Generic OIDC SSO integration layer
+1. `SP1-010` - Generic OIDC SSO integration layer
+2. `SP1-011` - OIDC provider catalog and conventions
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -25,6 +25,7 @@
 - Ownership transition support delivered: command to claim historical unowned receipts.
 - Authorization layer delivered: voters for receipt/station view/delete policies.
 - Security tests baseline delivered (integration + functional) for auth/ownership boundaries.
+- Security runbook and local/dev/prod security checklist delivered.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

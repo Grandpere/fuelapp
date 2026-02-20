@@ -42,6 +42,11 @@ final readonly class DoctrineStationRepository implements StationRepository
         $entity->setCity($station->city());
         $entity->setLatitudeMicroDegrees($station->latitudeMicroDegrees());
         $entity->setLongitudeMicroDegrees($station->longitudeMicroDegrees());
+        $entity->setGeocodingStatus($station->geocodingStatus());
+        $entity->setGeocodingRequestedAt($station->geocodingRequestedAt());
+        $entity->setGeocodedAt($station->geocodedAt());
+        $entity->setGeocodingFailedAt($station->geocodingFailedAt());
+        $entity->setGeocodingLastError($station->geocodingLastError());
 
         $this->em->persist($entity);
         $this->em->flush();
@@ -215,6 +220,11 @@ final readonly class DoctrineStationRepository implements StationRepository
             $entity->getCity(),
             $entity->getLatitudeMicroDegrees(),
             $entity->getLongitudeMicroDegrees(),
+            $entity->getGeocodingStatus(),
+            $entity->getGeocodingRequestedAt(),
+            $entity->getGeocodedAt(),
+            $entity->getGeocodingFailedAt(),
+            $entity->getGeocodingLastError(),
         );
     }
 }

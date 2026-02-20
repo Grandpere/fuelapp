@@ -7,11 +7,11 @@
 - Put strong authentication/authorization foundations before async geocoding and import pipeline.
 
 ## In progress
-- `SP2-001` - Geocoding contract and statuses.
+- `SP2-002` - Messenger job geocoding.
 
 ## Next tickets (ordered)
-1. `SP2-001` - Geocoding contract and statuses
-2. `SP2-002` - Messenger job geocoding
+1. `SP2-002` - Messenger job geocoding
+2. `SP2-003` - Nominatim provider adapter with rate-limit compliance
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

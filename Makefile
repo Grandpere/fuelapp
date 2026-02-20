@@ -72,6 +72,10 @@ composer-autoload: ## Rebuild composer autoload files
 cache-clear: ## Clear Symfony cache (dev)
 	$(DC_EXEC) php bin/console cache:clear
 
+.PHONY: user-create
+user-create: ## Create local user (EMAIL=... PASSWORD=... [ADMIN=1])
+	$(DC_EXEC) php bin/console app:user:create "$(EMAIL)" "$(PASSWORD)" $(if $(ADMIN),--admin)
+
 ##
 ## Database
 ##---------------------------------------------------------------------------

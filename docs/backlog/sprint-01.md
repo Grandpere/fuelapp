@@ -12,6 +12,6 @@ Secure API/UI and isolate data per user.
 - [SP1-006 - Authorization voters/policies](tickets/SP1-006-authorization-voters-policies.md) - P1 - todo
 - [SP1-007 - Security tests (unit + integration + functional)](tickets/SP1-007-security-tests.md) - P0 - todo
 - [SP1-008 - Security docs and operational checklist](tickets/SP1-008-security-docs-and-checklist.md) - P1 - todo
-- [SP1-009 - Local authentication baseline (email/password)](tickets/SP1-009-local-authentication-baseline.md) - P0 - todo
+- [SP1-009 - Local authentication baseline (email/password)](tickets/SP1-009-local-authentication-baseline.md) - P0 - done
 - [SP1-010 - Generic OIDC SSO integration layer (Auth0/Google/Microsoft)](tickets/SP1-010-generic-oidc-sso-layer.md) - P1 - todo
 - [SP1-011 - OIDC provider catalog and conventions](tickets/SP1-011-oidc-provider-catalog-and-conventions.md) - P2 - todo

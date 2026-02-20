@@ -69,6 +69,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: remove `stations.owner_id`; keep ownership on receipts only.
 - Prevention: validate ownership semantics against domain language before migration design.
 
+## 2026-02-20 - Symfony security entry point type mismatch
+- Symptom: runtime `TypeError` on firewall exception listener (`entry_point` received authenticator with wrong interface).
+- Root cause: custom authenticator used as `entry_point` without implementing `AuthenticationEntryPointInterface`.
+- Fix: implement `AuthenticationEntryPointInterface` and `start()` in login authenticator.
+- Prevention: when declaring `entry_point`, ensure service explicitly implements the expected interface.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

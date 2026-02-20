@@ -5,7 +5,10 @@ security:
 
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        users_in_memory: { memory: null }
+        app_user_provider:
+            entity:
+                class: App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity
+                property: email
 
     firewalls:
         dev:
@@ -14,7 +17,13 @@ security:
             security: false
         main:
             lazy: true
-            provider: users_in_memory
+            provider: app_user_provider
+            custom_authenticators:
+                - App\Security\LoginFormAuthenticator
+            entry_point: App\Security\LoginFormAuthenticator
+            logout:
+                path: ui_logout
+                target: ui_login
 
             # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -24,8 +33,8 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/ui/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/ui, roles: ROLE_USER }
 
 when@test:
     security:

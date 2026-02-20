@@ -21,4 +21,4 @@ Sprint 1 needs secure auth foundations without external provider dependency.
 - SP1-001.
 
 ## Status
-- todo
+- done

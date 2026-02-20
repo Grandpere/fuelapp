@@ -29,6 +29,12 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Station/Infrastructure/Persistence/Doctrine/Entity'
                 prefix: 'App\Station\Infrastructure\Persistence\Doctrine\Entity'
                 alias: Station
+            User:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/User/Infrastructure/Persistence/Doctrine/Entity'
+                prefix: 'App\User\Infrastructure\Persistence\Doctrine\Entity'
+                alias: User
         controller_resolver:
             auto_mapping: false
 

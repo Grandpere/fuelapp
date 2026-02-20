@@ -7,12 +7,12 @@
 - Put strong authentication/authorization foundations before async geocoding and import pipeline.
 
 ## In progress
-- `SP1-001` - Ownership baseline finalization (constraints + migration strategy).
+- `SP1-006` - Authorization voters/policies (next hardening step).
 
 ## Next tickets (ordered)
-1. `SP1-001` - Finalize user/ownership baseline constraints
-2. `SP1-006` - Authorization voters/policies
-3. `SP1-007` - Security tests (integration/functional)
+1. `SP1-006` - Authorization voters/policies
+2. `SP1-007` - Security tests (integration/functional)
+3. `SP1-008` - Security docs and operational checklist
 4. `SP1-010` - Generic OIDC SSO integration layer
 
 ## Notes
@@ -24,6 +24,7 @@
 - UI protection baseline delivered: `/ui/*` secured, `/ui/login` public, CSRF-protected logout.
 - Receipt repository scoping delivered: user only sees/mutates owned receipts.
 - Station repository reads are scoped to stations linked to current user's receipts.
+- Ownership transition support delivered: command to claim historical unowned receipts.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

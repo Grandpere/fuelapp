@@ -93,6 +93,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: scope station repository reads through linked receipts owned by current user.
 - Prevention: when ownership is indirect, enforce access perimeter via relationship queries.
 
+## 2026-02-20 - Historical unowned receipts after ownership rollout
+- Symptom: older receipts become invisible once owner filtering is enabled.
+- Root cause: legacy rows have `owner_id = NULL`.
+- Fix: provide `app:receipts:claim-unowned <email>` operational command.
+- Prevention: include backfill/claim path when introducing ownership constraints.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

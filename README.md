@@ -23,6 +23,10 @@ The Compose env file lives at `resources/docker/.env` (example at `resources/doc
 ```bash
 make user-create EMAIL=you@example.com PASSWORD='StrongPassword'
 ```
+- (Optional) claim historical receipts created before ownership was enforced:
+```bash
+make receipts-claim-unowned EMAIL=you@example.com
+```
 - UI login page: `http://localhost:${APP_PORT:-8081}/ui/login`
 
 ## API auth (JWT)

@@ -76,6 +76,10 @@ cache-clear: ## Clear Symfony cache (dev)
 user-create: ## Create local user (EMAIL=... PASSWORD=... [ADMIN=1])
 	$(DC_EXEC) php bin/console app:user:create "$(EMAIL)" "$(PASSWORD)" $(if $(ADMIN),--admin)
 
+.PHONY: receipts-claim-unowned
+receipts-claim-unowned: ## Assign unowned receipts to a user (EMAIL=...)
+	$(DC_EXEC) php bin/console app:receipts:claim-unowned "$(EMAIL)"
+
 ##
 ## Database
 ##---------------------------------------------------------------------------

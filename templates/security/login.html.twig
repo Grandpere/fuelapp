@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .login-shell {
+            max-width: 460px;
+            margin: 10vh auto 0;
+        }
+
+        .login-card {
+            padding: 1.2rem;
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .login-card h1 {
+            margin: 0;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.4rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell login-shell">
+        <section class="card login-card">
+            <h1>Sign in</h1>
+            <p class="muted" style="margin: 0;">Use your FuelApp account credentials.</p>
+
+            {% if error %}
+                <div class="flash" style="border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                    Invalid credentials.
+                </div>
+            {% endif %}
+
+            <form method="post" style="display: grid; gap: 0.75rem;">
+                <label class="label">
+                    Email
+                    <input class="input" type="email" name="email" value="{{ lastUsername }}" autocomplete="email" required autofocus>
+                </label>
+
+                <label class="label">
+                    Password
+                    <input class="input" type="password" name="password" autocomplete="current-password" required>
+                </label>
+
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                <button class="btn btn-primary" type="submit">Sign in</button>
+            </form>
+
+            {% if oidcProviders is not empty %}
+                <div class="muted" style="display: flex; align-items: center; gap: .7rem;">
+                    <span style="height:1px;background:rgba(255,255,255,.2);flex:1;"></span>
+                    <span>or continue with</span>
+                    <span style="height:1px;background:rgba(255,255,255,.2);flex:1;"></span>
+                </div>
+                <div style="display:grid; gap:.5rem;">
+                    {% for provider in oidcProviders %}
+                        <a class="btn btn-secondary" href="{{ path('ui_oidc_start', {provider: provider.name}) }}">
+                            Continue with {{ provider.label }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
+    </main>
+{% endblock %}

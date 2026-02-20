@@ -15,9 +15,11 @@ namespace App\Station\UI\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
+use App\Security\Voter\StationVoter;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\Station;
 use App\Station\UI\Api\Resource\Output\StationOutput;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -25,8 +27,10 @@ use Symfony\Component\Uid\Uuid;
  */
 final readonly class StationStateProvider implements ProviderInterface
 {
-    public function __construct(private StationRepository $repository)
-    {
+    public function __construct(
+        private StationRepository $repository,
+        private AuthorizationCheckerInterface $authorizationChecker,
+    ) {
     }
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -34,6 +38,10 @@ final readonly class StationStateProvider implements ProviderInterface
         $id = $uriVariables['id'] ?? null;
         if (is_string($id)) {
             if (!Uuid::isValid($id)) {
+                return null;
+            }
+
+            if (!$this->authorizationChecker->isGranted(StationVoter::VIEW, $id)) {
                 return null;
             }
 

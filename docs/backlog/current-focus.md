@@ -7,13 +7,12 @@
 - Put strong authentication/authorization foundations before async geocoding and import pipeline.
 
 ## In progress
-- `SP1-001` - User model and ownership columns (baseline committed, final constraints pending).
-- `SP1-001` - Ownership constraints alignment and repository scoping (next).
+- `SP1-001` - Ownership baseline finalization (constraints + migration strategy).
 
 ## Next tickets (ordered)
 1. `SP1-001` - Finalize user/ownership baseline constraints
-2. `SP1-004` - Receipt repository ownership filtering
-3. `SP1-005` - Station repository ownership filtering
+2. `SP1-006` - Authorization voters/policies
+3. `SP1-007` - Security tests (integration/functional)
 4. `SP1-010` - Generic OIDC SSO integration layer
 
 ## Notes
@@ -23,6 +22,8 @@
 - API auth strategy for Sprint 1: JWT bearer on `/api` with dedicated login endpoint.
 - API JWT baseline delivered: `/api/login` + Bearer authenticator on `/api/*`.
 - UI protection baseline delivered: `/ui/*` secured, `/ui/login` public, CSRF-protected logout.
+- Receipt repository scoping delivered: user only sees/mutates owned receipts.
+- Station repository reads are scoped to stations linked to current user's receipts.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

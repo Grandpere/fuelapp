@@ -22,24 +22,33 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Domain\ValueObject\StationId;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
+use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
+use RuntimeException;
 use Stringable;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use UnexpectedValueException;
 
 final readonly class DoctrineReceiptRepository implements ReceiptRepository
 {
-    public function __construct(private EntityManagerInterface $em)
+    public function __construct(
+        private EntityManagerInterface $em,
+        private TokenStorageInterface $tokenStorage,
+    )
     {
     }
 
     public function save(Receipt $receipt): void
     {
-        $entity = $this->em->find(ReceiptEntity::class, $receipt->id()->toString()) ?? new ReceiptEntity();
+        $owner = $this->requireCurrentUser();
+        $entity = $this->findOwnedEntityById($receipt->id()->toString()) ?? new ReceiptEntity();
         $entity->setId(Uuid::fromString($receipt->id()->toString()));
+        $ownerRef = $this->em->getReference(UserEntity::class, $owner->getId()->toRfc4122());
+        $entity->setOwner($ownerRef);
         $entity->setIssuedAt($receipt->issuedAt());
         $entity->setTotalCents($receipt->totalCents());
         $entity->setVatAmountCents($receipt->vatAmountCents());
@@ -68,7 +77,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
     public function get(string $id): ?Receipt
     {
-        $entity = $this->em->find(ReceiptEntity::class, $id);
+        $entity = $this->findOwnedEntityById($id);
         if (null === $entity) {
             return null;
         }
@@ -78,7 +87,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
     public function delete(string $id): void
     {
-        $entity = $this->em->find(ReceiptEntity::class, $id);
+        $entity = $this->findOwnedEntityById($id);
         if (null === $entity) {
             return;
         }
@@ -129,12 +138,14 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
     public function countAll(): int
     {
-        return (int) $this->em
+        $qb = $this->em
             ->createQueryBuilder()
             ->select('COUNT(r.id)')
-            ->from(ReceiptEntity::class, 'r')
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->from(ReceiptEntity::class, 'r');
+
+        $this->applyOwnerFilter($qb);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
     public function paginateFiltered(
@@ -212,6 +223,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->from(ReceiptEntity::class, 'r')
             ->leftJoin('r.lines', 'rl');
 
+        $this->applyOwnerFilter($qb);
         $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
         $this->applyLineFilters(
             $qb,
@@ -266,6 +278,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->setFirstResult($offset)
             ->setMaxResults($safePerPage);
 
+        $this->applyOwnerFilter($rows);
         $this->applyFilters($rows, $stationId, $issuedFrom, $issuedTo);
         $this->applyLineFilters(
             $rows,
@@ -408,12 +421,16 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
     private function baseListQuery(): QueryBuilder
     {
-        return $this->em
+        $qb = $this->em
             ->createQueryBuilder()
             ->select('r')
             ->from(ReceiptEntity::class, 'r')
             ->orderBy('r.issuedAt', 'DESC')
             ->addOrderBy('r.id', 'DESC');
+
+        $this->applyOwnerFilter($qb);
+
+        return $qb;
     }
 
     private function filteredQuery(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): QueryBuilder
@@ -424,6 +441,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->from(ReceiptEntity::class, 'r')
             ->leftJoin('r.lines', 'rl');
 
+        $this->applyOwnerFilter($qb);
         $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
 
         return $qb;
@@ -514,5 +532,59 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $lines,
             $stationId,
         );
+    }
+
+    private function requireCurrentUser(): UserEntity
+    {
+        $user = $this->currentUser();
+        if (null === $user) {
+            throw new RuntimeException('Authenticated user is required to persist receipts.');
+        }
+
+        return $user;
+    }
+
+    private function currentUser(): ?UserEntity
+    {
+        $token = $this->tokenStorage->getToken();
+        if (null === $token) {
+            return null;
+        }
+
+        $user = $token->getUser();
+
+        return $user instanceof UserEntity ? $user : null;
+    }
+
+    private function applyOwnerFilter(QueryBuilder $qb): void
+    {
+        $user = $this->currentUser();
+        if (null === $user) {
+            $qb->andWhere('1 = 0');
+
+            return;
+        }
+
+        $qb->andWhere('IDENTITY(r.owner) = :currentOwnerId')
+            ->setParameter('currentOwnerId', $user->getId()->toRfc4122());
+    }
+
+    private function findOwnedEntityById(string $id): ?ReceiptEntity
+    {
+        if (!Uuid::isValid($id)) {
+            return null;
+        }
+
+        $qb = $this->em
+            ->createQueryBuilder()
+            ->select('r')
+            ->from(ReceiptEntity::class, 'r')
+            ->andWhere('r.id = :id')
+            ->setParameter('id', $id);
+        $this->applyOwnerFilter($qb);
+
+        $entity = $qb->getQuery()->getOneOrNullResult();
+
+        return $entity instanceof ReceiptEntity ? $entity : null;
     }
 }

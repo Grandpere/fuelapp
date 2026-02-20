@@ -20,4 +20,4 @@ Repositories currently read/write without ownership guard.
 - SP1-001, SP1-002, SP1-003.
 
 ## Status
-- todo
+- done

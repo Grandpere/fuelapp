@@ -87,6 +87,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enable firewall logout CSRF and use POST logout form with token.
 - Prevention: for every state-changing UI endpoint, enforce method + CSRF by default.
 
+## 2026-02-20 - Station visibility without station ownership
+- Symptom: need user isolation while stations remain globally deduplicated.
+- Root cause: domain model states users own receipts, not station entities.
+- Fix: scope station repository reads through linked receipts owned by current user.
+- Prevention: when ownership is indirect, enforce access perimeter via relationship queries.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

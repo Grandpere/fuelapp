@@ -17,6 +17,7 @@ Project collaboration rules for coding agents.
 - Plan-first default for non-trivial work (roughly 3+ steps).
 - Re-plan if implementation diverges or blockers appear.
 - For complex work, write short explicit specs before coding.
+- Tests are part of delivery, not optional: for each functional change, add or update the most relevant tests (`Unit`, `Integration`, `Functional`).
 - Verification before done:
   - validate behavior,
   - review diff quality,
@@ -56,6 +57,9 @@ Run at least:
 - `make phpunit-unit`
 - `make phpunit-integration`
 - `make php-cs-fixer-check`
+
+And when web/security/API behavior changed:
+- run `make phpunit-functional` (or equivalent targeted functional suite).
 
 If JS packages are added to importmap:
 - run `php bin/console importmap:install` in app container.

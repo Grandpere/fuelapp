@@ -7,7 +7,10 @@ Reusable, update-friendly checklists for delivery quality.
 - [ ] Confirm scope and out-of-scope from ticket file.
 - [ ] Identify impacted layers (`Domain/Application/Infrastructure/UI`).
 - [ ] Implement smallest viable slice.
-- [ ] Add/update tests for changed behavior.
+- [ ] Add/update tests for changed behavior (mandatory):
+- [ ] `Unit` for domain/application rules.
+- [ ] `Integration` for persistence/repository/infrastructure behavior.
+- [ ] `Functional` for HTTP/security/UI/API flows when endpoints/pages are touched.
 - [ ] Run quality gates locally.
 - [ ] Update docs if behavior/contracts changed.
 

@@ -81,6 +81,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: implement `/api/login` and Bearer token authenticator for `/api/*`.
 - Prevention: align interim security design with expected client architecture early.
 
+## 2026-02-20 - UI logout hardened with CSRF
+- Symptom: logout endpoint existed without explicit CSRF hardening requirement.
+- Root cause: default logout setup focused on flow completion, not explicit hardening.
+- Fix: enable firewall logout CSRF and use POST logout form with token.
+- Prevention: for every state-changing UI endpoint, enforce method + CSRF by default.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

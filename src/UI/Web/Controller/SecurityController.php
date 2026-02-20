@@ -33,7 +33,7 @@ final class SecurityController extends AbstractController
         ]);
     }
 
-    #[Route('/ui/logout', name: 'ui_logout', methods: ['GET'])]
+    #[Route('/ui/logout', name: 'ui_logout', methods: ['POST'])]
     public function logout(): never
     {
         throw new \LogicException('This method is intercepted by the firewall logout.');

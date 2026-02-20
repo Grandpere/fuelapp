@@ -58,6 +58,31 @@
                     padding: 1.25rem 1rem 2.5rem;
                 }
 
+                .topbar {
+                    max-width: 1360px;
+                    margin: 0 auto;
+                    padding: 0.75rem 1rem 0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 0.8rem;
+                }
+
+                .topbar-brand {
+                    font-family: "Space Grotesk", sans-serif;
+                    font-size: 1rem;
+                    letter-spacing: 0.03em;
+                    color: #f7c866;
+                }
+
+                .topbar-right {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    color: var(--text-soft);
+                    font-size: 0.82rem;
+                }
+
                 .page-title {
                     margin: 0;
                     font-family: "Space Grotesk", sans-serif;
@@ -294,6 +319,18 @@
         {% endblock %}
     </head>
     <body>
+        {% if app.user %}
+            <header class="topbar">
+                <div class="topbar-brand">FuelApp</div>
+                <div class="topbar-right">
+                    <span>{{ app.user.userIdentifier }}</span>
+                    <form method="post" action="{{ path('ui_logout') }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                        <button class="btn btn-secondary" type="submit" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">Sign out</button>
+                    </form>
+                </div>
+            </header>
+        {% endif %}
         {% block body %}{% endblock %}
     </body>
 </html>

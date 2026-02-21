@@ -52,11 +52,11 @@
                 </label>
                 <label class="label">
                     Created from
-                    <input class="input" type="date" name="createdFrom" value="{{ filters.createdFrom ?? '' }}">
+                    <input class="input" type="text" name="createdFrom" value="{{ filters.createdFrom ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
                 <label class="label">
                     Created to
-                    <input class="input" type="date" name="createdTo" value="{{ filters.createdTo ?? '' }}">
+                    <input class="input" type="text" name="createdTo" value="{{ filters.createdTo ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
             </div>
             <div style="display: flex; gap: .5rem; flex-wrap: wrap;">

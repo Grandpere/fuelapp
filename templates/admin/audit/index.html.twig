@@ -36,11 +36,11 @@
                 </label>
                 <label class="label">
                     From date
-                    <input class="input" type="date" name="from" value="{{ filters.from ?? '' }}">
+                    <input class="input" type="text" name="from" value="{{ filters.from ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
                 <label class="label">
                     To date
-                    <input class="input" type="date" name="to" value="{{ filters.to ?? '' }}">
+                    <input class="input" type="text" name="to" value="{{ filters.to ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
             </div>
             <div style="display: flex; gap: .5rem; flex-wrap: wrap;">

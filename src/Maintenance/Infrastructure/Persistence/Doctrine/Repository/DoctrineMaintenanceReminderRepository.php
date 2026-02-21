@@ -91,6 +91,26 @@ final readonly class DoctrineMaintenanceReminderRepository implements Maintenanc
         }
     }
 
+    public function allForSystem(): iterable
+    {
+        $entities = $this->em->getRepository(MaintenanceReminderEntity::class)->createQueryBuilder('r')
+            ->orderBy('r.createdAt', 'DESC')
+            ->addOrderBy('r.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
+        foreach ($entities as $entity) {
+            if (!$entity instanceof MaintenanceReminderEntity) {
+                continue;
+            }
+
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
     private function mapEntityToDomain(MaintenanceReminderEntity $entity): MaintenanceReminder
     {
         return MaintenanceReminder::reconstitute(

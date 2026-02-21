@@ -1,0 +1,85 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Maintenance Events{% endblock %}
+
+{% set admin_section = 'maintenance_events' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Maintenance Events</h2>
+        <p class="muted">Cross-owner timeline of maintenance operations.</p>
+
+        <form method="get" action="{{ path('ui_admin_maintenance_event_list') }}" style="display:grid; gap:0.8rem; margin-top:1rem;">
+            <div class="form-grid-2">
+                <label class="label">
+                    Owner ID
+                    <input class="input" type="text" name="owner_id" value="{{ filters.ownerId }}" placeholder="UUID v7">
+                </label>
+                <label class="label">
+                    Vehicle ID
+                    <input class="input" type="text" name="vehicle_id" value="{{ filters.vehicleId }}" placeholder="UUID v7">
+                </label>
+                <label class="label">
+                    Event type
+                    <select class="select" name="event_type">
+                        <option value="">All</option>
+                        {% for eventType in eventTypeOptions %}
+                            <option value="{{ eventType }}" {% if filters.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
+                    Occurred from
+                    <input class="input" type="text" name="occurred_from" data-datepicker="date" value="{{ filters.occurredFrom }}" autocomplete="off">
+                </label>
+                <label class="label">
+                    Occurred to
+                    <input class="input" type="text" name="occurred_to" data-datepicker="date" value="{{ filters.occurredTo }}" autocomplete="off">
+                </label>
+            </div>
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="submit">Apply</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Reset</a>
+            </div>
+        </form>
+
+        <div class="table-wrap" style="margin-top: 1rem;">
+            <table class="app-table" style="min-width: 1040px;">
+                <thead>
+                <tr>
+                    <th>Occurred</th>
+                    <th>Type</th>
+                    <th>Owner ID</th>
+                    <th>Vehicle ID</th>
+                    <th>Cost</th>
+                    <th>Odometer</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for event in events %}
+                    <tr class="table-row">
+                        <td>{{ event.occurredAt|date('Y-m-d H:i') }}</td>
+                        <td><span class="pill pill-energy">{{ event.eventType.value }}</span></td>
+                        <td><code>{{ event.ownerId }}</code></td>
+                        <td><code>{{ event.vehicleId }}</code></td>
+                        <td>
+                            {% if event.totalCostCents is not null %}
+                                {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}
+                            {% else %}
+                                <span class="muted">n/a</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ event.odometerKilometers ?? 'n/a' }}</td>
+                        <td>{{ event.description ?? 'n/a' }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="muted">No maintenance events found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

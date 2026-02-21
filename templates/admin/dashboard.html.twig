@@ -19,6 +19,14 @@
                 <p class="admin-metric-value">{{ vehicleCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Maintenance Events</p>
+                <p class="admin-metric-value">{{ maintenanceEventCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Maintenance Reminders</p>
+                <p class="admin-metric-value">{{ maintenanceReminderCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
                 <p class="admin-metric-label">API Docs</p>
                 <p class="admin-metric-value" style="font-size: 1.3rem;">/api/docs</p>
             </article>
@@ -30,6 +38,8 @@
         <ul class="admin-inline-list">
             <li><a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Browse stations</a></li>
             <li><a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a></li>
+            <li><a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Browse maintenance events</a></li>
+            <li><a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_list') }}">Browse maintenance reminders</a></li>
             <li><a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}">Browse imports</a></li>
             <li><a class="btn btn-secondary" href="/api/docs">Open API docs</a></li>
         </ul>

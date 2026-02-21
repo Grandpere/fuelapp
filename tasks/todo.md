@@ -1,8 +1,8 @@
-# TODO - SP5-006 Maintenance UI timeline and planner
+# TODO - SP5-008 Maintenance admin back-office exposure
 
 ## Plan
-- [completed] Create maintenance web routes/controllers for dashboard + event/plan create/edit flows.
-- [completed] Build maintenance Twig pages (timeline, planner, event form, plan form) with responsive behavior.
-- [completed] Add maintenance UI functional test coverage for access and create/edit flows.
-- [completed] Run quality gates and fix static/style/test issues.
-- [completed] Update backlog/docs status for SP5-006 and prepare commit.
+- [completed] Add system-level maintenance repository reads required by admin queries.
+- [completed] Expose read-only admin maintenance API endpoints with filters.
+- [completed] Add admin UI pages for maintenance events/reminders with filters + navigation/dashboard links.
+- [completed] Extend functional admin test coverage for role boundary and admin visibility.
+- [completed] Run quality gates, update backlog/docs/memory, and commit SP5-008.

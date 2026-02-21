@@ -16,6 +16,11 @@ namespace App\Tests\Functional\Admin;
 use App\Admin\Infrastructure\Persistence\Doctrine\Entity\AdminAuditLogEntity;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Infrastructure\Persistence\Doctrine\Entity\ImportJobEntity;
+use App\Maintenance\Domain\Enum\MaintenanceEventType;
+use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderEntity;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderRuleEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
@@ -63,7 +68,7 @@ final class AdminBackofficeUiTest extends KernelTestCase
         }
         $this->passwordHasher = $passwordHasher;
 
-        $this->em->getConnection()->executeStatement('TRUNCATE TABLE admin_audit_logs, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
+        $this->em->getConnection()->executeStatement('TRUNCATE TABLE admin_audit_logs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, maintenance_planned_costs, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
     }
 
     public function testRoleUserCannotAccessAdminUiPagesWhenAuthenticated(): void
@@ -78,12 +83,16 @@ final class AdminBackofficeUiTest extends KernelTestCase
         $dashboardResponse = $this->request('GET', '/ui/admin', [], [], $sessionCookie);
         $stationsResponse = $this->request('GET', '/ui/admin/stations', [], [], $sessionCookie);
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
+        $maintenanceEventsResponse = $this->request('GET', '/ui/admin/maintenance/events', [], [], $sessionCookie);
+        $maintenanceRemindersResponse = $this->request('GET', '/ui/admin/maintenance/reminders', [], [], $sessionCookie);
         $importsResponse = $this->request('GET', '/ui/admin/imports', [], [], $sessionCookie);
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs', [], [], $sessionCookie);
 
         self::assertSame(Response::HTTP_FORBIDDEN, $dashboardResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $stationsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $vehiclesResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceEventsResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceRemindersResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $importsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $auditResponse->getStatusCode());
     }
@@ -130,6 +139,46 @@ final class AdminBackofficeUiTest extends KernelTestCase
         $job->setRetentionUntil(new DateTimeImmutable('2026-03-22 09:00:00'));
         $this->em->persist($job);
 
+        $maintenanceEvent = new MaintenanceEventEntity();
+        $maintenanceEvent->setId(Uuid::v7());
+        $maintenanceEvent->setOwner($owner);
+        $maintenanceEvent->setVehicle($vehicle);
+        $maintenanceEvent->setEventType(MaintenanceEventType::SERVICE);
+        $maintenanceEvent->setOccurredAt(new DateTimeImmutable('2026-02-22 08:30:00'));
+        $maintenanceEvent->setDescription('UI maintenance event');
+        $maintenanceEvent->setOdometerKilometers(120000);
+        $maintenanceEvent->setTotalCostCents(22000);
+        $maintenanceEvent->setCurrencyCode('EUR');
+        $maintenanceEvent->setCreatedAt(new DateTimeImmutable('2026-02-22 08:30:00'));
+        $maintenanceEvent->setUpdatedAt(new DateTimeImmutable('2026-02-22 08:30:00'));
+        $this->em->persist($maintenanceEvent);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('UI rule');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::DATE);
+        $rule->setEventType(MaintenanceEventType::SERVICE);
+        $rule->setIntervalDays(365);
+        $rule->setIntervalKilometers(null);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-02-22 08:40:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-02-22 08:40:00'));
+        $this->em->persist($rule);
+
+        $reminder = new MaintenanceReminderEntity();
+        $reminder->setId(Uuid::v7());
+        $reminder->setOwner($owner);
+        $reminder->setVehicle($vehicle);
+        $reminder->setRule($rule);
+        $reminder->setDedupKey(hash('sha256', 'ui-admin-maintenance-reminder'));
+        $reminder->setDueAtDate(new DateTimeImmutable('2026-02-25 00:00:00'));
+        $reminder->setDueAtOdometerKilometers(null);
+        $reminder->setDueByDate(true);
+        $reminder->setDueByOdometer(false);
+        $reminder->setCreatedAt(new DateTimeImmutable('2026-02-22 08:50:00'));
+        $this->em->persist($reminder);
+
         $audit = new AdminAuditLogEntity();
         $audit->setId(Uuid::v7());
         $audit->setActorId($admin->getId());
@@ -159,6 +208,16 @@ final class AdminBackofficeUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_OK, $vehiclesResponse->getStatusCode());
         self::assertStringContainsString('UI Vehicle', (string) $vehiclesResponse->getContent());
         self::assertStringContainsString('AA-123-UI', (string) $vehiclesResponse->getContent());
+
+        $maintenanceEventsResponse = $this->request('GET', '/ui/admin/maintenance/events', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $maintenanceEventsResponse->getStatusCode());
+        self::assertStringContainsString('Maintenance Events', (string) $maintenanceEventsResponse->getContent());
+        self::assertStringContainsString('UI maintenance event', (string) $maintenanceEventsResponse->getContent());
+
+        $maintenanceRemindersResponse = $this->request('GET', '/ui/admin/maintenance/reminders', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $maintenanceRemindersResponse->getStatusCode());
+        self::assertStringContainsString('Maintenance Reminders', (string) $maintenanceRemindersResponse->getContent());
+        self::assertStringContainsString('UI rule', (string) $maintenanceRemindersResponse->getContent());
 
         $importsResponse = $this->request('GET', '/ui/admin/imports', ['status' => 'needs_review'], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $importsResponse->getStatusCode());

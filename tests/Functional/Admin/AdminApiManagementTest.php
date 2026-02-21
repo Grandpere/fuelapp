@@ -13,7 +13,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Admin;
 
+use App\Maintenance\Domain\Enum\MaintenanceEventType;
+use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderEntity;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderRuleEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -57,7 +64,7 @@ final class AdminApiManagementTest extends KernelTestCase
         }
         $this->passwordHasher = $passwordHasher;
 
-        $this->em->getConnection()->executeStatement('TRUNCATE TABLE vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
+        $this->em->getConnection()->executeStatement('TRUNCATE TABLE maintenance_reminders, maintenance_reminder_rules, maintenance_events, maintenance_planned_costs, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
     }
 
     public function testRoleUserCannotAccessAdminCollections(): void
@@ -70,9 +77,13 @@ final class AdminApiManagementTest extends KernelTestCase
         $token = $this->apiLogin($email, $password);
         $stationsResponse = $this->request('GET', '/api/admin/stations', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $vehiclesResponse = $this->request('GET', '/api/admin/vehicles', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
+        $maintenanceEventsResponse = $this->request('GET', '/api/admin/maintenance/events', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
+        $maintenanceRemindersResponse = $this->request('GET', '/api/admin/maintenance/reminders', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
 
         self::assertSame(Response::HTTP_FORBIDDEN, $stationsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $vehiclesResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceEventsResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceRemindersResponse->getStatusCode());
     }
 
     public function testAdminCanManageVehicleCrudAndSearch(): void
@@ -188,6 +199,90 @@ final class AdminApiManagementTest extends KernelTestCase
             ], JSON_THROW_ON_ERROR),
         );
         self::assertSame(Response::HTTP_OK, $patchResponse->getStatusCode());
+    }
+
+    public function testAdminCanQueryMaintenanceEventsAndRemindersWithFilters(): void
+    {
+        $token = $this->createAdminAndLogin('admin.maintenance@example.com');
+        $owner = $this->createUser('maintenance.owner@example.com', 'test1234', ['ROLE_USER']);
+        $this->em->flush();
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($owner);
+        $vehicle->setName('Maintenance Car');
+        $vehicle->setPlateNumber('MM-001-AA');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $event = new MaintenanceEventEntity();
+        $event->setId(Uuid::v7());
+        $event->setOwner($owner);
+        $event->setVehicle($vehicle);
+        $event->setEventType(MaintenanceEventType::SERVICE);
+        $event->setOccurredAt(new DateTimeImmutable('2026-03-02 09:30:00'));
+        $event->setDescription('Admin seeded maintenance event');
+        $event->setOdometerKilometers(124000);
+        $event->setTotalCostCents(18990);
+        $event->setCurrencyCode('EUR');
+        $event->setCreatedAt(new DateTimeImmutable('2026-03-02 09:30:00'));
+        $event->setUpdatedAt(new DateTimeImmutable('2026-03-02 09:30:00'));
+        $this->em->persist($event);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('Oil change rule');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::DATE);
+        $rule->setEventType(MaintenanceEventType::SERVICE);
+        $rule->setIntervalDays(365);
+        $rule->setIntervalKilometers(null);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-03-02 10:00:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-03-02 10:00:00'));
+        $this->em->persist($rule);
+
+        $reminder = new MaintenanceReminderEntity();
+        $reminder->setId(Uuid::v7());
+        $reminder->setOwner($owner);
+        $reminder->setVehicle($vehicle);
+        $reminder->setRule($rule);
+        $reminder->setDedupKey(hash('sha256', 'admin-maintenance-reminder'));
+        $reminder->setDueAtDate(new DateTimeImmutable('2026-03-05 00:00:00'));
+        $reminder->setDueAtOdometerKilometers(null);
+        $reminder->setDueByDate(true);
+        $reminder->setDueByOdometer(false);
+        $reminder->setCreatedAt(new DateTimeImmutable('2026-03-03 08:45:00'));
+        $this->em->persist($reminder);
+        $this->em->flush();
+
+        $ownerId = $owner->getId()->toRfc4122();
+        $vehicleId = $vehicle->getId()->toRfc4122();
+
+        $eventsResponse = $this->request(
+            'GET',
+            '/api/admin/maintenance/events?ownerId='.$ownerId.'&vehicleId='.$vehicleId.'&eventType=service',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $eventsResponse->getStatusCode());
+        $decodedEvents = json_decode((string) $eventsResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        $events = $this->extractCollectionItems($decodedEvents);
+        self::assertNotEmpty($events);
+        self::assertSame('service', $events[0]['eventType'] ?? null);
+        self::assertSame($ownerId, $events[0]['ownerId'] ?? null);
+
+        $remindersResponse = $this->request(
+            'GET',
+            '/api/admin/maintenance/reminders?ownerId='.$ownerId.'&vehicleId='.$vehicleId.'&dueBy=date&dueFrom=2026-03-01&dueTo=2026-03-31',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $remindersResponse->getStatusCode());
+        $decodedReminders = json_decode((string) $remindersResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        $reminders = $this->extractCollectionItems($decodedReminders);
+        self::assertNotEmpty($reminders);
+        self::assertSame($ownerId, $reminders[0]['ownerId'] ?? null);
+        self::assertTrue((bool) ($reminders[0]['dueByDate'] ?? false));
     }
 
     /** @param array<string, string> $server */

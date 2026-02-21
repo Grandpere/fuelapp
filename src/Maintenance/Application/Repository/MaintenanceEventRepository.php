@@ -30,5 +30,8 @@ interface MaintenanceEventRepository
     /** @return iterable<MaintenanceEvent> */
     public function allForOwnerAndVehicle(string $ownerId, string $vehicleId): iterable;
 
+    /** @return iterable<MaintenanceEvent> */
+    public function allForSystem(): iterable;
+
     public function sumActualCostsForOwner(?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to, string $ownerId): int;
 }

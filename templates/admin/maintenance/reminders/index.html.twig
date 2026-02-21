@@ -1,0 +1,82 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Maintenance Reminders{% endblock %}
+
+{% set admin_section = 'maintenance_reminders' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Maintenance Reminders</h2>
+        <p class="muted">Triggered reminder states produced by scheduler evaluation.</p>
+
+        <form method="get" action="{{ path('ui_admin_maintenance_reminder_list') }}" style="display:grid; gap:0.8rem; margin-top:1rem;">
+            <div class="form-grid-2">
+                <label class="label">
+                    Owner ID
+                    <input class="input" type="text" name="owner_id" value="{{ filters.ownerId }}" placeholder="UUID v7">
+                </label>
+                <label class="label">
+                    Vehicle ID
+                    <input class="input" type="text" name="vehicle_id" value="{{ filters.vehicleId }}" placeholder="UUID v7">
+                </label>
+                <label class="label">
+                    Due by
+                    <select class="select" name="due_by">
+                        <option value="">All</option>
+                        <option value="date" {% if filters.dueBy == 'date' %}selected{% endif %}>Date</option>
+                        <option value="odometer" {% if filters.dueBy == 'odometer' %}selected{% endif %}>Odometer</option>
+                        <option value="both" {% if filters.dueBy == 'both' %}selected{% endif %}>Both</option>
+                    </select>
+                </label>
+                <label class="label">
+                    Due from
+                    <input class="input" type="text" name="due_from" data-datepicker="date" value="{{ filters.dueFrom }}" autocomplete="off">
+                </label>
+                <label class="label">
+                    Due to
+                    <input class="input" type="text" name="due_to" data-datepicker="date" value="{{ filters.dueTo }}" autocomplete="off">
+                </label>
+            </div>
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="submit">Apply</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_list') }}">Reset</a>
+            </div>
+        </form>
+
+        <div class="table-wrap" style="margin-top: 1rem;">
+            <table class="app-table" style="min-width: 1020px;">
+                <thead>
+                <tr>
+                    <th>Created</th>
+                    <th>Rule</th>
+                    <th>Owner ID</th>
+                    <th>Vehicle ID</th>
+                    <th>Due date</th>
+                    <th>Due odometer</th>
+                    <th>State</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for reminder in reminders %}
+                    <tr class="table-row">
+                        <td>{{ reminder.createdAt|date('Y-m-d H:i') }}</td>
+                        <td>{{ ruleNames[reminder.ruleId] ?? reminder.ruleId }}</td>
+                        <td><code>{{ reminder.ownerId }}</code></td>
+                        <td><code>{{ reminder.vehicleId }}</code></td>
+                        <td>{{ reminder.dueAtDate ? reminder.dueAtDate|date('Y-m-d') : 'n/a' }}</td>
+                        <td>{{ reminder.dueAtOdometerKilometers ?? 'n/a' }}</td>
+                        <td>
+                            {% if reminder.dueByDate %}<span class="pill" style="background: rgba(247,181,0,0.2); color: #ffd27a;">date</span>{% endif %}
+                            {% if reminder.dueByOdometer %}<span class="pill" style="background: rgba(54,180,252,0.2); color: #9fdefe;">odometer</span>{% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="muted">No reminders found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

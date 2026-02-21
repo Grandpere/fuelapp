@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Maintenance\Application\Repository\MaintenanceEventRepository;
+use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,6 +26,8 @@ final class AdminDashboardController extends AbstractController
     public function __construct(
         private readonly StationRepository $stationRepository,
         private readonly VehicleRepository $vehicleRepository,
+        private readonly MaintenanceEventRepository $maintenanceEventRepository,
+        private readonly MaintenanceReminderRepository $maintenanceReminderRepository,
     ) {
     }
 
@@ -34,6 +38,8 @@ final class AdminDashboardController extends AbstractController
         return $this->render('admin/dashboard.html.twig', [
             'stationCount' => $this->countStations(),
             'vehicleCount' => $this->countVehicles(),
+            'maintenanceEventCount' => $this->countMaintenanceEvents(),
+            'maintenanceReminderCount' => $this->countMaintenanceReminders(),
         ]);
     }
 
@@ -51,6 +57,26 @@ final class AdminDashboardController extends AbstractController
     {
         $count = 0;
         foreach ($this->vehicleRepository->all() as $_) {
+            ++$count;
+        }
+
+        return $count;
+    }
+
+    private function countMaintenanceEvents(): int
+    {
+        $count = 0;
+        foreach ($this->maintenanceEventRepository->allForSystem() as $_) {
+            ++$count;
+        }
+
+        return $count;
+    }
+
+    private function countMaintenanceReminders(): int
+    {
+        $count = 0;
+        foreach ($this->maintenanceReminderRepository->allForSystem() as $_) {
             ++$count;
         }
 

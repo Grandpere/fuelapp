@@ -21,4 +21,7 @@ interface MaintenanceReminderRepository
 
     /** @return iterable<MaintenanceReminder> */
     public function allForOwner(string $ownerId): iterable;
+
+    /** @return iterable<MaintenanceReminder> */
+    public function allForSystem(): iterable;
 }

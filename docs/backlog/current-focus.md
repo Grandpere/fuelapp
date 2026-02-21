@@ -7,11 +7,10 @@
 - Deliver maintenance event foundation, reminders and cost tracking.
 
 ## In progress
-- `SP5-008` - Maintenance admin back-office exposure.
+- `SP5-007` - Maintenance tests and regression matrix.
 
 ## Next tickets (ordered)
-1. `SP5-008` - Maintenance admin back-office exposure
-2. `SP5-007` - Maintenance tests and regression matrix
+1. `SP5-007` - Maintenance tests and regression matrix
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -50,6 +49,7 @@
 - `SP5-004` delivered: async reminder evaluation workflow with persistent deduplicated reminders and in-app notification abstraction.
 - `SP5-005` delivered: planned maintenance cost CRUD + variance read-model endpoint (period/vehicle filters) with unit/integration/functional coverage.
 - `SP5-006` delivered: maintenance web UI timeline/planner + event/plan create-edit forms with responsive pages and functional coverage.
+- `SP5-008` delivered: admin read-only maintenance exposure (`/api/admin/maintenance/*`, `/ui/admin/maintenance/*`) with filters and role-boundary functional coverage.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

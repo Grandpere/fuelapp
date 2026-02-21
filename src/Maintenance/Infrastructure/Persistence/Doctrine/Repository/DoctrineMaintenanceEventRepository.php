@@ -139,6 +139,26 @@ final readonly class DoctrineMaintenanceEventRepository implements MaintenanceEv
         }
     }
 
+    public function allForSystem(): iterable
+    {
+        $entities = $this->em->getRepository(MaintenanceEventEntity::class)->createQueryBuilder('m')
+            ->orderBy('m.occurredAt', 'DESC')
+            ->addOrderBy('m.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
+        foreach ($entities as $entity) {
+            if (!$entity instanceof MaintenanceEventEntity) {
+                continue;
+            }
+
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
     public function sumActualCostsForOwner(?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to, string $ownerId): int
     {
         $normalizedOwnerId = trim($ownerId);

@@ -22,4 +22,4 @@ Maintenance features are user-facing first, but operations/support may need admi
 - SP5-002, SP5-003, SP5-004 (minimum data model + reminder state available).
 
 ## Status
-- todo
+- done

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Import\Application\Command;
 
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Storage\ImportFileStorage;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use App\Receipt\Application\Command\CreateReceiptLineCommand;
@@ -30,6 +31,7 @@ final readonly class FinalizeImportJobHandler
 {
     public function __construct(
         private ImportJobRepository $repository,
+        private ImportFileStorage $fileStorage,
         private CreateReceiptWithStationHandler $createReceiptWithStationHandler,
     ) {
     }
@@ -85,6 +87,7 @@ final readonly class FinalizeImportJobHandler
             null !== ($payload['creationPayload'] ?? null),
         ));
         $this->repository->save($job);
+        $this->fileStorage->delete($job->storage(), $job->filePath());
 
         return $job;
     }

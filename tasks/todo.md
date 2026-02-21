@@ -1,8 +1,8 @@
-# TODO - SP6-005 Export service hardening (CSV/XLSX)
+# TODO - UI import upload (user) and file lifecycle cleanup
 
 ## Plan
-- [completed] Refactor receipt export to stream CSV rows in chunks for large datasets.
-- [completed] Add optional XLSX export format and include export metadata (generation date + applied filters).
-- [completed] Expose CSV/XLSX options in web UI export actions while preserving existing filter semantics.
-- [completed] Add functional coverage for CSV metadata/filter parity and XLSX response format.
-- [completed] Run quality gates, update backlog docs, and commit.
+- [completed] Add user-facing UI page to upload receipt files and list own import jobs.
+- [completed] Link import UI from shared navigation.
+- [completed] Clarify/implement import file lifecycle cleanup after terminal outcomes (duplicate/finalized).
+- [completed] Add functional and unit/integration coverage updates for new upload UI and cleanup wiring.
+- [completed] Run quality gates and prepare commit.

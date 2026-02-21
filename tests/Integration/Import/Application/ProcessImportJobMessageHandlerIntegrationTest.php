@@ -22,7 +22,9 @@ use App\Import\Application\Parsing\ParsedReceiptDraft;
 use App\Import\Application\Parsing\ParsedReceiptLineDraft;
 use App\Import\Application\Parsing\ReceiptOcrParser;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Storage\ImportFileStorage;
 use App\Import\Application\Storage\ImportStoredFileLocator;
+use App\Import\Application\Storage\StoredImportFile;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
@@ -80,6 +82,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new StaticOcrProvider(),
             new StaticReceiptParser(),
@@ -130,6 +133,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new StaticOcrProvider(),
             new StaticReceiptParser(),
@@ -150,6 +154,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new ThrowingOcrProvider(OcrProviderException::permanent('bad api key')),
             new StaticReceiptParser(),
@@ -169,6 +174,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('provider timeout')),
             new StaticReceiptParser(),
@@ -192,6 +198,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new StaticOcrProvider(),
             new ThrowingReceiptParser(new RuntimeException('parser exploded')),
@@ -243,6 +250,18 @@ final class StaticFileLocator implements ImportStoredFileLocator
     public function locate(string $storage, string $path): string
     {
         return $this->path;
+    }
+}
+
+final class StaticImportFileStorage implements ImportFileStorage
+{
+    public function store(string $sourcePath, string $originalFilename): StoredImportFile
+    {
+        return new StoredImportFile('local', 'unused/path', $originalFilename, 'application/pdf', 0, str_repeat('a', 64));
+    }
+
+    public function delete(string $storage, string $path): void
+    {
     }
 }
 

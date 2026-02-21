@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Import Receipts{% endblock %}
+
+{% block body %}
+    <main class="app-shell" style="display:grid; gap: 1rem;">
+        <section class="card" style="padding: 1rem; display:grid; gap: .8rem;">
+            <div>
+                <h1 class="page-title">Import Receipts</h1>
+                <p class="muted" style="margin:.35rem 0 0;">Upload a receipt file and let the async OCR pipeline process it.</p>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" style="display:grid; gap:.7rem; max-width: 560px;">
+                <input type="hidden" name="_token" value="{{ csrf_token('ui_import_upload') }}">
+                <label class="label">
+                    Receipt file (PDF/JPEG/PNG/WEBP, max 10MB)
+                    <input class="input" type="file" name="file" accept=".pdf,image/jpeg,image/png,image/webp" required>
+                </label>
+                <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                    <button class="btn btn-primary" type="submit">Upload and process</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Refresh</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="card" style="padding: 1rem; display:grid; gap:.8rem;">
+            <h2 style="margin:0; font-size:1.05rem;">My import jobs</h2>
+            <div class="table-wrap">
+                <table class="app-table" style="min-width: 980px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Filename</th>
+                            <th>MIME</th>
+                            <th>Size</th>
+                            <th>Created</th>
+                            <th>Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                            <tr class="table-row">
+                                <td>{{ job.id.toString }}</td>
+                                <td>
+                                    <span class="pill" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color:#1d1405;">
+                                        {{ statusLabels[job.status.value] ?? job.status.value }}
+                                    </span>
+                                </td>
+                                <td>{{ job.originalFilename }}</td>
+                                <td>{{ job.mimeType }}</td>
+                                <td>{{ job.fileSizeBytes }} bytes</td>
+                                <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
+                                <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="muted">No imports yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+{% endblock %}

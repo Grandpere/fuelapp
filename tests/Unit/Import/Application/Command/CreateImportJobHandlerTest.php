@@ -84,6 +84,10 @@ final class InMemoryImportFileStorage implements ImportFileStorage
             str_repeat('a', 64),
         );
     }
+
+    public function delete(string $storage, string $path): void
+    {
+    }
 }
 
 final class InMemoryImportJobRepository implements ImportJobRepository

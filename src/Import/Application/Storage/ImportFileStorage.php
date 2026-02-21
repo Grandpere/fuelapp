@@ -16,4 +16,6 @@ namespace App\Import\Application\Storage;
 interface ImportFileStorage
 {
     public function store(string $sourcePath, string $originalFilename): StoredImportFile;
+
+    public function delete(string $storage, string $path): void;
 }

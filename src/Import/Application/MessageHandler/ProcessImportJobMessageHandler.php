@@ -19,6 +19,7 @@ use App\Import\Application\Ocr\OcrProviderException;
 use App\Import\Application\Parsing\ParsedReceiptDraft;
 use App\Import\Application\Parsing\ReceiptOcrParser;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Storage\ImportFileStorage;
 use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Domain\Enum\ImportJobStatus;
 use JsonException;
@@ -31,6 +32,7 @@ final readonly class ProcessImportJobMessageHandler
 {
     public function __construct(
         private ImportJobRepository $repository,
+        private ImportFileStorage $fileStorage,
         private ImportStoredFileLocator $storedFileLocator,
         private OcrProvider $ocrProvider,
         private ReceiptOcrParser $receiptParser,
@@ -66,6 +68,7 @@ final readonly class ProcessImportJobMessageHandler
         if (null !== $duplicateOf) {
             $job->markDuplicate($this->buildDuplicatePayload($job->id()->toString(), $duplicateOf->id()->toString(), $fingerprint));
             $this->repository->save($job);
+            $this->fileStorage->delete($job->storage(), $job->filePath());
 
             $this->logger->info('import.job.marked_duplicate', [
                 'import_job_id' => $job->id()->toString(),

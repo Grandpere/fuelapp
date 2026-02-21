@@ -189,6 +189,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: run `make phpunit-integration` and `make phpunit-functional` sequentially.
 - Prevention: avoid parallel execution of suites that reset shared database state.
 
+## 2026-02-21 - Import file lifecycle after OCR review flow
+- Symptom: uploaded import files accumulated even when no longer useful.
+- Root cause: files were persisted for async OCR but not cleaned after terminal business outcomes.
+- Fix: delete stored file when import becomes `duplicate` or is finalized to `processed`; keep file for `failed`/`needs_review` to preserve retry/review capability.
+- Prevention: define file retention behavior per import status explicitly whenever import workflow changes.
+
 ## 2026-02-21 - API Platform metadata compatibility: use `openapi` operation object
 - Symptom: static analysis failed with unknown `openapiContext` argument on `ApiPlatform\Metadata\Post`.
 - Root cause: project API Platform metadata version expects `openapi` (`ApiPlatform\OpenApi\Model\Operation`) instead of legacy context argument.

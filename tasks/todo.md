@@ -1,9 +1,8 @@
-# TODO - SP2-002 Messenger job geocoding
+# TODO - SP2-003 Nominatim adapter
 
 ## Plan
-- [completed] Implement geocoding message + handler with idempotent status processing.
-- [completed] Add internal station repository read path for worker (no user token scope).
-- [completed] Wire create station flow to dispatch geocoding message.
-- [completed] Configure Messenger async/failure transport routing and retry baseline.
-- [completed] Add/update unit and integration tests for dispatch + handler behavior.
+- [completed] Implement Nominatim geocoder adapter behind `Geocoder`.
+- [completed] Add policy-safe request controls (User-Agent + 1 req/s throttling + cache).
+- [completed] Wire service configuration/env parameters to use Nominatim in app runtime.
+- [completed] Add unit tests for response mapping and transient error handling.
 - [completed] Run quality gates and update backlog/docs.

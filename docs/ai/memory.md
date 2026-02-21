@@ -123,6 +123,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: add explicit system-level read method (`getForSystem`) for internal jobs and use it in geocoding handler.
 - Prevention: for background jobs, always use explicit internal repository methods rather than user-scoped read APIs.
 
+## 2026-02-20 - Dotenv values with spaces must be quoted
+- Symptom: app bootstrap/test commands failed parsing `.env` after geocoding User-Agent config.
+- Root cause: unquoted env value containing spaces and parentheses.
+- Fix: wrap `NOMINATIM_USER_AGENT` value in double quotes.
+- Prevention: always quote `.env` values when they contain spaces.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

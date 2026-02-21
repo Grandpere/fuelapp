@@ -9,6 +9,9 @@
 parameters:
     app.jwt_secret: '%env(JWT_SECRET)%'
     app.jwt_ttl_seconds: '%env(int:JWT_TTL_SECONDS)%'
+    app.geocoding.nominatim_base_uri: '%env(string:NOMINATIM_BASE_URI)%'
+    app.geocoding.nominatim_user_agent: '%env(string:NOMINATIM_USER_AGENT)%'
+    app.geocoding.nominatim_email: '%env(default::NOMINATIM_EMAIL)%'
     app.oidc_providers:
         auth0:
             enabled: '%env(bool:OIDC_AUTH0_ENABLED)%'
@@ -58,6 +61,13 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
-    App\Station\Application\Geocoding\Geocoder: '@App\Station\Infrastructure\Geocoding\NullGeocoder'
+    App\Station\Application\Geocoding\Geocoder: '@App\Station\Infrastructure\Geocoding\NominatimGeocoder'
+    App\Station\Infrastructure\Geocoding\NominatimGeocoder:
+        arguments:
+            $nominatimHttpClient: '@http_client'
+            $baseUri: '%app.geocoding.nominatim_base_uri%'
+            $cache: '@cache.app'
+            $userAgent: '%app.geocoding.nominatim_user_agent%'
+            $contactEmail: '%app.geocoding.nominatim_email%'
     App\Receipt\Application\Repository\ReceiptRepository: '@App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'

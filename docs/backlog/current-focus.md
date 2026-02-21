@@ -7,11 +7,11 @@
 - Put strong authentication/authorization foundations before async geocoding and import pipeline.
 
 ## In progress
-- `SP2-003` - Nominatim provider adapter with rate-limit compliance.
+- `SP2-004` - Trigger geocoding from station creation/update.
 
 ## Next tickets (ordered)
-1. `SP2-003` - Nominatim provider adapter with rate-limit compliance
-2. `SP2-004` - Trigger geocoding from station creation/update
+1. `SP2-004` - Trigger geocoding from station creation/update
+2. `SP2-005` - Job observability and retry policy
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

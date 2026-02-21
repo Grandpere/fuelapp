@@ -78,6 +78,55 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
     }
 
+    public function testAnonymousUserGets401OnAdminApiPrefix(): void
+    {
+        $response = $this->request('GET', '/api/admin/ping');
+
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+    }
+
+    public function testRoleUserCannotAccessAdminApiPrefix(): void
+    {
+        $email = 'user.admin.blocked@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $response = $this->request(
+            'GET',
+            '/api/admin/ping',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+
+        self::assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode());
+    }
+
+    public function testRoleAdminCanPassAdminApiGate(): void
+    {
+        $email = 'admin.allowed@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password, ['ROLE_ADMIN']);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $response = $this->request(
+            'GET',
+            '/api/admin/ping',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+    }
+
+    public function testAnonymousUserIsRedirectedOnAdminUiPrefix(): void
+    {
+        $response = $this->request('GET', '/ui/admin');
+
+        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $response->headers->get('Location'));
+    }
+
     public function testAnonymousUserCanAccessApiDocs(): void
     {
         $htmlResponse = $this->request('GET', '/api/docs');
@@ -180,12 +229,13 @@ final class SecurityBoundariesTest extends KernelTestCase
         $this->em->getConnection()->executeStatement('TRUNCATE TABLE receipt_lines, receipts, stations, users CASCADE');
     }
 
-    private function createUser(string $email, string $plainPassword): UserEntity
+    /** @param list<string> $roles */
+    private function createUser(string $email, string $plainPassword, array $roles = ['ROLE_USER']): UserEntity
     {
         $user = new UserEntity();
         $user->setId(Uuid::v7());
         $user->setEmail($email);
-        $user->setRoles(['ROLE_USER']);
+        $user->setRoles($roles);
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
         $this->em->persist($user);
 

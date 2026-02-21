@@ -195,6 +195,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: define upload docs with `openapi: new Operation(...)` on the resource operation.
 - Prevention: when adding custom docs on metadata operations, align constructor args with installed API Platform version.
 
+## 2026-02-21 - Access control assertions need real routed endpoints
+- Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
+- Root cause: firewall access checks are not a substitute for route existence in functional assertions.
+- Fix: add minimal routed admin probes (`/api/admin/ping`, `/ui/admin`) and assert role outcomes on those routes.
+- Prevention: when testing security boundaries, target concrete routes under the protected prefix.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

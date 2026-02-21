@@ -4,7 +4,7 @@
 Provide operational management for core entities and import jobs.
 
 ## Tickets
-- [SP4-001 - Admin access model and role policy](tickets/SP4-001-admin-access-model-role-policy.md) - P0 - todo
+- [SP4-001 - Admin access model and role policy](tickets/SP4-001-admin-access-model-role-policy.md) - P0 - done
 - [SP4-002 - Back-office API for stations and vehicles](tickets/SP4-002-backoffice-api-stations-vehicles.md) - P0 - todo
 - [SP4-003 - Back-office UI shell and navigation](tickets/SP4-003-backoffice-ui-shell-navigation.md) - P1 - todo
 - [SP4-004 - Import jobs dashboard and filtering](tickets/SP4-004-import-jobs-dashboard-filtering.md) - P0 - todo

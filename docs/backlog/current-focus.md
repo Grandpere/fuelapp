@@ -1,16 +1,17 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 03 - Async import (image/PDF)
+- Sprint 04 - Back-office
 
 ## Current goal
-- Deliver async import foundations (job model, upload endpoint, orchestration).
+- Deliver back-office security model and admin tooling.
 
 ## In progress
-- Sprint 03 completed.
+- `SP4-002` - Back-office API for stations and vehicles.
 
 ## Next tickets (ordered)
-1. Prepare Sprint 04 planning
+1. `SP4-002` - Back-office API for stations and vehicles
+2. `SP4-003` - Back-office UI shell and navigation
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -36,6 +37,7 @@
 - `SP3-007` delivered: API review/finalization flow for `needs_review` imports with receipt creation and processed audit payload.
 - `SP3-008` delivered: import regression coverage for OCR/provider/parser failure paths and finalize API error-paths.
 - `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
+- `SP4-001` delivered: admin access model with role hierarchy and explicit `/api/admin` + `/ui/admin` policy gates.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

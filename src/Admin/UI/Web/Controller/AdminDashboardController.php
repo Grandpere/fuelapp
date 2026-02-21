@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of a FuelApp project.
+ *
+ * (c) Lorenzo Marozzo <lorenzo.marozzo@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Admin\UI\Web\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+final class AdminDashboardController extends AbstractController
+{
+    #[Route('/ui/admin', name: 'ui_admin_dashboard', methods: ['GET'])]
+    public function __invoke(): Response
+    {
+        return new Response('Admin dashboard');
+    }
+}

@@ -1,8 +1,8 @@
-# TODO - SP3-009 Optional API Platform native upload operation refactor
+# TODO - SP4-001 Admin access model and role policy
 
 ## Plan
-- [completed] Move `POST /api/imports` from Symfony route attribute to API Platform operation metadata.
-- [completed] Keep multipart validation and response contract (`id`, `status`, `createdAt`) unchanged.
-- [completed] Remove custom OpenAPI decorator and keep `/api/imports` documented natively.
-- [completed] Validate no behavior regression on upload/auth/docs through existing suites.
+- [completed] Define admin role model (`ROLE_ADMIN`) with explicit hierarchy.
+- [completed] Restrict admin prefixes (`/api/admin`, `/ui/admin`) via access control policy.
+- [completed] Add minimal admin entry routes for API and UI scope.
+- [completed] Add tests for admin/non-admin separation and policy map.
 - [completed] Run quality checks.

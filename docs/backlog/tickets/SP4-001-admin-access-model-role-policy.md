@@ -19,4 +19,4 @@ Back-office needs strict role boundaries.
 - Sprint 1 auth.
 
 ## Status
-- todo
+- done

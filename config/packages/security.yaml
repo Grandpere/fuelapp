@@ -1,4 +1,7 @@
 security:
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_USER]
+
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
@@ -44,6 +47,8 @@ security:
         - { path: ^/api/login$, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs(\..+)?$, roles: PUBLIC_ACCESS }
         - { path: ^/ui/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/admin, roles: ROLE_ADMIN }
+        - { path: ^/ui/admin, roles: ROLE_ADMIN }
         - { path: ^/api, roles: ROLE_USER }
         - { path: ^/ui, roles: ROLE_USER }
 

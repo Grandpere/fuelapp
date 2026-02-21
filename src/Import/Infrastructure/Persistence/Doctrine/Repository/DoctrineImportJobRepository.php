@@ -61,6 +61,21 @@ final readonly class DoctrineImportJobRepository implements ImportJobRepository
         $this->em->flush();
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        if (!Uuid::isValid($id)) {
+            return;
+        }
+
+        $entity = $this->em->find(ImportJobEntity::class, $id);
+        if (!$entity instanceof ImportJobEntity) {
+            return;
+        }
+
+        $this->em->remove($entity);
+        $this->em->flush();
+    }
+
     public function get(string $id): ?ImportJob
     {
         if (!Uuid::isValid($id)) {

@@ -98,7 +98,13 @@
                         <td>{{ job.storage }}</td>
                         <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
                         <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
-                        <td><a class="btn btn-secondary" href="{{ path('ui_admin_import_job_show', {id: job.id.toString}) }}">Detail</a></td>
+                        <td style="display: flex; gap: .5rem; flex-wrap: wrap;">
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_show', {id: job.id.toString}) }}">Detail</a>
+                            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" onsubmit="return confirm('Delete this import job and source file?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
+                                <button class="btn btn-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                 {% else %}
                     <tr>

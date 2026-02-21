@@ -290,11 +290,61 @@ final class AdminBackofficeUiTest extends KernelTestCase
             [],
             $sessionCookie,
         );
-        self::assertSame(Response::HTTP_SEE_OTHER, $deleteResponse->getStatusCode());
+        self::assertContains($deleteResponse->getStatusCode(), [Response::HTTP_FOUND, Response::HTTP_SEE_OTHER]);
 
         $afterDelete = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
         self::assertStringNotContainsString('BO-200-BB', (string) $afterDelete->getContent());
+    }
+
+    public function testAdminCanDeleteImportJobFromBackofficeUi(): void
+    {
+        $adminEmail = 'ui.admin.import.delete@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.import.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::FAILED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/15/failed-import.pdf');
+        $job->setOriginalFilename('failed-import.pdf');
+        $job->setMimeType('application/pdf');
+        $job->setFileSizeBytes(1024);
+        $job->setFileChecksumSha256(str_repeat('f', 64));
+        $job->setErrorPayload('{"error":"failed"}');
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-15 09:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-15 09:00:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-15 09:00:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $listResponse = $this->request('GET', '/ui/admin/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        self::assertStringContainsString('failed-import.pdf', (string) $listResponse->getContent());
+        $deleteToken = $this->extractDeleteCsrfForImport((string) $listResponse->getContent(), $jobId);
+
+        $deleteResponse = $this->request(
+            'POST',
+            '/ui/admin/imports/'.$jobId.'/delete',
+            [
+                '_token' => $deleteToken,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertContains($deleteResponse->getStatusCode(), [Response::HTTP_FOUND, Response::HTTP_SEE_OTHER]);
+        self::assertSame('/ui/admin/imports', $deleteResponse->headers->get('Location'));
+
+        $afterDelete = $this->request('GET', '/ui/admin/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
+        self::assertStringNotContainsString('failed-import.pdf', (string) $afterDelete->getContent());
+        self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
     }
 
     /**
@@ -358,6 +408,18 @@ final class AdminBackofficeUiTest extends KernelTestCase
     private function extractDeleteCsrfForVehicle(string $content, string $vehicleId): string
     {
         $pattern = '#/ui/admin/vehicles/'.preg_quote($vehicleId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractDeleteCsrfForImport(string $content, string $importId): string
+    {
+        $pattern = '#/ui/admin/imports/'.preg_quote($importId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

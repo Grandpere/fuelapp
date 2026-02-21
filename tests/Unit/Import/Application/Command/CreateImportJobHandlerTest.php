@@ -99,6 +99,13 @@ final class InMemoryImportJobRepository implements ImportJobRepository
         $this->saved = $job;
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        if (null !== $this->saved && $this->saved->id()->toString() === $id) {
+            $this->saved = null;
+        }
+    }
+
     public function get(string $id): ?ImportJob
     {
         if (null === $this->saved || $this->saved->id()->toString() !== $id) {

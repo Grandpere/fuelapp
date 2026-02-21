@@ -132,6 +132,7 @@ final class SecurityBoundariesTest extends KernelTestCase
         $stationsResponse = $this->request('GET', '/ui/admin/stations');
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles');
         $importsResponse = $this->request('GET', '/ui/admin/imports');
+        $auditResponse = $this->request('GET', '/ui/admin/audit-logs');
 
         self::assertSame(Response::HTTP_FOUND, $stationsResponse->getStatusCode());
         self::assertStringStartsWith('/ui/login', (string) $stationsResponse->headers->get('Location'));
@@ -139,6 +140,8 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertStringStartsWith('/ui/login', (string) $vehiclesResponse->headers->get('Location'));
         self::assertSame(Response::HTTP_FOUND, $importsResponse->getStatusCode());
         self::assertStringStartsWith('/ui/login', (string) $importsResponse->headers->get('Location'));
+        self::assertSame(Response::HTTP_FOUND, $auditResponse->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $auditResponse->headers->get('Location'));
     }
 
     public function testAnonymousUserCanAccessApiDocs(): void

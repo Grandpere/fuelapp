@@ -183,6 +183,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: call endpoint with `Content-Type: application/ld+json` (or widen operation formats explicitly if needed).
 - Prevention: for new API Platform POST/PATCH operations, validate accepted content types in functional tests.
 
+## 2026-02-21 - Integration and functional suites must run sequentially (shared test DB lifecycle)
+- Symptom: intermittent integration failures (`database "app_test" does not exist`) when running multiple suites concurrently.
+- Root cause: both suites execute drop/create/migrate on the same test database.
+- Fix: run `make phpunit-integration` and `make phpunit-functional` sequentially.
+- Prevention: avoid parallel execution of suites that reset shared database state.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

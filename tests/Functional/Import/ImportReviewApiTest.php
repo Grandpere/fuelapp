@@ -151,6 +151,73 @@ final class ImportReviewApiTest extends KernelTestCase
         self::assertSame(1, $receiptCount);
     }
 
+    public function testFinalizeReturns422WhenJobIsNotNeedsReview(): void
+    {
+        $email = 'import.review.invalid-status@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+        $this->em->flush();
+
+        $job = ImportJob::createQueued(
+            $user->getId()->toRfc4122(),
+            'local',
+            '2026/02/21/file.pdf',
+            'file.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('f', 64),
+        );
+        $this->importJobRepository->save($job);
+
+        $token = $this->apiLogin($email, $password);
+        $response = $this->request(
+            'POST',
+            '/api/imports/'.$job->id()->toString().'/finalize',
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/ld+json',
+            ],
+            json_encode([], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+    }
+
+    public function testFinalizeReturns422WhenNoCreationPayloadAndNoManualData(): void
+    {
+        $email = 'import.review.missing-data@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+        $this->em->flush();
+
+        $job = ImportJob::createQueued(
+            $user->getId()->toRfc4122(),
+            'local',
+            '2026/02/21/file.pdf',
+            'file.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('1', 64),
+        );
+        $job->markNeedsReview(json_encode([
+            'parsedDraft' => ['issues' => ['missing_fields']],
+        ], JSON_THROW_ON_ERROR));
+        $this->importJobRepository->save($job);
+
+        $token = $this->apiLogin($email, $password);
+        $response = $this->request(
+            'POST',
+            '/api/imports/'.$job->id()->toString().'/finalize',
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/ld+json',
+            ],
+            json_encode([], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+    }
+
     /** @param array<string, string> $server */
     private function request(string $method, string $uri, array $server = [], ?string $content = null): Response
     {

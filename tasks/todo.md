@@ -1,9 +1,7 @@
-# TODO - SP3-007 Manual review flow for ambiguous imports
+# TODO - SP3-008 Import tests and error-path coverage
 
 ## Plan
-- [completed] Expose import jobs in API with review metadata (`parsedDraft`, `issues`, `creationPayload`).
-- [completed] Add finalize API action to confirm/correct `needs_review` imports.
-- [completed] Finalize import by creating receipt via existing domain/application flow.
-- [completed] Persist processed audit payload with `finalizedReceiptId`.
-- [completed] Add unit, integration, and functional coverage for review/finalization.
+- [completed] Add integration coverage for OCR permanent/retryable/parser-failure paths in async processing.
+- [completed] Add functional coverage for finalize API validation failures (`status` and missing required fields).
+- [completed] Keep existing coverage for upload validation, duplicate detection, and review happy path.
 - [completed] Run quality checks.

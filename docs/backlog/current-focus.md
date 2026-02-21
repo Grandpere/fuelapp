@@ -1,17 +1,18 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 04 - Back-office
+- Sprint 05 - Maintenance domain
 
 ## Current goal
-- Deliver back-office security model and admin tooling.
+- Deliver maintenance event foundation, reminders and cost tracking.
 
 ## In progress
-- `SP4-007` - Back-office test suite.
+- `SP5-004` - Reminder scheduler and notifications.
 
 ## Next tickets (ordered)
-1. `SP4-007` - Back-office test suite
-2. `SP5-001` - Maintenance context skeleton
+1. `SP5-004` - Reminder scheduler and notifications
+2. `SP5-005` - Planned vs actual maintenance cost model
+3. `SP5-008` - Maintenance admin back-office exposure
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -39,6 +40,14 @@
 - `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
 - `SP4-001` delivered: admin access model with role hierarchy and explicit `/api/admin` + `/ui/admin` policy gates.
 - `SP4-002` delivered: admin CRUD APIs for stations and vehicles with basic list filters/search in `/api/admin/*`.
+- `SP4-003` delivered: back-office UI shell/navigation with station and vehicle pages.
+- `SP4-004` delivered: imports dashboard with filters and metrics.
+- `SP4-005` delivered: admin retry/finalize flows for import recovery.
+- `SP4-006` delivered: immutable audit trail for admin mutations (API + UI listing).
+- `SP4-007` delivered: back-office functional suite extended for authenticated UI role boundary and seeded rendering coverage.
+- `SP5-001` delivered: maintenance bounded context skeleton with domain model, doctrine persistence, migration, and baseline tests.
+- `SP5-002` delivered: maintenance events CRUD API with ownership-safe vehicle binding and functional validation/isolation coverage.
+- `SP5-003` delivered: reminder rules model (date/odometer/whichever-first) with deterministic due-state calculator and rule persistence/tests.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

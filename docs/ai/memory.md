@@ -225,6 +225,18 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: add `admin_audit_logs` immutable store and record actions with actor, target, diff summary, timestamp, and correlation id.
 - Prevention: every new admin mutation endpoint/controller must append an audit event through `AdminAuditTrail`.
 
+## 2026-02-21 - Test container removes unused private aliases
+- Symptom: integration test failed to fetch a newly added repository interface alias from `self::getContainer()`.
+- Root cause: Symfony test container can remove/in-line private services not referenced by runtime wiring.
+- Fix: instantiate the repository directly with `EntityManagerInterface` in integration tests for new skeleton contexts until a runtime consumer exists.
+- Prevention: in early-stage context skeleton tickets, avoid assuming interface aliases are retrievable from test container before first real consumer is wired.
+
+## 2026-02-21 - UI layer user-context lookup must not depend on infrastructure entities
+- Symptom: architecture guard (`phpat`) failed when maintenance API state classes imported `UserEntity`.
+- Root cause: authenticated user id resolution was implemented directly in UI layer via Doctrine entity type checks.
+- Fix: introduce `Shared\Application\Security\AuthenticatedUserIdProvider` with infrastructure implementation and inject the abstraction in UI/API state classes.
+- Prevention: user/session lookup in UI/Application should use dedicated abstractions, never infrastructure entity classes directly.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

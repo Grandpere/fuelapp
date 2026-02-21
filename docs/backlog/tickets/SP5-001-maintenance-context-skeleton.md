@@ -19,4 +19,4 @@ Maintenance must stay isolated from receipt domain concerns.
 - Sprint 1 baseline.
 
 ## Status
-- todo
+- done

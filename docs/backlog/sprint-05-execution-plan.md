@@ -68,20 +68,28 @@ Introduce a robust maintenance domain with reminders and planned vs actual cost 
 - Exit criteria:
   - CI catches maintenance regressions.
 
-### Day 8 - UX polish and data quality pass
+### Day 8 - Admin back-office coverage
+- Ticket: `SP5-008`
+- Work:
+  - Expose maintenance observability/operations in admin API/UI.
+  - Add role-boundary tests and audit hooks for admin mutations.
+- Exit criteria:
+  - Admin can operate maintenance scope without policy regressions.
+
+### Day 9 - UX polish and data quality pass
 - Work:
   - Improve reminder clarity and planner readability.
   - Validate unit/currency consistency.
 - Exit criteria:
   - Maintenance UX is coherent and low-friction.
 
-### Day 9 - Buffer and review
+### Day 10 - Buffer and review
 - Work:
   - Resolve findings.
   - Tighten business rule edge cases.
   - Final quality run.
 
-### Day 10 - Release prep
+### Day 11 - Release prep
 - Work:
   - Final regression.
   - Update maintenance docs and examples.
@@ -92,7 +100,7 @@ Introduce a robust maintenance domain with reminders and planned vs actual cost 
 - PR2: `SP5-003` + `SP5-004`
 - PR3: `SP5-005`
 - PR4: `SP5-006`
-- PR5: `SP5-007`
+- PR5: `SP5-007` + `SP5-008`
 
 ## Mandatory checks per PR
 - `make phpstan`

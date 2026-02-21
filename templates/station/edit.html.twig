@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit station{% endblock %}
+
+{% block body %}
+    <main class="app-shell" style="max-width: 760px;">
+        <header style="display:grid; gap:0.35rem; margin-bottom:1rem;">
+            <h1 class="page-title">Edit station</h1>
+            <p class="muted" style="margin:0;">Update station address and retrigger geocoding when needed.</p>
+        </header>
+
+        {% if errors is not empty %}
+            <div class="flash" style="border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                <ul style="margin: 0; padding-left: 1.15rem;">
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <section class="card" style="padding:1rem;">
+            <form method="post" style="display:grid; gap:0.9rem;">
+                <input type="hidden" name="_token" value="{{ csrf_token('station_edit_' ~ stationId) }}">
+                <div class="form-grid-2">
+                    <label class="label">
+                        Name
+                        <input class="input" type="text" name="name" value="{{ formData.name }}" required>
+                    </label>
+                    <label class="label">
+                        Street name
+                        <input class="input" type="text" name="streetName" value="{{ formData.streetName }}" required>
+                    </label>
+                    <label class="label">
+                        Postal code
+                        <input class="input" type="text" name="postalCode" value="{{ formData.postalCode }}" required>
+                    </label>
+                    <label class="label">
+                        City
+                        <input class="input" type="text" name="city" value="{{ formData.city }}" required>
+                    </label>
+                </div>
+
+                <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                    <button class="btn btn-primary" type="submit">Save station</button>
+                    <a class="btn btn-secondary" href="{{ redirect }}">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+{% endblock %}

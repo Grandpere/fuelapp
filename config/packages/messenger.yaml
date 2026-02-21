@@ -17,6 +17,7 @@ framework:
             App\Station\Application\Message\GeocodeStationAddressMessage: async
             App\Import\Application\Message\ProcessImportJobMessage: async
             App\Maintenance\Application\Message\EvaluateMaintenanceRemindersMessage: async
+            App\Analytics\Application\Message\RefreshReceiptAnalyticsProjectionMessage: async
 
 when@test:
     framework:

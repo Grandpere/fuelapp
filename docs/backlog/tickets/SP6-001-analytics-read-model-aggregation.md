@@ -19,4 +19,4 @@ Dashboards should avoid heavy runtime queries.
 - Prior data domains stable.
 
 ## Status
-- todo
+- done

@@ -195,6 +195,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: define upload docs with `openapi: new Operation(...)` on the resource operation.
 - Prevention: when adding custom docs on metadata operations, align constructor args with installed API Platform version.
 
+## 2026-02-21 - DBAL datetime parameter type must match immutable values
+- Symptom: analytics projection refresh crashed in integration tests with `Could not convert PHP value of type DateTimeImmutable to type DateTimeType`.
+- Root cause: DBAL statement parameter types were declared as `datetime` while values were `DateTimeImmutable`.
+- Fix: use `datetime_immutable` for DBAL parameter type mapping in projection state upserts.
+- Prevention: when binding `DateTimeImmutable` in DBAL queries, always declare `datetime_immutable` explicitly.
+
 ## 2026-02-21 - Access control assertions need real routed endpoints
 - Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
 - Root cause: firewall access checks are not a substitute for route existence in functional assertions.

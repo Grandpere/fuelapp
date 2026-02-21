@@ -1,8 +1,8 @@
-# TODO - Admin vehicle creation policy alignment
+# TODO - SP6-001 Analytics read model and aggregation strategy
 
 ## Plan
-- [completed] Remove admin vehicle creation operation from API Platform resource.
-- [completed] Remove admin vehicle creation route/action from back-office UI.
-- [completed] Update functional tests to enforce "no admin create" while keeping edit/delete.
-- [completed] Align backlog docs with the updated policy.
-- [completed] Run quality gates and prepare commit.
+- [completed] Add analytics read-model schema (daily KPI + projection freshness state).
+- [completed] Implement deterministic aggregation service with observable refresh metadata.
+- [completed] Add sync/async refresh entry points (command + message handler + Make targets).
+- [completed] Add integration coverage for projection correctness and freshness updates.
+- [completed] Update backlog docs/status, run quality gates, and commit.

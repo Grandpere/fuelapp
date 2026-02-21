@@ -88,6 +88,14 @@ messenger-consume-async: ## Consume async messenger queue (VERBOSITY=-vv optiona
 maintenance-reminders-dispatch: ## Dispatch maintenance reminder evaluation message
 	$(DC_EXEC) php bin/console app:maintenance:reminders:dispatch
 
+.PHONY: analytics-receipts-refresh
+analytics-receipts-refresh: ## Refresh receipt analytics projection synchronously
+	$(DC_EXEC) php bin/console app:analytics:receipts:refresh
+
+.PHONY: analytics-receipts-dispatch
+analytics-receipts-dispatch: ## Dispatch receipt analytics refresh message
+	$(DC_EXEC) php bin/console app:analytics:receipts:refresh --async
+
 .PHONY: messenger-failed-show
 messenger-failed-show: ## Show failed messenger messages stats
 	$(DC_EXEC) php bin/console messenger:failed:show --stats

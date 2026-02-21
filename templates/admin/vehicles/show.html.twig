@@ -7,7 +7,7 @@
 {% block admin_content %}
     <section class="card admin-panel">
         <h2 class="page-title">Vehicle Detail</h2>
-        <p class="muted">Read-only back-office view. Mutations are available via admin API endpoints.</p>
+        <p class="muted">Back-office detail view with direct mutation actions.</p>
 
         <dl class="admin-dl" style="margin-top: 1rem;">
             <dt class="admin-dt">ID</dt>
@@ -26,6 +26,11 @@
 
         <div style="margin-top: 1rem;">
             <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Back to list</a>
+            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString}) }}">Edit vehicle</a>
+            <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('Delete this vehicle?');" style="display:inline-flex;">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_vehicle_delete_' ~ vehicle.id.toString) }}">
+                <button class="btn btn-danger" type="submit">Delete</button>
+            </form>
             <a class="btn btn-secondary" href="/api/admin/vehicles/{{ vehicle.id.toString }}">Open API resource</a>
         </div>
     </section>

@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Vehicles{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .vehicles-page {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .vehicles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .vehicles-header p {
+            margin: 0.35rem 0 0;
+        }
+
+        .panel {
+            padding: 1rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell vehicles-page">
+        <section class="vehicles-header">
+            <div>
+                <h1 class="page-title">My Vehicles</h1>
+                <p class="muted">Manage your fleet used for receipts and maintenance planning.</p>
+            </div>
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
+                <a class="btn btn-primary" href="{{ path('ui_vehicle_new') }}">Add vehicle</a>
+            </div>
+        </section>
+
+        {% for message in app.flashes('success') %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+
+        <section class="card panel">
+            <div class="table-wrap">
+                <table class="app-table" style="min-width: 760px;">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Plate</th>
+                        <th>Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for vehicle in vehicles %}
+                        <tr class="table-row">
+                            <td>{{ vehicle.name }}</td>
+                            <td>{{ vehicle.plateNumber }}</td>
+                            <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
+                            <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                                <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString}) }}">Edit</a>
+                                <form method="post" action="{{ path('ui_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('Delete this vehicle?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('vehicle_delete_' ~ vehicle.id.toString) }}">
+                                    <button class="btn btn-danger" type="submit">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="muted">No vehicle yet. Add your first one to start maintenance tracking.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+{% endblock %}

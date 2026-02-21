@@ -230,6 +230,85 @@ final class AdminBackofficeUiTest extends KernelTestCase
         self::assertStringContainsString('corr-ui-admin-001', (string) $auditResponse->getContent());
     }
 
+    public function testAdminCanCreateEditAndDeleteVehicleFromBackofficeUi(): void
+    {
+        $adminEmail = 'ui.admin.vehicle.write@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.vehicle.owner@example.com', 'test1234', ['ROLE_USER']);
+        $this->em->flush();
+
+        $ownerId = $owner->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $newPage = $this->request('GET', '/ui/admin/vehicles/new', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $newPage->getStatusCode());
+        $newCsrf = $this->extractFormCsrf((string) $newPage->getContent());
+
+        $createResponse = $this->request(
+            'POST',
+            '/ui/admin/vehicles/new',
+            [
+                'ownerId' => $ownerId,
+                'name' => 'Backoffice Vehicle',
+                'plateNumber' => 'BO-100-AA',
+                '_token' => $newCsrf,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $createResponse->getStatusCode());
+
+        $listResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        self::assertStringContainsString('Backoffice Vehicle', (string) $listResponse->getContent());
+
+        $vehicle = $this->em->getConnection()->fetchAssociative("SELECT id FROM vehicles WHERE plate_number = 'BO-100-AA' LIMIT 1");
+        self::assertIsArray($vehicle);
+        self::assertArrayHasKey('id', $vehicle);
+        self::assertIsString($vehicle['id']);
+        $vehicleId = $vehicle['id'];
+        self::assertNotSame('', $vehicleId);
+
+        $editPage = $this->request('GET', '/ui/admin/vehicles/'.$vehicleId.'/edit', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
+        $editCsrf = $this->extractFormCsrf((string) $editPage->getContent());
+
+        $editResponse = $this->request(
+            'POST',
+            '/ui/admin/vehicles/'.$vehicleId.'/edit',
+            [
+                'ownerId' => $ownerId,
+                'name' => 'Backoffice Vehicle Updated',
+                'plateNumber' => 'BO-200-BB',
+                '_token' => $editCsrf,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $editResponse->getStatusCode());
+
+        $updatedList = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $updatedList->getStatusCode());
+        self::assertStringContainsString('Backoffice Vehicle Updated', (string) $updatedList->getContent());
+        $deleteToken = $this->extractDeleteCsrfForVehicle((string) $updatedList->getContent(), $vehicleId);
+
+        $deleteResponse = $this->request(
+            'POST',
+            '/ui/admin/vehicles/'.$vehicleId.'/delete',
+            [
+                '_token' => $deleteToken,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $deleteResponse->getStatusCode());
+
+        $afterDelete = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
+        self::assertStringNotContainsString('BO-200-BB', (string) $afterDelete->getContent());
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server
@@ -275,6 +354,29 @@ final class AdminBackofficeUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_FOUND, $loginResponse->getStatusCode());
 
         return $this->extractSessionCookie($loginResponse) ?: $sessionCookie;
+    }
+
+    private function extractFormCsrf(string $content): string
+    {
+        self::assertMatchesRegularExpression('/name="_token" value="([^"]+)"/', $content);
+        preg_match('/name="_token" value="([^"]+)"/', $content, $matches);
+        $csrfToken = $matches[1] ?? null;
+        self::assertIsString($csrfToken);
+        self::assertNotSame('', $csrfToken);
+
+        return $csrfToken;
+    }
+
+    private function extractDeleteCsrfForVehicle(string $content, string $vehicleId): string
+    {
+        $pattern = '#/ui/admin/vehicles/'.preg_quote($vehicleId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
     }
 
     /** @return array<string, string> */

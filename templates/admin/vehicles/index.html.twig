@@ -9,6 +9,10 @@
         <h2 class="page-title">Vehicles</h2>
         <p class="muted">Global vehicle list used to attach receipts to an owner fleet.</p>
 
+        <div style="margin-top: 0.8rem;">
+            <a class="btn btn-primary" href="{{ path('ui_admin_vehicle_new') }}">Create vehicle</a>
+        </div>
+
         <div class="table-wrap" style="margin-top: 1rem;">
             <table class="app-table" style="min-width: 780px;">
                 <thead>
@@ -17,7 +21,7 @@
                     <th>Plate</th>
                     <th>Owner ID</th>
                     <th>Updated</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -27,7 +31,14 @@
                         <td>{{ vehicle.plateNumber }}</td>
                         <td>{{ vehicle.ownerId ?? 'n/a' }}</td>
                         <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
-                        <td><a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString}) }}">Detail</a></td>
+                        <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString}) }}">Detail</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString}) }}">Edit</a>
+                            <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('Delete this vehicle?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_vehicle_delete_' ~ vehicle.id.toString) }}">
+                                <button class="btn btn-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                 {% else %}
                     <tr>

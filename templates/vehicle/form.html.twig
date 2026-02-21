@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{% if isEdit %}Edit Vehicle{% else %}New Vehicle{% endif %}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .vehicle-form-page {
+            max-width: 760px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .vehicle-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .vehicle-form-card {
+            padding: 1rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell vehicle-form-page">
+        <header class="vehicle-form-header">
+            <h1 class="page-title">{% if isEdit %}Edit vehicle{% else %}Add vehicle{% endif %}</h1>
+            <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}">Back</a>
+        </header>
+
+        <section class="card vehicle-form-card">
+            {% if errors is not empty %}
+                <div class="flash" style="border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                    <ul style="margin: 0; padding-left: 1.15rem;">
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" action="" style="display:grid; gap:0.9rem;">
+                <input type="hidden" name="_token" value="{{ csrfToken }}">
+                <label class="label">
+                    Name
+                    <input class="input" type="text" name="name" maxlength="120" value="{{ formData.name }}" required>
+                </label>
+                <label class="label">
+                    Plate number
+                    <input class="input" type="text" name="plateNumber" maxlength="40" value="{{ formData.plateNumber }}" required>
+                </label>
+
+                <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                    <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create vehicle{% endif %}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+{% endblock %}

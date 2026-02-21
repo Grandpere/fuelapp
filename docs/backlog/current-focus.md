@@ -50,6 +50,7 @@
 - `SP5-005` delivered: planned maintenance cost CRUD + variance read-model endpoint (period/vehicle filters) with unit/integration/functional coverage.
 - `SP5-006` delivered: maintenance web UI timeline/planner + event/plan create-edit forms with responsive pages and functional coverage.
 - `SP5-008` delivered: admin read-only maintenance exposure (`/api/admin/maintenance/*`, `/ui/admin/maintenance/*`) with filters and role-boundary functional coverage.
+- `SP5-009` delivered: vehicle web CRUD for users and back-office vehicle mutation forms for admins with functional coverage.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

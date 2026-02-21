@@ -1,8 +1,8 @@
-# TODO - SP5-008 Maintenance admin back-office exposure
+# TODO - SP5-009 Vehicle UI management (user + admin)
 
 ## Plan
-- [completed] Add system-level maintenance repository reads required by admin queries.
-- [completed] Expose read-only admin maintenance API endpoints with filters.
-- [completed] Add admin UI pages for maintenance events/reminders with filters + navigation/dashboard links.
-- [completed] Extend functional admin test coverage for role boundary and admin visibility.
-- [completed] Run quality gates, update backlog/docs/memory, and commit SP5-008.
+- [completed] Add user vehicle web UI CRUD flows (`/ui/vehicles`).
+- [completed] Add admin vehicle web create/edit/delete flows (`/ui/admin/vehicles`).
+- [completed] Add functional tests for user/admin vehicle UI mutation paths.
+- [completed] Run quality gates and fix static/style/test issues.
+- [completed] Add and close dedicated backlog ticket SP5-009, then commit.

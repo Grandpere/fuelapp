@@ -243,6 +243,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: render KPI currency explicitly (`EUR`) and keep template aligned with actual DTO/read-model properties.
 - Prevention: for new UI pages bound to read models, validate template field names against constructor/public properties and cover with functional UI assertion.
 
+## 2026-02-21 - Functional tests should not fetch CSRF token from container without request session
+- Symptom: functional test failed with `SessionNotFoundException` when generating CSRF token in helper via container token manager.
+- Root cause: token manager session storage needs an active request session; test helper called it outside request lifecycle.
+- Fix: extract CSRF token directly from rendered form HTML and post it back as browser would do.
+- Prevention: in functional web tests, prefer CSRF extraction from response content over direct token manager calls.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

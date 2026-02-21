@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of a FuelApp project.
+ *
+ * (c) Lorenzo Marozzo <lorenzo.marozzo@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Import\Domain\Enum;
+
+enum ImportJobStatus: string
+{
+    case QUEUED = 'queued';
+    case PROCESSING = 'processing';
+    case PROCESSED = 'processed';
+    case FAILED = 'failed';
+    case NEEDS_REVIEW = 'needs_review';
+}

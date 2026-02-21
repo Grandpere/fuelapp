@@ -135,6 +135,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: run `make db-migrate` after schema changes and before user verification.
 - Prevention: in task handover, always list required user commands and explicitly include DB migration when schema changed.
 
+## 2026-02-21 - New Doctrine context requires explicit ORM mapping registration
+- Symptom: integration tests failed with `MappingException` saying `ImportJobEntity` was not found in configured namespaces.
+- Root cause: new `Import` entity namespace was created, but `config/packages/doctrine.yaml` mappings still listed only `Receipt`, `Station`, and `User`.
+- Fix: add `Import` attribute mapping block in Doctrine ORM configuration.
+- Prevention: each new bounded context with Doctrine entities must include mapping registration in the same change set.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -1,17 +1,17 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 01 - Security and ownership
+- Sprint 03 - Async import (image/PDF)
 
 ## Current goal
-- Put strong authentication/authorization foundations before async geocoding and import pipeline.
+- Deliver async import foundations (job model, upload endpoint, orchestration).
 
 ## In progress
-- `SP3-001` - Import job model and storage.
+- `SP3-002` - Upload API endpoint validation.
 
 ## Next tickets (ordered)
-1. `SP3-001` - Import job model and storage
-2. `SP3-002` - Upload API endpoint validation
+1. `SP3-002` - Upload API endpoint validation
+2. `SP3-003` - Async pipeline orchestration
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -28,6 +28,7 @@
 - Security runbook and local/dev/prod security checklist delivered.
 - Generic OIDC SSO integration layer delivered (Auth0-ready, provider-agnostic).
 - OIDC provider catalog/conventions delivered (claims mapping + onboarding checklist).
+- `SP3-001` delivered: import job domain model, persistence, local storage adapter, and baseline tests.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

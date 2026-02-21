@@ -19,4 +19,4 @@ Define import job persistence for async processing.
 - Sprint 1 and 2 foundations.
 
 ## Status
-- todo
+- done

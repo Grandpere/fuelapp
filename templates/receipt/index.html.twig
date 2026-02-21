@@ -279,6 +279,7 @@
                     <button class="btn btn-primary" type="submit">Apply</button>
                     <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Reset</a>
                     <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams) }}">Export CSV</a>
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams|merge({ format: 'xlsx' })) }}">Export XLSX</a>
                 </div>
 
                 <fieldset class="card-subtle columns-wrap">

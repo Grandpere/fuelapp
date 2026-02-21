@@ -213,6 +213,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: convert deci-cents per liter to EUR/L with `/ 1000` and align tests/UI labels to that unit.
 - Prevention: when exposing derived pricing metrics, keep explicit unit labels in DTO/UI and validate conversion formula in functional tests.
 
+## 2026-02-21 - PhpSpreadsheet requires GD extension in app image
+- Symptom: `composer require phpoffice/phpspreadsheet` failed with missing `ext-gd`.
+- Root cause: project Docker image did not install the PHP GD extension required by PhpSpreadsheet.
+- Fix: add `gd` to `install-php-extensions` in `Dockerfile` and rebuild the app image before installing dependency.
+- Prevention: when adding spreadsheet/image-capable libraries, verify required PHP extensions against container image in the same change set.
+
 ## 2026-02-21 - Access control assertions need real routed endpoints
 - Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
 - Root cause: firewall access checks are not a substitute for route existence in functional assertions.

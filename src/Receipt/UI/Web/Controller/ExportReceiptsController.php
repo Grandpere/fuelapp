@@ -16,13 +16,21 @@ namespace App\Receipt\UI\Web\Controller;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use DateTimeImmutable;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ExportReceiptsController extends AbstractController
 {
+    private const FORMAT_CSV = 'csv';
+    private const FORMAT_XLSX = 'xlsx';
+    private const EXPORT_CHUNK_SIZE = 1000;
+
     private const PRESET_COMPACT = 'compact';
     private const PRESET_MOBILE = 'mobile';
     private const PRESET_FULL = 'full';
@@ -106,12 +114,55 @@ final class ExportReceiptsController extends AbstractController
         $unitPriceDeciCentsPerLiterMin = $this->parseInt($request->query->get('unit_price_min'));
         $unitPriceDeciCentsPerLiterMax = $this->parseInt($request->query->get('unit_price_max'));
         $vatRatePercent = $this->parseInt($request->query->get('vat_rate'));
+        $format = $this->parseFormat($request->query->get('format'));
         $sortBy = in_array((string) $request->query->get('sort_by'), ['date', 'total', 'fuel_type', 'quantity', 'unit_price', 'vat_rate'], true)
             ? (string) $request->query->get('sort_by')
             : 'date';
         $sortDirection = 'asc' === strtolower((string) $request->query->get('sort_direction')) ? 'asc' : 'desc';
 
-        $rows = $this->receiptRepository->listFilteredRowsForExport(
+        $generatedAt = new DateTimeImmutable();
+        $metadataRows = $this->buildMetadataRows(
+            $generatedAt,
+            $stationId,
+            $issuedFrom,
+            $issuedTo,
+            $sortBy,
+            $sortDirection,
+            $fuelType,
+            $quantityMilliLitersMin,
+            $quantityMilliLitersMax,
+            $unitPriceDeciCentsPerLiterMin,
+            $unitPriceDeciCentsPerLiterMax,
+            $vatRatePercent,
+            $columns,
+            $format,
+        );
+
+        $filenameBase = sprintf('receipts-export-%s', $generatedAt->format('Ymd-His'));
+
+        if (self::FORMAT_XLSX === $format) {
+            return $this->xlsxResponse(
+                $filenameBase.'.xlsx',
+                $metadataRows,
+                $columns,
+                $stationId,
+                $issuedFrom,
+                $issuedTo,
+                $sortBy,
+                $sortDirection,
+                $fuelType,
+                $quantityMilliLitersMin,
+                $quantityMilliLitersMax,
+                $unitPriceDeciCentsPerLiterMin,
+                $unitPriceDeciCentsPerLiterMax,
+                $vatRatePercent,
+            );
+        }
+
+        return $this->csvResponse(
+            $filenameBase.'.csv',
+            $metadataRows,
+            $columns,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -124,54 +175,311 @@ final class ExportReceiptsController extends AbstractController
             $unitPriceDeciCentsPerLiterMax,
             $vatRatePercent,
         );
+    }
 
-        $stream = fopen('php://temp', 'w+');
-        if (false === $stream) {
-            throw $this->createNotFoundException('Cannot create export stream.');
-        }
-
-        $headers = [];
-        foreach ($columns as $column) {
-            $headers[] = self::COLUMN_LABELS[$column];
-        }
-        fputcsv($stream, $headers);
-
-        foreach ($rows as $row) {
-            $line = [];
-            foreach ($columns as $column) {
-                $line[] = match ($column) {
-                    'id' => $row['id'],
-                    'issued_at' => $row['issuedAt']->format('Y-m-d H:i:s'),
-                    'station_name' => $row['stationName'] ?? '',
-                    'station_street_name' => $row['stationStreetName'] ?? '',
-                    'station_postal_code' => $row['stationPostalCode'] ?? '',
-                    'station_city' => $row['stationCity'] ?? '',
-                    'fuel_type' => $row['fuelType'] ?? '',
-                    'quantity_milli_liters' => null === $row['quantityMilliLiters'] ? '' : (string) $row['quantityMilliLiters'],
-                    'unit_price_deci_cents_per_liter' => null === $row['unitPriceDeciCentsPerLiter'] ? '' : (string) $row['unitPriceDeciCentsPerLiter'],
-                    'vat_rate_percent' => null === $row['vatRatePercent'] ? '' : (string) $row['vatRatePercent'],
-                    'total_cents' => (string) $row['totalCents'],
-                    'vat_amount_cents' => (string) $row['vatAmountCents'],
-                    default => '',
-                };
+    /**
+     * @param list<array{0:string,1:string}> $metadataRows
+     * @param list<string>                   $columns
+     */
+    private function csvResponse(
+        string $filename,
+        array $metadataRows,
+        array $columns,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+        ?string $fuelType,
+        ?int $quantityMilliLitersMin,
+        ?int $quantityMilliLitersMax,
+        ?int $unitPriceDeciCentsPerLiterMin,
+        ?int $unitPriceDeciCentsPerLiterMax,
+        ?int $vatRatePercent,
+    ): Response {
+        $response = new StreamedResponse(function () use (
+            $metadataRows,
+            $columns,
+            $stationId,
+            $issuedFrom,
+            $issuedTo,
+            $sortBy,
+            $sortDirection,
+            $fuelType,
+            $quantityMilliLitersMin,
+            $quantityMilliLitersMax,
+            $unitPriceDeciCentsPerLiterMin,
+            $unitPriceDeciCentsPerLiterMax,
+            $vatRatePercent,
+        ): void {
+            $stream = fopen('php://output', 'w');
+            if (false === $stream) {
+                throw new RuntimeException('Cannot create export stream.');
             }
 
-            fputcsv($stream, $line);
-        }
+            foreach ($metadataRows as $metadataRow) {
+                fputcsv($stream, $metadataRow);
+            }
+            fputcsv($stream, []);
 
-        rewind($stream);
-        $csv = stream_get_contents($stream);
-        fclose($stream);
+            $headers = [];
+            foreach ($columns as $column) {
+                $headers[] = self::COLUMN_LABELS[$column];
+            }
+            fputcsv($stream, $headers);
 
-        if (false === $csv) {
-            throw $this->createNotFoundException('Cannot read export stream.');
-        }
+            foreach ($this->iterateRowsForExport(
+                $stationId,
+                $issuedFrom,
+                $issuedTo,
+                $sortBy,
+                $sortDirection,
+                $fuelType,
+                $quantityMilliLitersMin,
+                $quantityMilliLitersMax,
+                $unitPriceDeciCentsPerLiterMin,
+                $unitPriceDeciCentsPerLiterMax,
+                $vatRatePercent,
+            ) as $row) {
+                $line = [];
+                foreach ($columns as $column) {
+                    $line[] = $this->mapColumnValue($column, $row);
+                }
 
-        $response = new Response($csv, Response::HTTP_OK);
+                fputcsv($stream, $line);
+            }
+
+            fclose($stream);
+        });
+
         $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
-        $response->headers->set('Content-Disposition', 'attachment; filename="receipts-export.csv"');
+        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
 
         return $response;
+    }
+
+    /**
+     * @param list<array{0:string,1:string}> $metadataRows
+     * @param list<string>                   $columns
+     */
+    private function xlsxResponse(
+        string $filename,
+        array $metadataRows,
+        array $columns,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+        ?string $fuelType,
+        ?int $quantityMilliLitersMin,
+        ?int $quantityMilliLitersMax,
+        ?int $unitPriceDeciCentsPerLiterMin,
+        ?int $unitPriceDeciCentsPerLiterMax,
+        ?int $vatRatePercent,
+    ): Response {
+        $response = new StreamedResponse(function () use (
+            $metadataRows,
+            $columns,
+            $stationId,
+            $issuedFrom,
+            $issuedTo,
+            $sortBy,
+            $sortDirection,
+            $fuelType,
+            $quantityMilliLitersMin,
+            $quantityMilliLitersMax,
+            $unitPriceDeciCentsPerLiterMin,
+            $unitPriceDeciCentsPerLiterMax,
+            $vatRatePercent,
+        ): void {
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Receipts export');
+
+            $rowIndex = 1;
+            foreach ($metadataRows as [$key, $value]) {
+                $sheet->setCellValue(sprintf('A%d', $rowIndex), $key);
+                $sheet->setCellValue(sprintf('B%d', $rowIndex), $value);
+                ++$rowIndex;
+            }
+            ++$rowIndex;
+
+            $columnIndex = 1;
+            foreach ($columns as $column) {
+                $sheet->setCellValue([$columnIndex, $rowIndex], self::COLUMN_LABELS[$column]);
+                ++$columnIndex;
+            }
+            ++$rowIndex;
+
+            foreach ($this->iterateRowsForExport(
+                $stationId,
+                $issuedFrom,
+                $issuedTo,
+                $sortBy,
+                $sortDirection,
+                $fuelType,
+                $quantityMilliLitersMin,
+                $quantityMilliLitersMax,
+                $unitPriceDeciCentsPerLiterMin,
+                $unitPriceDeciCentsPerLiterMax,
+                $vatRatePercent,
+            ) as $row) {
+                $columnIndex = 1;
+                foreach ($columns as $column) {
+                    $sheet->setCellValue([$columnIndex, $rowIndex], $this->mapColumnValue($column, $row));
+                    ++$columnIndex;
+                }
+                ++$rowIndex;
+            }
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+        });
+
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
+
+        return $response;
+    }
+
+    /**
+     * @param list<string> $columns
+     *
+     * @return list<array{0:string,1:string}>
+     */
+    private function buildMetadataRows(
+        DateTimeImmutable $generatedAt,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+        ?string $fuelType,
+        ?int $quantityMilliLitersMin,
+        ?int $quantityMilliLitersMax,
+        ?int $unitPriceDeciCentsPerLiterMin,
+        ?int $unitPriceDeciCentsPerLiterMax,
+        ?int $vatRatePercent,
+        array $columns,
+        string $format,
+    ): array {
+        return [
+            ['generated_at', $generatedAt->format(DATE_ATOM)],
+            ['format', $format],
+            ['filter_station_id', $stationId ?? ''],
+            ['filter_issued_from', $issuedFrom?->format('Y-m-d') ?? ''],
+            ['filter_issued_to', $issuedTo?->format('Y-m-d') ?? ''],
+            ['filter_fuel_type', $fuelType ?? ''],
+            ['filter_quantity_min', null === $quantityMilliLitersMin ? '' : (string) $quantityMilliLitersMin],
+            ['filter_quantity_max', null === $quantityMilliLitersMax ? '' : (string) $quantityMilliLitersMax],
+            ['filter_unit_price_min', null === $unitPriceDeciCentsPerLiterMin ? '' : (string) $unitPriceDeciCentsPerLiterMin],
+            ['filter_unit_price_max', null === $unitPriceDeciCentsPerLiterMax ? '' : (string) $unitPriceDeciCentsPerLiterMax],
+            ['filter_vat_rate', null === $vatRatePercent ? '' : (string) $vatRatePercent],
+            ['sort_by', $sortBy],
+            ['sort_direction', $sortDirection],
+            ['columns', implode(',', $columns)],
+        ];
+    }
+
+    /**
+     * @return iterable<array{
+     *     id: string,
+     *     issuedAt: DateTimeImmutable,
+     *     totalCents: int,
+     *     vatAmountCents: int,
+     *     stationName: ?string,
+     *     stationStreetName: ?string,
+     *     stationPostalCode: ?string,
+     *     stationCity: ?string,
+     *     fuelType: ?string,
+     *     quantityMilliLiters: ?int,
+     *     unitPriceDeciCentsPerLiter: ?int,
+     *     vatRatePercent: ?int
+     * }>
+     */
+    private function iterateRowsForExport(
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+        ?string $fuelType,
+        ?int $quantityMilliLitersMin,
+        ?int $quantityMilliLitersMax,
+        ?int $unitPriceDeciCentsPerLiterMin,
+        ?int $unitPriceDeciCentsPerLiterMax,
+        ?int $vatRatePercent,
+    ): iterable {
+        $page = 1;
+        while (true) {
+            $rows = $this->receiptRepository->paginateFilteredListRows(
+                $page,
+                self::EXPORT_CHUNK_SIZE,
+                $stationId,
+                $issuedFrom,
+                $issuedTo,
+                $sortBy,
+                $sortDirection,
+                $fuelType,
+                $quantityMilliLitersMin,
+                $quantityMilliLitersMax,
+                $unitPriceDeciCentsPerLiterMin,
+                $unitPriceDeciCentsPerLiterMax,
+                $vatRatePercent,
+            );
+
+            if ([] === $rows) {
+                return;
+            }
+
+            foreach ($rows as $row) {
+                yield $row;
+            }
+
+            if (count($rows) < self::EXPORT_CHUNK_SIZE) {
+                return;
+            }
+
+            ++$page;
+        }
+    }
+
+    /**
+     * @param array{
+     *     id: string,
+     *     issuedAt: DateTimeImmutable,
+     *     totalCents: int,
+     *     vatAmountCents: int,
+     *     stationName: ?string,
+     *     stationStreetName: ?string,
+     *     stationPostalCode: ?string,
+     *     stationCity: ?string,
+     *     fuelType: ?string,
+     *     quantityMilliLiters: ?int,
+     *     unitPriceDeciCentsPerLiter: ?int,
+     *     vatRatePercent: ?int
+     * } $row
+     */
+    private function mapColumnValue(string $column, array $row): string
+    {
+        return match ($column) {
+            'id' => $row['id'],
+            'issued_at' => $row['issuedAt']->format('Y-m-d H:i:s'),
+            'station_name' => $row['stationName'] ?? '',
+            'station_street_name' => $row['stationStreetName'] ?? '',
+            'station_postal_code' => $row['stationPostalCode'] ?? '',
+            'station_city' => $row['stationCity'] ?? '',
+            'fuel_type' => $row['fuelType'] ?? '',
+            'quantity_milli_liters' => null === $row['quantityMilliLiters'] ? '' : (string) $row['quantityMilliLiters'],
+            'unit_price_deci_cents_per_liter' => null === $row['unitPriceDeciCentsPerLiter'] ? '' : (string) $row['unitPriceDeciCentsPerLiter'],
+            'vat_rate_percent' => null === $row['vatRatePercent'] ? '' : (string) $row['vatRatePercent'],
+            'total_cents' => (string) $row['totalCents'],
+            'vat_amount_cents' => (string) $row['vatAmountCents'],
+            default => '',
+        };
     }
 
     private function nullableString(mixed $value): ?string
@@ -290,5 +598,12 @@ final class ExportReceiptsController extends AbstractController
         }
 
         return $this->parseColumns($columnsValue);
+    }
+
+    private function parseFormat(mixed $value): string
+    {
+        $format = strtolower($this->nullableString($value) ?? self::FORMAT_CSV);
+
+        return in_array($format, [self::FORMAT_CSV, self::FORMAT_XLSX], true) ? $format : self::FORMAT_CSV;
     }
 }

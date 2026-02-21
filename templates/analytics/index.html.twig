@@ -156,6 +156,7 @@
             </div>
             <div class="analytics-actions">
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams) }}">Export CSV</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams|merge({ format: 'xlsx' })) }}">Export XLSX</a>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Receipts</a>
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
             </div>

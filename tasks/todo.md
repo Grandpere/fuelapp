@@ -1,7 +1,8 @@
-# TODO - SP6-004 Time-window and multi-filter analytics
+# TODO - SP6-005 Export service hardening (CSV/XLSX)
 
 ## Plan
-- [completed] Extend analytics KPI read model and API filters with station + fuel type dimensions.
-- [completed] Extend analytics dashboard UI filters (station/fuel type) and keep filter semantics aligned with CSV export from dashboard.
-- [completed] Add/adjust functional tests for API and web dashboard to cover combined filters and consistency.
-- [completed] Run quality gates, update backlog/docs, and commit.
+- [completed] Refactor receipt export to stream CSV rows in chunks for large datasets.
+- [completed] Add optional XLSX export format and include export metadata (generation date + applied filters).
+- [completed] Expose CSV/XLSX options in web UI export actions while preserving existing filter semantics.
+- [completed] Add functional coverage for CSV metadata/filter parity and XLSX response format.
+- [completed] Run quality gates, update backlog docs, and commit.

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Vehicle\Infrastructure\Persistence\Doctrine\Entity;
 
+use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -20,8 +21,9 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'vehicles')]
-#[ORM\UniqueConstraint(name: 'uniq_vehicle_plate_number', columns: ['plate_number'])]
+#[ORM\UniqueConstraint(name: 'uniq_vehicle_owner_plate_number', columns: ['owner_id', 'plate_number'])]
 #[ORM\Index(name: 'idx_vehicle_name', columns: ['name'])]
+#[ORM\Index(name: 'idx_vehicle_owner_id', columns: ['owner_id'])]
 class VehicleEntity
 {
     #[ORM\Id]
@@ -33,6 +35,10 @@ class VehicleEntity
 
     #[ORM\Column(type: 'string', length: 32, name: 'plate_number')]
     private string $plateNumber;
+
+    #[ORM\ManyToOne(targetEntity: UserEntity::class)]
+    #[ORM\JoinColumn(name: 'owner_id', nullable: true, onDelete: 'SET NULL')]
+    private ?UserEntity $owner = null;
 
     #[ORM\Column(type: 'datetime_immutable', name: 'created_at')]
     private DateTimeImmutable $createdAt;
@@ -68,6 +74,16 @@ class VehicleEntity
     public function setPlateNumber(string $plateNumber): void
     {
         $this->plateNumber = $plateNumber;
+    }
+
+    public function getOwner(): ?UserEntity
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(?UserEntity $owner): void
+    {
+        $this->owner = $owner;
     }
 
     public function getCreatedAt(): DateTimeImmutable

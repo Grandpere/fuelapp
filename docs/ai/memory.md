@@ -207,6 +207,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: set `read: false` on PATCH/DELETE operations and load domain objects in custom processors.
 - Prevention: for non-entity API resources driven by custom processors, explicitly choose `read` behavior per operation.
 
+## 2026-02-21 - UI layer must not depend on Infrastructure entities
+- Symptom: PHPStan architecture rule (`phpat`) failed when an API processor referenced `UserEntity`.
+- Root cause: ownership validation was implemented in UI state processor using Doctrine entity class directly.
+- Fix: move owner existence check behind `VehicleRepository` application contract and keep UI depending only on application/domain abstractions.
+- Prevention: when adding validation in UI/API state classes, route cross-layer checks through repository/service interfaces instead of infrastructure entity imports.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -23,7 +23,9 @@ interface VehicleRepository
 
     public function delete(string $id): void;
 
-    public function findByPlateNumber(string $plateNumber): ?Vehicle;
+    public function ownerExists(string $ownerId): bool;
+
+    public function findByOwnerAndPlateNumber(string $ownerId, string $plateNumber): ?Vehicle;
 
     /** @return iterable<Vehicle> */
     public function all(): iterable;

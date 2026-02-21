@@ -15,6 +15,7 @@ namespace App\Receipt\Domain;
 
 use App\Receipt\Domain\ValueObject\ReceiptId;
 use App\Station\Domain\ValueObject\StationId;
+use App\Vehicle\Domain\ValueObject\VehicleId;
 use DateTimeImmutable;
 use InvalidArgumentException;
 
@@ -25,26 +26,33 @@ final class Receipt
     /** @var array<ReceiptLine> */
     private array $lines;
     private ?StationId $stationId;
+    private ?VehicleId $vehicleId;
 
     /** @param array<ReceiptLine> $lines */
-    private function __construct(ReceiptId $id, DateTimeImmutable $issuedAt, array $lines, ?StationId $stationId)
+    private function __construct(ReceiptId $id, DateTimeImmutable $issuedAt, array $lines, ?StationId $stationId, ?VehicleId $vehicleId)
     {
         $this->id = $id;
         $this->issuedAt = $issuedAt;
         $this->lines = $lines;
         $this->stationId = $stationId;
+        $this->vehicleId = $vehicleId;
     }
 
     /** @param array<ReceiptLine> $lines */
-    public static function create(DateTimeImmutable $issuedAt, array $lines, ?StationId $stationId): self
+    public static function create(DateTimeImmutable $issuedAt, array $lines, ?StationId $stationId, ?VehicleId $vehicleId = null): self
     {
-        return new self(ReceiptId::new(), $issuedAt, self::assertLines($lines), $stationId);
+        return new self(ReceiptId::new(), $issuedAt, self::assertLines($lines), $stationId, $vehicleId);
     }
 
     /** @param array<ReceiptLine> $lines */
-    public static function reconstitute(ReceiptId $id, DateTimeImmutable $issuedAt, array $lines, ?StationId $stationId): self
-    {
-        return new self($id, $issuedAt, self::assertLines($lines), $stationId);
+    public static function reconstitute(
+        ReceiptId $id,
+        DateTimeImmutable $issuedAt,
+        array $lines,
+        ?StationId $stationId,
+        ?VehicleId $vehicleId = null,
+    ): self {
+        return new self($id, $issuedAt, self::assertLines($lines), $stationId, $vehicleId);
     }
 
     public function id(): ReceiptId
@@ -66,6 +74,11 @@ final class Receipt
     public function stationId(): ?StationId
     {
         return $this->stationId;
+    }
+
+    public function vehicleId(): ?VehicleId
+    {
+        return $this->vehicleId;
     }
 
     public function totalCents(): int

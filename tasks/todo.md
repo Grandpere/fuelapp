@@ -1,9 +1,8 @@
-# TODO - SP4-002 Back-office API for stations and vehicles
+# TODO - Vehicle Ownership + Receipt Vehicle Reference
 
 ## Plan
-- [completed] Add admin API CRUD for stations under `/api/admin/stations`.
-- [completed] Add vehicle context + persistence + migration + admin API CRUD under `/api/admin/vehicles`.
-- [completed] Add basic filtering/search (`q`, `city`, `geocodingStatus`) for back-office lists.
-- [completed] Keep ownership boundaries explicit: admin-only prefixes, no impact on user-scoped APIs.
-- [completed] Add functional/integration coverage for admin separation and vehicle persistence.
-- [completed] Run quality checks.
+- [completed] Link vehicles to users in domain, persistence, and admin API (`ownerId` required).
+- [completed] Scope vehicle uniqueness by owner (`owner_id + plate_number`).
+- [completed] Add optional receipt-to-vehicle reference in domain/application/API/persistence.
+- [completed] Enforce ownership boundary: a receipt can only reference a vehicle owned by current user.
+- [completed] Run quality checks and validate migration/test suite.

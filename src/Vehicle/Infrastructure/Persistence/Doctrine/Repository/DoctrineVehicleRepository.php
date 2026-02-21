@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Vehicle\Infrastructure\Persistence\Doctrine\Repository;
 
+use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use App\Vehicle\Domain\ValueObject\VehicleId;
 use App\Vehicle\Domain\Vehicle;
@@ -32,6 +33,12 @@ final readonly class DoctrineVehicleRepository implements VehicleRepository
         $entity->setId(Uuid::fromString($vehicle->id()->toString()));
         $entity->setName($vehicle->name());
         $entity->setPlateNumber($vehicle->plateNumber());
+        if (null !== $vehicle->ownerId()) {
+            $ownerRef = $this->em->getReference(UserEntity::class, $vehicle->ownerId());
+            $entity->setOwner($ownerRef);
+        } else {
+            $entity->setOwner(null);
+        }
         $entity->setCreatedAt($vehicle->createdAt());
         $entity->setUpdatedAt($vehicle->updatedAt());
 
@@ -68,14 +75,30 @@ final readonly class DoctrineVehicleRepository implements VehicleRepository
         $this->em->flush();
     }
 
-    public function findByPlateNumber(string $plateNumber): ?Vehicle
+    public function ownerExists(string $ownerId): bool
     {
+        $normalizedOwnerId = trim($ownerId);
+        if ('' === $normalizedOwnerId || !Uuid::isValid($normalizedOwnerId)) {
+            return false;
+        }
+
+        $owner = $this->em->find(UserEntity::class, $normalizedOwnerId);
+
+        return $owner instanceof UserEntity;
+    }
+
+    public function findByOwnerAndPlateNumber(string $ownerId, string $plateNumber): ?Vehicle
+    {
+        $normalizedOwnerId = trim($ownerId);
         $normalized = mb_strtoupper(trim($plateNumber));
-        if ('' === $normalized) {
+        if ('' === $normalized || '' === $normalizedOwnerId || !Uuid::isValid($normalizedOwnerId)) {
             return null;
         }
 
-        $entity = $this->em->getRepository(VehicleEntity::class)->findOneBy(['plateNumber' => $normalized]);
+        $entity = $this->em->getRepository(VehicleEntity::class)->findOneBy([
+            'owner' => Uuid::fromString($normalizedOwnerId),
+            'plateNumber' => $normalized,
+        ]);
         if (!$entity instanceof VehicleEntity) {
             return null;
         }
@@ -107,6 +130,7 @@ final readonly class DoctrineVehicleRepository implements VehicleRepository
     {
         return Vehicle::reconstitute(
             VehicleId::fromString($entity->getId()->toRfc4122()),
+            $entity->getOwner()?->getId()->toRfc4122(),
             $entity->getName(),
             $entity->getPlateNumber(),
             $entity->getCreatedAt(),

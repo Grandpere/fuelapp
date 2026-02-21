@@ -24,7 +24,8 @@ final class ReceiptOutput
         public DateTimeImmutable $issuedAt,
         public int $totalCents,
         public int $vatAmountCents,
-        public Uuid $stationId,
+        public ?Uuid $stationId,
+        public ?Uuid $vehicleId,
         public array $lines,
     ) {
     }

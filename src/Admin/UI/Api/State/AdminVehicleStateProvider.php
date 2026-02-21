@@ -47,9 +47,13 @@ final readonly class AdminVehicleStateProvider implements ProviderInterface
         }
 
         $query = $this->readFilter($context, 'q');
+        $ownerId = $this->readOwnerIdFilter($context, 'ownerId');
         $resources = [];
         foreach ($this->repository->all() as $vehicle) {
             if (null !== $query && !$this->matchesQuery($vehicle, $query)) {
+                continue;
+            }
+            if (null !== $ownerId && $vehicle->ownerId() !== $ownerId) {
                 continue;
             }
 
@@ -63,6 +67,7 @@ final readonly class AdminVehicleStateProvider implements ProviderInterface
     {
         return new AdminVehicleOutput(
             $vehicle->id()->toString(),
+            $vehicle->ownerId(),
             $vehicle->name(),
             $vehicle->plateNumber(),
             $vehicle->createdAt(),
@@ -93,5 +98,16 @@ final readonly class AdminVehicleStateProvider implements ProviderInterface
         $trimmed = trim($value);
 
         return '' === $trimmed ? null : $trimmed;
+    }
+
+    /** @param array<string, mixed> $context */
+    private function readOwnerIdFilter(array $context, string $name): ?string
+    {
+        $value = $this->readFilter($context, $name);
+        if (null === $value || !Uuid::isValid($value)) {
+            return null;
+        }
+
+        return $value;
     }
 }

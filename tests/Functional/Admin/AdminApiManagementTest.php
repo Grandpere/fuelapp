@@ -78,6 +78,8 @@ final class AdminApiManagementTest extends KernelTestCase
     public function testAdminCanManageVehicleCrudAndSearch(): void
     {
         $token = $this->createAdminAndLogin('admin.vehicle@example.com');
+        $vehicleOwner = $this->createUser('vehicle.owner@example.com', 'test1234', ['ROLE_USER']);
+        $this->em->flush();
 
         $createResponse = $this->request(
             'POST',
@@ -86,7 +88,11 @@ final class AdminApiManagementTest extends KernelTestCase
                 'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
                 'CONTENT_TYPE' => 'application/ld+json',
             ],
-            json_encode(['name' => 'Peugeot 208', 'plateNumber' => 'aa-123-bb'], JSON_THROW_ON_ERROR),
+            json_encode([
+                'ownerId' => $vehicleOwner->getId()->toRfc4122(),
+                'name' => 'Peugeot 208',
+                'plateNumber' => 'aa-123-bb',
+            ], JSON_THROW_ON_ERROR),
         );
         self::assertSame(Response::HTTP_CREATED, $createResponse->getStatusCode());
 
@@ -114,7 +120,11 @@ final class AdminApiManagementTest extends KernelTestCase
                 'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
                 'CONTENT_TYPE' => 'application/merge-patch+json',
             ],
-            json_encode(['name' => 'Peugeot 208 GT', 'plateNumber' => 'AA-123-BB'], JSON_THROW_ON_ERROR),
+            json_encode([
+                'ownerId' => $vehicleOwner->getId()->toRfc4122(),
+                'name' => 'Peugeot 208 GT',
+                'plateNumber' => 'AA-123-BB',
+            ], JSON_THROW_ON_ERROR),
         );
         self::assertSame(Response::HTTP_OK, $patchResponse->getStatusCode());
 
@@ -245,7 +255,7 @@ final class AdminApiManagementTest extends KernelTestCase
     }
 
     /** @param list<string> $roles */
-    private function createUser(string $email, string $password, array $roles): void
+    private function createUser(string $email, string $password, array $roles): UserEntity
     {
         $user = new UserEntity();
         $user->setId(Uuid::v7());
@@ -253,5 +263,7 @@ final class AdminApiManagementTest extends KernelTestCase
         $user->setRoles($roles);
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
         $this->em->persist($user);
+
+        return $user;
     }
 }

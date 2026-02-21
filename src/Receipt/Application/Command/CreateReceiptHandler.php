@@ -39,6 +39,7 @@ final readonly class CreateReceiptHandler
             $command->issuedAt,
             $lines,
             $command->stationId,
+            $command->vehicleId,
         );
 
         $this->repository->save($receipt);

@@ -19,6 +19,9 @@ final readonly class AdminVehicleInput
 {
     public function __construct(
         #[Assert\NotBlank]
+        #[Assert\Uuid]
+        public string $ownerId,
+        #[Assert\NotBlank]
         #[Assert\Length(max: 120)]
         public string $name,
         #[Assert\NotBlank]

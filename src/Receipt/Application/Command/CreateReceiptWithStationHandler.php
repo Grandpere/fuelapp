@@ -18,6 +18,7 @@ use App\Station\Application\Command\CreateStationCommand;
 use App\Station\Application\Command\CreateStationHandler;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\ValueObject\StationId;
+use App\Vehicle\Domain\ValueObject\VehicleId;
 use Throwable;
 
 final class CreateReceiptWithStationHandler
@@ -67,6 +68,7 @@ final class CreateReceiptWithStationHandler
             $command->issuedAt,
             $command->lines,
             StationId::fromString($station->id()->toString()),
+            null === $command->vehicleId ? null : VehicleId::fromString($command->vehicleId),
         ));
     }
 }

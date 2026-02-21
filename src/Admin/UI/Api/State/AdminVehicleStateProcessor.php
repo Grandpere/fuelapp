@@ -52,19 +52,24 @@ final readonly class AdminVehicleStateProcessor implements ProcessorInterface
                 throw new NotFoundHttpException();
             }
         } else {
-            $vehicle = Vehicle::create($data->name, $data->plateNumber);
+            $vehicle = Vehicle::create($data->ownerId, $data->name, $data->plateNumber);
         }
 
-        $existing = $this->repository->findByPlateNumber($data->plateNumber);
+        if (!$this->repository->ownerExists($data->ownerId)) {
+            throw new NotFoundHttpException('Owner not found.');
+        }
+
+        $existing = $this->repository->findByOwnerAndPlateNumber($data->ownerId, $data->plateNumber);
         if ($existing instanceof Vehicle && $existing->id()->toString() !== $vehicle->id()->toString()) {
-            throw new ConflictHttpException('A vehicle with this plate number already exists.');
+            throw new ConflictHttpException('A vehicle with this plate number already exists for this owner.');
         }
 
-        $vehicle->update($data->name, $data->plateNumber);
+        $vehicle->update($data->ownerId, $data->name, $data->plateNumber);
         $this->repository->save($vehicle);
 
         return new AdminVehicleOutput(
             $vehicle->id()->toString(),
+            $vehicle->ownerId(),
             $vehicle->name(),
             $vehicle->plateNumber(),
             $vehicle->createdAt(),

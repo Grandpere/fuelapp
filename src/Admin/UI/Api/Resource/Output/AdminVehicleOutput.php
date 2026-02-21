@@ -19,6 +19,7 @@ final readonly class AdminVehicleOutput
 {
     public function __construct(
         public string $id,
+        public ?string $ownerId,
         public string $name,
         public string $plateNumber,
         public DateTimeImmutable $createdAt,

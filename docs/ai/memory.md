@@ -201,6 +201,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: use `datetime_immutable` for DBAL parameter type mapping in projection state upserts.
 - Prevention: when binding `DateTimeImmutable` in DBAL queries, always declare `datetime_immutable` explicitly.
 
+## 2026-02-21 - PostgreSQL nullable filter params need explicit safe casting
+- Symptom: analytics KPI endpoints failed with SQLSTATE errors (`indeterminate datatype` / `invalid input syntax for type uuid: ""`) when optional filters were absent.
+- Root cause: SQL expressions attempted direct casts on nullable/empty-string parameters inside `OR` predicates.
+- Fix: normalize optional filters to empty string and cast with `NULLIF(:param, '')` (UUID) or explicit `CAST(... AS date)` for date filters.
+- Prevention: for optional DBAL filters on PostgreSQL, avoid direct casting of raw nullable params; normalize inputs and cast only sanitized values.
+
 ## 2026-02-21 - Access control assertions need real routed endpoints
 - Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
 - Root cause: firewall access checks are not a substitute for route existence in functional assertions.

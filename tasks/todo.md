@@ -1,8 +1,7 @@
-# TODO - SP6-001 Analytics read model and aggregation strategy
+# TODO - SP6-002 KPI API endpoints
 
 ## Plan
-- [completed] Add analytics read-model schema (daily KPI + projection freshness state).
-- [completed] Implement deterministic aggregation service with observable refresh metadata.
-- [completed] Add sync/async refresh entry points (command + message handler + Make targets).
-- [completed] Add integration coverage for projection correctness and freshness updates.
+- [completed] Add analytics KPI read service for monthly cost, monthly consumption, and average fuel price.
+- [completed] Expose API Platform endpoints with period/vehicle filters and explicit units.
+- [completed] Add functional API coverage for values and ownership isolation using refreshed projection.
 - [completed] Update backlog docs/status, run quality gates, and commit.

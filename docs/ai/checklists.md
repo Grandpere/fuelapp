@@ -10,7 +10,8 @@ Reusable, update-friendly checklists for delivery quality.
 - [ ] Add/update tests for changed behavior (mandatory):
 - [ ] `Unit` for domain/application rules.
 - [ ] `Integration` for persistence/repository/infrastructure behavior.
-- [ ] `Functional` for HTTP/security/UI/API flows when endpoints/pages are touched.
+- [ ] `Functional` tests are prepared/updated for HTTP/security/UI/API flows when endpoints/pages are touched.
+- [ ] Ask the user to run `make phpunit-functional` manually and share any errors (agent does not run it automatically).
 - [ ] Run quality gates locally.
 - [ ] Update docs if behavior/contracts changed.
 
@@ -59,6 +60,7 @@ Reusable, update-friendly checklists for delivery quality.
 - [ ] `make phpunit-unit`
 - [ ] `make phpunit-integration`
 - [ ] `make php-cs-fixer-check`
+- [ ] If functional coverage is impacted: ask user to run `make phpunit-functional`, then process returned errors.
 
 ## Maintenance rule
 When a recurring issue appears, append a short entry in `/docs/ai/memory.md` and, if process-related, update this checklist file.

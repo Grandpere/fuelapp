@@ -65,7 +65,9 @@ Run at least:
 - `make php-cs-fixer-check`
 
 And when web/security/API behavior changed:
-- run `make phpunit-functional` (or equivalent targeted functional suite).
+- do not run `make phpunit-functional` automatically from agent actions.
+- ask the user to run `make phpunit-functional` (or equivalent targeted functional suite) manually.
+- request the user to share failing output/errors, then fix based on those errors.
 
 If JS packages are added to importmap:
 - run `php bin/console importmap:install` in app container.

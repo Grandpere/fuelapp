@@ -207,6 +207,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: normalize optional filters to empty string and cast with `NULLIF(:param, '')` (UUID) or explicit `CAST(... AS date)` for date filters.
 - Prevention: for optional DBAL filters on PostgreSQL, avoid direct casting of raw nullable params; normalize inputs and cast only sanitized values.
 
+## 2026-02-21 - Deci-cents fuel price formatting in UI
+- Symptom: analytics dashboard tests expected wrong average EUR/L display.
+- Root cause: `averagePriceDeciCentsPerLiter` unit was interpreted as cents instead of deci-cents in assertions.
+- Fix: convert deci-cents per liter to EUR/L with `/ 1000` and align tests/UI labels to that unit.
+- Prevention: when exposing derived pricing metrics, keep explicit unit labels in DTO/UI and validate conversion formula in functional tests.
+
 ## 2026-02-21 - Access control assertions need real routed endpoints
 - Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
 - Root cause: firewall access checks are not a substitute for route existence in functional assertions.

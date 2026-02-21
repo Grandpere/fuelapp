@@ -1,0 +1,251 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .analytics-page {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .analytics-header p {
+            margin: 0.35rem 0 0;
+        }
+
+        .analytics-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .analytics-filters {
+            padding: 1rem;
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .analytics-filters-form {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.7rem;
+            align-items: end;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .kpi-card {
+            padding: 0.95rem;
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .kpi-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-soft);
+        }
+
+        .kpi-value {
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.24rem;
+            font-weight: 700;
+        }
+
+        .trend-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.85rem;
+        }
+
+        .trend-card {
+            padding: 1rem;
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .trend-card h2 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .trend-list {
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .trend-row {
+            display: grid;
+            grid-template-columns: 68px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .trend-month {
+            color: var(--text-soft);
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .trend-bar-wrap {
+            background: rgba(6, 26, 38, 0.55);
+            border: 1px solid rgba(92, 133, 159, 0.32);
+            border-radius: 999px;
+            height: 12px;
+            overflow: hidden;
+        }
+
+        .trend-bar {
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .trend-bar-cost {
+            background: linear-gradient(120deg, rgba(247, 181, 0, 0.88), rgba(240, 138, 0, 0.94));
+        }
+
+        .trend-bar-consumption {
+            background: linear-gradient(120deg, rgba(97, 221, 255, 0.88), rgba(38, 167, 241, 0.94));
+        }
+
+        .trend-value {
+            font-size: 0.82rem;
+            color: #d6e5ef;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            padding: 0.8rem;
+            border: 1px dashed rgba(147, 178, 198, 0.35);
+            border-radius: 10px;
+            color: var(--text-soft);
+        }
+
+        @media (max-width: 980px) {
+            .analytics-filters-form,
+            .kpi-grid,
+            .trend-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell analytics-page">
+        <section class="analytics-header">
+            <div>
+                <h1 class="page-title">Analytics Dashboard</h1>
+                <p class="muted">Pilot fuel spend and consumption trends across your selected period.</p>
+            </div>
+            <div class="analytics-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Receipts</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
+            </div>
+        </section>
+
+        <section class="card analytics-filters">
+            <form class="analytics-filters-form" method="get" action="{{ path('ui_analytics_dashboard') }}">
+                <label class="label">
+                    From
+                    <input class="input" type="date" name="from" value="{{ fromFilter ?? '' }}">
+                </label>
+                <label class="label">
+                    To
+                    <input class="input" type="date" name="to" value="{{ toFilter ?? '' }}">
+                </label>
+                <label class="label">
+                    Vehicle
+                    <select class="select" name="vehicle_id">
+                        <option value="">All vehicles</option>
+                        {% for optionId, optionLabel in vehicleOptions %}
+                            <option value="{{ optionId }}" {% if vehicleFilter == optionId %}selected{% endif %}>{{ optionLabel }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                    <button class="btn btn-primary" type="submit">Apply filters</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard') }}">Reset</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="kpi-grid">
+            <article class="card-subtle kpi-card">
+                <div class="kpi-label">Total cost</div>
+                <div class="kpi-value">{{ (totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</div>
+            </article>
+            <article class="card-subtle kpi-card">
+                <div class="kpi-label">Fuel volume</div>
+                <div class="kpi-value">{{ (totalQuantityMilliLiters / 1000)|number_format(2, '.', ' ') }} L</div>
+            </article>
+            <article class="card-subtle kpi-card">
+                <div class="kpi-label">Average fuel price</div>
+                <div class="kpi-value">
+                    {% if averagePriceDeciCentsPerLiter is not null %}
+                        {{ (averagePriceDeciCentsPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
+                    {% else %}
+                        n/a
+                    {% endif %}
+                </div>
+            </article>
+        </section>
+
+        <section class="trend-grid">
+            <article class="card trend-card">
+                <h2>Cost trend by month</h2>
+                {% if costTrend is empty %}
+                    <div class="empty-state">No cost data for current filters.</div>
+                {% else %}
+                    <div class="trend-list">
+                        {% for item in costTrend %}
+                            <div class="trend-row">
+                                <span class="trend-month">{{ item.month }}</span>
+                                <div class="trend-bar-wrap">
+                                    <div class="trend-bar trend-bar-cost" style="width: {{ item.ratio }}%;"></div>
+                                </div>
+                                <span class="trend-value">{{ (item.value / 100)|number_format(2, '.', ' ') }} EUR</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </article>
+
+            <article class="card trend-card">
+                <h2>Consumption trend by month</h2>
+                {% if consumptionTrend is empty %}
+                    <div class="empty-state">No consumption data for current filters.</div>
+                {% else %}
+                    <div class="trend-list">
+                        {% for item in consumptionTrend %}
+                            <div class="trend-row">
+                                <span class="trend-month">{{ item.month }}</span>
+                                <div class="trend-bar-wrap">
+                                    <div class="trend-bar trend-bar-consumption" style="width: {{ item.ratio }}%;"></div>
+                                </div>
+                                <span class="trend-value">{{ (item.value / 1000)|number_format(2, '.', ' ') }} L</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </article>
+        </section>
+    </main>
+{% endblock %}
+

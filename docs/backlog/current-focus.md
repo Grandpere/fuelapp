@@ -7,12 +7,12 @@
 - Deliver decision-oriented metrics and robust exports.
 
 ## In progress
-- `SP6-003` - Dashboard UI (fuel, cost, trend).
+- `SP6-004` - Time-window and multi-filter analytics.
 
 ## Next tickets (ordered)
-1. `SP6-003` - Dashboard UI (fuel, cost, trend)
-2. `SP6-004` - Time-window and multi-filter analytics
-3. `SP6-005` - Export service hardening (CSV/XLSX)
+1. `SP6-004` - Time-window and multi-filter analytics
+2. `SP6-005` - Export service hardening (CSV/XLSX)
+3. `SP6-006` - Performance budget and query optimization
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -55,6 +55,7 @@
 - `SP5-009` delivered: vehicle web CRUD for users and back-office vehicle mutation forms for admins with functional coverage.
 - `SP6-001` delivered: analytics daily fuel KPI read-model, refresh pipeline (sync/async), and projection freshness metadata.
 - `SP6-002` delivered: KPI API endpoints (cost/month, consumption/month, average fuel price) with period/vehicle filters and explicit units.
+- `SP6-003` delivered: responsive analytics dashboard UI with period/vehicle filters, KPI cards, and monthly trend views.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

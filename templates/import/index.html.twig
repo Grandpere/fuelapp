@@ -13,7 +13,7 @@
             <form method="post" enctype="multipart/form-data" style="display:grid; gap:.7rem; max-width: 560px;">
                 <input type="hidden" name="_token" value="{{ csrf_token('ui_import_upload') }}">
                 <label class="label">
-                    Receipt file (PDF/JPEG/PNG/WEBP, max 10MB)
+                    Receipt file (PDF/JPEG/PNG/WEBP, max 1MB)
                     <input class="input" type="file" name="file" accept=".pdf,image/jpeg,image/png,image/webp" required>
                 </label>
                 <div style="display:flex; gap:.6rem; flex-wrap:wrap;">

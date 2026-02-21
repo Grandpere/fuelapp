@@ -28,7 +28,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ImportJobWebController extends AbstractController
 {
-    private const MAX_UPLOAD_SIZE = '10M';
+    // OCR.Space free tier hard limit.
+    private const MAX_UPLOAD_SIZE = '1024K';
 
     /** @var list<string> */
     private const ALLOWED_MIME_TYPES = [
@@ -69,6 +70,7 @@ final class ImportJobWebController extends AbstractController
                 new Assert\File(
                     maxSize: self::MAX_UPLOAD_SIZE,
                     mimeTypes: self::ALLOWED_MIME_TYPES,
+                    maxSizeMessage: 'File is too large. Current import limit is 1 MB.',
                     mimeTypesMessage: 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.',
                 ),
             ]);

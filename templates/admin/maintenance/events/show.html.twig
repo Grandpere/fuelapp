@@ -1,0 +1,51 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Maintenance Event Detail{% endblock %}
+
+{% set admin_section = 'maintenance_events' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Maintenance Event Detail</h2>
+        <p class="muted">Back-office detail view with direct mutation actions.</p>
+
+        <dl class="admin-dl" style="margin-top: 1rem;">
+            <dt class="admin-dt">ID</dt>
+            <dd class="admin-dd">{{ event.id.toString }}</dd>
+            <dt class="admin-dt">Owner ID</dt>
+            <dd class="admin-dd">{{ event.ownerId }}</dd>
+            <dt class="admin-dt">Vehicle ID</dt>
+            <dd class="admin-dd">{{ event.vehicleId }}</dd>
+            <dt class="admin-dt">Type</dt>
+            <dd class="admin-dd">{{ event.eventType.value }}</dd>
+            <dt class="admin-dt">Occurred at</dt>
+            <dd class="admin-dd">{{ event.occurredAt|date('Y-m-d H:i:s') }}</dd>
+            <dt class="admin-dt">Description</dt>
+            <dd class="admin-dd">{{ event.description ?? 'n/a' }}</dd>
+            <dt class="admin-dt">Odometer</dt>
+            <dd class="admin-dd">{{ event.odometerKilometers ?? 'n/a' }}</dd>
+            <dt class="admin-dt">Total cost</dt>
+            <dd class="admin-dd">
+                {% if event.totalCostCents is not null %}
+                    {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}
+                {% else %}
+                    n/a
+                {% endif %}
+            </dd>
+            <dt class="admin-dt">Created at</dt>
+            <dd class="admin-dd">{{ event.createdAt|date('Y-m-d H:i:s') }}</dd>
+            <dt class="admin-dt">Updated at</dt>
+            <dd class="admin-dd">{{ event.updatedAt|date('Y-m-d H:i:s') }}</dd>
+        </dl>
+
+        <div style="margin-top: 1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Back to list</a>
+            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString}) }}">Edit event</a>
+            <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" onsubmit="return confirm('Delete this maintenance event?');" style="display:inline-flex;">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.id.toString) }}">
+                <button class="btn btn-danger" type="submit">Delete</button>
+            </form>
+            <a class="btn btn-secondary" href="/api/admin/maintenance/events/{{ event.id.toString }}">Open API resource</a>
+        </div>
+    </section>
+{% endblock %}

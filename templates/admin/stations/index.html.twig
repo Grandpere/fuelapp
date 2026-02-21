@@ -17,12 +17,12 @@
                     <th>Address</th>
                     <th>Geocoding</th>
                     <th>Coordinates</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 {% for station in stations %}
-                    <tr class="table-row">
+                    <tr class="table-row" style="cursor:pointer;" onclick="if (!event.target.closest('a,button,input,form,select,textarea,label')) { window.location.href='{{ path('ui_admin_station_show', {id: station.id.toString}) }}'; }">
                         <td>{{ station.name }}</td>
                         <td>{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}</td>
                         <td><span class="pill pill-energy">{{ station.geocodingStatus.value }}</span></td>
@@ -33,7 +33,14 @@
                                 <span class="muted">n/a</span>
                             {% endif %}
                         </td>
-                        <td><a class="btn btn-secondary" href="{{ path('ui_admin_station_show', {id: station.id.toString}) }}">Detail</a></td>
+                        <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_station_show', {id: station.id.toString}) }}">Detail</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_station_edit', {id: station.id.toString}) }}">Edit</a>
+                            <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
+                                <button class="btn btn-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                 {% else %}
                     <tr>

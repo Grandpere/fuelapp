@@ -22,7 +22,7 @@
                 </thead>
                 <tbody>
                 {% for vehicle in vehicles %}
-                    <tr class="table-row">
+                    <tr class="table-row" style="cursor:pointer;" onclick="if (!event.target.closest('a,button,input,form,select,textarea,label')) { window.location.href='{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString}) }}'; }">
                         <td>{{ vehicle.name }}</td>
                         <td>{{ vehicle.plateNumber }}</td>
                         <td>{{ vehicle.ownerId ?? 'n/a' }}</td>

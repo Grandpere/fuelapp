@@ -29,7 +29,7 @@ final readonly class UpdateStationAddressHandler
 
     public function __invoke(UpdateStationAddressCommand $command): ?Station
     {
-        $station = $this->repository->get($command->id);
+        $station = $this->repository->get($command->id) ?? $this->repository->getForSystem($command->id);
         if (null === $station) {
             return null;
         }

@@ -83,7 +83,7 @@
                 </thead>
                 <tbody>
                 {% for job in jobs %}
-                    <tr class="table-row">
+                    <tr class="table-row" style="cursor:pointer;" onclick="if (!event.target.closest('a,button,input,form,select,textarea,label')) { window.location.href='{{ path('ui_admin_import_job_show', {id: job.id.toString}) }}'; }">
                         <td>{{ job.id.toString }}</td>
                         <td>
                             <span class="pill pill-energy" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color: #1d1405;">

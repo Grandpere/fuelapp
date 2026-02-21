@@ -1,0 +1,112 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Import Jobs{% endblock %}
+
+{% set admin_section = 'imports' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Import Jobs</h2>
+        <p class="muted">Operational dashboard for OCR/import pipeline triage.</p>
+
+        <div class="admin-metric-grid" style="margin-top: 1rem;">
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Needs review</p>
+                <p class="admin-metric-value">{{ metrics['needs_review']|default(0) }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Failed</p>
+                <p class="admin-metric-value">{{ metrics['failed']|default(0) }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Queued + processing</p>
+                <p class="admin-metric-value">{{ (metrics['queued']|default(0)) + (metrics['processing']|default(0)) }}</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="card admin-panel" style="margin-top: 1rem;">
+        <h3 style="margin: 0;">Filters</h3>
+        <form method="get" style="margin-top: .9rem; display: grid; gap: .75rem;">
+            <div class="form-grid-2">
+                <label class="label">
+                    Status
+                    <select name="status" class="select">
+                        <option value="">All</option>
+                        {% for status in statusOptions %}
+                            <option value="{{ status }}" {{ filters.status == status ? 'selected' : '' }}>{{ status }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
+                    Source (storage)
+                    <input class="input" type="text" name="source" value="{{ filters.source ?? '' }}" placeholder="local">
+                </label>
+                <label class="label">
+                    Owner ID
+                    <input class="input" type="text" name="ownerId" value="{{ filters.ownerId ?? '' }}" placeholder="UUID user">
+                </label>
+                <label class="label">
+                    Search (id/file/checksum)
+                    <input class="input" type="text" name="q" value="{{ filters.q ?? '' }}" placeholder="invoice-2026-02.pdf">
+                </label>
+                <label class="label">
+                    Created from
+                    <input class="input" type="date" name="createdFrom" value="{{ filters.createdFrom ?? '' }}">
+                </label>
+                <label class="label">
+                    Created to
+                    <input class="input" type="date" name="createdTo" value="{{ filters.createdTo ?? '' }}">
+                </label>
+            </div>
+            <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" type="submit">Apply filters</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}">Reset</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="card admin-panel" style="margin-top: 1rem;">
+        <div class="table-wrap">
+            <table class="app-table" style="min-width: 1180px;">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Status</th>
+                    <th>Owner ID</th>
+                    <th>File</th>
+                    <th>Source</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for job in jobs %}
+                    <tr class="table-row">
+                        <td>{{ job.id.toString }}</td>
+                        <td>
+                            <span class="pill pill-energy" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color: #1d1405;">
+                                {{ job.status.value }}
+                            </span>
+                        </td>
+                        <td>{{ job.ownerId }}</td>
+                        <td>
+                            <div>{{ job.originalFilename }}</div>
+                            <div class="muted" style="font-size: .78rem;">{{ job.mimeType }} · {{ job.fileSizeBytes }} bytes</div>
+                        </td>
+                        <td>{{ job.storage }}</td>
+                        <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
+                        <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
+                        <td><a class="btn btn-secondary" href="{{ path('ui_admin_import_job_show', {id: job.id.toString}) }}">Detail</a></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="muted">No import jobs match current filters.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

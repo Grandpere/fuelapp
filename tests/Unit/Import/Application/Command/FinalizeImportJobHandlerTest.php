@@ -144,6 +144,11 @@ final class FinalizeInMemoryImportJobRepository implements ImportJobRepository
     {
         return array_values($this->items);
     }
+
+    public function allForSystem(): iterable
+    {
+        return $this->all();
+    }
 }
 
 final class FinalizeInMemoryReceiptRepository implements ReceiptRepository

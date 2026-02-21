@@ -1,0 +1,65 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Import Job Detail{% endblock %}
+
+{% set admin_section = 'imports' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Import Job Detail</h2>
+        <p class="muted">Detailed payload and processing metadata for troubleshooting.</p>
+
+        <dl class="admin-dl" style="margin-top: 1rem;">
+            <dt class="admin-dt">ID</dt>
+            <dd class="admin-dd">{{ job.id.toString }}</dd>
+            <dt class="admin-dt">Status</dt>
+            <dd class="admin-dd">{{ job.status.value }}</dd>
+            <dt class="admin-dt">Owner ID</dt>
+            <dd class="admin-dd">{{ job.ownerId }}</dd>
+            <dt class="admin-dt">Storage</dt>
+            <dd class="admin-dd">{{ job.storage }}</dd>
+            <dt class="admin-dt">File path</dt>
+            <dd class="admin-dd">{{ job.filePath }}</dd>
+            <dt class="admin-dt">Original filename</dt>
+            <dd class="admin-dd">{{ job.originalFilename }}</dd>
+            <dt class="admin-dt">Mime type</dt>
+            <dd class="admin-dd">{{ job.mimeType }}</dd>
+            <dt class="admin-dt">File size</dt>
+            <dd class="admin-dd">{{ job.fileSizeBytes }} bytes</dd>
+            <dt class="admin-dt">Checksum (sha256)</dt>
+            <dd class="admin-dd">{{ job.fileChecksumSha256 }}</dd>
+            <dt class="admin-dt">Created at</dt>
+            <dd class="admin-dd">{{ job.createdAt|date('Y-m-d H:i:s') }}</dd>
+            <dt class="admin-dt">Updated at</dt>
+            <dd class="admin-dd">{{ job.updatedAt|date('Y-m-d H:i:s') }}</dd>
+            <dt class="admin-dt">Started at</dt>
+            <dd class="admin-dd">{{ job.startedAt ? job.startedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
+            <dt class="admin-dt">Completed at</dt>
+            <dd class="admin-dd">{{ job.completedAt ? job.completedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
+            <dt class="admin-dt">Failed at</dt>
+            <dd class="admin-dd">{{ job.failedAt ? job.failedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
+        </dl>
+
+        {% if payloadData is not null %}
+            <div class="card-subtle" style="margin-top: 1rem; padding: .9rem;">
+                <p style="margin: 0 0 .5rem; font-weight: 700;">Decoded payload</p>
+                <pre style="margin: 0; overflow:auto; white-space: pre-wrap; font-size: .82rem;">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+            </div>
+        {% elseif payload %}
+            <div class="card-subtle" style="margin-top: 1rem; padding: .9rem;">
+                <p style="margin: 0 0 .5rem; font-weight: 700;">Raw payload</p>
+                <pre style="margin: 0; overflow:auto; white-space: pre-wrap; font-size: .82rem;">{{ payload }}</pre>
+            </div>
+        {% else %}
+            <p class="muted" style="margin-top: 1rem;">No payload available.</p>
+        {% endif %}
+
+        <div style="margin-top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+            <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}">Back to list</a>
+            <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}">Open API resource</a>
+            {% if job.status.value == 'needs_review' %}
+                <a class="btn btn-primary" href="/api/docs">Finalize from API docs</a>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

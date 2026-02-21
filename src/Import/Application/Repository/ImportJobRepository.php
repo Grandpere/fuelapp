@@ -27,4 +27,7 @@ interface ImportJobRepository
 
     /** @return iterable<ImportJob> */
     public function all(): iterable;
+
+    /** @return iterable<ImportJob> */
+    public function allForSystem(): iterable;
 }

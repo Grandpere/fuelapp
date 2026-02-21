@@ -218,6 +218,11 @@ final class InMemoryImportJobRepository implements ImportJobRepository
         return array_values($this->items);
     }
 
+    public function allForSystem(): iterable
+    {
+        return $this->all();
+    }
+
     public function findLatestByOwnerAndChecksum(string $ownerId, string $checksumSha256, ?string $excludeJobId = null): ?ImportJob
     {
         $latest = null;

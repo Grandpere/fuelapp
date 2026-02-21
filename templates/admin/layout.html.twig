@@ -151,7 +151,7 @@
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'dashboard' ? 'is-active' : '' }}" href="{{ path('ui_admin_dashboard') }}">Dashboard</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'stations' ? 'is-active' : '' }}" href="{{ path('ui_admin_station_list') }}">Stations</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'vehicles' ? 'is-active' : '' }}" href="{{ path('ui_admin_vehicle_list') }}">Vehicles</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'imports' ? 'is-active' : '' }}" href="/api/docs">Imports API</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'imports' ? 'is-active' : '' }}" href="{{ path('ui_admin_import_job_list') }}">Imports</a>
             </nav>
         </aside>
 

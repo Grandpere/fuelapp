@@ -19,4 +19,4 @@ Users need a safe entrypoint for receipt files.
 - SP3-001.
 
 ## Status
-- todo
+- done

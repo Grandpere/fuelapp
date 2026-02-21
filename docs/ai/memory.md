@@ -141,6 +141,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: add `Import` attribute mapping block in Doctrine ORM configuration.
 - Prevention: each new bounded context with Doctrine entities must include mapping registration in the same change set.
 
+## 2026-02-21 - File mime validation via `Assert\File` requires Mime component
+- Symptom: functional API upload tests returned 500 with `You cannot guess the mime type as the Mime component is not installed`.
+- Root cause: `Assert\File(mimeTypes: ...)` triggers mime guessing logic that depends on `symfony/mime`, not present in this project.
+- Fix: replace mime validation with explicit upload checks (size + allowed client mime/extension) for this endpoint.
+- Prevention: before using `Assert\File` mime checks, either install `symfony/mime` or choose explicit validation that does not require mime guessing.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -7,11 +7,11 @@
 - Deliver async import foundations (job model, upload endpoint, orchestration).
 
 ## In progress
-- `SP3-002` - Upload API endpoint validation.
+- `SP3-003` - Async pipeline orchestration.
 
 ## Next tickets (ordered)
-1. `SP3-002` - Upload API endpoint validation
-2. `SP3-003` - Async pipeline orchestration
+1. `SP3-003` - Async pipeline orchestration
+2. `SP3-004` - OCR adapter abstraction and first provider
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -29,6 +29,7 @@
 - Generic OIDC SSO integration layer delivered (Auth0-ready, provider-agnostic).
 - OIDC provider catalog/conventions delivered (claims mapping + onboarding checklist).
 - `SP3-001` delivered: import job domain model, persistence, local storage adapter, and baseline tests.
+- `SP3-002` delivered: authenticated upload endpoint with validation and queued import job creation.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

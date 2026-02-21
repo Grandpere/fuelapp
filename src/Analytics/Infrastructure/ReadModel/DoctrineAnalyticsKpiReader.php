@@ -38,8 +38,8 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                     FROM analytics_daily_fuel_kpis
                     WHERE owner_id = :ownerId
                       AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
-                      AND (:fromDate = '' OR day >= CAST(:fromDate AS date))
-                      AND (:toDate = '' OR day <= CAST(:toDate AS date))
+                      AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
+                      AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
                     GROUP BY DATE_TRUNC('month', day::timestamp)
                     ORDER BY DATE_TRUNC('month', day::timestamp)
                 SQL,
@@ -76,8 +76,8 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                     FROM analytics_daily_fuel_kpis
                     WHERE owner_id = :ownerId
                       AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
-                      AND (:fromDate = '' OR day >= CAST(:fromDate AS date))
-                      AND (:toDate = '' OR day <= CAST(:toDate AS date))
+                      AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
+                      AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
                     GROUP BY DATE_TRUNC('month', day::timestamp)
                     ORDER BY DATE_TRUNC('month', day::timestamp)
                 SQL,
@@ -116,8 +116,8 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                     FROM analytics_daily_fuel_kpis
                     WHERE owner_id = :ownerId
                       AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
-                      AND (:fromDate = '' OR day >= CAST(:fromDate AS date))
-                      AND (:toDate = '' OR day <= CAST(:toDate AS date))
+                      AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
+                      AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
                 SQL,
             [
                 'ownerId' => $ownerId,

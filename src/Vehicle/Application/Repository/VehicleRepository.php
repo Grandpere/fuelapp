@@ -25,6 +25,8 @@ interface VehicleRepository
 
     public function ownerExists(string $ownerId): bool;
 
+    public function belongsToOwner(string $vehicleId, string $ownerId): bool;
+
     public function findByOwnerAndPlateNumber(string $ownerId, string $plateNumber): ?Vehicle;
 
     /** @return iterable<Vehicle> */

@@ -75,5 +75,6 @@ final class DoctrineVehicleRepositoryTest extends KernelTestCase
         $loadedByPlate = $this->repository->findByOwnerAndPlateNumber($owner->getId()->toRfc4122(), 'aa-123-bb');
         self::assertNotNull($loadedByPlate);
         self::assertSame($vehicle->id()->toString(), $loadedByPlate->id()->toString());
+        self::assertTrue($this->repository->belongsToOwner($vehicle->id()->toString(), $owner->getId()->toRfc4122()));
     }
 }

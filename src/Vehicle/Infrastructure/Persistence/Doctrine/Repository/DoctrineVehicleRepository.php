@@ -87,6 +87,26 @@ final readonly class DoctrineVehicleRepository implements VehicleRepository
         return $owner instanceof UserEntity;
     }
 
+    public function belongsToOwner(string $vehicleId, string $ownerId): bool
+    {
+        $normalizedVehicleId = trim($vehicleId);
+        $normalizedOwnerId = trim($ownerId);
+        if ('' === $normalizedVehicleId || '' === $normalizedOwnerId || !Uuid::isValid($normalizedVehicleId) || !Uuid::isValid($normalizedOwnerId)) {
+            return false;
+        }
+
+        $count = (int) $this->em->getRepository(VehicleEntity::class)->createQueryBuilder('v')
+            ->select('COUNT(v.id)')
+            ->andWhere('v.id = :vehicleId')
+            ->andWhere('IDENTITY(v.owner) = :ownerId')
+            ->setParameter('vehicleId', Uuid::fromString($normalizedVehicleId))
+            ->setParameter('ownerId', Uuid::fromString($normalizedOwnerId))
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count > 0;
+    }
+
     public function findByOwnerAndPlateNumber(string $ownerId, string $plateNumber): ?Vehicle
     {
         $normalizedOwnerId = trim($ownerId);

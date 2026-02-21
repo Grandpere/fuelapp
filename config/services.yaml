@@ -88,6 +88,7 @@ services:
             $baseDirectory: '%app.import.storage_dir%'
     App\Import\Application\Ocr\OcrProvider: '@App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider'
     App\Import\Application\Parsing\ReceiptOcrParser: '@App\Import\Infrastructure\Parsing\RegexReceiptOcrParser'
+    App\Shared\Application\Security\AuthenticatedUserIdProvider: '@App\Shared\Infrastructure\Security\TokenStorageAuthenticatedUserIdProvider'
     App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider:
         arguments:
             $httpClient: '@http_client'
@@ -97,6 +98,8 @@ services:
             $engine: '%app.import.ocr_space_engine%'
     App\Receipt\Application\Repository\ReceiptRepository: '@App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository'
     App\Import\Application\Repository\ImportJobRepository: '@App\Import\Infrastructure\Persistence\Doctrine\Repository\DoctrineImportJobRepository'
+    App\Maintenance\Application\Repository\MaintenanceEventRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceEventRepository'
+    App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRuleRepository'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'
     App\Vehicle\Application\Repository\VehicleRepository: '@App\Vehicle\Infrastructure\Persistence\Doctrine\Repository\DoctrineVehicleRepository'
     App\Admin\Application\Audit\AdminAuditContext: '@App\Admin\Infrastructure\Audit\SecurityRequestAdminAuditContext'

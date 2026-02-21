@@ -119,7 +119,14 @@ final class UploadImportControllerTest extends KernelTestCase
         $this->em->flush();
 
         $token = $this->apiLogin($email, $password);
-        $upload = $this->createUploadedFile('ticket.png', 'fake-image-content', 'image/png');
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+        $upload = $this->createUploadedFile('ticket.png', $png, 'image/png');
 
         $response = $this->request(
             'POST',

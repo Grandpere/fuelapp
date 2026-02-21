@@ -22,10 +22,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class UploadImportController extends AbstractController
 {
-    private const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
+    private const MAX_UPLOAD_SIZE = '10M';
 
     /** @var list<string> */
     private const ALLOWED_MIME_TYPES = [
@@ -35,17 +37,10 @@ final class UploadImportController extends AbstractController
         'image/webp',
     ];
 
-    /** @var list<string> */
-    private const ALLOWED_EXTENSIONS = [
-        'pdf',
-        'jpg',
-        'jpeg',
-        'png',
-        'webp',
-    ];
-
-    public function __construct(private readonly CreateImportJobHandler $handler)
-    {
+    public function __construct(
+        private readonly CreateImportJobHandler $handler,
+        private readonly ValidatorInterface $validator,
+    ) {
     }
 
     #[Route('/api/imports', name: 'api_import_upload', methods: ['POST'])]
@@ -64,30 +59,23 @@ final class UploadImportController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $size = $uploadedFile->getSize();
-        if (false === $size || $size <= 0) {
-            return $this->json([
-                'message' => 'Validation failed.',
-                'errors' => [['field' => 'file', 'message' => 'Uploaded file is empty.']],
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+        $violations = $this->validator->validate($uploadedFile, [
+            new Assert\File(
+                maxSize: self::MAX_UPLOAD_SIZE,
+                mimeTypes: self::ALLOWED_MIME_TYPES,
+                mimeTypesMessage: 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.',
+            ),
+        ]);
 
-        if ($size > self::MAX_UPLOAD_SIZE_BYTES) {
-            return $this->json([
-                'message' => 'Validation failed.',
-                'errors' => [['field' => 'file', 'message' => 'File is too large (max 10MB).']],
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+        if (count($violations) > 0) {
+            $errors = [];
+            foreach ($violations as $violation) {
+                $errors[] = ['field' => 'file', 'message' => $violation->getMessage()];
+            }
 
-        $clientMimeType = mb_strtolower(trim((string) $uploadedFile->getClientMimeType()));
-        $extension = mb_strtolower(trim((string) $uploadedFile->getClientOriginalExtension()));
-        if (
-            !in_array($clientMimeType, self::ALLOWED_MIME_TYPES, true)
-            && !in_array($extension, self::ALLOWED_EXTENSIONS, true)
-        ) {
             return $this->json([
                 'message' => 'Validation failed.',
-                'errors' => [['field' => 'file', 'message' => 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.']],
+                'errors' => $errors,
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 

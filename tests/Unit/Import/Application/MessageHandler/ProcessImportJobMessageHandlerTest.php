@@ -15,7 +15,11 @@ namespace App\Tests\Unit\Import\Application\MessageHandler;
 
 use App\Import\Application\Message\ProcessImportJobMessage;
 use App\Import\Application\MessageHandler\ProcessImportJobMessageHandler;
+use App\Import\Application\Ocr\OcrExtraction;
+use App\Import\Application\Ocr\OcrProvider;
+use App\Import\Application\Ocr\OcrProviderException;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use PHPUnit\Framework\TestCase;
@@ -26,14 +30,19 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
     public function testItSkipsUnknownImportJob(): void
     {
         $repository = new InMemoryImportJobRepository([]);
-        $handler = new ProcessImportJobMessageHandler($repository, new NullLogger());
+        $handler = new ProcessImportJobMessageHandler(
+            $repository,
+            new FakeStoredFileLocator('/tmp/upload.pdf'),
+            new FakeOcrProvider(new OcrExtraction('fake', 'text', ['text'], [])),
+            new NullLogger(),
+        );
 
         $handler(new ProcessImportJobMessage('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01'));
 
         self::assertSame(0, $repository->saveCount);
     }
 
-    public function testItTransitionsQueuedJobToNeedsReviewThroughProcessing(): void
+    public function testItTransitionsQueuedJobToNeedsReviewWithOcrPayload(): void
     {
         $job = ImportJob::createQueued(
             '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
@@ -46,7 +55,12 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         );
 
         $repository = new InMemoryImportJobRepository([$job]);
-        $handler = new ProcessImportJobMessageHandler($repository, new NullLogger());
+        $handler = new ProcessImportJobMessageHandler(
+            $repository,
+            new FakeStoredFileLocator('/tmp/upload.pdf'),
+            new FakeOcrProvider(new OcrExtraction('ocr_space', 'Total\n80.00', ['Total', '80.00'], ['raw' => true])),
+            new NullLogger(),
+        );
 
         $handler(new ProcessImportJobMessage($job->id()->toString()));
 
@@ -54,8 +68,70 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         self::assertNotNull($saved);
         self::assertSame(ImportJobStatus::NEEDS_REVIEW, $saved->status());
         self::assertNotNull($saved->startedAt());
-        self::assertSame('pipeline_pending_ocr_and_parsing', $saved->errorPayload());
+        self::assertNotNull($saved->errorPayload());
+        self::assertStringContainsString('ocr_space', (string) $saved->errorPayload());
         self::assertSame(2, $repository->saveCount);
+    }
+
+    public function testItMarksFailedWithoutThrowingForPermanentProviderError(): void
+    {
+        $job = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/file.pdf',
+            'file.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('a', 64),
+        );
+
+        $repository = new InMemoryImportJobRepository([$job]);
+        $handler = new ProcessImportJobMessageHandler(
+            $repository,
+            new FakeStoredFileLocator('/tmp/upload.pdf'),
+            new ThrowingOcrProvider(OcrProviderException::permanent('invalid file')),
+            new NullLogger(),
+        );
+
+        $handler(new ProcessImportJobMessage($job->id()->toString()));
+
+        $saved = $repository->getForSystem($job->id()->toString());
+        self::assertNotNull($saved);
+        self::assertSame(ImportJobStatus::FAILED, $saved->status());
+        self::assertStringContainsString('ocr_provider_permanent', (string) $saved->errorPayload());
+        self::assertSame(2, $repository->saveCount);
+    }
+
+    public function testItMarksFailedAndRethrowsRetryableProviderError(): void
+    {
+        $job = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/file.pdf',
+            'file.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('a', 64),
+        );
+
+        $repository = new InMemoryImportJobRepository([$job]);
+        $handler = new ProcessImportJobMessageHandler(
+            $repository,
+            new FakeStoredFileLocator('/tmp/upload.pdf'),
+            new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
+            new NullLogger(),
+        );
+
+        $this->expectException(OcrProviderException::class);
+
+        try {
+            $handler(new ProcessImportJobMessage($job->id()->toString()));
+        } finally {
+            $saved = $repository->getForSystem($job->id()->toString());
+            self::assertNotNull($saved);
+            self::assertSame(ImportJobStatus::FAILED, $saved->status());
+            self::assertStringContainsString('ocr_provider_retryable', (string) $saved->errorPayload());
+        }
     }
 }
 
@@ -93,5 +169,41 @@ final class InMemoryImportJobRepository implements ImportJobRepository
     public function all(): iterable
     {
         return array_values($this->items);
+    }
+}
+
+final class FakeStoredFileLocator implements ImportStoredFileLocator
+{
+    public function __construct(private readonly string $path)
+    {
+    }
+
+    public function locate(string $storage, string $path): string
+    {
+        return $this->path;
+    }
+}
+
+final class FakeOcrProvider implements OcrProvider
+{
+    public function __construct(private readonly OcrExtraction $extraction)
+    {
+    }
+
+    public function extract(string $filePath, string $mimeType): OcrExtraction
+    {
+        return $this->extraction;
+    }
+}
+
+final class ThrowingOcrProvider implements OcrProvider
+{
+    public function __construct(private readonly OcrProviderException $exception)
+    {
+    }
+
+    public function extract(string $filePath, string $mimeType): OcrExtraction
+    {
+        throw $this->exception;
     }
 }

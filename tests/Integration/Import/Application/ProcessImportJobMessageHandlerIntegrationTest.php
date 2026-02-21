@@ -15,7 +15,10 @@ namespace App\Tests\Integration\Import\Application;
 
 use App\Import\Application\Message\ProcessImportJobMessage;
 use App\Import\Application\MessageHandler\ProcessImportJobMessageHandler;
+use App\Import\Application\Ocr\OcrExtraction;
+use App\Import\Application\Ocr\OcrProvider;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
@@ -70,13 +73,39 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         );
         $this->importJobRepository->save($job);
 
-        $handler = new ProcessImportJobMessageHandler($this->importJobRepository, new NullLogger());
+        $handler = new ProcessImportJobMessageHandler(
+            $this->importJobRepository,
+            new StaticFileLocator('/tmp/fake.pdf'),
+            new StaticOcrProvider(),
+            new NullLogger(),
+        );
         $handler(new ProcessImportJobMessage($job->id()->toString()));
 
         $saved = $this->importJobRepository->getForSystem($job->id()->toString());
         self::assertNotNull($saved);
         self::assertSame(ImportJobStatus::NEEDS_REVIEW, $saved->status());
         self::assertNotNull($saved->startedAt());
-        self::assertSame('pipeline_pending_ocr_and_parsing', $saved->errorPayload());
+        self::assertNotNull($saved->errorPayload());
+        self::assertStringContainsString('ocr_space', (string) $saved->errorPayload());
+    }
+}
+
+final class StaticFileLocator implements ImportStoredFileLocator
+{
+    public function __construct(private readonly string $path)
+    {
+    }
+
+    public function locate(string $storage, string $path): string
+    {
+        return $this->path;
+    }
+}
+
+final class StaticOcrProvider implements OcrProvider
+{
+    public function extract(string $filePath, string $mimeType): OcrExtraction
+    {
+        return new OcrExtraction('ocr_space', 'TOTAL 80.00', ['TOTAL 80.00'], ['raw' => true]);
     }
 }

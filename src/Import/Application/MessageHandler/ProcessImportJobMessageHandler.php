@@ -14,16 +14,23 @@ declare(strict_types=1);
 namespace App\Import\Application\MessageHandler;
 
 use App\Import\Application\Message\ProcessImportJobMessage;
+use App\Import\Application\Ocr\OcrProvider;
+use App\Import\Application\Ocr\OcrProviderException;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Domain\Enum\ImportJobStatus;
+use JsonException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Throwable;
 
 #[AsMessageHandler]
 final readonly class ProcessImportJobMessageHandler
 {
     public function __construct(
         private ImportJobRepository $repository,
+        private ImportStoredFileLocator $storedFileLocator,
+        private OcrProvider $ocrProvider,
         private LoggerInterface $logger,
     ) {
     }
@@ -54,13 +61,74 @@ final readonly class ProcessImportJobMessageHandler
         $job->markProcessing();
         $this->repository->save($job);
 
-        // SP3-003 orchestration skeleton: OCR/parsing is implemented in SP3-004/SP3-005.
-        $job->markNeedsReview('pipeline_pending_ocr_and_parsing');
-        $this->repository->save($job);
+        try {
+            $absolutePath = $this->storedFileLocator->locate($job->storage(), $job->filePath());
+            $extraction = $this->ocrProvider->extract($absolutePath, $job->mimeType());
 
-        $this->logger->info('import.job.needs_review', [
-            'import_job_id' => $job->id()->toString(),
-            'status' => $job->status()->value,
-        ]);
+            $payload = $this->buildNeedsReviewPayload($job->id()->toString(), $extraction->provider, $extraction->text, $extraction->pages);
+            $job->markNeedsReview($payload);
+            $this->repository->save($job);
+
+            $this->logger->info('import.job.needs_review', [
+                'import_job_id' => $job->id()->toString(),
+                'status' => $job->status()->value,
+                'ocr_provider' => $extraction->provider,
+            ]);
+        } catch (OcrProviderException $ocrException) {
+            $job->markFailed($this->buildProviderFailureReason($ocrException));
+            $this->repository->save($job);
+
+            $this->logger->error('import.job.failed_provider', [
+                'import_job_id' => $job->id()->toString(),
+                'error' => $ocrException->getMessage(),
+                'retryable' => $ocrException->isRetryable(),
+            ]);
+
+            if ($ocrException->isRetryable()) {
+                throw $ocrException;
+            }
+        } catch (Throwable $throwable) {
+            $job->markFailed($this->buildUnexpectedFailureReason($throwable));
+            $this->repository->save($job);
+            $this->logger->error('import.job.failed_unexpected', [
+                'import_job_id' => $job->id()->toString(),
+                'error' => $throwable->getMessage(),
+                'exception_class' => $throwable::class,
+            ]);
+
+            throw $throwable;
+        }
+    }
+
+    /** @param list<string> $pages */
+    private function buildNeedsReviewPayload(string $jobId, string $provider, string $text, array $pages): string
+    {
+        $payload = [
+            'jobId' => $jobId,
+            'provider' => $provider,
+            'text' => $text,
+            'pages' => $pages,
+            'status' => 'needs_review',
+        ];
+
+        try {
+            $encoded = json_encode($payload, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return 'ocr_payload_serialization_failed';
+        }
+
+        return $encoded;
+    }
+
+    private function buildProviderFailureReason(OcrProviderException $exception): string
+    {
+        $prefix = $exception->isRetryable() ? 'ocr_provider_retryable' : 'ocr_provider_permanent';
+
+        return mb_substr(sprintf('%s: %s', $prefix, trim($exception->getMessage())), 0, 5000);
+    }
+
+    private function buildUnexpectedFailureReason(Throwable $throwable): string
+    {
+        return mb_substr(sprintf('ocr_unexpected: %s', trim($throwable->getMessage())), 0, 5000);
     }
 }

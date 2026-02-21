@@ -7,11 +7,11 @@
 - Deliver async import foundations (job model, upload endpoint, orchestration).
 
 ## In progress
-- `SP3-004` - OCR adapter abstraction and first provider.
+- `SP3-005` - Receipt parsing and normalization.
 
 ## Next tickets (ordered)
-1. `SP3-004` - OCR adapter abstraction and first provider
-2. `SP3-005` - Receipt parsing and normalization
+1. `SP3-005` - Receipt parsing and normalization
+2. `SP3-006` - Idempotency and duplicate detection
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -31,6 +31,7 @@
 - `SP3-001` delivered: import job domain model, persistence, local storage adapter, and baseline tests.
 - `SP3-002` delivered: authenticated upload endpoint with validation and queued import job creation.
 - `SP3-003` delivered: async import message dispatch, handler lifecycle transitions, and retry-ready routing.
+- `SP3-004` delivered: OCR abstraction + first provider adapter and normalized extraction payload for parser handoff.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

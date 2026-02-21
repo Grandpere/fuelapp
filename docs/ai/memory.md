@@ -159,6 +159,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: use `ImportJobRepository::getForSystem()` in import async handlers.
 - Prevention: for every worker/cron flow, explicitly use system-level read APIs and keep user-scoped methods for HTTP/UI flows only.
 
+## 2026-02-21 - OCR provider errors must distinguish retryable vs permanent
+- Symptom: import jobs can either need retry (provider outage) or immediate failure (invalid input/api key).
+- Root cause: a single generic OCR exception type loses retry semantics required by Messenger.
+- Fix: model OCR failures with explicit retryable/permanent mapping and persist clear failure reasons on import jobs.
+- Prevention: for every external provider adapter, encode retry semantics in exceptions and keep handler behavior deterministic.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

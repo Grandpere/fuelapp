@@ -1,0 +1,36 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% set admin_section = 'dashboard' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Admin Dashboard</h2>
+        <p class="muted">Quick overview and navigation for operational actions.</p>
+
+        <div class="admin-metric-grid" style="margin-top: 1rem;">
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Stations</p>
+                <p class="admin-metric-value">{{ stationCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Vehicles</p>
+                <p class="admin-metric-value">{{ vehicleCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">API Docs</p>
+                <p class="admin-metric-value" style="font-size: 1.3rem;">/api/docs</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="card admin-panel" style="margin-top: 1rem;">
+        <h3 style="margin-top: 0;">Quick actions</h3>
+        <ul class="admin-inline-list">
+            <li><a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Browse stations</a></li>
+            <li><a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a></li>
+            <li><a class="btn btn-secondary" href="/api/docs">Open API docs</a></li>
+        </ul>
+    </section>
+{% endblock %}

@@ -127,6 +127,17 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertStringStartsWith('/ui/login', (string) $response->headers->get('Location'));
     }
 
+    public function testAnonymousUserIsRedirectedOnAdminUiEntityPages(): void
+    {
+        $stationsResponse = $this->request('GET', '/ui/admin/stations');
+        $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles');
+
+        self::assertSame(Response::HTTP_FOUND, $stationsResponse->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $stationsResponse->headers->get('Location'));
+        self::assertSame(Response::HTTP_FOUND, $vehiclesResponse->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $vehiclesResponse->headers->get('Location'));
+    }
+
     public function testAnonymousUserCanAccessApiDocs(): void
     {
         $htmlResponse = $this->request('GET', '/api/docs');

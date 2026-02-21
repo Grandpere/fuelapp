@@ -1,0 +1,32 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Vehicle Detail{% endblock %}
+
+{% set admin_section = 'vehicles' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Vehicle Detail</h2>
+        <p class="muted">Read-only back-office view. Mutations are available via admin API endpoints.</p>
+
+        <dl class="admin-dl" style="margin-top: 1rem;">
+            <dt class="admin-dt">ID</dt>
+            <dd class="admin-dd">{{ vehicle.id.toString }}</dd>
+            <dt class="admin-dt">Owner ID</dt>
+            <dd class="admin-dd">{{ vehicle.ownerId ?? 'n/a' }}</dd>
+            <dt class="admin-dt">Name</dt>
+            <dd class="admin-dd">{{ vehicle.name }}</dd>
+            <dt class="admin-dt">Plate number</dt>
+            <dd class="admin-dd">{{ vehicle.plateNumber }}</dd>
+            <dt class="admin-dt">Created at</dt>
+            <dd class="admin-dd">{{ vehicle.createdAt|date('Y-m-d H:i:s') }}</dd>
+            <dt class="admin-dt">Updated at</dt>
+            <dd class="admin-dd">{{ vehicle.updatedAt|date('Y-m-d H:i:s') }}</dd>
+        </dl>
+
+        <div style="margin-top: 1rem;">
+            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Back to list</a>
+            <a class="btn btn-secondary" href="/api/admin/vehicles/{{ vehicle.id.toString }}">Open API resource</a>
+        </div>
+    </section>
+{% endblock %}

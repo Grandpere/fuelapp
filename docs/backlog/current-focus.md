@@ -7,11 +7,11 @@
 - Deliver back-office security model and admin tooling.
 
 ## In progress
-- `SP4-003` - Back-office UI shell and navigation.
+- `SP4-004` - Import jobs dashboard and filtering.
 
 ## Next tickets (ordered)
-1. `SP4-003` - Back-office UI shell and navigation
-2. `SP4-004` - Import jobs dashboard and filtering
+1. `SP4-004` - Import jobs dashboard and filtering
+2. `SP4-005` - Retry/fix/reprocess actions for failed imports
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

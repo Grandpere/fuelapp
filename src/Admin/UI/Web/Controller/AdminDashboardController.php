@@ -13,15 +13,47 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Station\Application\Repository\StationRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class AdminDashboardController extends AbstractController
 {
+    public function __construct(
+        private readonly StationRepository $stationRepository,
+        private readonly VehicleRepository $vehicleRepository,
+    ) {
+    }
+
     #[Route('/ui/admin', name: 'ui_admin_dashboard', methods: ['GET'])]
+    #[Route('/ui/admin/dashboard', name: 'ui_admin_dashboard_alias', methods: ['GET'])]
     public function __invoke(): Response
     {
-        return new Response('Admin dashboard');
+        return $this->render('admin/dashboard.html.twig', [
+            'stationCount' => $this->countStations(),
+            'vehicleCount' => $this->countVehicles(),
+        ]);
+    }
+
+    private function countStations(): int
+    {
+        $count = 0;
+        foreach ($this->stationRepository->allForSystem() as $_) {
+            ++$count;
+        }
+
+        return $count;
+    }
+
+    private function countVehicles(): int
+    {
+        $count = 0;
+        foreach ($this->vehicleRepository->all() as $_) {
+            ++$count;
+        }
+
+        return $count;
     }
 }

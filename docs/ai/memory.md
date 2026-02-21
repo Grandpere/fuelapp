@@ -195,6 +195,60 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: define upload docs with `openapi: new Operation(...)` on the resource operation.
 - Prevention: when adding custom docs on metadata operations, align constructor args with installed API Platform version.
 
+## 2026-02-21 - Access control assertions need real routed endpoints
+- Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
+- Root cause: firewall access checks are not a substitute for route existence in functional assertions.
+- Fix: add minimal routed admin probes (`/api/admin/ping`, `/ui/admin`) and assert role outcomes on those routes.
+- Prevention: when testing security boundaries, target concrete routes under the protected prefix.
+
+## 2026-02-21 - API Platform custom resources with PATCH/DELETE need explicit `read: false` when not entity-backed
+- Symptom: admin PATCH operations returned 404 from `ReadProvider` before reaching custom processors.
+- Root cause: API Platform attempted default pre-read on DTO resources without matching entity provider.
+- Fix: set `read: false` on PATCH/DELETE operations and load domain objects in custom processors.
+- Prevention: for non-entity API resources driven by custom processors, explicitly choose `read` behavior per operation.
+
+## 2026-02-21 - UI layer must not depend on Infrastructure entities
+- Symptom: PHPStan architecture rule (`phpat`) failed when an API processor referenced `UserEntity`.
+- Root cause: ownership validation was implemented in UI state processor using Doctrine entity class directly.
+- Fix: move owner existence check behind `VehicleRepository` application contract and keep UI depending only on application/domain abstractions.
+- Prevention: when adding validation in UI/API state classes, route cross-layer checks through repository/service interfaces instead of infrastructure entity imports.
+
+## 2026-02-21 - Admin finalize of import jobs must preserve original receipt owner
+- Symptom: finalizing a `needs_review` import from admin context can create receipts owned by admin instead of import owner.
+- Root cause: receipt persistence defaulted to current authenticated user from token storage.
+- Fix: propagate owner context from import job through finalize/create-receipt flow and persist via `ReceiptRepository::saveForOwner`.
+- Prevention: for system/admin workflows acting on user-owned resources, pass explicit owner context instead of relying on current session user.
+
+## 2026-02-21 - Admin mutation flows require immutable audit records with correlation id
+- Symptom: troubleshooting admin-side mutations across API/UI is hard without centralized trace events.
+- Root cause: critical admin actions lacked persisted actor/target/change metadata and request correlation.
+- Fix: add `admin_audit_logs` immutable store and record actions with actor, target, diff summary, timestamp, and correlation id.
+- Prevention: every new admin mutation endpoint/controller must append an audit event through `AdminAuditTrail`.
+
+## 2026-02-21 - Test container removes unused private aliases
+- Symptom: integration test failed to fetch a newly added repository interface alias from `self::getContainer()`.
+- Root cause: Symfony test container can remove/in-line private services not referenced by runtime wiring.
+- Fix: instantiate the repository directly with `EntityManagerInterface` in integration tests for new skeleton contexts until a runtime consumer exists.
+- Prevention: in early-stage context skeleton tickets, avoid assuming interface aliases are retrievable from test container before first real consumer is wired.
+
+## 2026-02-21 - UI layer user-context lookup must not depend on infrastructure entities
+- Symptom: architecture guard (`phpat`) failed when maintenance API state classes imported `UserEntity`.
+- Root cause: authenticated user id resolution was implemented directly in UI layer via Doctrine entity type checks.
+- Fix: introduce `Shared\Application\Security\AuthenticatedUserIdProvider` with infrastructure implementation and inject the abstraction in UI/API state classes.
+- Prevention: user/session lookup in UI/Application should use dedicated abstractions, never infrastructure entity classes directly.
+
+## 2026-02-21 - Twig dashboard must match read-model fields exactly
+- Symptom: maintenance dashboard returned HTTP 500 with Twig runtime error about missing `currencyCode` on variance model.
+- Root cause: template assumed a field that does not exist on `MaintenanceCostVariance` (`plannedCostCents`, `actualCostCents`, `varianceCents` only).
+- Fix: render KPI currency explicitly (`EUR`) and keep template aligned with actual DTO/read-model properties.
+- Prevention: for new UI pages bound to read models, validate template field names against constructor/public properties and cover with functional UI assertion.
+
+## 2026-02-21 - Functional tests should not fetch CSRF token from container without request session
+- Symptom: functional test failed with `SessionNotFoundException` when generating CSRF token in helper via container token manager.
+- Root cause: token manager session storage needs an active request session; test helper called it outside request lifecycle.
+- Fix: extract CSRF token directly from rendered form HTML and post it back as browser would do.
+- Prevention: in functional web tests, prefer CSRF extraction from response content over direct token manager calls.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

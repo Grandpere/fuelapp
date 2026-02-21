@@ -144,6 +144,11 @@ final class FinalizeInMemoryImportJobRepository implements ImportJobRepository
     {
         return array_values($this->items);
     }
+
+    public function allForSystem(): iterable
+    {
+        return $this->all();
+    }
 }
 
 final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
@@ -153,6 +158,11 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
     public function save(Receipt $receipt): void
     {
         ++$this->savedCount;
+    }
+
+    public function saveForOwner(Receipt $receipt, string $ownerId): void
+    {
+        $this->save($receipt);
     }
 
     public function get(string $id): ?Receipt
@@ -271,6 +281,11 @@ final class FinalizeInMemoryStationRepository implements StationRepository
         unset($this->items[$id]);
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        $this->delete($id);
+    }
+
     public function getByIds(array $ids): array
     {
         $result = [];
@@ -302,6 +317,11 @@ final class FinalizeInMemoryStationRepository implements StationRepository
     public function all(): iterable
     {
         return array_values($this->items);
+    }
+
+    public function allForSystem(): iterable
+    {
+        return $this->all();
     }
 }
 

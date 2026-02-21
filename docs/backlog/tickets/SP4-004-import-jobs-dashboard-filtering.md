@@ -19,4 +19,4 @@ Ops needs visibility on job states.
 - SP3 pipeline, SP4-003.
 
 ## Status
-- todo
+- done

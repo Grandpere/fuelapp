@@ -1,0 +1,47 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Stations{% endblock %}
+
+{% set admin_section = 'stations' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Stations</h2>
+        <p class="muted">Global station registry used for receipt matching and geocoding.</p>
+
+        <div class="table-wrap" style="margin-top: 1rem;">
+            <table class="app-table" style="min-width: 820px;">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Geocoding</th>
+                    <th>Coordinates</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for station in stations %}
+                    <tr class="table-row">
+                        <td>{{ station.name }}</td>
+                        <td>{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}</td>
+                        <td><span class="pill pill-energy">{{ station.geocodingStatus.value }}</span></td>
+                        <td>
+                            {% if station.latitudeMicroDegrees is not null and station.longitudeMicroDegrees is not null %}
+                                {{ station.latitudeMicroDegrees }} / {{ station.longitudeMicroDegrees }}
+                            {% else %}
+                                <span class="muted">n/a</span>
+                            {% endif %}
+                        </td>
+                        <td><a class="btn btn-secondary" href="{{ path('ui_admin_station_show', {id: station.id.toString}) }}">Detail</a></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="muted">No stations found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

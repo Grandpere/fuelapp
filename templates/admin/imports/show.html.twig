@@ -1,0 +1,140 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Import Job Detail{% endblock %}
+
+{% set admin_section = 'imports' %}
+
+{% block admin_content %}
+    {% set creationPayload = payloadData is not null and payloadData.creationPayload is defined and payloadData.creationPayload is iterable ? payloadData.creationPayload : null %}
+    {% set firstLine = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable and creationPayload.lines|length > 0 ? creationPayload.lines|first : null %}
+
+    <section class="card admin-panel">
+        <h2 class="page-title">Import Job Detail</h2>
+        <p class="muted">Detailed payload and processing metadata for troubleshooting.</p>
+
+        <dl class="admin-dl" style="margin-top: 1rem;">
+            <dt class="admin-dt">ID</dt>
+            <dd class="admin-dd">{{ job.id.toString }}</dd>
+            <dt class="admin-dt">Status</dt>
+            <dd class="admin-dd">{{ job.status.value }}</dd>
+            <dt class="admin-dt">Owner ID</dt>
+            <dd class="admin-dd">{{ job.ownerId }}</dd>
+            <dt class="admin-dt">Storage</dt>
+            <dd class="admin-dd">{{ job.storage }}</dd>
+            <dt class="admin-dt">File path</dt>
+            <dd class="admin-dd">{{ job.filePath }}</dd>
+            <dt class="admin-dt">Original filename</dt>
+            <dd class="admin-dd">{{ job.originalFilename }}</dd>
+            <dt class="admin-dt">Mime type</dt>
+            <dd class="admin-dd">{{ job.mimeType }}</dd>
+            <dt class="admin-dt">File size</dt>
+            <dd class="admin-dd">{{ job.fileSizeBytes }} bytes</dd>
+            <dt class="admin-dt">Checksum (sha256)</dt>
+            <dd class="admin-dd">{{ job.fileChecksumSha256 }}</dd>
+            <dt class="admin-dt">Created at</dt>
+            <dd class="admin-dd">{{ job.createdAt|date('Y-m-d H:i:s') }}</dd>
+            <dt class="admin-dt">Updated at</dt>
+            <dd class="admin-dd">{{ job.updatedAt|date('Y-m-d H:i:s') }}</dd>
+            <dt class="admin-dt">Started at</dt>
+            <dd class="admin-dd">{{ job.startedAt ? job.startedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
+            <dt class="admin-dt">Completed at</dt>
+            <dd class="admin-dd">{{ job.completedAt ? job.completedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
+            <dt class="admin-dt">Failed at</dt>
+            <dd class="admin-dd">{{ job.failedAt ? job.failedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
+        </dl>
+
+        {% if payloadData is not null %}
+            <div class="card-subtle" style="margin-top: 1rem; padding: .9rem;">
+                <p style="margin: 0 0 .5rem; font-weight: 700;">Decoded payload</p>
+                <pre style="margin: 0; overflow:auto; white-space: pre-wrap; font-size: .82rem;">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+            </div>
+        {% elseif payload %}
+            <div class="card-subtle" style="margin-top: 1rem; padding: .9rem;">
+                <p style="margin: 0 0 .5rem; font-weight: 700;">Raw payload</p>
+                <pre style="margin: 0; overflow:auto; white-space: pre-wrap; font-size: .82rem;">{{ payload }}</pre>
+            </div>
+        {% else %}
+            <p class="muted" style="margin-top: 1rem;">No payload available.</p>
+        {% endif %}
+
+        <div style="margin-top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+            <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}">Back to list</a>
+            <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}">Open user API resource</a>
+            <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry">Open admin retry endpoint</a>
+        </div>
+    </section>
+
+    {% if job.status.value == 'failed' %}
+        <section class="card admin-panel" style="margin-top: 1rem;">
+            <h3 style="margin-top: 0;">Retry Failed Job</h3>
+            <p class="muted">Queue this failed import job for async reprocessing.</p>
+            <form method="post" action="{{ path('ui_admin_import_job_retry', {id: job.id.toString}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_import_retry_' ~ job.id.toString) }}">
+                <button class="btn btn-primary" type="submit">Retry job</button>
+            </form>
+        </section>
+    {% endif %}
+
+    {% if job.status.value == 'needs_review' %}
+        <section class="card admin-panel" style="margin-top: 1rem;">
+            <h3 style="margin-top: 0;">Fix And Finalize</h3>
+            <p class="muted">Optional corrections can be provided before finalization. Leave fields empty to use payload values.</p>
+
+            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" style="display: grid; gap: .8rem;">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_import_finalize_' ~ job.id.toString) }}">
+
+                <div class="form-grid-2">
+                    <label class="label">
+                        Issued at
+                        <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\\\TH:i') : '' }}">
+                    </label>
+                    <label class="label">
+                        Station name
+                        <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : '' }}">
+                    </label>
+                    <label class="label">
+                        Station street
+                        <input class="input" type="text" name="stationStreetName" value="{{ creationPayload is not null and creationPayload.stationStreetName is defined ? creationPayload.stationStreetName : '' }}">
+                    </label>
+                    <label class="label">
+                        Station postal code
+                        <input class="input" type="text" name="stationPostalCode" value="{{ creationPayload is not null and creationPayload.stationPostalCode is defined ? creationPayload.stationPostalCode : '' }}">
+                    </label>
+                    <label class="label">
+                        Station city
+                        <input class="input" type="text" name="stationCity" value="{{ creationPayload is not null and creationPayload.stationCity is defined ? creationPayload.stationCity : '' }}">
+                    </label>
+                    <label class="label">
+                        Latitude (micro degrees)
+                        <input class="input" type="number" name="latitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.latitudeMicroDegrees is defined ? creationPayload.latitudeMicroDegrees : '' }}" step="1">
+                    </label>
+                    <label class="label">
+                        Longitude (micro degrees)
+                        <input class="input" type="number" name="longitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.longitudeMicroDegrees is defined ? creationPayload.longitudeMicroDegrees : '' }}" step="1">
+                    </label>
+                    <label class="label">
+                        Line fuel type
+                        <input class="input" type="text" name="lineFuelType" value="{{ firstLine is not null and firstLine.fuelType is defined ? firstLine.fuelType : '' }}" placeholder="diesel">
+                    </label>
+                    <label class="label">
+                        Line quantity (mL)
+                        <input class="input" type="number" name="lineQuantityMilliLiters" value="{{ firstLine is not null and firstLine.quantityMilliLiters is defined ? firstLine.quantityMilliLiters : '' }}" min="1" step="1">
+                    </label>
+                    <label class="label">
+                        Line unit price (deci-cents/L)
+                        <input class="input" type="number" name="lineUnitPriceDeciCentsPerLiter" value="{{ firstLine is not null and firstLine.unitPriceDeciCentsPerLiter is defined ? firstLine.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
+                    </label>
+                    <label class="label">
+                        Line VAT rate (%)
+                        <input class="input" type="number" name="lineVatRatePercent" value="{{ firstLine is not null and firstLine.vatRatePercent is defined ? firstLine.vatRatePercent : '' }}" min="0" max="100" step="1">
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" type="submit">Finalize job</button>
+                    <a class="btn btn-secondary" href="/api/docs">Finalize from API docs</a>
+                </div>
+            </form>
+        </section>
+    {% endif %}
+{% endblock %}

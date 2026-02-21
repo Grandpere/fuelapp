@@ -123,6 +123,21 @@ final readonly class DoctrineStationRepository implements StationRepository
         $this->em->flush();
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        if (!Uuid::isValid($id)) {
+            return;
+        }
+
+        $entity = $this->em->find(StationEntity::class, $id);
+        if (!$entity instanceof StationEntity) {
+            return;
+        }
+
+        $this->em->remove($entity);
+        $this->em->flush();
+    }
+
     public function getByIds(array $ids): array
     {
         if ([] === $ids) {
@@ -177,6 +192,28 @@ final readonly class DoctrineStationRepository implements StationRepository
         $qb = $this->em->getRepository(StationEntity::class)->createQueryBuilder('s');
         $this->applyReadableByCurrentUser($qb, 's');
         $entities = $qb->getQuery()->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
+        foreach ($entities as $entity) {
+            if (!$entity instanceof StationEntity) {
+                continue;
+            }
+
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    public function allForSystem(): iterable
+    {
+        $entities = $this->em->getRepository(StationEntity::class)
+            ->createQueryBuilder('s')
+            ->orderBy('s.name', 'ASC')
+            ->addOrderBy('s.city', 'ASC')
+            ->getQuery()
+            ->getResult();
+
         if (!is_iterable($entities)) {
             return;
         }

@@ -19,4 +19,4 @@ Admin requires management endpoints.
 - SP4-001.
 
 ## Status
-- todo
+- done

@@ -39,9 +39,14 @@ final readonly class CreateReceiptHandler
             $command->issuedAt,
             $lines,
             $command->stationId,
+            $command->vehicleId,
         );
 
-        $this->repository->save($receipt);
+        if (null !== $command->ownerId) {
+            $this->repository->saveForOwner($receipt, $command->ownerId);
+        } else {
+            $this->repository->save($receipt);
+        }
 
         return $receipt;
     }

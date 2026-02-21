@@ -1,8 +1,8 @@
-# TODO - SP3-009 Optional API Platform native upload operation refactor
+# TODO - Admin vehicle creation policy alignment
 
 ## Plan
-- [completed] Move `POST /api/imports` from Symfony route attribute to API Platform operation metadata.
-- [completed] Keep multipart validation and response contract (`id`, `status`, `createdAt`) unchanged.
-- [completed] Remove custom OpenAPI decorator and keep `/api/imports` documented natively.
-- [completed] Validate no behavior regression on upload/auth/docs through existing suites.
-- [completed] Run quality checks.
+- [completed] Remove admin vehicle creation operation from API Platform resource.
+- [completed] Remove admin vehicle creation route/action from back-office UI.
+- [completed] Update functional tests to enforce "no admin create" while keeping edit/delete.
+- [completed] Align backlog docs with the updated policy.
+- [completed] Run quality gates and prepare commit.

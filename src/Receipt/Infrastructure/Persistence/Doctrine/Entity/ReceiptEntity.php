@@ -15,6 +15,7 @@ namespace App\Receipt\Infrastructure\Persistence\Doctrine\Entity;
 
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -46,6 +47,10 @@ class ReceiptEntity
     #[ORM\ManyToOne(targetEntity: UserEntity::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?UserEntity $owner = null;
+
+    #[ORM\ManyToOne(targetEntity: VehicleEntity::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?VehicleEntity $vehicle = null;
 
     /** @var Collection<int, ReceiptLineEntity> */
     #[ORM\OneToMany(mappedBy: 'receipt', targetEntity: ReceiptLineEntity::class, cascade: ['persist'], orphanRemoval: true)]
@@ -114,6 +119,16 @@ class ReceiptEntity
     public function setOwner(?UserEntity $owner): void
     {
         $this->owner = $owner;
+    }
+
+    public function getVehicle(): ?VehicleEntity
+    {
+        return $this->vehicle;
+    }
+
+    public function setVehicle(?VehicleEntity $vehicle): void
+    {
+        $this->vehicle = $vehicle;
     }
 
     /** @return Collection<int, ReceiptLineEntity> */

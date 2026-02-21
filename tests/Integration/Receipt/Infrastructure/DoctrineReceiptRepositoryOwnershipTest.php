@@ -18,6 +18,8 @@ use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\Domain\Receipt;
 use App\Receipt\Domain\ReceiptLine;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\Vehicle\Domain\ValueObject\VehicleId;
+use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -88,6 +90,37 @@ final class DoctrineReceiptRepositoryOwnershipTest extends KernelTestCase
         $this->authenticate($other);
         self::assertSame(0, $this->receiptRepository->countAll());
         self::assertNull($this->receiptRepository->get($receipt->id()->toString()));
+    }
+
+    public function testRepositoryRejectsVehicleNotOwnedByCurrentUser(): void
+    {
+        $owner = $this->createUser('owner.vehicle.receipt@example.com');
+        $other = $this->createUser('other.vehicle.receipt@example.com');
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($other);
+        $vehicle->setName('Other vehicle');
+        $vehicle->setPlateNumber('AA-999-BB');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-02-21 09:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-02-21 09:00:00'));
+
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $this->authenticate($owner);
+
+        $receipt = Receipt::create(
+            new DateTimeImmutable('2026-02-20 09:00:00'),
+            [ReceiptLine::create(FuelType::DIESEL, 10_000, 1800, 20)],
+            null,
+            VehicleId::fromString($vehicle->getId()->toRfc4122()),
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Vehicle must belong to the current user.');
+
+        $this->receiptRepository->save($receipt);
     }
 
     private function createUser(string $email): UserEntity

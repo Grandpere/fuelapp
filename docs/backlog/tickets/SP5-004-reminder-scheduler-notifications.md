@@ -19,4 +19,4 @@ Due reminders should surface automatically.
 - SP5-003.
 
 ## Status
-- todo
+- done

@@ -1,0 +1,42 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Station Detail{% endblock %}
+
+{% set admin_section = 'stations' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Station Detail</h2>
+        <p class="muted">Read-only back-office view. Mutations are available via admin API endpoints.</p>
+
+        <dl class="admin-dl" style="margin-top: 1rem;">
+            <dt class="admin-dt">ID</dt>
+            <dd class="admin-dd">{{ station.id.toString }}</dd>
+            <dt class="admin-dt">Name</dt>
+            <dd class="admin-dd">{{ station.name }}</dd>
+            <dt class="admin-dt">Street</dt>
+            <dd class="admin-dd">{{ station.streetName }}</dd>
+            <dt class="admin-dt">Postal code</dt>
+            <dd class="admin-dd">{{ station.postalCode }}</dd>
+            <dt class="admin-dt">City</dt>
+            <dd class="admin-dd">{{ station.city }}</dd>
+            <dt class="admin-dt">Geocoding status</dt>
+            <dd class="admin-dd">{{ station.geocodingStatus.value }}</dd>
+            <dt class="admin-dt">Coordinates</dt>
+            <dd class="admin-dd">
+                {% if station.latitudeMicroDegrees is not null and station.longitudeMicroDegrees is not null %}
+                    {{ station.latitudeMicroDegrees }} / {{ station.longitudeMicroDegrees }}
+                {% else %}
+                    n/a
+                {% endif %}
+            </dd>
+            <dt class="admin-dt">Last geocoding error</dt>
+            <dd class="admin-dd">{{ station.geocodingLastError ?? 'n/a' }}</dd>
+        </dl>
+
+        <div style="margin-top: 1rem;">
+            <a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Back to list</a>
+            <a class="btn btn-secondary" href="/api/admin/stations/{{ station.id.toString }}">Open API resource</a>
+        </div>
+    </section>
+{% endblock %}

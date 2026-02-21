@@ -99,3 +99,18 @@ If JS packages are added to importmap:
   - `Recommended` (safe refresh after infra/runtime/config changes),
   - `Not needed` (pure code/template changes hot-reload safely).
 - With FrankenPHP worker mode, Twig/CSS/UI changes may still require `make restart-app`; mention this explicitly when relevant.
+
+## 12) Admin Coverage Decision For New Features
+- For every new feature, systematically evaluate whether an admin/back-office exposure is needed.
+- Before implementing admin coverage, ask the user for confirmation.
+- In that confirmation request, always explain:
+  - why adding admin support is useful (operations, support, audit, moderation, recovery, etc.),
+  - whether it is necessary now or can be deferred,
+  - what the concrete impact is if admin support is not added now.
+- If admin coverage is deferred/refused, mention this explicitly in task handover and backlog notes.
+
+## 13) Commit And PR Discipline
+- Commit at the end of each completed task/ticket (do not batch multiple tickets without reason).
+- Keep commits scoped and readable so task-level review is straightforward.
+- At the end of each sprint, open a dedicated GitHub PR for that sprint scope.
+- Always send the PR URL to the user for review before merge.

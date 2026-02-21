@@ -172,6 +172,11 @@ final class InMemoryStationRepository implements StationRepository
         }
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        $this->delete($id);
+    }
+
     public function getByIds(array $ids): array
     {
         if (null === $this->station) {
@@ -198,6 +203,11 @@ final class InMemoryStationRepository implements StationRepository
     {
         return $this->station ? [$this->station] : [];
     }
+
+    public function allForSystem(): iterable
+    {
+        return $this->all();
+    }
 }
 
 final class InMemoryReceiptRepository implements ReceiptRepository
@@ -208,6 +218,11 @@ final class InMemoryReceiptRepository implements ReceiptRepository
     public function save(Receipt $receipt): void
     {
         $this->items[$receipt->id()->toString()] = $receipt;
+    }
+
+    public function saveForOwner(Receipt $receipt, string $ownerId): void
+    {
+        $this->save($receipt);
     }
 
     public function get(string $id): ?Receipt

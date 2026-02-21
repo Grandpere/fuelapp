@@ -78,7 +78,8 @@ final readonly class ReceiptStateProvider implements ProviderInterface
             $receipt->issuedAt(),
             $receipt->totalCents(),
             $receipt->vatAmountCents(),
-            Uuid::fromString($receipt->stationId()?->toString() ?? ''),
+            null === $receipt->stationId() ? null : Uuid::fromString($receipt->stationId()->toString()),
+            null === $receipt->vehicleId() ? null : Uuid::fromString($receipt->vehicleId()->toString()),
             $lines,
         );
     }

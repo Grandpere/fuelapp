@@ -41,6 +41,8 @@ final class ReceiptInput
         public ?int $latitudeMicroDegrees = null,
         #[Assert\Range(min: -180000000, max: 180000000)]
         public ?int $longitudeMicroDegrees = null,
+        #[Assert\Uuid]
+        public ?string $vehicleId = null,
     ) {
     }
 }

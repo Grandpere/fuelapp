@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Receipt\Application\Command;
 
 use App\Station\Domain\ValueObject\StationId;
+use App\Vehicle\Domain\ValueObject\VehicleId;
 use DateTimeImmutable;
 
 final readonly class CreateReceiptCommand
@@ -23,6 +24,8 @@ final readonly class CreateReceiptCommand
         public DateTimeImmutable $issuedAt,
         public array $lines,
         public ?StationId $stationId,
+        public ?VehicleId $vehicleId = null,
+        public ?string $ownerId = null,
     ) {
     }
 }

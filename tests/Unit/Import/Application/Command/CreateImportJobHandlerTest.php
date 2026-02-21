@@ -118,4 +118,9 @@ final class InMemoryImportJobRepository implements ImportJobRepository
     {
         return null === $this->saved ? [] : [$this->saved];
     }
+
+    public function allForSystem(): iterable
+    {
+        return $this->all();
+    }
 }

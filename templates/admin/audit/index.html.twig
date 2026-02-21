@@ -1,0 +1,100 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Audit Logs{% endblock %}
+
+{% set admin_section = 'audit' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Audit Logs</h2>
+        <p class="muted">Immutable admin action trail with actor, target and correlation id.</p>
+    </section>
+
+    <section class="card admin-panel" style="margin-top: 1rem;">
+        <h3 style="margin: 0;">Filters</h3>
+        <form method="get" style="margin-top: .9rem; display: grid; gap: .75rem;">
+            <div class="form-grid-2">
+                <label class="label">
+                    Action
+                    <input class="input" type="text" name="action" value="{{ filters.action ?? '' }}" placeholder="admin.station.updated">
+                </label>
+                <label class="label">
+                    Actor ID
+                    <input class="input" type="text" name="actorId" value="{{ filters.actorId ?? '' }}" placeholder="UUID">
+                </label>
+                <label class="label">
+                    Target type
+                    <input class="input" type="text" name="targetType" value="{{ filters.targetType ?? '' }}" placeholder="station">
+                </label>
+                <label class="label">
+                    Target ID
+                    <input class="input" type="text" name="targetId" value="{{ filters.targetId ?? '' }}" placeholder="UUID">
+                </label>
+                <label class="label">
+                    Correlation ID
+                    <input class="input" type="text" name="correlationId" value="{{ filters.correlationId ?? '' }}" placeholder="corr-...">
+                </label>
+                <label class="label">
+                    From date
+                    <input class="input" type="text" name="from" value="{{ filters.from ?? '' }}" data-datepicker="date" autocomplete="off">
+                </label>
+                <label class="label">
+                    To date
+                    <input class="input" type="text" name="to" value="{{ filters.to ?? '' }}" data-datepicker="date" autocomplete="off">
+                </label>
+            </div>
+            <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" type="submit">Apply filters</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_audit_log_list') }}">Reset</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="card admin-panel" style="margin-top: 1rem;">
+        <div class="table-wrap">
+            <table class="app-table" style="min-width: 1150px;">
+                <thead>
+                <tr>
+                    <th>Created</th>
+                    <th>Action</th>
+                    <th>Actor</th>
+                    <th>Target</th>
+                    <th>Correlation ID</th>
+                    <th>Diff Summary</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for entry in entries %}
+                    <tr class="table-row">
+                        <td>{{ entry.createdAt|date('Y-m-d H:i:s') }}</td>
+                        <td>{{ entry.action }}</td>
+                        <td>
+                            <div>{{ entry.actorEmail ?? 'n/a' }}</div>
+                            <div class="muted" style="font-size: .78rem;">{{ entry.actorId ?? 'n/a' }}</div>
+                        </td>
+                        <td>
+                            <div>{{ entry.targetType }}</div>
+                            <div class="muted" style="font-size: .78rem;">{{ entry.targetId }}</div>
+                        </td>
+                        <td>{{ entry.correlationId }}</td>
+                        <td>
+                            {% if entry.diffSummary is not empty %}
+                                <details>
+                                    <summary>view</summary>
+                                    <pre style="margin: .4rem 0 0; white-space: pre-wrap; font-size: .78rem;">{{ entry.diffSummary|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                                </details>
+                            {% else %}
+                                <span class="muted">n/a</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="muted">No audit entries found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

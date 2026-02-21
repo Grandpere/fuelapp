@@ -113,6 +113,25 @@ final readonly class DoctrineImportJobRepository implements ImportJobRepository
         }
     }
 
+    public function allForSystem(): iterable
+    {
+        $items = $this->em->getRepository(ImportJobEntity::class)
+            ->createQueryBuilder('j')
+            ->orderBy('j.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        if (!is_iterable($items)) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ($item instanceof ImportJobEntity) {
+                yield $this->mapEntityToDomain($item);
+            }
+        }
+    }
+
     public function findLatestByOwnerAndChecksum(string $ownerId, string $checksumSha256, ?string $excludeJobId = null): ?ImportJob
     {
         if (!Uuid::isValid($ownerId) || '' === trim($checksumSha256)) {

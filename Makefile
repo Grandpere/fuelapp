@@ -84,6 +84,10 @@ receipts-claim-unowned: ## Assign unowned receipts to a user (EMAIL=...)
 messenger-consume-async: ## Consume async messenger queue (VERBOSITY=-vv optional)
 	$(DC_EXEC) php bin/console messenger:consume async $(VERBOSITY)
 
+.PHONY: maintenance-reminders-dispatch
+maintenance-reminders-dispatch: ## Dispatch maintenance reminder evaluation message
+	$(DC_EXEC) php bin/console app:maintenance:reminders:dispatch
+
 .PHONY: messenger-failed-show
 messenger-failed-show: ## Show failed messenger messages stats
 	$(DC_EXEC) php bin/console messenger:failed:show --stats

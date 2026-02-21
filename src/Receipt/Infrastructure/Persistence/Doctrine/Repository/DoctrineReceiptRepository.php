@@ -23,6 +23,8 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Domain\ValueObject\StationId;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\Vehicle\Domain\ValueObject\VehicleId;
+use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -44,7 +46,26 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
     public function save(Receipt $receipt): void
     {
         $owner = $this->requireCurrentUser();
-        $entity = $this->findOwnedEntityById($receipt->id()->toString()) ?? new ReceiptEntity();
+        $this->saveForResolvedOwner($receipt, $owner);
+    }
+
+    public function saveForOwner(Receipt $receipt, string $ownerId): void
+    {
+        if (!Uuid::isValid($ownerId)) {
+            throw new UnexpectedValueException('Owner not found.');
+        }
+
+        $owner = $this->em->find(UserEntity::class, $ownerId);
+        if (!$owner instanceof UserEntity) {
+            throw new UnexpectedValueException('Owner not found.');
+        }
+
+        $this->saveForResolvedOwner($receipt, $owner);
+    }
+
+    private function saveForResolvedOwner(Receipt $receipt, UserEntity $owner): void
+    {
+        $entity = $this->findEntityByIdForOwner($receipt->id()->toString(), $owner->getId()->toRfc4122()) ?? new ReceiptEntity();
         $entity->setId(Uuid::fromString($receipt->id()->toString()));
         $ownerRef = $this->em->getReference(UserEntity::class, $owner->getId()->toRfc4122());
         $entity->setOwner($ownerRef);
@@ -57,6 +78,22 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $entity->setStation($stationRef);
         } else {
             $entity->setStation(null);
+        }
+
+        if (null !== $receipt->vehicleId()) {
+            $vehicle = $this->em->find(VehicleEntity::class, $receipt->vehicleId()->toString());
+            if (!$vehicle instanceof VehicleEntity) {
+                throw new UnexpectedValueException('Vehicle not found.');
+            }
+
+            $vehicleOwnerId = $vehicle->getOwner()?->getId()->toRfc4122();
+            if (null === $vehicleOwnerId || $vehicleOwnerId !== $owner->getId()->toRfc4122()) {
+                throw new UnexpectedValueException('Vehicle must belong to the current user.');
+            }
+
+            $entity->setVehicle($vehicle);
+        } else {
+            $entity->setVehicle(null);
         }
 
         $entity->clearLines();
@@ -524,12 +561,14 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         }
 
         $stationId = $entity->getStation() ? StationId::fromString($entity->getStation()->getId()->toRfc4122()) : null;
+        $vehicleId = $entity->getVehicle() ? VehicleId::fromString($entity->getVehicle()->getId()->toRfc4122()) : null;
 
         return Receipt::reconstitute(
             ReceiptId::fromString($entity->getId()->toRfc4122()),
             $entity->getIssuedAt(),
             $lines,
             $stationId,
+            $vehicleId,
         );
     }
 
@@ -583,6 +622,26 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $this->applyOwnerFilter($qb);
 
         $entity = $qb->getQuery()->getOneOrNullResult();
+
+        return $entity instanceof ReceiptEntity ? $entity : null;
+    }
+
+    private function findEntityByIdForOwner(string $id, string $ownerId): ?ReceiptEntity
+    {
+        if (!Uuid::isValid($id) || !Uuid::isValid($ownerId)) {
+            return null;
+        }
+
+        $entity = $this->em
+            ->createQueryBuilder()
+            ->select('r')
+            ->from(ReceiptEntity::class, 'r')
+            ->andWhere('r.id = :id')
+            ->andWhere('IDENTITY(r.owner) = :ownerId')
+            ->setParameter('id', $id)
+            ->setParameter('ownerId', $ownerId)
+            ->getQuery()
+            ->getOneOrNullResult();
 
         return $entity instanceof ReceiptEntity ? $entity : null;
     }

@@ -1,0 +1,48 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Vehicles{% endblock %}
+
+{% set admin_section = 'vehicles' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Vehicles</h2>
+        <p class="muted">Global vehicle list used to attach receipts to an owner fleet. Creation stays in user flow.</p>
+
+        <div class="table-wrap" style="margin-top: 1rem;">
+            <table class="app-table" style="min-width: 780px;">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Plate</th>
+                    <th>Owner ID</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for vehicle in vehicles %}
+                    <tr class="table-row">
+                        <td>{{ vehicle.name }}</td>
+                        <td>{{ vehicle.plateNumber }}</td>
+                        <td>{{ vehicle.ownerId ?? 'n/a' }}</td>
+                        <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
+                        <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString}) }}">Detail</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString}) }}">Edit</a>
+                            <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('Delete this vehicle?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_vehicle_delete_' ~ vehicle.id.toString) }}">
+                                <button class="btn btn-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="muted">No vehicles found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

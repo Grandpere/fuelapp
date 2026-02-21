@@ -1,0 +1,98 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{% if isEdit %}Edit maintenance event{% else %}New maintenance event{% endif %}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .maintenance-form-page {
+            max-width: 880px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .maintenance-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .maintenance-form-card {
+            padding: 1rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell maintenance-form-page">
+        <header class="maintenance-form-header">
+            <h1 class="page-title">{% if isEdit %}Edit maintenance event{% else %}Add maintenance event{% endif %}</h1>
+            <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Back</a>
+        </header>
+
+        <section class="card maintenance-form-card">
+            {% if errors is not empty %}
+                <div class="flash" style="border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                    <ul style="margin: 0; padding-left: 1.15rem;">
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" action="" style="display: grid; gap: 0.9rem;">
+                <input type="hidden" name="_token" value="{{ csrfToken }}">
+
+                <div class="form-grid-2">
+                    <label class="label">
+                        Vehicle
+                        <select class="select" name="vehicleId" required>
+                            <option value="">Select vehicle</option>
+                            {% for optionId, optionLabel in vehicleOptions %}
+                                <option value="{{ optionId }}" {% if formData.vehicleId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="label">
+                        Event type
+                        <select class="select" name="eventType" required>
+                            {% for eventType in eventTypes %}
+                                <option value="{{ eventType }}" {% if formData.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="label">
+                        Date/time
+                        <input class="input" type="text" name="occurredAt" data-datepicker="datetime" value="{{ formData.occurredAt }}" autocomplete="off" required>
+                    </label>
+                    <label class="label">
+                        Odometer (km)
+                        <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
+                    </label>
+                    <label class="label">
+                        Total cost (cents)
+                        <input class="input" type="number" min="0" step="1" name="totalCostCents" value="{{ formData.totalCostCents }}">
+                    </label>
+                    <label class="label">
+                        Currency
+                        <input class="input" type="text" maxlength="3" name="currencyCode" value="{{ formData.currencyCode }}" required>
+                    </label>
+                </div>
+
+                <label class="label">
+                    Description
+                    <textarea class="input" name="description" rows="4" maxlength="2000">{{ formData.description }}</textarea>
+                </label>
+
+                <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create event{% endif %}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+{% endblock %}

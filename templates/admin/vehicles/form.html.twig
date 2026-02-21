@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Edit Admin Vehicle{% endblock %}
+
+{% set admin_section = 'vehicles' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Edit vehicle</h2>
+        <p class="muted">Admin mutation flow for owner vehicle management.</p>
+
+        {% if errors is not empty %}
+            <div class="flash" style="margin-top: 1rem; border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                <ul style="margin: 0; padding-left: 1.15rem;">
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" action="" style="display:grid; gap:0.8rem; margin-top:1rem; max-width:720px;">
+            <input type="hidden" name="_token" value="{{ csrfToken }}">
+            <label class="label">
+                Owner ID
+                <input class="input" type="text" name="ownerId" value="{{ formData.ownerId }}" required>
+            </label>
+            <label class="label">
+                Vehicle name
+                <input class="input" type="text" name="name" value="{{ formData.name }}" required>
+            </label>
+            <label class="label">
+                Plate number
+                <input class="input" type="text" name="plateNumber" value="{{ formData.plateNumber }}" required>
+            </label>
+
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="submit">Save changes</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Back to list</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

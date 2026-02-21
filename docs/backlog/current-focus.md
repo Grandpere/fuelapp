@@ -1,16 +1,18 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 03 - Async import (image/PDF)
+- Sprint 06 - Analytics and exports
 
 ## Current goal
-- Deliver async import foundations (job model, upload endpoint, orchestration).
+- Deliver decision-oriented metrics and robust exports.
 
 ## In progress
-- Sprint 03 completed.
+- `SP6-001` - Analytics read model and aggregation strategy.
 
 ## Next tickets (ordered)
-1. Prepare Sprint 04 planning
+1. `SP6-001` - Analytics read model and aggregation strategy
+2. `SP6-002` - KPI API endpoints
+3. `SP6-003` - Dashboard UI (fuel, cost, trend)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -36,6 +38,21 @@
 - `SP3-007` delivered: API review/finalization flow for `needs_review` imports with receipt creation and processed audit payload.
 - `SP3-008` delivered: import regression coverage for OCR/provider/parser failure paths and finalize API error-paths.
 - `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
+- `SP4-001` delivered: admin access model with role hierarchy and explicit `/api/admin` + `/ui/admin` policy gates.
+- `SP4-002` delivered: admin station CRUD APIs and vehicle management APIs (read/update/delete) with basic list filters/search in `/api/admin/*`.
+- `SP4-003` delivered: back-office UI shell/navigation with station and vehicle pages.
+- `SP4-004` delivered: imports dashboard with filters and metrics.
+- `SP4-005` delivered: admin retry/finalize flows for import recovery.
+- `SP4-006` delivered: immutable audit trail for admin mutations (API + UI listing).
+- `SP4-007` delivered: back-office functional suite extended for authenticated UI role boundary and seeded rendering coverage.
+- `SP5-001` delivered: maintenance bounded context skeleton with domain model, doctrine persistence, migration, and baseline tests.
+- `SP5-002` delivered: maintenance events CRUD API with ownership-safe vehicle binding and functional validation/isolation coverage.
+- `SP5-003` delivered: reminder rules model (date/odometer/whichever-first) with deterministic due-state calculator and rule persistence/tests.
+- `SP5-004` delivered: async reminder evaluation workflow with persistent deduplicated reminders and in-app notification abstraction.
+- `SP5-005` delivered: planned maintenance cost CRUD + variance read-model endpoint (period/vehicle filters) with unit/integration/functional coverage.
+- `SP5-006` delivered: maintenance web UI timeline/planner + event/plan create-edit forms with responsive pages and functional coverage.
+- `SP5-008` delivered: admin read-only maintenance exposure (`/api/admin/maintenance/*`, `/ui/admin/maintenance/*`) with filters and role-boundary functional coverage.
+- `SP5-009` delivered: vehicle web CRUD for users and back-office vehicle mutation forms for admins with functional coverage.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

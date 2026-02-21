@@ -41,6 +41,24 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Import/Infrastructure/Persistence/Doctrine/Entity'
                 prefix: 'App\Import\Infrastructure\Persistence\Doctrine\Entity'
                 alias: Import
+            Vehicle:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Vehicle/Infrastructure/Persistence/Doctrine/Entity'
+                prefix: 'App\Vehicle\Infrastructure\Persistence\Doctrine\Entity'
+                alias: Vehicle
+            Admin:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Admin/Infrastructure/Persistence/Doctrine/Entity'
+                prefix: 'App\Admin\Infrastructure\Persistence\Doctrine\Entity'
+                alias: Admin
+            Maintenance:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Maintenance/Infrastructure/Persistence/Doctrine/Entity'
+                prefix: 'App\Maintenance\Infrastructure\Persistence\Doctrine\Entity'
+                alias: Maintenance
         controller_resolver:
             auto_mapping: false
 

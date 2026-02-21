@@ -135,6 +135,11 @@ final class InMemoryUpdateStationRepository implements StationRepository
         }
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        $this->delete($id);
+    }
+
     public function getByIds(array $ids): array
     {
         if (null === $this->station) {
@@ -165,5 +170,10 @@ final class InMemoryUpdateStationRepository implements StationRepository
     public function all(): iterable
     {
         return $this->station ? [$this->station] : [];
+    }
+
+    public function allForSystem(): iterable
+    {
+        return $this->all();
     }
 }

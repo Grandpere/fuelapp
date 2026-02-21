@@ -20,6 +20,8 @@ interface ReceiptRepository
 {
     public function save(Receipt $receipt): void;
 
+    public function saveForOwner(Receipt $receipt, string $ownerId): void;
+
     public function get(string $id): ?Receipt;
 
     public function delete(string $id): void;

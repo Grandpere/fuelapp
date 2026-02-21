@@ -16,6 +16,7 @@ framework:
         routing:
             App\Station\Application\Message\GeocodeStationAddressMessage: async
             App\Import\Application\Message\ProcessImportJobMessage: async
+            App\Maintenance\Application\Message\EvaluateMaintenanceRemindersMessage: async
 
 when@test:
     framework:

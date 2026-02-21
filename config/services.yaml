@@ -89,6 +89,7 @@ services:
     App\Import\Application\Ocr\OcrProvider: '@App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider'
     App\Import\Application\Parsing\ReceiptOcrParser: '@App\Import\Infrastructure\Parsing\RegexReceiptOcrParser'
     App\Shared\Application\Security\AuthenticatedUserIdProvider: '@App\Shared\Infrastructure\Security\TokenStorageAuthenticatedUserIdProvider'
+    App\Maintenance\Application\Notification\MaintenanceReminderNotifier: '@App\Maintenance\Infrastructure\Notification\InAppMaintenanceReminderNotifier'
     App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider:
         arguments:
             $httpClient: '@http_client'
@@ -100,6 +101,7 @@ services:
     App\Import\Application\Repository\ImportJobRepository: '@App\Import\Infrastructure\Persistence\Doctrine\Repository\DoctrineImportJobRepository'
     App\Maintenance\Application\Repository\MaintenanceEventRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceEventRepository'
     App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRuleRepository'
+    App\Maintenance\Application\Repository\MaintenanceReminderRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRepository'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'
     App\Vehicle\Application\Repository\VehicleRepository: '@App\Vehicle\Infrastructure\Persistence\Doctrine\Repository\DoctrineVehicleRepository'
     App\Admin\Application\Audit\AdminAuditContext: '@App\Admin\Infrastructure\Audit\SecurityRequestAdminAuditContext'

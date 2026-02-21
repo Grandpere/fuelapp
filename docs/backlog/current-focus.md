@@ -7,11 +7,11 @@
 - Deliver maintenance event foundation, reminders and cost tracking.
 
 ## In progress
-- `SP5-004` - Reminder scheduler and notifications.
+- `SP5-005` - Planned vs actual maintenance cost model.
 
 ## Next tickets (ordered)
-1. `SP5-004` - Reminder scheduler and notifications
-2. `SP5-005` - Planned vs actual maintenance cost model
+1. `SP5-005` - Planned vs actual maintenance cost model
+2. `SP5-006` - Maintenance UI timeline and planner
 3. `SP5-008` - Maintenance admin back-office exposure
 
 ## Notes
@@ -48,6 +48,7 @@
 - `SP5-001` delivered: maintenance bounded context skeleton with domain model, doctrine persistence, migration, and baseline tests.
 - `SP5-002` delivered: maintenance events CRUD API with ownership-safe vehicle binding and functional validation/isolation coverage.
 - `SP5-003` delivered: reminder rules model (date/odometer/whichever-first) with deterministic due-state calculator and rule persistence/tests.
+- `SP5-004` delivered: async reminder evaluation workflow with persistent deduplicated reminders and in-app notification abstraction.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

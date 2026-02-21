@@ -128,6 +128,11 @@ final readonly class InMemoryRuleRepository implements MaintenanceReminderRuleRe
             }
         }
     }
+
+    public function allForSystem(): iterable
+    {
+        yield from $this->rules;
+    }
 }
 
 final readonly class InMemoryEventRepository implements MaintenanceEventRepository

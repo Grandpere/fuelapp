@@ -25,4 +25,7 @@ interface MaintenanceReminderRuleRepository
 
     /** @return iterable<MaintenanceReminderRule> */
     public function allForOwnerAndVehicle(string $ownerId, string $vehicleId): iterable;
+
+    /** @return iterable<MaintenanceReminderRule> */
+    public function allForSystem(): iterable;
 }

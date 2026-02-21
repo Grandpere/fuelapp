@@ -91,6 +91,10 @@
                     <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
                         <button class="btn btn-primary" type="submit">Finalize import</button>
                         <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Cancel</a>
+                        <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" onsubmit="return confirm('Delete this import file?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
+                            <button class="btn btn-danger" type="submit">Delete import</button>
+                        </form>
                     </div>
                 </form>
             </section>

@@ -54,18 +54,20 @@
                                 <td>{{ job.fileSizeBytes }} bytes</td>
                                 <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
                                 <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
-                                <td>
-                                    {% if job.status.value == 'needs_review' %}
-                                        <a class="btn btn-primary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Review</a>
-                                    {% elseif row.canAutoFinalize %}
-                                        <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Detail</a>
-                                    {% else %}
-                                        <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Detail</a>
-                                    {% endif %}
-                                    <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" style="display:inline-flex; margin-left:.4rem;" onsubmit="return confirm('Delete this import file?');">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
-                                        <button class="btn btn-danger" type="submit">Delete</button>
-                                    </form>
+                                <td style="white-space:nowrap;">
+                                    <div style="display:flex; gap:.45rem; align-items:center; flex-wrap:nowrap;">
+                                        {% if job.status.value == 'needs_review' %}
+                                            <a class="btn btn-primary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Review</a>
+                                        {% elseif row.canAutoFinalize %}
+                                            <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Detail</a>
+                                        {% else %}
+                                            <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Detail</a>
+                                        {% endif %}
+                                        <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" style="display:inline-flex;" onsubmit="return confirm('Delete this import file?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
+                                            <button class="btn btn-danger" type="submit">Delete</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         {% else %}

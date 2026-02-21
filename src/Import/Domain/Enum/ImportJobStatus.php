@@ -20,4 +20,5 @@ enum ImportJobStatus: string
     case PROCESSED = 'processed';
     case FAILED = 'failed';
     case NEEDS_REVIEW = 'needs_review';
+    case DUPLICATE = 'duplicate';
 }

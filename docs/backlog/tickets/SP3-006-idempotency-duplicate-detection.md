@@ -19,4 +19,4 @@ Re-upload/retry should not create duplicate receipts.
 - SP3-005.
 
 ## Status
-- todo
+- done

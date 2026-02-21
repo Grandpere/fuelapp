@@ -266,4 +266,15 @@ final class ImportJob
         $this->errorPayload = null !== $payload ? mb_substr($payload, 0, 5000) : null;
         $this->updatedAt = $at;
     }
+
+    public function markDuplicate(string $payload, ?DateTimeImmutable $at = null): void
+    {
+        $at ??= new DateTimeImmutable();
+
+        $this->status = ImportJobStatus::DUPLICATE;
+        $this->completedAt = $at;
+        $this->failedAt = null;
+        $this->errorPayload = mb_substr($payload, 0, 5000);
+        $this->updatedAt = $at;
+    }
 }

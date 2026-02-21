@@ -92,6 +92,55 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         self::assertNotNull($saved->errorPayload());
         self::assertStringContainsString('ocr_space', (string) $saved->errorPayload());
     }
+
+    public function testHandlerMarksJobAsDuplicateWhenChecksumAlreadyExists(): void
+    {
+        $user = new UserEntity();
+        $user->setId(Uuid::v7());
+        $user->setEmail('import.duplicate@example.com');
+        $user->setRoles(['ROLE_USER']);
+        $user->setPassword('test1234');
+        $this->em->persist($user);
+        $this->em->flush();
+
+        $existing = ImportJob::createQueued(
+            $user->getId()->toRfc4122(),
+            'local',
+            '2026/02/21/existing.pdf',
+            'existing.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('b', 64),
+        );
+        $existing->markNeedsReview('already-parsed');
+        $this->importJobRepository->save($existing);
+
+        $job = ImportJob::createQueued(
+            $user->getId()->toRfc4122(),
+            'local',
+            '2026/02/21/new.pdf',
+            'new.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('b', 64),
+        );
+        $this->importJobRepository->save($job);
+
+        $handler = new ProcessImportJobMessageHandler(
+            $this->importJobRepository,
+            new StaticFileLocator('/tmp/fake.pdf'),
+            new StaticOcrProvider(),
+            new StaticReceiptParser(),
+            new NullLogger(),
+        );
+        $handler(new ProcessImportJobMessage($job->id()->toString()));
+
+        $saved = $this->importJobRepository->getForSystem($job->id()->toString());
+        self::assertNotNull($saved);
+        self::assertSame(ImportJobStatus::DUPLICATE, $saved->status());
+        self::assertStringContainsString('same_file_checksum', (string) $saved->errorPayload());
+        self::assertStringContainsString($existing->id()->toString(), (string) $saved->errorPayload());
+    }
 }
 
 final class StaticFileLocator implements ImportStoredFileLocator

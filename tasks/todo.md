@@ -1,9 +1,8 @@
-# TODO - SP3-005 Receipt parsing and normalization
+# TODO - SP3-006 Idempotency and duplicate detection
 
 ## Plan
-- [completed] Define parsing contract and parsed draft model for OCR output.
-- [completed] Implement regex-based parser for station/date/lines/amounts/VAT normalization.
-- [completed] Build validated receipt creation payload candidate from parsed draft.
-- [completed] Integrate parser output into import async `needs_review` payload with explicit issues.
-- [completed] Add unit coverage for parser and adapt import handler tests.
+- [completed] Define deterministic fingerprint strategy based on file checksum.
+- [completed] Add duplicate check in async import handler before OCR processing.
+- [completed] Persist explicit duplicate terminal status and payload metadata.
+- [completed] Add unit and integration coverage for duplicate detection path.
 - [completed] Run quality checks.

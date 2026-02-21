@@ -171,6 +171,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: return parsed draft with normalized fields, explicit issues list, and `creationPayload` only when required fields are complete.
 - Prevention: for extraction pipelines, always separate `raw parsed data` from `validated command-ready payload`.
 
+## 2026-02-21 - Duplicate import must short-circuit before OCR
+- Symptom: re-uploading the same receipt can trigger full OCR/parsing again and risks duplicate receipt creation.
+- Root cause: async handler lacked deterministic duplicate gate before expensive processing.
+- Fix: compare owner + file checksum upfront, mark job as `duplicate`, persist structured payload (`duplicateOfImportJobId`, fingerprint), and stop processing.
+- Prevention: for async ingest pipelines, enforce idempotency checks before calling external providers.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

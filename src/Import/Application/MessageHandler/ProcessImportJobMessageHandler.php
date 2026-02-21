@@ -52,10 +52,25 @@ final readonly class ProcessImportJobMessageHandler
             return;
         }
 
-        if (in_array($job->status(), [ImportJobStatus::PROCESSED, ImportJobStatus::NEEDS_REVIEW], true)) {
+        if (in_array($job->status(), [ImportJobStatus::PROCESSED, ImportJobStatus::NEEDS_REVIEW, ImportJobStatus::DUPLICATE], true)) {
             $this->logger->info('import.job.skipped_already_terminal', [
                 'import_job_id' => $job->id()->toString(),
                 'status' => $job->status()->value,
+            ]);
+
+            return;
+        }
+
+        $fingerprint = $this->buildFingerprintV1($job->fileChecksumSha256());
+        $duplicateOf = $this->repository->findLatestByOwnerAndChecksum($job->ownerId(), $job->fileChecksumSha256(), $job->id()->toString());
+        if (null !== $duplicateOf) {
+            $job->markDuplicate($this->buildDuplicatePayload($job->id()->toString(), $duplicateOf->id()->toString(), $fingerprint));
+            $this->repository->save($job);
+
+            $this->logger->info('import.job.marked_duplicate', [
+                'import_job_id' => $job->id()->toString(),
+                'duplicate_of_import_job_id' => $duplicateOf->id()->toString(),
+                'fingerprint' => $fingerprint,
             ]);
 
             return;
@@ -69,7 +84,7 @@ final readonly class ProcessImportJobMessageHandler
             $extraction = $this->ocrProvider->extract($absolutePath, $job->mimeType());
             $parsedDraft = $this->receiptParser->parse($extraction);
 
-            $payload = $this->buildNeedsReviewPayload($job->id()->toString(), $extraction->provider, $extraction->text, $extraction->pages, $parsedDraft);
+            $payload = $this->buildNeedsReviewPayload($job->id()->toString(), $extraction->provider, $extraction->text, $extraction->pages, $parsedDraft, $fingerprint);
             $job->markNeedsReview($payload);
             $this->repository->save($job);
 
@@ -106,10 +121,11 @@ final readonly class ProcessImportJobMessageHandler
     }
 
     /** @param list<string> $pages */
-    private function buildNeedsReviewPayload(string $jobId, string $provider, string $text, array $pages, ParsedReceiptDraft $parsedDraft): string
+    private function buildNeedsReviewPayload(string $jobId, string $provider, string $text, array $pages, ParsedReceiptDraft $parsedDraft, string $fingerprint): string
     {
         $payload = [
             'jobId' => $jobId,
+            'fingerprint' => $fingerprint,
             'provider' => $provider,
             'text' => mb_substr($text, 0, 2000),
             'pages' => $pages,
@@ -136,5 +152,29 @@ final readonly class ProcessImportJobMessageHandler
     private function buildUnexpectedFailureReason(Throwable $throwable): string
     {
         return mb_substr(sprintf('ocr_unexpected: %s', trim($throwable->getMessage())), 0, 5000);
+    }
+
+    private function buildFingerprintV1(string $checksumSha256): string
+    {
+        return 'checksum-sha256:v1:'.mb_strtolower(trim($checksumSha256));
+    }
+
+    private function buildDuplicatePayload(string $jobId, string $duplicateOfJobId, string $fingerprint): string
+    {
+        $payload = [
+            'jobId' => $jobId,
+            'status' => 'duplicate',
+            'duplicateOfImportJobId' => $duplicateOfJobId,
+            'fingerprint' => $fingerprint,
+            'reason' => 'same_file_checksum',
+        ];
+
+        try {
+            $encoded = json_encode($payload, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return 'duplicate_payload_serialization_failed';
+        }
+
+        return $encoded;
     }
 }

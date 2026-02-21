@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Import\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use App\Import\Domain\ValueObject\ImportJobId;
 use App\Import\Infrastructure\Persistence\Doctrine\Entity\ImportJobEntity;
@@ -110,6 +111,34 @@ final readonly class DoctrineImportJobRepository implements ImportJobRepository
                 yield $this->mapEntityToDomain($item);
             }
         }
+    }
+
+    public function findLatestByOwnerAndChecksum(string $ownerId, string $checksumSha256, ?string $excludeJobId = null): ?ImportJob
+    {
+        if (!Uuid::isValid($ownerId) || '' === trim($checksumSha256)) {
+            return null;
+        }
+
+        $qb = $this->em->getRepository(ImportJobEntity::class)->createQueryBuilder('j')
+            ->andWhere('IDENTITY(j.owner) = :ownerId')
+            ->andWhere('j.fileChecksumSha256 = :checksum')
+            ->andWhere('j.status != :failedStatus')
+            ->setParameter('ownerId', $ownerId)
+            ->setParameter('checksum', $checksumSha256)
+            ->setParameter('failedStatus', ImportJobStatus::FAILED)
+            ->orderBy('j.createdAt', 'DESC')
+            ->setMaxResults(1);
+
+        if (null !== $excludeJobId && Uuid::isValid($excludeJobId)) {
+            $qb->andWhere('j.id != :excludeJobId')->setParameter('excludeJobId', $excludeJobId);
+        }
+
+        $entity = $qb->getQuery()->getOneOrNullResult();
+        if (!$entity instanceof ImportJobEntity) {
+            return null;
+        }
+
+        return $this->mapEntityToDomain($entity);
     }
 
     private function applyOwnedByCurrentUser(QueryBuilder $qb, string $alias): void

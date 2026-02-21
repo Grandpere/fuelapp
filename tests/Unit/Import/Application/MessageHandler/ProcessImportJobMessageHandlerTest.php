@@ -140,6 +140,46 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
             self::assertStringContainsString('ocr_provider_retryable', (string) $saved->errorPayload());
         }
     }
+
+    public function testItMarksJobAsDuplicateWhenFingerprintAlreadyExists(): void
+    {
+        $existing = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/existing.pdf',
+            'existing.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('a', 64),
+        );
+        $existing->markNeedsReview('already processed');
+
+        $job = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/new.pdf',
+            'new.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('a', 64),
+        );
+
+        $repository = new InMemoryImportJobRepository([$existing, $job]);
+        $handler = new ProcessImportJobMessageHandler(
+            $repository,
+            new FakeStoredFileLocator('/tmp/upload.pdf'),
+            new FakeOcrProvider(new OcrExtraction('ocr_space', 'ignored', ['ignored'], [])),
+            new FakeReceiptOcrParser(),
+            new NullLogger(),
+        );
+
+        $handler(new ProcessImportJobMessage($job->id()->toString()));
+
+        $saved = $repository->getForSystem($job->id()->toString());
+        self::assertNotNull($saved);
+        self::assertSame(ImportJobStatus::DUPLICATE, $saved->status());
+        self::assertStringContainsString('same_file_checksum', (string) $saved->errorPayload());
+    }
 }
 
 final class InMemoryImportJobRepository implements ImportJobRepository
@@ -176,6 +216,30 @@ final class InMemoryImportJobRepository implements ImportJobRepository
     public function all(): iterable
     {
         return array_values($this->items);
+    }
+
+    public function findLatestByOwnerAndChecksum(string $ownerId, string $checksumSha256, ?string $excludeJobId = null): ?ImportJob
+    {
+        $latest = null;
+        foreach ($this->items as $item) {
+            if ($item->ownerId() !== $ownerId || $item->fileChecksumSha256() !== $checksumSha256) {
+                continue;
+            }
+
+            if (null !== $excludeJobId && $item->id()->toString() === $excludeJobId) {
+                continue;
+            }
+
+            if (ImportJobStatus::FAILED === $item->status()) {
+                continue;
+            }
+
+            if (null === $latest || $item->createdAt() > $latest->createdAt()) {
+                $latest = $item;
+            }
+        }
+
+        return $latest;
     }
 }
 

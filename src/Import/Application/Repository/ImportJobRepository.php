@@ -23,6 +23,8 @@ interface ImportJobRepository
 
     public function getForSystem(string $id): ?ImportJob;
 
+    public function findLatestByOwnerAndChecksum(string $ownerId, string $checksumSha256, ?string $excludeJobId = null): ?ImportJob;
+
     /** @return iterable<ImportJob> */
     public function all(): iterable;
 }

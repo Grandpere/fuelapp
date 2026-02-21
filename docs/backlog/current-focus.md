@@ -7,11 +7,11 @@
 - Deliver back-office security model and admin tooling.
 
 ## In progress
-- `SP4-002` - Back-office API for stations and vehicles.
+- `SP4-003` - Back-office UI shell and navigation.
 
 ## Next tickets (ordered)
-1. `SP4-002` - Back-office API for stations and vehicles
-2. `SP4-003` - Back-office UI shell and navigation
+1. `SP4-003` - Back-office UI shell and navigation
+2. `SP4-004` - Import jobs dashboard and filtering
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -38,6 +38,7 @@
 - `SP3-008` delivered: import regression coverage for OCR/provider/parser failure paths and finalize API error-paths.
 - `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
 - `SP4-001` delivered: admin access model with role hierarchy and explicit `/api/admin` + `/ui/admin` policy gates.
+- `SP4-002` delivered: admin CRUD APIs for stations and vehicles with basic list filters/search in `/api/admin/*`.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

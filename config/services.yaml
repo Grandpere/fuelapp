@@ -98,3 +98,4 @@ services:
     App\Receipt\Application\Repository\ReceiptRepository: '@App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository'
     App\Import\Application\Repository\ImportJobRepository: '@App\Import\Infrastructure\Persistence\Doctrine\Repository\DoctrineImportJobRepository'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'
+    App\Vehicle\Application\Repository\VehicleRepository: '@App\Vehicle\Infrastructure\Persistence\Doctrine\Repository\DoctrineVehicleRepository'

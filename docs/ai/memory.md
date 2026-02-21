@@ -201,6 +201,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: add minimal routed admin probes (`/api/admin/ping`, `/ui/admin`) and assert role outcomes on those routes.
 - Prevention: when testing security boundaries, target concrete routes under the protected prefix.
 
+## 2026-02-21 - API Platform custom resources with PATCH/DELETE need explicit `read: false` when not entity-backed
+- Symptom: admin PATCH operations returned 404 from `ReadProvider` before reaching custom processors.
+- Root cause: API Platform attempted default pre-read on DTO resources without matching entity provider.
+- Fix: set `read: false` on PATCH/DELETE operations and load domain objects in custom processors.
+- Prevention: for non-entity API resources driven by custom processors, explicitly choose `read` behavior per operation.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

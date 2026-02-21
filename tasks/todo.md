@@ -1,8 +1,9 @@
-# TODO - SP4-001 Admin access model and role policy
+# TODO - SP4-002 Back-office API for stations and vehicles
 
 ## Plan
-- [completed] Define admin role model (`ROLE_ADMIN`) with explicit hierarchy.
-- [completed] Restrict admin prefixes (`/api/admin`, `/ui/admin`) via access control policy.
-- [completed] Add minimal admin entry routes for API and UI scope.
-- [completed] Add tests for admin/non-admin separation and policy map.
+- [completed] Add admin API CRUD for stations under `/api/admin/stations`.
+- [completed] Add vehicle context + persistence + migration + admin API CRUD under `/api/admin/vehicles`.
+- [completed] Add basic filtering/search (`q`, `city`, `geocodingStatus`) for back-office lists.
+- [completed] Keep ownership boundaries explicit: admin-only prefixes, no impact on user-scoped APIs.
+- [completed] Add functional/integration coverage for admin separation and vehicle persistence.
 - [completed] Run quality checks.

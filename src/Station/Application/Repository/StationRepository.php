@@ -23,6 +23,8 @@ interface StationRepository
 
     public function getForSystem(string $id): ?Station;
 
+    public function deleteForSystem(string $id): void;
+
     public function delete(string $id): void;
 
     /** @param list<string> $ids
@@ -34,4 +36,7 @@ interface StationRepository
 
     /** @return iterable<Station> */
     public function all(): iterable;
+
+    /** @return iterable<Station> */
+    public function allForSystem(): iterable;
 }

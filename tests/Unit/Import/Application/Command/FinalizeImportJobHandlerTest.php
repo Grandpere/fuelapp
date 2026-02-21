@@ -271,6 +271,11 @@ final class FinalizeInMemoryStationRepository implements StationRepository
         unset($this->items[$id]);
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        $this->delete($id);
+    }
+
     public function getByIds(array $ids): array
     {
         $result = [];
@@ -302,6 +307,11 @@ final class FinalizeInMemoryStationRepository implements StationRepository
     public function all(): iterable
     {
         return array_values($this->items);
+    }
+
+    public function allForSystem(): iterable
+    {
+        return $this->all();
     }
 }
 

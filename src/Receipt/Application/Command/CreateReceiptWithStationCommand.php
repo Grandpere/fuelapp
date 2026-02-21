@@ -28,6 +28,7 @@ final readonly class CreateReceiptWithStationCommand
         public ?int $latitudeMicroDegrees,
         public ?int $longitudeMicroDegrees,
         public ?string $vehicleId = null,
+        public ?string $ownerId = null,
     ) {
     }
 }

@@ -283,4 +283,16 @@ final class ImportJob
         $this->errorPayload = mb_substr($payload, 0, 5000);
         $this->updatedAt = $at;
     }
+
+    public function markQueuedForRetry(?DateTimeImmutable $at = null): void
+    {
+        $at ??= new DateTimeImmutable();
+
+        $this->status = ImportJobStatus::QUEUED;
+        $this->startedAt = null;
+        $this->completedAt = null;
+        $this->failedAt = null;
+        $this->errorPayload = null;
+        $this->updatedAt = $at;
+    }
 }

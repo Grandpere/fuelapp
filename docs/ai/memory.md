@@ -213,6 +213,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: move owner existence check behind `VehicleRepository` application contract and keep UI depending only on application/domain abstractions.
 - Prevention: when adding validation in UI/API state classes, route cross-layer checks through repository/service interfaces instead of infrastructure entity imports.
 
+## 2026-02-21 - Admin finalize of import jobs must preserve original receipt owner
+- Symptom: finalizing a `needs_review` import from admin context can create receipts owned by admin instead of import owner.
+- Root cause: receipt persistence defaulted to current authenticated user from token storage.
+- Fix: propagate owner context from import job through finalize/create-receipt flow and persist via `ReceiptRepository::saveForOwner`.
+- Prevention: for system/admin workflows acting on user-owned resources, pass explicit owner context instead of relying on current session user.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

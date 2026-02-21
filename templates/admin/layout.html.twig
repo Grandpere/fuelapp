@@ -156,6 +156,13 @@
         </aside>
 
         <main class="admin-main">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="flash" style="{{ label == 'error' ? 'border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;' : '' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
             {% block admin_content %}{% endblock %}
         </main>
     </div>

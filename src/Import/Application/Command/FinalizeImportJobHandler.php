@@ -76,6 +76,7 @@ final readonly class FinalizeImportJobHandler
             $stationCity,
             $latitudeMicroDegrees,
             $longitudeMicroDegrees,
+            ownerId: $job->ownerId(),
         ));
 
         $job->markProcessedWithPayload($this->buildProcessedPayload(

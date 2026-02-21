@@ -220,6 +220,11 @@ final class InMemoryReceiptRepository implements ReceiptRepository
         $this->items[$receipt->id()->toString()] = $receipt;
     }
 
+    public function saveForOwner(Receipt $receipt, string $ownerId): void
+    {
+        $this->save($receipt);
+    }
+
     public function get(string $id): ?Receipt
     {
         return $this->items[$id] ?? null;

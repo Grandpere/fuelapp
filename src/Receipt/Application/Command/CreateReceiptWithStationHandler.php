@@ -69,6 +69,7 @@ final class CreateReceiptWithStationHandler
             $command->lines,
             StationId::fromString($station->id()->toString()),
             null === $command->vehicleId ? null : VehicleId::fromString($command->vehicleId),
+            $command->ownerId,
         ));
     }
 }

@@ -1,9 +1,9 @@
-# TODO - SP4-004 Import jobs dashboard and filtering
+# TODO - SP4-005 Retry/fix/reprocess imports
 
 ## Plan
-- [completed] Add system-level import jobs list API in repository (`allForSystem`) for admin UI use.
-- [completed] Create admin imports dashboard page with status metrics and triage table.
-- [completed] Add filters (`status`, `createdFrom`, `createdTo`, `ownerId`, `source`, `q`).
-- [completed] Add import job detail page with payload/error visibility.
-- [completed] Wire admin navigation to imports dashboard and detail links.
+- [completed] Add retry action in application layer for failed import jobs and re-dispatch async processing.
+- [completed] Add admin API actions for import retry and finalize with manual corrections.
+- [completed] Ensure admin finalize preserves original import owner when creating receipt.
+- [completed] Add admin UI actions on import detail (retry + fix/finalize form).
+- [completed] Add unit/functional coverage for recovery flows.
 - [completed] Run quality checks and finalize docs.

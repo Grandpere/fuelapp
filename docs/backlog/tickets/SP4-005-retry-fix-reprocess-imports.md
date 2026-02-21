@@ -19,4 +19,4 @@ Operators need recovery tools without shell access.
 - SP4-004.
 
 ## Status
-- todo
+- done

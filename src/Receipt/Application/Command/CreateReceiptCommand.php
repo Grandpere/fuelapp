@@ -25,6 +25,7 @@ final readonly class CreateReceiptCommand
         public array $lines,
         public ?StationId $stationId,
         public ?VehicleId $vehicleId = null,
+        public ?string $ownerId = null,
     ) {
     }
 }

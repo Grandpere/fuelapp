@@ -160,6 +160,11 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
         ++$this->savedCount;
     }
 
+    public function saveForOwner(Receipt $receipt, string $ownerId): void
+    {
+        $this->save($receipt);
+    }
+
     public function get(string $id): ?Receipt
     {
         return null;

@@ -325,8 +325,8 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             }
 
             $context = $line;
-            $windowStart = max(0, $index - 3);
-            $windowLength = min(count($lines) - $windowStart, 10);
+            $windowStart = max(0, $index - 6);
+            $windowLength = min(count($lines) - $windowStart, 14);
             $window = array_slice($lines, $windowStart, $windowLength);
             if ([] !== $window) {
                 $context = implode(' ', $window);

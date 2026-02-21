@@ -18,10 +18,10 @@ use DateTimeImmutable;
 interface AnalyticsKpiReader
 {
     /** @return list<MonthlyCostKpi> */
-    public function readCostPerMonth(string $ownerId, ?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
+    public function readCostPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
 
     /** @return list<MonthlyConsumptionKpi> */
-    public function readConsumptionPerMonth(string $ownerId, ?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
+    public function readConsumptionPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
 
-    public function readAveragePrice(string $ownerId, ?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to): AverageFuelPriceKpi;
+    public function readAveragePrice(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): AverageFuelPriceKpi;
 }

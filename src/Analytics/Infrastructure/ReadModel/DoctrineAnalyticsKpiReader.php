@@ -26,9 +26,11 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
     {
     }
 
-    public function readCostPerMonth(string $ownerId, ?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
+    public function readCostPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
     {
         $normalizedVehicleId = $vehicleId ?? '';
+        $normalizedStationId = $stationId ?? '';
+        $normalizedFuelType = $fuelType ?? '';
         $normalizedFromDate = $from?->format('Y-m-d') ?? '';
         $normalizedToDate = $to?->format('Y-m-d') ?? '';
 
@@ -38,6 +40,8 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                     FROM analytics_daily_fuel_kpis
                     WHERE owner_id = :ownerId
                       AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
+                      AND (:stationId = '' OR station_id = CAST(NULLIF(:stationId, '') AS uuid))
+                      AND (:fuelType = '' OR fuel_type = :fuelType)
                       AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
                       AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
                     GROUP BY DATE_TRUNC('month', day::timestamp)
@@ -46,6 +50,8 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
             [
                 'ownerId' => $ownerId,
                 'vehicleId' => $normalizedVehicleId,
+                'stationId' => $normalizedStationId,
+                'fuelType' => $normalizedFuelType,
                 'fromDate' => $normalizedFromDate,
                 'toDate' => $normalizedToDate,
             ],
@@ -64,9 +70,11 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
         return $items;
     }
 
-    public function readConsumptionPerMonth(string $ownerId, ?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
+    public function readConsumptionPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
     {
         $normalizedVehicleId = $vehicleId ?? '';
+        $normalizedStationId = $stationId ?? '';
+        $normalizedFuelType = $fuelType ?? '';
         $normalizedFromDate = $from?->format('Y-m-d') ?? '';
         $normalizedToDate = $to?->format('Y-m-d') ?? '';
 
@@ -76,6 +84,8 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                     FROM analytics_daily_fuel_kpis
                     WHERE owner_id = :ownerId
                       AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
+                      AND (:stationId = '' OR station_id = CAST(NULLIF(:stationId, '') AS uuid))
+                      AND (:fuelType = '' OR fuel_type = :fuelType)
                       AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
                       AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
                     GROUP BY DATE_TRUNC('month', day::timestamp)
@@ -84,6 +94,8 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
             [
                 'ownerId' => $ownerId,
                 'vehicleId' => $normalizedVehicleId,
+                'stationId' => $normalizedStationId,
+                'fuelType' => $normalizedFuelType,
                 'fromDate' => $normalizedFromDate,
                 'toDate' => $normalizedToDate,
             ],
@@ -102,9 +114,11 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
         return $items;
     }
 
-    public function readAveragePrice(string $ownerId, ?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to): AverageFuelPriceKpi
+    public function readAveragePrice(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): AverageFuelPriceKpi
     {
         $normalizedVehicleId = $vehicleId ?? '';
+        $normalizedStationId = $stationId ?? '';
+        $normalizedFuelType = $fuelType ?? '';
         $normalizedFromDate = $from?->format('Y-m-d') ?? '';
         $normalizedToDate = $to?->format('Y-m-d') ?? '';
 
@@ -116,12 +130,16 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                     FROM analytics_daily_fuel_kpis
                     WHERE owner_id = :ownerId
                       AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
+                      AND (:stationId = '' OR station_id = CAST(NULLIF(:stationId, '') AS uuid))
+                      AND (:fuelType = '' OR fuel_type = :fuelType)
                       AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
                       AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
                 SQL,
             [
                 'ownerId' => $ownerId,
                 'vehicleId' => $normalizedVehicleId,
+                'stationId' => $normalizedStationId,
+                'fuelType' => $normalizedFuelType,
                 'fromDate' => $normalizedFromDate,
                 'toDate' => $normalizedToDate,
             ],

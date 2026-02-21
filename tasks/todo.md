@@ -1,8 +1,7 @@
-# TODO - SP6-003 Dashboard UI (fuel, cost, trend)
+# TODO - SP6-004 Time-window and multi-filter analytics
 
 ## Plan
-- [completed] Add analytics dashboard web route/controller with period and vehicle filters.
-- [completed] Build responsive dashboard UI with KPI cards and monthly trend visualizations.
-- [completed] Integrate analytics navigation entry in shared top bar.
-- [completed] Add functional web UI coverage for rendered metrics and vehicle filtering.
-- [completed] Update backlog docs/status, run quality gates, and commit.
+- [completed] Extend analytics KPI read model and API filters with station + fuel type dimensions.
+- [completed] Extend analytics dashboard UI filters (station/fuel type) and keep filter semantics aligned with CSV export from dashboard.
+- [completed] Add/adjust functional tests for API and web dashboard to cover combined filters and consistency.
+- [completed] Run quality gates, update backlog/docs, and commit.

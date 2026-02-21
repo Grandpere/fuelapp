@@ -38,6 +38,8 @@ final readonly class AnalyticsConsumptionPerMonthStateProvider implements Provid
         $items = $this->kpiReader->readConsumptionPerMonth(
             $ownerId,
             AnalyticsFilterReader::readVehicleId($context),
+            AnalyticsFilterReader::readStationId($context),
+            AnalyticsFilterReader::readFuelType($context),
             AnalyticsFilterReader::readDateFilter($context, 'from'),
             AnalyticsFilterReader::readDateFilter($context, 'to'),
         );

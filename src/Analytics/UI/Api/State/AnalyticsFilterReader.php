@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Analytics\UI\Api\State;
 
+use App\Receipt\Domain\Enum\FuelType;
 use DateTimeImmutable;
 use Symfony\Component\Uid\Uuid;
 
@@ -27,6 +28,30 @@ final class AnalyticsFilterReader
         }
 
         return $value;
+    }
+
+    /** @param array<string, mixed> $context */
+    public static function readStationId(array $context): ?string
+    {
+        $value = self::readStringFilter($context, 'stationId');
+        if (null === $value || !Uuid::isValid($value)) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $context */
+    public static function readFuelType(array $context): ?string
+    {
+        $value = self::readStringFilter($context, 'fuelType');
+        if (null === $value) {
+            return null;
+        }
+
+        $choices = array_map(static fn (FuelType $type): string => $type->value, FuelType::cases());
+
+        return in_array($value, $choices, true) ? $value : null;
     }
 
     /** @param array<string, mixed> $context */

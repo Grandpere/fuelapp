@@ -36,7 +36,7 @@
 
         .analytics-filters-form {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 0.7rem;
             align-items: end;
         }
@@ -155,6 +155,7 @@
                 <p class="muted">Pilot fuel spend and consumption trends across your selected period.</p>
             </div>
             <div class="analytics-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams) }}">Export CSV</a>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Receipts</a>
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
             </div>
@@ -176,6 +177,24 @@
                         <option value="">All vehicles</option>
                         {% for optionId, optionLabel in vehicleOptions %}
                             <option value="{{ optionId }}" {% if vehicleFilter == optionId %}selected{% endif %}>{{ optionLabel }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
+                    Station
+                    <select class="select" name="station_id">
+                        <option value="">All stations</option>
+                        {% for stationOption in stationOptions %}
+                            <option value="{{ stationOption.id }}" {% if stationFilter == stationOption.id %}selected{% endif %}>{{ stationOption.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
+                    Fuel type
+                    <select class="select" name="fuel_type">
+                        <option value="">All fuel types</option>
+                        {% for fuelTypeChoice in fuelTypeChoices %}
+                            <option value="{{ fuelTypeChoice }}" {% if fuelTypeFilter == fuelTypeChoice %}selected{% endif %}>{{ fuelTypeChoice }}</option>
                         {% endfor %}
                     </select>
                 </label>
@@ -248,4 +267,3 @@
         </section>
     </main>
 {% endblock %}
-

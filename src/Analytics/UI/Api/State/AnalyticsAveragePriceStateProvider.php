@@ -36,9 +36,11 @@ final readonly class AnalyticsAveragePriceStateProvider implements ProviderInter
         }
 
         $vehicleId = AnalyticsFilterReader::readVehicleId($context);
+        $stationId = AnalyticsFilterReader::readStationId($context);
+        $fuelType = AnalyticsFilterReader::readFuelType($context);
         $from = AnalyticsFilterReader::readDateFilter($context, 'from');
         $to = AnalyticsFilterReader::readDateFilter($context, 'to');
-        $kpi = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $from, $to);
+        $kpi = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         return [new AnalyticsAveragePriceOutput(
             'average',

@@ -16,6 +16,7 @@ namespace App\Tests\Functional\Analytics;
 use App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
+use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
@@ -87,18 +88,21 @@ final class AnalyticsKpiApiTest extends KernelTestCase
         $vehicle->setCreatedAt(new DateTimeImmutable('2026-01-01 10:00:00'));
         $vehicle->setUpdatedAt(new DateTimeImmutable('2026-01-01 10:00:00'));
         $this->em->persist($vehicle);
+
+        $stationA = $this->createStation('Station A', '1 Main St', '75001', 'Paris');
+        $stationB = $this->createStation('Station B', '2 Oak Ave', '69001', 'Lyon');
         $this->em->flush();
 
-        $this->createReceipt($owner, $vehicle, new DateTimeImmutable('2026-01-10 10:00:00'), [
+        $this->createReceipt($owner, $vehicle, $stationA, new DateTimeImmutable('2026-01-10 10:00:00'), [
             ['diesel', 10000, 18000, 20],
         ]);
-        $this->createReceipt($owner, $vehicle, new DateTimeImmutable('2026-01-20 11:00:00'), [
+        $this->createReceipt($owner, $vehicle, $stationA, new DateTimeImmutable('2026-01-20 11:00:00'), [
             ['diesel', 5000, 20000, 20],
         ]);
-        $this->createReceipt($owner, null, new DateTimeImmutable('2026-02-01 10:00:00'), [
+        $this->createReceipt($owner, null, $stationB, new DateTimeImmutable('2026-02-01 10:00:00'), [
             ['unleaded95', 20000, 17000, 20],
         ]);
-        $this->createReceipt($otherOwner, null, new DateTimeImmutable('2026-01-15 12:00:00'), [
+        $this->createReceipt($otherOwner, null, $stationB, new DateTimeImmutable('2026-01-15 12:00:00'), [
             ['diesel', 10000, 30000, 20],
         ]);
         $this->em->flush();
@@ -154,6 +158,18 @@ final class AnalyticsKpiApiTest extends KernelTestCase
         self::assertSame(28000, $this->toInt($vehicleAverageItems[0]['totalCostCents'] ?? null));
         self::assertSame(15000, $this->toInt($vehicleAverageItems[0]['totalQuantityMilliLiters'] ?? null));
         self::assertSame(18667, $this->toInt($vehicleAverageItems[0]['averagePriceDeciCentsPerLiter'] ?? null));
+
+        $stationFuelFiltered = $this->request(
+            'GET',
+            '/api/analytics/kpis/average-price?stationId='.$stationA->getId()->toRfc4122().'&fuelType=diesel&from=2026-01-01&to=2026-02-28',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $stationFuelFiltered->getStatusCode());
+        $stationFuelItems = $this->extractCollectionItems(json_decode((string) $stationFuelFiltered->getContent(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertCount(1, $stationFuelItems);
+        self::assertSame(28000, $this->toInt($stationFuelItems[0]['totalCostCents'] ?? null));
+        self::assertSame(15000, $this->toInt($stationFuelItems[0]['totalQuantityMilliLiters'] ?? null));
+        self::assertSame(18667, $this->toInt($stationFuelItems[0]['averagePriceDeciCentsPerLiter'] ?? null));
     }
 
     /** @param array<string, string> $server */
@@ -223,15 +239,28 @@ final class AnalyticsKpiApiTest extends KernelTestCase
         return $user;
     }
 
+    private function createStation(string $name, string $street, string $postalCode, string $city): StationEntity
+    {
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName($name);
+        $station->setStreetName($street);
+        $station->setPostalCode($postalCode);
+        $station->setCity($city);
+        $this->em->persist($station);
+
+        return $station;
+    }
+
     /**
      * @param list<array{0:string,1:int,2:int,3:int}> $lines
      */
-    private function createReceipt(UserEntity $owner, ?VehicleEntity $vehicle, DateTimeImmutable $issuedAt, array $lines): void
+    private function createReceipt(UserEntity $owner, ?VehicleEntity $vehicle, ?StationEntity $station, DateTimeImmutable $issuedAt, array $lines): void
     {
         $receipt = new ReceiptEntity();
         $receipt->setId(Uuid::v7());
         $receipt->setOwner($owner);
-        $receipt->setStation(null);
+        $receipt->setStation($station);
         $receipt->setVehicle($vehicle);
         $receipt->setIssuedAt($issuedAt);
         $receipt->setTotalCents(0);

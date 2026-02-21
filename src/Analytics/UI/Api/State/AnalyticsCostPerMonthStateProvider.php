@@ -38,6 +38,8 @@ final readonly class AnalyticsCostPerMonthStateProvider implements ProviderInter
         $items = $this->kpiReader->readCostPerMonth(
             $ownerId,
             AnalyticsFilterReader::readVehicleId($context),
+            AnalyticsFilterReader::readStationId($context),
+            AnalyticsFilterReader::readFuelType($context),
             AnalyticsFilterReader::readDateFilter($context, 'from'),
             AnalyticsFilterReader::readDateFilter($context, 'to'),
         );

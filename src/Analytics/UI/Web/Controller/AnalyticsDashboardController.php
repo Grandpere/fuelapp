@@ -16,7 +16,9 @@ namespace App\Analytics\UI\Web\Controller;
 use App\Analytics\Application\Kpi\AnalyticsKpiReader;
 use App\Analytics\Application\Kpi\MonthlyConsumptionKpi;
 use App\Analytics\Application\Kpi\MonthlyCostKpi;
+use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
+use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -31,6 +33,7 @@ final class AnalyticsDashboardController extends AbstractController
     public function __construct(
         private readonly AnalyticsKpiReader $kpiReader,
         private readonly VehicleRepository $vehicleRepository,
+        private readonly StationRepository $stationRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
     ) {
     }
@@ -46,14 +49,20 @@ final class AnalyticsDashboardController extends AbstractController
         $from = $this->readDateFilter($request, 'from');
         $to = $this->readDateFilter($request, 'to');
         $vehicleId = $this->readVehicleFilter($request, $ownerId);
+        $stationId = $this->readStationFilter($request);
+        $fuelType = $this->readFuelTypeFilter($request);
 
-        $costPerMonth = $this->kpiReader->readCostPerMonth($ownerId, $vehicleId, $from, $to);
-        $consumptionPerMonth = $this->kpiReader->readConsumptionPerMonth($ownerId, $vehicleId, $from, $to);
-        $averagePrice = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $from, $to);
+        $costPerMonth = $this->kpiReader->readCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $consumptionPerMonth = $this->kpiReader->readConsumptionPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $averagePrice = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         return $this->render('analytics/index.html.twig', [
             'vehicleOptions' => $this->vehicleOptions($ownerId),
+            'stationOptions' => $this->stationOptions(),
+            'fuelTypeChoices' => array_map(static fn (FuelType $case): string => $case->value, FuelType::cases()),
             'vehicleFilter' => $vehicleId,
+            'stationFilter' => $stationId,
+            'fuelTypeFilter' => $fuelType,
             'fromFilter' => $from?->format('Y-m-d'),
             'toFilter' => $to?->format('Y-m-d'),
             'costPerMonth' => $costPerMonth,
@@ -63,6 +72,12 @@ final class AnalyticsDashboardController extends AbstractController
             'totalCostCents' => $averagePrice->totalCostCents,
             'totalQuantityMilliLiters' => $averagePrice->totalQuantityMilliLiters,
             'averagePriceDeciCentsPerLiter' => $averagePrice->averagePriceDeciCentsPerLiter,
+            'exportQueryParams' => [
+                'issued_from' => $from?->format('Y-m-d'),
+                'issued_to' => $to?->format('Y-m-d'),
+                'station_id' => $stationId,
+                'fuel_type' => $fuelType,
+            ],
         ]);
     }
 
@@ -77,6 +92,33 @@ final class AnalyticsDashboardController extends AbstractController
 
             $options[$vehicle->id()->toString()] = sprintf('%s (%s)', $vehicle->name(), $vehicle->plateNumber());
         }
+
+        return $options;
+    }
+
+    /**
+     * @return list<array{id:string,label:string}>
+     */
+    private function stationOptions(): array
+    {
+        $options = [];
+        foreach ($this->stationRepository->all() as $station) {
+            $options[] = [
+                'id' => $station->id()->toString(),
+                'label' => sprintf(
+                    '%s - %s, %s %s',
+                    $station->name(),
+                    $station->streetName(),
+                    $station->postalCode(),
+                    $station->city(),
+                ),
+            ];
+        }
+
+        usort(
+            $options,
+            static fn (array $a, array $b): int => strcmp((string) $a['label'], (string) $b['label']),
+        );
 
         return $options;
     }
@@ -116,6 +158,38 @@ final class AnalyticsDashboardController extends AbstractController
         }
 
         return $this->vehicleRepository->belongsToOwner($vehicleId, $ownerId) ? $vehicleId : null;
+    }
+
+    private function readStationFilter(Request $request): ?string
+    {
+        $raw = $request->query->get('station_id');
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $stationId = trim((string) $raw);
+        if ('' === $stationId || !Uuid::isValid($stationId)) {
+            return null;
+        }
+
+        return $stationId;
+    }
+
+    private function readFuelTypeFilter(Request $request): ?string
+    {
+        $raw = $request->query->get('fuel_type');
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $fuelType = trim((string) $raw);
+        if ('' === $fuelType) {
+            return null;
+        }
+
+        $choices = array_map(static fn (FuelType $case): string => $case->value, FuelType::cases());
+
+        return in_array($fuelType, $choices, true) ? $fuelType : null;
     }
 
     /**

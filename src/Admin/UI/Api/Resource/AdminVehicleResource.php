@@ -19,7 +19,6 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Post;
 use App\Admin\UI\Api\Resource\Input\AdminVehicleInput;
 use App\Admin\UI\Api\Resource\Output\AdminVehicleOutput;
 use App\Admin\UI\Api\State\AdminVehicleDeleteProcessor;
@@ -34,13 +33,6 @@ use App\Admin\UI\Api\State\AdminVehicleStateProvider;
             output: AdminVehicleOutput::class,
             provider: AdminVehicleStateProvider::class,
             requirements: ['id' => self::UUID_ROUTE_REQUIREMENT],
-        ),
-        new Post(
-            uriTemplate: '/admin/vehicles',
-            input: AdminVehicleInput::class,
-            output: AdminVehicleOutput::class,
-            processor: AdminVehicleStateProcessor::class,
-            status: 201,
         ),
         new Patch(
             uriTemplate: '/admin/vehicles/{id}',

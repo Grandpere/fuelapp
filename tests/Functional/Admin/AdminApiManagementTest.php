@@ -86,10 +86,18 @@ final class AdminApiManagementTest extends KernelTestCase
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceRemindersResponse->getStatusCode());
     }
 
-    public function testAdminCanManageVehicleCrudAndSearch(): void
+    public function testAdminCanManageVehicleWithoutCreateOperation(): void
     {
         $token = $this->createAdminAndLogin('admin.vehicle@example.com');
         $vehicleOwner = $this->createUser('vehicle.owner@example.com', 'test1234', ['ROLE_USER']);
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($vehicleOwner);
+        $vehicle->setName('Peugeot 208');
+        $vehicle->setPlateNumber('aa-123-bb');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicle);
         $this->em->flush();
 
         $createResponse = $this->request(
@@ -101,15 +109,11 @@ final class AdminApiManagementTest extends KernelTestCase
             ],
             json_encode([
                 'ownerId' => $vehicleOwner->getId()->toRfc4122(),
-                'name' => 'Peugeot 208',
-                'plateNumber' => 'aa-123-bb',
+                'name' => 'Should Fail',
+                'plateNumber' => 'NO-POST-01',
             ], JSON_THROW_ON_ERROR),
         );
-        self::assertSame(Response::HTTP_CREATED, $createResponse->getStatusCode());
-
-        /** @var array{id: string} $created */
-        $created = json_decode((string) $createResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        $id = $created['id'];
+        self::assertSame(Response::HTTP_METHOD_NOT_ALLOWED, $createResponse->getStatusCode());
 
         $listResponse = $this->request(
             'GET',
@@ -122,11 +126,11 @@ final class AdminApiManagementTest extends KernelTestCase
         self::assertNotEmpty($listPayload);
         self::assertArrayHasKey('id', $listPayload[0]);
         self::assertIsString($listPayload[0]['id']);
-        self::assertSame($id, $listPayload[0]['id']);
+        self::assertSame($vehicle->getId()->toRfc4122(), $listPayload[0]['id']);
 
         $patchResponse = $this->request(
             'PATCH',
-            '/api/admin/vehicles/'.$id,
+            '/api/admin/vehicles/'.$vehicle->getId()->toRfc4122(),
             [
                 'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
                 'CONTENT_TYPE' => 'application/merge-patch+json',
@@ -141,7 +145,7 @@ final class AdminApiManagementTest extends KernelTestCase
 
         $deleteResponse = $this->request(
             'DELETE',
-            '/api/admin/vehicles/'.$id,
+            '/api/admin/vehicles/'.$vehicle->getId()->toRfc4122(),
             ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
         );
         self::assertSame(Response::HTTP_NO_CONTENT, $deleteResponse->getStatusCode());

@@ -1,12 +1,12 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}{% if isEdit %}Edit Admin Vehicle{% else %}New Admin Vehicle{% endif %}{% endblock %}
+{% block title %}Edit Admin Vehicle{% endblock %}
 
 {% set admin_section = 'vehicles' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">{% if isEdit %}Edit vehicle{% else %}Create vehicle{% endif %}</h2>
+        <h2 class="page-title">Edit vehicle</h2>
         <p class="muted">Admin mutation flow for owner vehicle management.</p>
 
         {% if errors is not empty %}
@@ -35,7 +35,7 @@
             </label>
 
             <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-                <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create vehicle{% endif %}</button>
+                <button class="btn btn-primary" type="submit">Save changes</button>
                 <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Back to list</a>
             </div>
         </form>

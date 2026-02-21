@@ -230,45 +230,33 @@ final class AdminBackofficeUiTest extends KernelTestCase
         self::assertStringContainsString('corr-ui-admin-001', (string) $auditResponse->getContent());
     }
 
-    public function testAdminCanCreateEditAndDeleteVehicleFromBackofficeUi(): void
+    public function testAdminCanEditAndDeleteVehicleFromBackofficeUiWithoutCreatePage(): void
     {
         $adminEmail = 'ui.admin.vehicle.write@example.com';
         $adminPassword = 'test1234';
         $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
         $owner = $this->createUser('ui.vehicle.owner@example.com', 'test1234', ['ROLE_USER']);
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($owner);
+        $vehicle->setName('Backoffice Vehicle');
+        $vehicle->setPlateNumber('BO-100-AA');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicle);
         $this->em->flush();
 
         $ownerId = $owner->getId()->toRfc4122();
+        $vehicleId = $vehicle->getId()->toRfc4122();
         $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
 
         $newPage = $this->request('GET', '/ui/admin/vehicles/new', [], [], $sessionCookie);
-        self::assertSame(Response::HTTP_OK, $newPage->getStatusCode());
-        $newCsrf = $this->extractFormCsrf((string) $newPage->getContent());
-
-        $createResponse = $this->request(
-            'POST',
-            '/ui/admin/vehicles/new',
-            [
-                'ownerId' => $ownerId,
-                'name' => 'Backoffice Vehicle',
-                'plateNumber' => 'BO-100-AA',
-                '_token' => $newCsrf,
-            ],
-            [],
-            $sessionCookie,
-        );
-        self::assertSame(Response::HTTP_SEE_OTHER, $createResponse->getStatusCode());
+        self::assertSame(Response::HTTP_NOT_FOUND, $newPage->getStatusCode());
 
         $listResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        self::assertStringNotContainsString('Create vehicle', (string) $listResponse->getContent());
         self::assertStringContainsString('Backoffice Vehicle', (string) $listResponse->getContent());
-
-        $vehicle = $this->em->getConnection()->fetchAssociative("SELECT id FROM vehicles WHERE plate_number = 'BO-100-AA' LIMIT 1");
-        self::assertIsArray($vehicle);
-        self::assertArrayHasKey('id', $vehicle);
-        self::assertIsString($vehicle['id']);
-        $vehicleId = $vehicle['id'];
-        self::assertNotSame('', $vehicleId);
 
         $editPage = $this->request('GET', '/ui/admin/vehicles/'.$vehicleId.'/edit', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());

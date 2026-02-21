@@ -5,7 +5,7 @@ Vehicle domain was exposed in API and admin read views, but no direct web forms 
 
 ## Scope
 - Add user web UI for owned vehicle CRUD (`/ui/vehicles`).
-- Add admin web UI create/edit/delete actions for vehicles (`/ui/admin/vehicles/*`).
+- Add admin web UI edit/delete actions for vehicles (`/ui/admin/vehicles/*`).
 - Keep ownership and CSRF constraints explicit.
 - Add functional coverage for both user and admin vehicle mutation flows.
 
@@ -15,7 +15,7 @@ Vehicle domain was exposed in API and admin read views, but no direct web forms 
 
 ## Acceptance criteria
 - A ROLE_USER can create/edit/delete only owned vehicles from web UI.
-- A ROLE_ADMIN can create/edit/delete vehicles from back-office UI.
+- A ROLE_ADMIN can view/edit/delete vehicles from back-office UI, but cannot create them.
 - Functional tests validate both flows.
 
 ## Dependencies

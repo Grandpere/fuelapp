@@ -43,25 +43,16 @@ final readonly class AdminVehicleStateProcessor implements ProcessorInterface
         }
 
         $id = $uriVariables['id'] ?? null;
-        $vehicle = null;
-        $action = 'admin.vehicle.created';
-        $before = [];
-
-        if (is_string($id)) {
-            if (!Uuid::isValid($id)) {
-                throw new NotFoundHttpException();
-            }
-
-            $vehicle = $this->repository->get($id);
-            if (!$vehicle instanceof Vehicle) {
-                throw new NotFoundHttpException();
-            }
-
-            $action = 'admin.vehicle.updated';
-            $before = $this->snapshot($vehicle);
-        } else {
-            $vehicle = Vehicle::create($data->ownerId, $data->name, $data->plateNumber);
+        if (!is_string($id) || !Uuid::isValid($id)) {
+            throw new NotFoundHttpException();
         }
+
+        $vehicle = $this->repository->get($id);
+        if (!$vehicle instanceof Vehicle) {
+            throw new NotFoundHttpException();
+        }
+
+        $before = $this->snapshot($vehicle);
 
         if (!$this->repository->ownerExists($data->ownerId)) {
             throw new NotFoundHttpException('Owner not found.');
@@ -76,7 +67,7 @@ final readonly class AdminVehicleStateProcessor implements ProcessorInterface
         $this->repository->save($vehicle);
         $after = $this->snapshot($vehicle);
         $this->auditTrail->record(
-            $action,
+            'admin.vehicle.updated',
             'vehicle',
             $vehicle->id()->toString(),
             [

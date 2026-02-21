@@ -34,35 +34,19 @@ final class AdminVehicleFormController extends AbstractController
     ) {
     }
 
-    #[Route('/ui/admin/vehicles/new', name: 'ui_admin_vehicle_new', methods: ['GET', 'POST'])]
-    public function create(Request $request): Response
-    {
-        return $this->handle($request, null);
-    }
-
     #[Route('/ui/admin/vehicles/{id}/edit', name: 'ui_admin_vehicle_edit', methods: ['GET', 'POST'], requirements: ['id' => self::UUID_ROUTE_REQUIREMENT])]
     public function edit(Request $request, string $id): Response
     {
-        return $this->handle($request, $id);
-    }
-
-    private function handle(Request $request, ?string $id): Response
-    {
-        $vehicle = null;
-        if (null !== $id) {
-            if (!Uuid::isValid($id)) {
-                throw new NotFoundHttpException();
-            }
-
-            $vehicle = $this->vehicleRepository->get($id);
-            if (!$vehicle instanceof Vehicle) {
-                throw new NotFoundHttpException();
-            }
+        if (!Uuid::isValid($id)) {
+            throw new NotFoundHttpException();
         }
 
-        $formData = null === $vehicle
-            ? ['ownerId' => '', 'name' => '', 'plateNumber' => '', '_token' => '']
-            : ['ownerId' => $vehicle->ownerId() ?? '', 'name' => $vehicle->name(), 'plateNumber' => $vehicle->plateNumber(), '_token' => ''];
+        $vehicle = $this->vehicleRepository->get($id);
+        if (!$vehicle instanceof Vehicle) {
+            throw new NotFoundHttpException();
+        }
+
+        $formData = ['ownerId' => $vehicle->ownerId() ?? '', 'name' => $vehicle->name(), 'plateNumber' => $vehicle->plateNumber(), '_token' => ''];
         $errors = [];
 
         if ($request->isMethod('POST')) {
@@ -84,21 +68,15 @@ final class AdminVehicleFormController extends AbstractController
                 $name = trim($formData['name']);
                 $plateNumber = trim($formData['plateNumber']);
 
-                if ($vehicle instanceof Vehicle) {
-                    $vehicle->update($ownerId, $name, $plateNumber);
-                    $this->vehicleRepository->save($vehicle);
-                    $this->addFlash('success', 'Vehicle updated.');
-                } else {
-                    $this->vehicleRepository->save(Vehicle::create($ownerId, $name, $plateNumber));
-                    $this->addFlash('success', 'Vehicle created.');
-                }
+                $vehicle->update($ownerId, $name, $plateNumber);
+                $this->vehicleRepository->save($vehicle);
+                $this->addFlash('success', 'Vehicle updated.');
 
                 return new RedirectResponse($this->generateUrl('ui_admin_vehicle_list'), Response::HTTP_SEE_OTHER);
             }
         }
 
         $response = $this->render('admin/vehicles/form.html.twig', [
-            'isEdit' => null !== $vehicle,
             'vehicle' => $vehicle,
             'formData' => $formData,
             'errors' => $errors,

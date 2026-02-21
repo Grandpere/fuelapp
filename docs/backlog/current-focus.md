@@ -39,7 +39,7 @@
 - `SP3-008` delivered: import regression coverage for OCR/provider/parser failure paths and finalize API error-paths.
 - `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
 - `SP4-001` delivered: admin access model with role hierarchy and explicit `/api/admin` + `/ui/admin` policy gates.
-- `SP4-002` delivered: admin CRUD APIs for stations and vehicles with basic list filters/search in `/api/admin/*`.
+- `SP4-002` delivered: admin station CRUD APIs and vehicle management APIs (read/update/delete) with basic list filters/search in `/api/admin/*`.
 - `SP4-003` delivered: back-office UI shell/navigation with station and vehicle pages.
 - `SP4-004` delivered: imports dashboard with filters and metrics.
 - `SP4-005` delivered: admin retry/finalize flows for import recovery.

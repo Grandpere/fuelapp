@@ -65,6 +65,7 @@ services:
     App\Station\Infrastructure\Geocoding\NominatimGeocoder:
         arguments:
             $nominatimHttpClient: '@http_client'
+            $nominatimRateLimiter: '@limiter.nominatim_geocoding'
             $baseUri: '%app.geocoding.nominatim_base_uri%'
             $cache: '@cache.app'
             $userAgent: '%app.geocoding.nominatim_user_agent%'

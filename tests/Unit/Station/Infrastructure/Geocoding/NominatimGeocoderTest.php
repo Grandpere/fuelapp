@@ -20,6 +20,8 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 final class NominatimGeocoderTest extends TestCase
 {
@@ -31,11 +33,11 @@ final class NominatimGeocoderTest extends TestCase
 
         $geocoder = new NominatimGeocoder(
             $httpClient,
+            $this->rateLimiterFactory(),
             'https://nominatim.openstreetmap.org',
             new ArrayAdapter(),
             'FuelAppGeocoding/1.0 (test@example.com)',
             null,
-            0,
         );
 
         $result = $geocoder->geocode('Total', 'Rue A', '75001', 'Paris');
@@ -53,11 +55,11 @@ final class NominatimGeocoderTest extends TestCase
 
         $geocoder = new NominatimGeocoder(
             $httpClient,
+            $this->rateLimiterFactory(),
             'https://nominatim.openstreetmap.org',
             new ArrayAdapter(),
             'FuelAppGeocoding/1.0 (test@example.com)',
             null,
-            0,
         );
 
         $result = $geocoder->geocode('Unknown', 'Nowhere', '00000', 'NoCity');
@@ -73,11 +75,11 @@ final class NominatimGeocoderTest extends TestCase
 
         $geocoder = new NominatimGeocoder(
             $httpClient,
+            $this->rateLimiterFactory(),
             'https://nominatim.openstreetmap.org',
             new ArrayAdapter(),
             'FuelAppGeocoding/1.0 (test@example.com)',
             null,
-            0,
         );
 
         $this->expectException(RuntimeException::class);
@@ -97,11 +99,11 @@ final class NominatimGeocoderTest extends TestCase
 
         $geocoder = new NominatimGeocoder(
             $httpClient,
+            $this->rateLimiterFactory(),
             'https://nominatim.openstreetmap.org',
             new ArrayAdapter(),
             'FuelAppGeocoding/1.0 (test@example.com)',
             null,
-            0,
         );
 
         $first = $geocoder->geocode('Total', 'Rue A', '75001', 'Paris');
@@ -120,16 +122,26 @@ final class NominatimGeocoderTest extends TestCase
 
         $geocoder = new NominatimGeocoder(
             $httpClient,
+            $this->rateLimiterFactory(),
             'https://nominatim.openstreetmap.org',
             new ArrayAdapter(),
             'FuelAppGeocoding/1.0 (test@example.com)',
             null,
-            0,
         );
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('transport failure');
 
         $geocoder->geocode('Total', 'Rue A', '75001', 'Paris');
+    }
+
+    private function rateLimiterFactory(): RateLimiterFactory
+    {
+        return new RateLimiterFactory([
+            'id' => 'nominatim_geocoding',
+            'policy' => 'fixed_window',
+            'limit' => 100,
+            'interval' => '1 second',
+        ], new InMemoryStorage());
     }
 }

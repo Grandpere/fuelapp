@@ -16,6 +16,7 @@ namespace App\Station\Infrastructure\Geocoding;
 use App\Station\Application\Geocoding\GeocodedAddress;
 use App\Station\Application\Geocoding\Geocoder;
 use RuntimeException;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
@@ -24,15 +25,14 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 final class NominatimGeocoder implements Geocoder
 {
     private const CACHE_KEY_PREFIX = 'station_nominatim_geocode_';
-    private static float $lastRequestAtMicrotime = 0.0;
 
     public function __construct(
         private HttpClientInterface $nominatimHttpClient,
+        private RateLimiterFactory $nominatimRateLimiter,
         private string $baseUri,
         private CacheInterface $cache,
         private string $userAgent,
         private ?string $contactEmail = null,
-        private int $minRequestIntervalMicroseconds = 1_000_000,
     ) {
     }
 
@@ -124,14 +124,24 @@ final class NominatimGeocoder implements Geocoder
 
     private function waitForRateLimit(): void
     {
-        $now = microtime(true);
-        $elapsedMicroseconds = (int) round(($now - self::$lastRequestAtMicrotime) * 1_000_000);
-        $waitMicroseconds = $this->minRequestIntervalMicroseconds - $elapsedMicroseconds;
-        if ($waitMicroseconds > 0) {
-            usleep($waitMicroseconds);
-        }
+        $limiter = $this->nominatimRateLimiter->create('nominatim-geocoder');
 
-        self::$lastRequestAtMicrotime = microtime(true);
+        while (true) {
+            $limit = $limiter->consume(1);
+            if ($limit->isAccepted()) {
+                return;
+            }
+
+            $retryAfter = $limit->getRetryAfter();
+            $sleepSeconds = max(0, $retryAfter->getTimestamp() - time());
+            if (0 === $sleepSeconds) {
+                usleep(50_000);
+
+                continue;
+            }
+
+            usleep($sleepSeconds * 1_000_000);
+        }
     }
 
     private function buildQuery(string $name, string $streetName, string $postalCode, string $city): string

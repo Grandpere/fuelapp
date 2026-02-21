@@ -13,13 +13,18 @@ declare(strict_types=1);
 
 namespace App\Station\Application\Command;
 
+use App\Station\Application\Message\GeocodeStationAddressMessage;
 use App\Station\Application\Repository\StationRepository;
+use App\Station\Domain\Enum\GeocodingStatus;
 use App\Station\Domain\Station;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 readonly class CreateStationHandler
 {
-    public function __construct(private StationRepository $repository)
-    {
+    public function __construct(
+        private StationRepository $repository,
+        private MessageBusInterface $messageBus,
+    ) {
     }
 
     public function __invoke(CreateStationCommand $command): Station
@@ -34,6 +39,10 @@ readonly class CreateStationHandler
         );
 
         $this->repository->save($station);
+
+        if (GeocodingStatus::PENDING === $station->geocodingStatus()) {
+            $this->messageBus->dispatch(new GeocodeStationAddressMessage($station->id()->toString()));
+        }
 
         return $station;
     }

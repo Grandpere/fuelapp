@@ -68,6 +68,11 @@ final readonly class StationStateProvider implements ProviderInterface
             $station->city(),
             $station->latitudeMicroDegrees(),
             $station->longitudeMicroDegrees(),
+            $station->geocodingStatus(),
+            $station->geocodingRequestedAt(),
+            $station->geocodedAt(),
+            $station->geocodingFailedAt(),
+            $station->geocodingLastError(),
         );
     }
 }

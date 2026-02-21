@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Station\Infrastructure\Persistence\Doctrine\Entity;
 
+use App\Station\Domain\Enum\GeocodingStatus;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
@@ -43,6 +45,21 @@ class StationEntity
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $longitudeMicroDegrees = null;
+
+    #[ORM\Column(type: 'string', enumType: GeocodingStatus::class, length: 16, options: ['default' => 'pending'])]
+    private GeocodingStatus $geocodingStatus = GeocodingStatus::PENDING;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?DateTimeImmutable $geocodingRequestedAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?DateTimeImmutable $geocodedAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?DateTimeImmutable $geocodingFailedAt = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $geocodingLastError = null;
 
     public function getId(): Uuid
     {
@@ -112,5 +129,55 @@ class StationEntity
     public function setLongitudeMicroDegrees(?int $longitudeMicroDegrees): void
     {
         $this->longitudeMicroDegrees = $longitudeMicroDegrees;
+    }
+
+    public function getGeocodingStatus(): GeocodingStatus
+    {
+        return $this->geocodingStatus;
+    }
+
+    public function setGeocodingStatus(GeocodingStatus $geocodingStatus): void
+    {
+        $this->geocodingStatus = $geocodingStatus;
+    }
+
+    public function getGeocodingRequestedAt(): ?DateTimeImmutable
+    {
+        return $this->geocodingRequestedAt;
+    }
+
+    public function setGeocodingRequestedAt(?DateTimeImmutable $geocodingRequestedAt): void
+    {
+        $this->geocodingRequestedAt = $geocodingRequestedAt;
+    }
+
+    public function getGeocodedAt(): ?DateTimeImmutable
+    {
+        return $this->geocodedAt;
+    }
+
+    public function setGeocodedAt(?DateTimeImmutable $geocodedAt): void
+    {
+        $this->geocodedAt = $geocodedAt;
+    }
+
+    public function getGeocodingFailedAt(): ?DateTimeImmutable
+    {
+        return $this->geocodingFailedAt;
+    }
+
+    public function setGeocodingFailedAt(?DateTimeImmutable $geocodingFailedAt): void
+    {
+        $this->geocodingFailedAt = $geocodingFailedAt;
+    }
+
+    public function getGeocodingLastError(): ?string
+    {
+        return $this->geocodingLastError;
+    }
+
+    public function setGeocodingLastError(?string $geocodingLastError): void
+    {
+        $this->geocodingLastError = $geocodingLastError;
     }
 }

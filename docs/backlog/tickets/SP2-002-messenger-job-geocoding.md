@@ -19,4 +19,4 @@ Geocoding must not block create flows.
 - SP2-001.
 
 ## Status
-- todo
+- done

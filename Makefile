@@ -80,6 +80,18 @@ user-create: ## Create local user (EMAIL=... PASSWORD=... [ADMIN=1])
 receipts-claim-unowned: ## Assign unowned receipts to a user (EMAIL=...)
 	$(DC_EXEC) php bin/console app:receipts:claim-unowned "$(EMAIL)"
 
+.PHONY: messenger-consume-async
+messenger-consume-async: ## Consume async messenger queue (VERBOSITY=-vv optional)
+	$(DC_EXEC) php bin/console messenger:consume async $(VERBOSITY)
+
+.PHONY: messenger-failed-show
+messenger-failed-show: ## Show failed messenger messages stats
+	$(DC_EXEC) php bin/console messenger:failed:show --stats
+
+.PHONY: messenger-failed-retry-all
+messenger-failed-retry-all: ## Retry all failed messenger messages
+	$(DC_EXEC) php bin/console messenger:failed:retry --force --all
+
 ##
 ## Database
 ##---------------------------------------------------------------------------

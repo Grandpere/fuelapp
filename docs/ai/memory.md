@@ -117,6 +117,24 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: call `Security::login($user, LoginFormAuthenticator::class, 'main')`.
 - Prevention: for programmatic UI login, always pass both authenticator class and firewall name explicitly.
 
+## 2026-02-20 - Worker access must bypass user-scoped repository reads
+- Symptom: async worker could not load station entities for background processing.
+- Root cause: `StationRepository::get()` enforces current-user ownership scope, but Messenger workers have no authenticated user context.
+- Fix: add explicit system-level read method (`getForSystem`) for internal jobs and use it in geocoding handler.
+- Prevention: for background jobs, always use explicit internal repository methods rather than user-scoped read APIs.
+
+## 2026-02-20 - Dotenv values with spaces must be quoted
+- Symptom: app bootstrap/test commands failed parsing `.env` after geocoding User-Agent config.
+- Root cause: unquoted env value containing spaces and parentheses.
+- Fix: wrap `NOMINATIM_USER_AGENT` value in double quotes.
+- Prevention: always quote `.env` values when they contain spaces.
+
+## 2026-02-20 - Dev schema changes require explicit migration handover
+- Symptom: runtime failed with missing geocoding columns after restart (`column ... does not exist`).
+- Root cause: migration was executed in test flows but not applied on dev database before manual UI validation.
+- Fix: run `make db-migrate` after schema changes and before user verification.
+- Prevention: in task handover, always list required user commands and explicitly include DB migration when schema changed.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

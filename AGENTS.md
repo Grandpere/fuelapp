@@ -74,3 +74,18 @@ If JS packages are added to importmap:
 - Update `/docs/ai/memory.md` when a bug/root cause is found and fixed.
 - Update `/docs/ai/checklists.md` when delivery process changes.
 - Keep sprint/backlog docs aligned in `/docs/backlog`.
+
+## 10) Dependencies Policy
+- If a missing dependency blocks a clean implementation, ask the user before introducing a workaround.
+- Prefer adding the proper dependency (with user confirmation) over shipping a degraded fallback.
+- When asking, state the package name and why it is required.
+
+## 11) User Runbook At Handover
+- At the end of each task, explicitly state whether the user has commands to run.
+- If commands are required, list them clearly and in execution order.
+- If no command is required, explicitly say: "No action needed on your side."
+- Explicitly state `make restart-app` status using one of:
+  - `Required` (must be run),
+  - `Recommended` (safe refresh after infra/runtime/config changes),
+  - `Not needed` (pure code/template changes hot-reload safely).
+- With FrankenPHP worker mode, Twig/CSS/UI changes may still require `make restart-app`; mention this explicitly when relevant.

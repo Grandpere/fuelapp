@@ -91,7 +91,20 @@
             </article>
 
             <article class="card show-card">
-                <h2>Station</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:0.6rem; margin-bottom:0.7rem; flex-wrap:wrap;">
+                    <h2 style="margin:0;">Station</h2>
+                    {% if station %}
+                        <a
+                            class="btn btn-secondary"
+                            href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_receipt_show', {id: receipt.id.toString()})}) }}"
+                            style="padding:0.35rem 0.7rem; font-size:0.8rem;"
+                            aria-label="Edit station"
+                            title="Edit station"
+                        >
+                            ✎
+                        </a>
+                    {% endif %}
+                </div>
                 {% if station %}
                     <div class="show-kv">
                         <div><strong>{{ station.name }}</strong></div>

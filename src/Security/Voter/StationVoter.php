@@ -23,6 +23,7 @@ final class StationVoter extends Voter
 {
     public const VIEW = 'STATION_VIEW';
     public const DELETE = 'STATION_DELETE';
+    public const EDIT = 'STATION_EDIT';
 
     public function __construct(private readonly StationRepository $repository)
     {
@@ -30,7 +31,7 @@ final class StationVoter extends Voter
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        if (!in_array($attribute, [self::VIEW, self::DELETE], true)) {
+        if (!in_array($attribute, [self::VIEW, self::DELETE, self::EDIT], true)) {
             return false;
         }
 

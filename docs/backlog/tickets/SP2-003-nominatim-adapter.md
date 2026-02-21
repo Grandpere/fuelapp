@@ -19,4 +19,4 @@ Need a free geocoding provider for initial rollout.
 - SP2-001.
 
 ## Status
-- todo
+- done

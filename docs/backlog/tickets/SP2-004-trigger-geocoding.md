@@ -19,4 +19,4 @@ Geocoding should be automatic for new or changed addresses.
 - SP2-002, SP2-003.
 
 ## Status
-- todo
+- done

@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace App\Station\UI\Api\Resource\Output;
 
+use App\Station\Domain\Enum\GeocodingStatus;
+use DateTimeImmutable;
+
 final class StationOutput
 {
     public function __construct(
@@ -23,6 +26,11 @@ final class StationOutput
         public string $city,
         public ?int $latitudeMicroDegrees,
         public ?int $longitudeMicroDegrees,
+        public GeocodingStatus $geocodingStatus,
+        public ?DateTimeImmutable $geocodingRequestedAt,
+        public ?DateTimeImmutable $geocodedAt,
+        public ?DateTimeImmutable $geocodingFailedAt,
+        public ?string $geocodingLastError,
     ) {
     }
 }

@@ -18,9 +18,12 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use App\Station\UI\Api\Resource\Input\UpdateStationAddressInput;
 use App\Station\UI\Api\Resource\Output\StationOutput;
 use App\Station\UI\Api\State\StationDeleteStateProcessor;
 use App\Station\UI\Api\State\StationStateProvider;
+use App\Station\UI\Api\State\StationUpdateStateProcessor;
 
 #[ApiResource(
     operations: [
@@ -29,6 +32,13 @@ use App\Station\UI\Api\State\StationStateProvider;
             uriTemplate: '/stations/{id}',
             output: StationOutput::class,
             provider: StationStateProvider::class,
+            requirements: ['id' => self::UUID_ROUTE_REQUIREMENT],
+        ),
+        new Patch(
+            uriTemplate: '/stations/{id}',
+            input: UpdateStationAddressInput::class,
+            output: StationOutput::class,
+            processor: StationUpdateStateProcessor::class,
             requirements: ['id' => self::UUID_ROUTE_REQUIREMENT],
         ),
         new Delete(

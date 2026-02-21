@@ -83,6 +83,12 @@ If JS packages are added to importmap:
   - why it is needed for a clean implementation,
   - what degrades or becomes workaround-heavy without it.
 - If the dependency is refused, document the chosen fallback and its limitations in the handover summary.
+- Prefer free solutions first for all app capabilities.
+- Preferred order when choosing tooling/providers:
+  - no external API (local/self-hosted or built-in project dependency),
+  - free external API if local option is not realistic short-term,
+  - paid external API only if explicitly approved by the user.
+- Even for free options, any new project dependency must still follow the approval flow above.
 
 ## 11) User Runbook At Handover
 - At the end of each task, explicitly state whether the user has commands to run.

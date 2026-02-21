@@ -282,6 +282,53 @@ final class ImportWebUiTest extends KernelTestCase
         self::assertSame(1, $receiptCount);
     }
 
+    public function testUserCanDeleteOwnImportFromUiList(): void
+    {
+        $email = 'import.web.delete@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::FAILED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/20/to-delete.jpg');
+        $job->setOriginalFilename('to-delete.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('d', 64));
+        $job->setErrorPayload('{"error":"ocr failed"}');
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-20 10:46:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-20 10:46:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-20 10:46:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('/ui/imports/'.$jobId, $listContent);
+        self::assertStringContainsString('/ui/imports/'.$jobId.'/delete', $listContent);
+        $deleteToken = $this->extractDeleteCsrfToken($listContent, $jobId);
+
+        $deleteResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$jobId.'/delete',
+            ['_token' => $deleteToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $deleteResponse->getStatusCode());
+        self::assertSame('/ui/imports', $deleteResponse->headers->get('Location'));
+
+        $this->em->clear();
+        self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, UploadedFile>               $files
@@ -363,6 +410,18 @@ final class ImportWebUiTest extends KernelTestCase
     private function extractFinalizeCsrfToken(string $content, string $jobId): string
     {
         $pattern = '#/ui/imports/'.preg_quote($jobId, '#').'/finalize.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractDeleteCsrfToken(string $content, string $jobId): string
+    {
+        $pattern = '#/ui/imports/'.preg_quote($jobId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

@@ -88,6 +88,48 @@ final class NominatimGeocoderTest extends TestCase
         $geocoder->geocode('Total', 'Rue A', '75001', 'Paris');
     }
 
+    public function testItThrowsOnRateLimitedProviderStatus(): void
+    {
+        $httpClient = new MockHttpClient([
+            new MockResponse('{"error":"too many requests"}', ['http_code' => 429]),
+        ], 'https://nominatim.openstreetmap.org');
+
+        $geocoder = new NominatimGeocoder(
+            $httpClient,
+            $this->rateLimiterFactory(),
+            'https://nominatim.openstreetmap.org',
+            new ArrayAdapter(),
+            'FuelAppGeocoding/1.0 (test@example.com)',
+            null,
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('transient error');
+
+        $geocoder->geocode('Total', 'Rue A', '75001', 'Paris');
+    }
+
+    public function testItThrowsOnMalformedProviderResponse(): void
+    {
+        $httpClient = new MockHttpClient([
+            new MockResponse('{not-json}', ['http_code' => 200]),
+        ], 'https://nominatim.openstreetmap.org');
+
+        $geocoder = new NominatimGeocoder(
+            $httpClient,
+            $this->rateLimiterFactory(),
+            'https://nominatim.openstreetmap.org',
+            new ArrayAdapter(),
+            'FuelAppGeocoding/1.0 (test@example.com)',
+            null,
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('malformed response');
+
+        $geocoder->geocode('Total', 'Rue A', '75001', 'Paris');
+    }
+
     public function testItUsesCacheToAvoidDuplicateProviderCalls(): void
     {
         $calls = 0;

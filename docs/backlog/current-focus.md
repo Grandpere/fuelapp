@@ -7,11 +7,11 @@
 - Put strong authentication/authorization foundations before async geocoding and import pipeline.
 
 ## In progress
-- `SP2-006` - Geocoding tests and failure scenarios.
+- `SP3-001` - Import job model and storage.
 
 ## Next tickets (ordered)
-1. `SP2-006` - Geocoding tests and failure scenarios
-2. `SP3-001` - Import job model and storage
+1. `SP3-001` - Import job model and storage
+2. `SP3-002` - Upload API endpoint validation
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

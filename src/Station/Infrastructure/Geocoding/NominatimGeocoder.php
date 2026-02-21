@@ -21,6 +21,7 @@ use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Throwable;
 
 final class NominatimGeocoder implements Geocoder
 {
@@ -95,7 +96,11 @@ final class NominatimGeocoder implements Geocoder
                 return ['found' => false];
             }
 
-            $payload = $response->toArray(false);
+            try {
+                $payload = $response->toArray(false);
+            } catch (Throwable $throwable) {
+                throw new RuntimeException(sprintf('Nominatim malformed response: %s', $throwable->getMessage()), 0, $throwable);
+            }
         } catch (TransportExceptionInterface $transportException) {
             throw new RuntimeException(sprintf('Nominatim transport failure: %s', $transportException->getMessage()), 0, $transportException);
         }

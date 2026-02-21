@@ -19,4 +19,4 @@ Geocoding has many external failure modes.
 - SP2-003, SP2-004, SP2-005.
 
 ## Status
-- todo
+- done

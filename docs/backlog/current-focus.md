@@ -1,16 +1,18 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 05 - Maintenance domain
+- Sprint 06 - Analytics and exports
 
 ## Current goal
-- Deliver maintenance event foundation, reminders and cost tracking.
+- Deliver decision-oriented metrics and robust exports.
 
 ## In progress
-- `SP5-007` - Maintenance tests and regression matrix.
+- `SP6-001` - Analytics read model and aggregation strategy.
 
 ## Next tickets (ordered)
-1. `SP5-007` - Maintenance tests and regression matrix
+1. `SP6-001` - Analytics read model and aggregation strategy
+2. `SP6-002` - KPI API endpoints
+3. `SP6-003` - Dashboard UI (fuel, cost, trend)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

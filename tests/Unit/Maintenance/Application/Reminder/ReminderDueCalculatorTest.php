@@ -98,6 +98,143 @@ final class ReminderDueCalculatorTest extends TestCase
         self::assertTrue($states[0]->dueByDate);
         self::assertTrue($states[0]->isDue);
     }
+
+    public function testWhicheverFirstIsDueWhenDateThresholdReachedBeforeOdometer(): void
+    {
+        $ownerId = Uuid::v7()->toRfc4122();
+        $vehicleId = Uuid::v7()->toRfc4122();
+        $rule = MaintenanceReminderRule::create(
+            $ownerId,
+            $vehicleId,
+            'Comprehensive Service',
+            ReminderRuleTriggerMode::WHICHEVER_FIRST,
+            MaintenanceEventType::SERVICE,
+            30,
+            10000,
+            new DateTimeImmutable('2026-01-01 10:00:00'),
+        );
+        $event = MaintenanceEvent::create(
+            $ownerId,
+            $vehicleId,
+            MaintenanceEventType::SERVICE,
+            new DateTimeImmutable('2026-01-01 10:00:00'),
+            'service baseline',
+            100000,
+            22990,
+        );
+
+        $calculator = new ReminderDueCalculator(
+            new InMemoryRuleRepository([$rule]),
+            new InMemoryEventRepository([$event]),
+        );
+
+        $states = $calculator->computeForVehicle(
+            $ownerId,
+            $vehicleId,
+            105000,
+            new DateTimeImmutable('2026-02-05 10:00:00'),
+        );
+
+        self::assertCount(1, $states);
+        self::assertSame('2026-01-31 10:00', $states[0]->dueAtDate?->format('Y-m-d H:i'));
+        self::assertSame(110000, $states[0]->dueAtOdometerKilometers);
+        self::assertTrue($states[0]->dueByDate);
+        self::assertFalse($states[0]->dueByOdometer);
+        self::assertTrue($states[0]->isDue);
+    }
+
+    public function testWhicheverFirstIsNotDueWhenNoThresholdReached(): void
+    {
+        $ownerId = Uuid::v7()->toRfc4122();
+        $vehicleId = Uuid::v7()->toRfc4122();
+        $rule = MaintenanceReminderRule::create(
+            $ownerId,
+            $vehicleId,
+            'Major Check',
+            ReminderRuleTriggerMode::WHICHEVER_FIRST,
+            MaintenanceEventType::SERVICE,
+            365,
+            20000,
+            new DateTimeImmutable('2026-01-01 10:00:00'),
+        );
+        $event = MaintenanceEvent::create(
+            $ownerId,
+            $vehicleId,
+            MaintenanceEventType::SERVICE,
+            new DateTimeImmutable('2026-01-01 10:00:00'),
+            'service baseline',
+            100000,
+            22990,
+        );
+
+        $calculator = new ReminderDueCalculator(
+            new InMemoryRuleRepository([$rule]),
+            new InMemoryEventRepository([$event]),
+        );
+
+        $states = $calculator->computeForVehicle(
+            $ownerId,
+            $vehicleId,
+            110000,
+            new DateTimeImmutable('2026-06-01 10:00:00'),
+        );
+
+        self::assertCount(1, $states);
+        self::assertFalse($states[0]->dueByDate);
+        self::assertFalse($states[0]->dueByOdometer);
+        self::assertFalse($states[0]->isDue);
+    }
+
+    public function testDateRuleIgnoresEventsOfDifferentTypeWhenSelectingBaseline(): void
+    {
+        $ownerId = Uuid::v7()->toRfc4122();
+        $vehicleId = Uuid::v7()->toRfc4122();
+        $rule = MaintenanceReminderRule::create(
+            $ownerId,
+            $vehicleId,
+            'Service cadence',
+            ReminderRuleTriggerMode::DATE,
+            MaintenanceEventType::SERVICE,
+            30,
+            null,
+            new DateTimeImmutable('2026-01-01 10:00:00'),
+        );
+
+        $serviceEvent = MaintenanceEvent::create(
+            $ownerId,
+            $vehicleId,
+            MaintenanceEventType::SERVICE,
+            new DateTimeImmutable('2026-01-10 08:00:00'),
+            'service event',
+            100500,
+            15000,
+        );
+        $repairEvent = MaintenanceEvent::create(
+            $ownerId,
+            $vehicleId,
+            MaintenanceEventType::REPAIR,
+            new DateTimeImmutable('2026-02-10 08:00:00'),
+            'repair event',
+            101000,
+            9000,
+        );
+
+        $calculator = new ReminderDueCalculator(
+            new InMemoryRuleRepository([$rule]),
+            new InMemoryEventRepository([$repairEvent, $serviceEvent]),
+        );
+
+        $states = $calculator->computeForVehicle(
+            $ownerId,
+            $vehicleId,
+            101000,
+            new DateTimeImmutable('2026-02-05 08:00:00'),
+        );
+
+        self::assertCount(1, $states);
+        self::assertSame('2026-02-09 08:00', $states[0]->dueAtDate?->format('Y-m-d H:i'));
+        self::assertFalse($states[0]->isDue);
+    }
 }
 
 final readonly class InMemoryRuleRepository implements MaintenanceReminderRuleRepository

@@ -1,8 +1,8 @@
-# TODO - SP5-009 Vehicle UI management (user + admin)
+# TODO - SP5-007 Maintenance tests and regression matrix
 
 ## Plan
-- [completed] Add user vehicle web UI CRUD flows (`/ui/vehicles`).
-- [completed] Add admin vehicle web create/edit/delete flows (`/ui/admin/vehicles`).
-- [completed] Add functional tests for user/admin vehicle UI mutation paths.
+- [completed] Extend maintenance reminder rule regression coverage in unit tests.
+- [completed] Add integration coverage for non-due scheduler path.
+- [completed] Add maintenance regression matrix documentation.
 - [completed] Run quality gates and fix static/style/test issues.
-- [completed] Add and close dedicated backlog ticket SP5-009, then commit.
+- [completed] Mark backlog ticket and sprint status as done, then commit.

@@ -19,4 +19,4 @@ Maintenance domain introduces multiple rule combinations.
 - SP5-001..SP5-006.
 
 ## Status
-- todo
+- done

@@ -17,7 +17,9 @@ use App\Maintenance\Application\Message\EvaluateMaintenanceRemindersMessage;
 use App\Maintenance\Application\MessageHandler\EvaluateMaintenanceRemindersMessageHandler;
 use App\Maintenance\Application\Notification\MaintenanceReminderNotifier;
 use App\Maintenance\Application\Reminder\ReminderDueCalculator;
+use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
+use App\Maintenance\Domain\MaintenanceEvent;
 use App\Maintenance\Domain\MaintenanceReminder;
 use App\Maintenance\Domain\MaintenanceReminderRule;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceEventRepository;
@@ -26,6 +28,7 @@ use App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaint
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use App\Vehicle\Domain\Vehicle;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -108,6 +111,66 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
         $count = (int) $rawCount;
         self::assertSame(1, $count);
         self::assertCount(1, $notifier->notifiedReminderIds);
+    }
+
+    public function testHandlerSkipsRuleWhenNotDueYet(): void
+    {
+        $owner = new UserEntity();
+        $owner->setId(Uuid::v7());
+        $owner->setEmail('maintenance.scheduler.not-due@example.com');
+        $owner->setRoles(['ROLE_USER']);
+        $owner->setPassword($this->passwordHasher->hashPassword($owner, 'test1234'));
+        $this->em->persist($owner);
+        $this->em->flush();
+
+        $vehicle = Vehicle::create($owner->getId()->toRfc4122(), 'Megane', 'ab-456-cd');
+        $this->vehicleRepository->save($vehicle);
+
+        $ruleRepository = new DoctrineMaintenanceReminderRuleRepository($this->em);
+        $eventRepository = new DoctrineMaintenanceEventRepository($this->em);
+        $reminderRepository = new DoctrineMaintenanceReminderRepository($this->em);
+
+        $rule = MaintenanceReminderRule::create(
+            $owner->getId()->toRfc4122(),
+            $vehicle->id()->toString(),
+            'Major inspection',
+            ReminderRuleTriggerMode::WHICHEVER_FIRST,
+            MaintenanceEventType::SERVICE,
+            365,
+            20000,
+        );
+        $ruleRepository->save($rule);
+
+        $serviceEvent = MaintenanceEvent::create(
+            $owner->getId()->toRfc4122(),
+            $vehicle->id()->toString(),
+            MaintenanceEventType::SERVICE,
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+            'reference event',
+            100000,
+            10000,
+            'EUR',
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+        );
+        $eventRepository->save($serviceEvent);
+
+        $calculator = new ReminderDueCalculator($ruleRepository, $eventRepository);
+        $notifier = new SpyNotifier();
+        $handler = new EvaluateMaintenanceRemindersMessageHandler(
+            $ruleRepository,
+            $eventRepository,
+            $calculator,
+            $reminderRepository,
+            $notifier,
+        );
+
+        $handler(new EvaluateMaintenanceRemindersMessage());
+
+        $rawCount = $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM maintenance_reminders');
+        self::assertTrue(is_int($rawCount) || (is_string($rawCount) && ctype_digit($rawCount)));
+        $count = (int) $rawCount;
+        self::assertSame(0, $count);
+        self::assertCount(0, $notifier->notifiedReminderIds);
     }
 }
 

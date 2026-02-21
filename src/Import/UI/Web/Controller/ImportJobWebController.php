@@ -18,6 +18,7 @@ use App\Import\Application\Command\CreateImportJobHandler;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\ImportJob;
 use App\Security\AuthenticatedUser;
+use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -96,12 +97,15 @@ final class ImportJobWebController extends AbstractController
 
         $jobs = [];
         foreach ($this->importJobRepository->all() as $job) {
-            $jobs[] = $job;
+            $jobs[] = [
+                'job' => $job,
+                'canAutoFinalize' => $this->canAutoFinalize($job),
+            ];
         }
 
         usort(
             $jobs,
-            static fn (ImportJob $a, ImportJob $b): int => $b->createdAt()->getTimestamp() <=> $a->createdAt()->getTimestamp(),
+            static fn (array $a, array $b): int => $b['job']->createdAt()->getTimestamp() <=> $a['job']->createdAt()->getTimestamp(),
         );
 
         return $this->render('import/index.html.twig', [
@@ -115,5 +119,29 @@ final class ImportJobWebController extends AbstractController
                 'duplicate' => 'Duplicate',
             ],
         ]);
+    }
+
+    private function canAutoFinalize(ImportJob $job): bool
+    {
+        if ('needs_review' !== $job->status()->value) {
+            return false;
+        }
+
+        $payload = $job->errorPayload();
+        if (null === $payload || '' === trim($payload)) {
+            return false;
+        }
+
+        try {
+            $decoded = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return false;
+        }
+
+        if (!is_array($decoded)) {
+            return false;
+        }
+
+        return isset($decoded['creationPayload']) && is_array($decoded['creationPayload']);
     }
 }

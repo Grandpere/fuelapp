@@ -36,10 +36,12 @@
                             <th>Size</th>
                             <th>Created</th>
                             <th>Updated</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for job in jobs %}
+                        {% for row in jobs %}
+                            {% set job = row.job %}
                             <tr class="table-row">
                                 <td>{{ job.id.toString }}</td>
                                 <td>
@@ -52,10 +54,20 @@
                                 <td>{{ job.fileSizeBytes }} bytes</td>
                                 <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
                                 <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
+                                <td>
+                                    {% if row.canAutoFinalize %}
+                                        <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" onsubmit="return confirm('Finalize this import and create a receipt?');" style="display:inline-flex;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('ui_import_finalize_' ~ job.id.toString) }}">
+                                            <button class="btn btn-primary" type="submit">Finalize</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="muted">-</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="7" class="muted">No imports yet.</td>
+                                <td colspan="8" class="muted">No imports yet.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

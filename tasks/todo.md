@@ -1,8 +1,7 @@
-# TODO - UI import upload (user) and file lifecycle cleanup
+# TODO - User UI import finalize
 
 ## Plan
-- [completed] Add user-facing UI page to upload receipt files and list own import jobs.
-- [completed] Link import UI from shared navigation.
-- [completed] Clarify/implement import file lifecycle cleanup after terminal outcomes (duplicate/finalized).
-- [completed] Add functional and unit/integration coverage updates for new upload UI and cleanup wiring.
+- [completed] Add user-facing finalize action for `needs_review` import jobs in `/ui/imports`.
+- [completed] Wire secure POST controller (owner-scoped + CSRF) to finalize imports via existing application handler.
+- [completed] Add functional UI test covering user finalize flow.
 - [completed] Run quality gates and prepare commit.

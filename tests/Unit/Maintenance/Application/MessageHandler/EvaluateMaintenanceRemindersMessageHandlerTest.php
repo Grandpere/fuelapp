@@ -125,6 +125,11 @@ final class NoopEventRepository implements MaintenanceEventRepository
     {
         return [];
     }
+
+    public function sumActualCostsForOwner(?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to, string $ownerId): int
+    {
+        return 0;
+    }
 }
 
 final class InMemoryReminderRepository implements MaintenanceReminderRepository

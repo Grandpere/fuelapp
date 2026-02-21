@@ -19,6 +19,7 @@ use App\Maintenance\Domain\ValueObject\MaintenanceEventId;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -136,6 +137,33 @@ final readonly class DoctrineMaintenanceEventRepository implements MaintenanceEv
 
             yield $this->mapEntityToDomain($entity);
         }
+    }
+
+    public function sumActualCostsForOwner(?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to, string $ownerId): int
+    {
+        $normalizedOwnerId = trim($ownerId);
+        if ('' === $normalizedOwnerId || !Uuid::isValid($normalizedOwnerId)) {
+            return 0;
+        }
+
+        $qb = $this->em->getRepository(MaintenanceEventEntity::class)->createQueryBuilder('m')
+            ->select('COALESCE(SUM(m.totalCostCents), 0)')
+            ->andWhere('m.owner = :owner')
+            ->setParameter('owner', Uuid::fromString($normalizedOwnerId));
+
+        if (null !== $vehicleId && Uuid::isValid($vehicleId)) {
+            $qb->andWhere('m.vehicle = :vehicle')->setParameter('vehicle', Uuid::fromString($vehicleId));
+        }
+
+        if (null !== $from) {
+            $qb->andWhere('m.occurredAt >= :from')->setParameter('from', $from->setTime(0, 0, 0));
+        }
+
+        if (null !== $to) {
+            $qb->andWhere('m.occurredAt <= :to')->setParameter('to', $to->setTime(23, 59, 59));
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
     private function mapEntityToDomain(MaintenanceEventEntity $entity): MaintenanceEvent

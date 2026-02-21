@@ -100,6 +100,7 @@ services:
     App\Receipt\Application\Repository\ReceiptRepository: '@App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository'
     App\Import\Application\Repository\ImportJobRepository: '@App\Import\Infrastructure\Persistence\Doctrine\Repository\DoctrineImportJobRepository'
     App\Maintenance\Application\Repository\MaintenanceEventRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceEventRepository'
+    App\Maintenance\Application\Repository\MaintenancePlannedCostRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenancePlannedCostRepository'
     App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRuleRepository'
     App\Maintenance\Application\Repository\MaintenanceReminderRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRepository'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'

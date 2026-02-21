@@ -1,8 +1,8 @@
-# TODO - SP5-004 Reminder scheduler and notifications
+# TODO - SP5-005 Planned vs actual maintenance cost model
 
 ## Plan
-- [completed] Add async reminder evaluation message + handler and schedule-friendly dispatch command.
-- [completed] Persist generated reminder instances with deduplication guard.
-- [completed] Add in-app notification abstraction and baseline implementation.
-- [completed] Add tests for generation flow and duplicate prevention.
-- [completed] Run quality gates and align backlog/docs statuses.
+- [completed] Define planned maintenance cost entry model and repository contract.
+- [completed] Implement user API CRUD for planned cost entries with ownership constraints.
+- [completed] Implement variance read-model endpoint (planned vs actual) with period/vehicle filters.
+- [completed] Add tests (unit/integration/functional) and run quality gates.
+- [completed] Update backlog/docs status for SP5-005.

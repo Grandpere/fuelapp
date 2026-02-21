@@ -172,4 +172,9 @@ final readonly class InMemoryEventRepository implements MaintenanceEventReposito
             }
         }
     }
+
+    public function sumActualCostsForOwner(?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to, string $ownerId): int
+    {
+        return 0;
+    }
 }

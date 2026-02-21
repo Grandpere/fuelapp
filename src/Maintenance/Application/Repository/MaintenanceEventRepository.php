@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Maintenance\Application\Repository;
 
 use App\Maintenance\Domain\MaintenanceEvent;
+use DateTimeImmutable;
 
 interface MaintenanceEventRepository
 {
@@ -28,4 +29,6 @@ interface MaintenanceEventRepository
 
     /** @return iterable<MaintenanceEvent> */
     public function allForOwnerAndVehicle(string $ownerId, string $vehicleId): iterable;
+
+    public function sumActualCostsForOwner(?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to, string $ownerId): int;
 }

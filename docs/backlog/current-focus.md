@@ -7,12 +7,12 @@
 - Deliver maintenance event foundation, reminders and cost tracking.
 
 ## In progress
-- `SP5-005` - Planned vs actual maintenance cost model.
+- `SP5-006` - Maintenance UI timeline and planner.
 
 ## Next tickets (ordered)
-1. `SP5-005` - Planned vs actual maintenance cost model
-2. `SP5-006` - Maintenance UI timeline and planner
-3. `SP5-008` - Maintenance admin back-office exposure
+1. `SP5-006` - Maintenance UI timeline and planner
+2. `SP5-008` - Maintenance admin back-office exposure
+3. `SP5-007` - Maintenance tests and regression matrix
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -49,6 +49,7 @@
 - `SP5-002` delivered: maintenance events CRUD API with ownership-safe vehicle binding and functional validation/isolation coverage.
 - `SP5-003` delivered: reminder rules model (date/odometer/whichever-first) with deterministic due-state calculator and rule persistence/tests.
 - `SP5-004` delivered: async reminder evaluation workflow with persistent deduplicated reminders and in-app notification abstraction.
+- `SP5-005` delivered: planned maintenance cost CRUD + variance read-model endpoint (period/vehicle filters) with unit/integration/functional coverage.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

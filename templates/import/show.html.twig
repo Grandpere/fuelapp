@@ -1,0 +1,110 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Import Review{% endblock %}
+
+{% block body %}
+    <main class="app-shell" style="display:grid; gap: 1rem;">
+        <section class="card" style="padding: 1rem; display:grid; gap:.8rem;">
+            <div style="display:flex; gap:.6rem; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;">
+                <div>
+                    <h1 class="page-title">Import Review</h1>
+                    <p class="muted" style="margin:.35rem 0 0;">Review extracted values, optionally correct fields, then finalize to create the receipt.</p>
+                </div>
+                <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Back to imports</a>
+            </div>
+
+            <dl style="display:grid; grid-template-columns: 180px 1fr; gap:.35rem .8rem; margin:0;">
+                <dt class="muted">Import ID</dt>
+                <dd style="margin:0;">{{ job.id.toString }}</dd>
+                <dt class="muted">Status</dt>
+                <dd style="margin:0;">
+                    <span class="pill pill-energy" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color:#1d1405;">
+                        {{ job.status.value }}
+                    </span>
+                </dd>
+                <dt class="muted">Filename</dt>
+                <dd style="margin:0;">{{ job.originalFilename }}</dd>
+            </dl>
+        </section>
+
+        {% if parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable and parsedDraft.issues|length > 0 %}
+            <section class="card" style="padding: 1rem;">
+                <p style="margin:0 0 .35rem; font-weight:700;">Detected issues</p>
+                <p class="muted" style="margin:0;">{{ parsedDraft.issues|join(', ') }}</p>
+            </section>
+        {% endif %}
+
+        {% if job.status.value == 'needs_review' %}
+            <section class="card" style="padding: 1rem;">
+                <h2 style="margin:0 0 .35rem; font-size:1.05rem;">Fix And Finalize</h2>
+                <p class="muted" style="margin:0 0 .8rem;">Leave empty to use extracted values when available.</p>
+                <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" style="display:grid; gap:.8rem;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('ui_import_finalize_' ~ job.id.toString) }}">
+
+                    <div class="form-grid-2">
+                        <label class="label">
+                            Issued at
+                            <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\TH:i') : (parsedDraft is not null and parsedDraft.issuedAt is defined and parsedDraft.issuedAt is not null ? parsedDraft.issuedAt|date('Y-m-d\\TH:i') : '') }}">
+                        </label>
+                        <label class="label">
+                            Station name
+                            <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : (parsedDraft is not null and parsedDraft.stationName is defined ? parsedDraft.stationName : '') }}">
+                        </label>
+                        <label class="label">
+                            Station street
+                            <input class="input" type="text" name="stationStreetName" value="{{ creationPayload is not null and creationPayload.stationStreetName is defined ? creationPayload.stationStreetName : (parsedDraft is not null and parsedDraft.stationStreetName is defined ? parsedDraft.stationStreetName : '') }}">
+                        </label>
+                        <label class="label">
+                            Station postal code
+                            <input class="input" type="text" name="stationPostalCode" value="{{ creationPayload is not null and creationPayload.stationPostalCode is defined ? creationPayload.stationPostalCode : (parsedDraft is not null and parsedDraft.stationPostalCode is defined ? parsedDraft.stationPostalCode : '') }}">
+                        </label>
+                        <label class="label">
+                            Station city
+                            <input class="input" type="text" name="stationCity" value="{{ creationPayload is not null and creationPayload.stationCity is defined ? creationPayload.stationCity : (parsedDraft is not null and parsedDraft.stationCity is defined ? parsedDraft.stationCity : '') }}">
+                        </label>
+                        <label class="label">
+                            Latitude (micro degrees)
+                            <input class="input" type="number" name="latitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.latitudeMicroDegrees is defined ? creationPayload.latitudeMicroDegrees : '' }}" step="1">
+                        </label>
+                        <label class="label">
+                            Longitude (micro degrees)
+                            <input class="input" type="number" name="longitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.longitudeMicroDegrees is defined ? creationPayload.longitudeMicroDegrees : '' }}" step="1">
+                        </label>
+                        <label class="label">
+                            Line fuel type
+                            <input class="input" type="text" name="lineFuelType" value="{{ firstLine is not null and firstLine.fuelType is defined ? firstLine.fuelType : '' }}" placeholder="diesel">
+                        </label>
+                        <label class="label">
+                            Line quantity (mL)
+                            <input class="input" type="number" name="lineQuantityMilliLiters" value="{{ firstLine is not null and firstLine.quantityMilliLiters is defined ? firstLine.quantityMilliLiters : '' }}" min="1" step="1">
+                        </label>
+                        <label class="label">
+                            Line unit price (deci-cents/L)
+                            <input class="input" type="number" name="lineUnitPriceDeciCentsPerLiter" value="{{ firstLine is not null and firstLine.unitPriceDeciCentsPerLiter is defined ? firstLine.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
+                        </label>
+                        <label class="label">
+                            Line VAT rate (%)
+                            <input class="input" type="number" name="lineVatRatePercent" value="{{ firstLine is not null and firstLine.vatRatePercent is defined ? firstLine.vatRatePercent : '' }}" min="0" max="100" step="1">
+                        </label>
+                    </div>
+
+                    <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                        <button class="btn btn-primary" type="submit">Finalize import</button>
+                        <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Cancel</a>
+                    </div>
+                </form>
+            </section>
+        {% else %}
+            <section class="card" style="padding: 1rem;">
+                <p class="muted" style="margin:0;">This import is no longer reviewable.</p>
+            </section>
+        {% endif %}
+
+        {% if payloadData is not null %}
+            <section class="card" style="padding: 1rem;">
+                <p style="margin:0 0 .5rem; font-weight:700;">Raw payload (debug)</p>
+                <pre style="margin:0; overflow:auto; white-space: pre-wrap; font-size:.82rem;">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+            </section>
+        {% endif %}
+    </main>
+{% endblock %}

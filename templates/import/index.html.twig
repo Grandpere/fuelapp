@@ -55,11 +55,10 @@
                                 <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
                                 <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
                                 <td>
-                                    {% if row.canAutoFinalize %}
-                                        <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" onsubmit="return confirm('Finalize this import and create a receipt?');" style="display:inline-flex;">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('ui_import_finalize_' ~ job.id.toString) }}">
-                                            <button class="btn btn-primary" type="submit">Finalize</button>
-                                        </form>
+                                    {% if job.status.value == 'needs_review' %}
+                                        <a class="btn btn-primary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Review</a>
+                                    {% elseif row.canAutoFinalize %}
+                                        <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Detail</a>
                                     {% else %}
                                         <span class="muted">-</span>
                                     {% endif %}

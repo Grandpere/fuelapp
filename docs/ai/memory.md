@@ -237,6 +237,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: set `read: false` on PATCH/DELETE operations and load domain objects in custom processors.
 - Prevention: for non-entity API resources driven by custom processors, explicitly choose `read` behavior per operation.
 
+## 2026-02-21 - Import review payload can be nested under `parsedDraft.creationPayload`
+- Symptom: user UI had no finalize action on `needs_review` imports even when extracted data looked complete.
+- Root cause: UI/controller logic only checked root `creationPayload`, while async parser payload stores command-ready data under `parsedDraft.creationPayload`.
+- Fix: support both payload shapes in UI action visibility and finalize handler fallback path resolution.
+- Prevention: when reading import payload fields, always account for both legacy/root and nested parser structures.
+
 ## 2026-02-21 - UI layer must not depend on Infrastructure entities
 - Symptom: PHPStan architecture rule (`phpat`) failed when an API processor referenced `UserEntity`.
 - Root cause: ownership validation was implemented in UI state processor using Doctrine entity class directly.

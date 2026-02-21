@@ -48,15 +48,16 @@ final readonly class FinalizeImportJobHandler
         }
 
         $payload = $this->decodePayload($job);
+        $creationPayloadPath = $this->resolveCreationPayloadPath($payload);
 
-        $issuedAt = $command->issuedAt ?? $this->readDate($payload, 'creationPayload.issuedAt');
-        $stationName = $this->coalesceString($command->stationName, $this->readString($payload, 'creationPayload.stationName'));
-        $stationStreetName = $this->coalesceString($command->stationStreetName, $this->readString($payload, 'creationPayload.stationStreetName'));
-        $stationPostalCode = $this->coalesceString($command->stationPostalCode, $this->readString($payload, 'creationPayload.stationPostalCode'));
-        $stationCity = $this->coalesceString($command->stationCity, $this->readString($payload, 'creationPayload.stationCity'));
-        $latitudeMicroDegrees = $command->latitudeMicroDegrees ?? $this->readInt($payload, 'creationPayload.latitudeMicroDegrees');
-        $longitudeMicroDegrees = $command->longitudeMicroDegrees ?? $this->readInt($payload, 'creationPayload.longitudeMicroDegrees');
-        $lines = $command->lines ?? $this->readLinesFromPayload($payload);
+        $issuedAt = $command->issuedAt ?? $this->readDate($payload, $creationPayloadPath.'.issuedAt');
+        $stationName = $this->coalesceString($command->stationName, $this->readString($payload, $creationPayloadPath.'.stationName'));
+        $stationStreetName = $this->coalesceString($command->stationStreetName, $this->readString($payload, $creationPayloadPath.'.stationStreetName'));
+        $stationPostalCode = $this->coalesceString($command->stationPostalCode, $this->readString($payload, $creationPayloadPath.'.stationPostalCode'));
+        $stationCity = $this->coalesceString($command->stationCity, $this->readString($payload, $creationPayloadPath.'.stationCity'));
+        $latitudeMicroDegrees = $command->latitudeMicroDegrees ?? $this->readInt($payload, $creationPayloadPath.'.latitudeMicroDegrees');
+        $longitudeMicroDegrees = $command->longitudeMicroDegrees ?? $this->readInt($payload, $creationPayloadPath.'.longitudeMicroDegrees');
+        $lines = $command->lines ?? $this->readLinesFromPayload($payload, $creationPayloadPath);
 
         if (
             null === $issuedAt
@@ -84,7 +85,7 @@ final readonly class FinalizeImportJobHandler
         $job->markProcessedWithPayload($this->buildProcessedPayload(
             $job->id()->toString(),
             $receipt->id()->toString(),
-            null !== ($payload['creationPayload'] ?? null),
+            'creationPayload' === $creationPayloadPath,
         ));
         $this->repository->save($job);
         $this->fileStorage->delete($job->storage(), $job->filePath());
@@ -140,9 +141,9 @@ final readonly class FinalizeImportJobHandler
      *
      * @return list<CreateReceiptLineCommand>
      */
-    private function readLinesFromPayload(array $payload): array
+    private function readLinesFromPayload(array $payload, string $creationPayloadPath): array
     {
-        $rawLines = $this->read($payload, 'creationPayload.lines');
+        $rawLines = $this->read($payload, $creationPayloadPath.'.lines');
         if (!is_array($rawLines)) {
             return [];
         }
@@ -241,5 +242,21 @@ final readonly class FinalizeImportJobHandler
         }
 
         return $fallback;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function resolveCreationPayloadPath(array $payload): string
+    {
+        $root = $this->read($payload, 'creationPayload');
+        if (is_array($root)) {
+            return 'creationPayload';
+        }
+
+        $parsedDraft = $this->read($payload, 'parsedDraft.creationPayload');
+        if (is_array($parsedDraft)) {
+            return 'parsedDraft.creationPayload';
+        }
+
+        return 'creationPayload';
     }
 }

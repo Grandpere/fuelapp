@@ -142,6 +142,15 @@ final class ImportJobWebController extends AbstractController
             return false;
         }
 
-        return isset($decoded['creationPayload']) && is_array($decoded['creationPayload']);
+        if (isset($decoded['creationPayload']) && is_array($decoded['creationPayload'])) {
+            return true;
+        }
+
+        $parsedDraft = $decoded['parsedDraft'] ?? null;
+        if (!is_array($parsedDraft)) {
+            return false;
+        }
+
+        return isset($parsedDraft['creationPayload']) && is_array($parsedDraft['creationPayload']);
     }
 }

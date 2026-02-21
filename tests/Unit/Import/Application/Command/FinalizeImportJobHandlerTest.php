@@ -107,6 +107,51 @@ final class FinalizeImportJobHandlerTest extends TestCase
 
         ($handler)(new FinalizeImportJobCommand($job->id()->toString()));
     }
+
+    public function testItFinalizesWhenCreationPayloadIsNestedUnderParsedDraft(): void
+    {
+        $job = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/file.pdf',
+            'file.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('a', 64),
+        );
+        $job->markNeedsReview(json_encode([
+            'parsedDraft' => [
+                'creationPayload' => [
+                    'issuedAt' => '2026-02-21T10:00:00+00:00',
+                    'stationName' => 'Total',
+                    'stationStreetName' => '1 Rue A',
+                    'stationPostalCode' => '75001',
+                    'stationCity' => 'Paris',
+                    'lines' => [[
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 10000,
+                        'unitPriceDeciCentsPerLiter' => 1800,
+                        'vatRatePercent' => 20,
+                    ]],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        $repository = new FinalizeInMemoryImportJobRepository([$job]);
+        $receiptRepository = new FinalizeInMemoryReceiptRepository();
+        $stationRepository = new FinalizeInMemoryStationRepository();
+        $createReceiptWithStationHandler = new CreateReceiptWithStationHandler(
+            new CreateReceiptHandler($receiptRepository),
+            $stationRepository,
+            new CreateStationHandler($stationRepository, new FinalizeNullMessageBus()),
+        );
+        $handler = new FinalizeImportJobHandler($repository, new FinalizeNullImportFileStorage(), $createReceiptWithStationHandler);
+
+        $updated = ($handler)(new FinalizeImportJobCommand($job->id()->toString()));
+
+        self::assertSame('processed', $updated->status()->value);
+        self::assertSame(1, $receiptRepository->savedCount);
+    }
 }
 
 final class FinalizeInMemoryImportJobRepository implements ImportJobRepository

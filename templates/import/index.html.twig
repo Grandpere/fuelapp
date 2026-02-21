@@ -45,7 +45,7 @@
                             <tr class="table-row">
                                 <td>{{ job.id.toString }}</td>
                                 <td>
-                                    <span class="pill" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color:#1d1405;">
+                                    <span class="pill pill-energy" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color:#1d1405;">
                                         {{ statusLabels[job.status.value] ?? job.status.value }}
                                     </span>
                                 </td>

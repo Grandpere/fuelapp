@@ -155,18 +155,20 @@ final class ImportWebUiTest extends KernelTestCase
         $job->setFileSizeBytes(64000);
         $job->setFileChecksumSha256(str_repeat('a', 64));
         $job->setErrorPayload(json_encode([
-            'creationPayload' => [
-                'issuedAt' => '2026-02-21T10:45:00+00:00',
-                'stationName' => 'TOTAL ENERGIES',
-                'stationStreetName' => '1 Rue de Rivoli',
-                'stationPostalCode' => '75001',
-                'stationCity' => 'Paris',
-                'lines' => [[
-                    'fuelType' => 'diesel',
-                    'quantityMilliLiters' => 40000,
-                    'unitPriceDeciCentsPerLiter' => 1879,
-                    'vatRatePercent' => 20,
-                ]],
+            'parsedDraft' => [
+                'creationPayload' => [
+                    'issuedAt' => '2026-02-21T10:45:00+00:00',
+                    'stationName' => 'TOTAL ENERGIES',
+                    'stationStreetName' => '1 Rue de Rivoli',
+                    'stationPostalCode' => '75001',
+                    'stationCity' => 'Paris',
+                    'lines' => [[
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 40000,
+                        'unitPriceDeciCentsPerLiter' => 1879,
+                        'vatRatePercent' => 20,
+                    ]],
+                ],
             ],
         ], JSON_THROW_ON_ERROR));
         $job->setCreatedAt(new DateTimeImmutable('2026-02-21 10:46:00'));

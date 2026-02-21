@@ -1,17 +1,16 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 01 - Security and ownership
+- Sprint 03 - Async import (image/PDF)
 
 ## Current goal
-- Put strong authentication/authorization foundations before async geocoding and import pipeline.
+- Deliver async import foundations (job model, upload endpoint, orchestration).
 
 ## In progress
-- `SP3-001` - Import job model and storage.
+- Sprint 03 completed.
 
 ## Next tickets (ordered)
-1. `SP3-001` - Import job model and storage
-2. `SP3-002` - Upload API endpoint validation
+1. Prepare Sprint 04 planning
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -28,6 +27,15 @@
 - Security runbook and local/dev/prod security checklist delivered.
 - Generic OIDC SSO integration layer delivered (Auth0-ready, provider-agnostic).
 - OIDC provider catalog/conventions delivered (claims mapping + onboarding checklist).
+- `SP3-001` delivered: import job domain model, persistence, local storage adapter, and baseline tests.
+- `SP3-002` delivered: authenticated upload endpoint with validation and queued import job creation.
+- `SP3-003` delivered: async import message dispatch, handler lifecycle transitions, and retry-ready routing.
+- `SP3-004` delivered: OCR abstraction + first provider adapter and normalized extraction payload for parser handoff.
+- `SP3-005` delivered: OCR parsing/normalization draft model with validated command payload candidate and parse issues.
+- `SP3-006` delivered: checksum-based duplicate detection with explicit `duplicate` import status and idempotent short-circuit before OCR.
+- `SP3-007` delivered: API review/finalization flow for `needs_review` imports with receipt creation and processed audit payload.
+- `SP3-008` delivered: import regression coverage for OCR/provider/parser failure paths and finalize API error-paths.
+- `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

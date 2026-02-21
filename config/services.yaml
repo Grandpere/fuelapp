@@ -9,6 +9,12 @@
 parameters:
     app.jwt_secret: '%env(JWT_SECRET)%'
     app.jwt_ttl_seconds: '%env(int:JWT_TTL_SECONDS)%'
+    app.import.storage_name: 'local'
+    app.import.storage_dir: '%kernel.project_dir%/%env(string:APP_SHARE_DIR)%/imports'
+    app.import.ocr_space_base_uri: '%env(string:OCR_SPACE_BASE_URI)%'
+    app.import.ocr_space_api_key: '%env(string:OCR_SPACE_API_KEY)%'
+    app.import.ocr_space_language: '%env(string:OCR_SPACE_LANGUAGE)%'
+    app.import.ocr_space_engine: '%env(int:OCR_SPACE_ENGINE)%'
     app.geocoding.nominatim_base_uri: '%env(string:NOMINATIM_BASE_URI)%'
     app.geocoding.nominatim_user_agent: '%env(string:NOMINATIM_USER_AGENT)%'
     app.geocoding.nominatim_email: '%env(default::NOMINATIM_EMAIL)%'
@@ -70,5 +76,25 @@ services:
             $cache: '@cache.app'
             $userAgent: '%app.geocoding.nominatim_user_agent%'
             $contactEmail: '%app.geocoding.nominatim_email%'
+    App\Import\Application\Storage\ImportFileStorage: '@App\Import\Infrastructure\Storage\LocalImportFileStorage'
+    App\Import\Application\Storage\ImportStoredFileLocator: '@App\Import\Infrastructure\Storage\LocalImportStoredFileLocator'
+    App\Import\Infrastructure\Storage\LocalImportStoredFileLocator:
+        arguments:
+            $storageName: '%app.import.storage_name%'
+            $baseDirectory: '%app.import.storage_dir%'
+    App\Import\Infrastructure\Storage\LocalImportFileStorage:
+        arguments:
+            $storageName: '%app.import.storage_name%'
+            $baseDirectory: '%app.import.storage_dir%'
+    App\Import\Application\Ocr\OcrProvider: '@App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider'
+    App\Import\Application\Parsing\ReceiptOcrParser: '@App\Import\Infrastructure\Parsing\RegexReceiptOcrParser'
+    App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider:
+        arguments:
+            $httpClient: '@http_client'
+            $baseUri: '%app.import.ocr_space_base_uri%'
+            $apiKey: '%app.import.ocr_space_api_key%'
+            $language: '%app.import.ocr_space_language%'
+            $engine: '%app.import.ocr_space_engine%'
     App\Receipt\Application\Repository\ReceiptRepository: '@App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository'
+    App\Import\Application\Repository\ImportJobRepository: '@App\Import\Infrastructure\Persistence\Doctrine\Repository\DoctrineImportJobRepository'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'

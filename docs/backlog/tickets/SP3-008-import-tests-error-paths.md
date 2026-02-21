@@ -19,4 +19,4 @@ Async OCR/import has many failure modes.
 - SP3-001..SP3-007.
 
 ## Status
-- todo
+- done

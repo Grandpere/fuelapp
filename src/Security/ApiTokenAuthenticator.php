@@ -37,7 +37,12 @@ final class ApiTokenAuthenticator extends AbstractAuthenticator implements Authe
             return false;
         }
 
-        if ('api_login' === $request->attributes->get('_route')) {
+        $route = $request->attributes->get('_route');
+        if (!is_string($route)) {
+            return true;
+        }
+
+        if (in_array($route, ['api_login', 'api_doc'], true)) {
             return false;
         }
 
@@ -46,12 +51,16 @@ final class ApiTokenAuthenticator extends AbstractAuthenticator implements Authe
 
     public function authenticate(Request $request): SelfValidatingPassport
     {
-        $authorization = $request->headers->get('Authorization');
-        if (null === $authorization || !str_starts_with($authorization, 'Bearer ')) {
+        $authorization = trim((string) $request->headers->get('Authorization', ''));
+        if ('' === $authorization) {
             throw new CustomUserMessageAuthenticationException('Missing Bearer token.');
         }
 
-        $token = trim(substr($authorization, 7));
+        $token = $authorization;
+        if (str_starts_with(mb_strtolower($authorization), 'bearer ')) {
+            $token = trim(substr($authorization, 7));
+        }
+
         if ('' === $token) {
             throw new CustomUserMessageAuthenticationException('Missing Bearer token.');
         }

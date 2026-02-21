@@ -42,6 +42,7 @@ security:
     # Note: Only the *first* matching rule is applied
     access_control:
         - { path: ^/api/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/docs(\..+)?$, roles: PUBLIC_ACCESS }
         - { path: ^/ui/login, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
         - { path: ^/ui, roles: ROLE_USER }

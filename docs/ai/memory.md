@@ -135,6 +135,66 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: run `make db-migrate` after schema changes and before user verification.
 - Prevention: in task handover, always list required user commands and explicitly include DB migration when schema changed.
 
+## 2026-02-21 - New Doctrine context requires explicit ORM mapping registration
+- Symptom: integration tests failed with `MappingException` saying `ImportJobEntity` was not found in configured namespaces.
+- Root cause: new `Import` entity namespace was created, but `config/packages/doctrine.yaml` mappings still listed only `Receipt`, `Station`, and `User`.
+- Fix: add `Import` attribute mapping block in Doctrine ORM configuration.
+- Prevention: each new bounded context with Doctrine entities must include mapping registration in the same change set.
+
+## 2026-02-21 - File mime validation via `Assert\File` requires Mime component
+- Symptom: functional API upload tests returned 500 with `You cannot guess the mime type as the Mime component is not installed`.
+- Root cause: `Assert\File(mimeTypes: ...)` depends on `symfony/mime` for mime guessing.
+- Fix: install `symfony/mime` and keep `Assert\File` validation.
+- Prevention: when introducing `Assert\File` mime checks, request `symfony/mime` installation upfront during task implementation.
+
+## 2026-02-21 - Symfony routes are not auto-listed in API Platform docs
+- Symptom: `/api/imports` worked but was missing from `/api/docs`.
+- Root cause: API Platform docs list API Platform operations by default; plain Symfony routes are excluded.
+- Fix: add an OpenAPI factory decorator to register the upload path and schema explicitly.
+- Prevention: for non-API Platform endpoints that must appear in docs, add/update OpenAPI decorator in the same ticket.
+
+## 2026-02-21 - Async import workers must use system-level repository reads
+- Symptom: Messenger handlers cannot rely on user-scoped repository methods.
+- Root cause: worker context has no authenticated user token.
+- Fix: use `ImportJobRepository::getForSystem()` in import async handlers.
+- Prevention: for every worker/cron flow, explicitly use system-level read APIs and keep user-scoped methods for HTTP/UI flows only.
+
+## 2026-02-21 - OCR provider errors must distinguish retryable vs permanent
+- Symptom: import jobs can either need retry (provider outage) or immediate failure (invalid input/api key).
+- Root cause: a single generic OCR exception type loses retry semantics required by Messenger.
+- Fix: model OCR failures with explicit retryable/permanent mapping and persist clear failure reasons on import jobs.
+- Prevention: for every external provider adapter, encode retry semantics in exceptions and keep handler behavior deterministic.
+
+## 2026-02-21 - Parse output should include both issues and a validated command candidate
+- Symptom: OCR data can be partially parsed, but downstream flows need to know if payload is directly usable.
+- Root cause: parsing-only output without explicit command candidate forces duplicated validation logic later.
+- Fix: return parsed draft with normalized fields, explicit issues list, and `creationPayload` only when required fields are complete.
+- Prevention: for extraction pipelines, always separate `raw parsed data` from `validated command-ready payload`.
+
+## 2026-02-21 - Duplicate import must short-circuit before OCR
+- Symptom: re-uploading the same receipt can trigger full OCR/parsing again and risks duplicate receipt creation.
+- Root cause: async handler lacked deterministic duplicate gate before expensive processing.
+- Fix: compare owner + file checksum upfront, mark job as `duplicate`, persist structured payload (`duplicateOfImportJobId`, fingerprint), and stop processing.
+- Prevention: for async ingest pipelines, enforce idempotency checks before calling external providers.
+
+## 2026-02-21 - API Platform write operations expect JSON-LD by default
+- Symptom: manual finalize endpoint returned `415 Unsupported Media Type` with `application/json`.
+- Root cause: API Platform content negotiation for resource operations defaults to `application/ld+json`.
+- Fix: call endpoint with `Content-Type: application/ld+json` (or widen operation formats explicitly if needed).
+- Prevention: for new API Platform POST/PATCH operations, validate accepted content types in functional tests.
+
+## 2026-02-21 - Integration and functional suites must run sequentially (shared test DB lifecycle)
+- Symptom: intermittent integration failures (`database "app_test" does not exist`) when running multiple suites concurrently.
+- Root cause: both suites execute drop/create/migrate on the same test database.
+- Fix: run `make phpunit-integration` and `make phpunit-functional` sequentially.
+- Prevention: avoid parallel execution of suites that reset shared database state.
+
+## 2026-02-21 - API Platform metadata compatibility: use `openapi` operation object
+- Symptom: static analysis failed with unknown `openapiContext` argument on `ApiPlatform\Metadata\Post`.
+- Root cause: project API Platform metadata version expects `openapi` (`ApiPlatform\OpenApi\Model\Operation`) instead of legacy context argument.
+- Fix: define upload docs with `openapi: new Operation(...)` on the resource operation.
+- Prevention: when adding custom docs on metadata operations, align constructor args with installed API Platform version.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

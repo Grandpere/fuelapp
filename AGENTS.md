@@ -76,9 +76,19 @@ If JS packages are added to importmap:
 - Keep sprint/backlog docs aligned in `/docs/backlog`.
 
 ## 10) Dependencies Policy
-- If a missing dependency blocks a clean implementation, ask the user before introducing a workaround.
-- Prefer adding the proper dependency (with user confirmation) over shipping a degraded fallback.
-- When asking, state the package name and why it is required.
+- Never add a new dependency (Composer, npm, system package, Docker image/tooling) without explicit user approval first.
+- Before any dependency install, ask the user systematically and wait for confirmation.
+- In the request, always explain:
+  - exact package name,
+  - why it is needed for a clean implementation,
+  - what degrades or becomes workaround-heavy without it.
+- If the dependency is refused, document the chosen fallback and its limitations in the handover summary.
+- Prefer free solutions first for all app capabilities.
+- Preferred order when choosing tooling/providers:
+  - no external API (local/self-hosted or built-in project dependency),
+  - free external API if local option is not realistic short-term,
+  - paid external API only if explicitly approved by the user.
+- Even for free options, any new project dependency must still follow the approval flow above.
 
 ## 11) User Runbook At Handover
 - At the end of each task, explicitly state whether the user has commands to run.

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\User\Infrastructure\Persistence\Doctrine\Entity;
 
+use App\Security\AuthenticatedUser;
 use Doctrine\ORM\Mapping as ORM;
 use LogicException;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -23,7 +24,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
 #[ORM\UniqueConstraint(name: 'uniq_users_email', columns: ['email'])]
-class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
+class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface, AuthenticatedUser
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]

@@ -21,7 +21,6 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -43,7 +42,6 @@ final class UploadImportController extends AbstractController
     ) {
     }
 
-    #[Route('/api/imports', name: 'api_import_upload', methods: ['POST'])]
     public function __invoke(Request $request): JsonResponse
     {
         $user = $this->getUser();

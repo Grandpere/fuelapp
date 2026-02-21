@@ -98,7 +98,3 @@ services:
     App\Receipt\Application\Repository\ReceiptRepository: '@App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository'
     App\Import\Application\Repository\ImportJobRepository: '@App\Import\Infrastructure\Persistence\Doctrine\Repository\DoctrineImportJobRepository'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'
-    App\Import\UI\Api\OpenApi\ImportUploadOpenApiFactory:
-        decorates: 'api_platform.openapi.factory'
-        arguments:
-            $decorated: '@App\Import\UI\Api\OpenApi\ImportUploadOpenApiFactory.inner'

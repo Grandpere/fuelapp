@@ -189,6 +189,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: run `make phpunit-integration` and `make phpunit-functional` sequentially.
 - Prevention: avoid parallel execution of suites that reset shared database state.
 
+## 2026-02-21 - API Platform metadata compatibility: use `openapi` operation object
+- Symptom: static analysis failed with unknown `openapiContext` argument on `ApiPlatform\Metadata\Post`.
+- Root cause: project API Platform metadata version expects `openapi` (`ApiPlatform\OpenApi\Model\Operation`) instead of legacy context argument.
+- Fix: define upload docs with `openapi: new Operation(...)` on the resource operation.
+- Prevention: when adding custom docs on metadata operations, align constructor args with installed API Platform version.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

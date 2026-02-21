@@ -21,4 +21,4 @@ Upload endpoint `/api/imports` is currently a Symfony controller route and docum
 - SP3-002.
 
 ## Status
-- todo
+- done

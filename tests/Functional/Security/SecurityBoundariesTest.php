@@ -78,6 +78,25 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
     }
 
+    public function testAnonymousUserCanAccessApiDocs(): void
+    {
+        $htmlResponse = $this->request('GET', '/api/docs');
+        self::assertSame(Response::HTTP_OK, $htmlResponse->getStatusCode());
+
+        $openApiResponse = $this->request('GET', '/api/docs.jsonopenapi');
+        self::assertSame(Response::HTTP_OK, $openApiResponse->getStatusCode());
+
+        /** @var array{paths?: array<string, mixed>} $openApi */
+        $openApi = json_decode((string) $openApiResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        $paths = $openApi['paths'] ?? null;
+        self::assertIsArray($paths);
+        self::assertArrayHasKey('/api/imports', $paths);
+
+        $importsPath = $paths['/api/imports'] ?? null;
+        self::assertIsArray($importsPath);
+        self::assertArrayHasKey('post', $importsPath);
+    }
+
     public function testOidcLoginRoutesArePublic(): void
     {
         $response = $this->request('GET', '/ui/login/oidc/unknown');

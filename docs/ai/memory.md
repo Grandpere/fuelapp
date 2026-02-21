@@ -143,9 +143,15 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 
 ## 2026-02-21 - File mime validation via `Assert\File` requires Mime component
 - Symptom: functional API upload tests returned 500 with `You cannot guess the mime type as the Mime component is not installed`.
-- Root cause: `Assert\File(mimeTypes: ...)` triggers mime guessing logic that depends on `symfony/mime`, not present in this project.
-- Fix: replace mime validation with explicit upload checks (size + allowed client mime/extension) for this endpoint.
-- Prevention: before using `Assert\File` mime checks, either install `symfony/mime` or choose explicit validation that does not require mime guessing.
+- Root cause: `Assert\File(mimeTypes: ...)` depends on `symfony/mime` for mime guessing.
+- Fix: install `symfony/mime` and keep `Assert\File` validation.
+- Prevention: when introducing `Assert\File` mime checks, request `symfony/mime` installation upfront during task implementation.
+
+## 2026-02-21 - Symfony routes are not auto-listed in API Platform docs
+- Symptom: `/api/imports` worked but was missing from `/api/docs`.
+- Root cause: API Platform docs list API Platform operations by default; plain Symfony routes are excluded.
+- Fix: add an OpenAPI factory decorator to register the upload path and schema explicitly.
+- Prevention: for non-API Platform endpoints that must appear in docs, add/update OpenAPI decorator in the same ticket.
 
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.

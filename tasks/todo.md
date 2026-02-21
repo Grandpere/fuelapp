@@ -1,8 +1,8 @@
-# TODO - SP3-002 Upload API endpoint and validation
+# TODO - API docs visibility for import upload
 
 ## Plan
-- [completed] Add authenticated upload API endpoint (`POST /api/imports`) for receipt files.
-- [completed] Validate upload constraints (required file, max size, supported types).
-- [completed] Persist queued import jobs through application handler and storage adapter.
-- [completed] Add tests for handler logic and functional API behavior (anonymous, invalid, success).
-- [completed] Run quality gates and sync backlog/docs.
+- [completed] Add OpenAPI decorator to expose `POST /api/imports` in `/api/docs`.
+- [completed] Ensure JWT bearer security scheme is present for this operation.
+- [completed] Add functional assertion that import upload appears in OpenAPI JSON docs.
+- [completed] Add a backlog ticket for optional later refactor to native API Platform operation.
+- [completed] Run quality checks.

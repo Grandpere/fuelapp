@@ -1,9 +1,9 @@
-# TODO - SP3-004 OCR adapter abstraction and first provider
+# TODO - SP3-005 Receipt parsing and normalization
 
 ## Plan
-- [completed] Define OCR provider contract and normalized extraction model.
-- [completed] Implement first OCR provider adapter (`OCR.Space`) with clean error mapping.
-- [completed] Add stored-file locator abstraction and local implementation for async workers.
-- [completed] Integrate OCR call in import async handler and map outcomes to statuses (`needs_review` / `failed`).
-- [completed] Add unit/integration coverage for provider + handler behavior.
+- [completed] Define parsing contract and parsed draft model for OCR output.
+- [completed] Implement regex-based parser for station/date/lines/amounts/VAT normalization.
+- [completed] Build validated receipt creation payload candidate from parsed draft.
+- [completed] Integrate parser output into import async `needs_review` payload with explicit issues.
+- [completed] Add unit coverage for parser and adapt import handler tests.
 - [completed] Run quality checks.

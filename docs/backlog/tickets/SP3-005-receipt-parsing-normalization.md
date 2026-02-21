@@ -19,4 +19,4 @@ OCR output must become consistent business data.
 - SP3-004.
 
 ## Status
-- todo
+- done

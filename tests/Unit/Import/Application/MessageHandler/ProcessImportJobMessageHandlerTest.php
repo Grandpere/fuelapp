@@ -18,6 +18,9 @@ use App\Import\Application\MessageHandler\ProcessImportJobMessageHandler;
 use App\Import\Application\Ocr\OcrExtraction;
 use App\Import\Application\Ocr\OcrProvider;
 use App\Import\Application\Ocr\OcrProviderException;
+use App\Import\Application\Parsing\ParsedReceiptDraft;
+use App\Import\Application\Parsing\ParsedReceiptLineDraft;
+use App\Import\Application\Parsing\ReceiptOcrParser;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Domain\Enum\ImportJobStatus;
@@ -34,6 +37,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
             $repository,
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new FakeOcrProvider(new OcrExtraction('fake', 'text', ['text'], [])),
+            new FakeReceiptOcrParser(),
             new NullLogger(),
         );
 
@@ -59,6 +63,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
             $repository,
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new FakeOcrProvider(new OcrExtraction('ocr_space', 'Total\n80.00', ['Total', '80.00'], ['raw' => true])),
+            new FakeReceiptOcrParser(),
             new NullLogger(),
         );
 
@@ -90,6 +95,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
             $repository,
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new ThrowingOcrProvider(OcrProviderException::permanent('invalid file')),
+            new FakeReceiptOcrParser(),
             new NullLogger(),
         );
 
@@ -119,6 +125,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
             $repository,
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
+            new FakeReceiptOcrParser(),
             new NullLogger(),
         );
 
@@ -205,5 +212,23 @@ final class ThrowingOcrProvider implements OcrProvider
     public function extract(string $filePath, string $mimeType): OcrExtraction
     {
         throw $this->exception;
+    }
+}
+
+final class FakeReceiptOcrParser implements ReceiptOcrParser
+{
+    public function parse(OcrExtraction $extraction): ParsedReceiptDraft
+    {
+        return new ParsedReceiptDraft(
+            'Total',
+            '1 Rue A',
+            '75001',
+            'Paris',
+            null,
+            8000,
+            1333,
+            [new ParsedReceiptLineDraft('diesel', 10000, 1800, 1800, 20)],
+            [],
+        );
     }
 }

@@ -165,6 +165,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: model OCR failures with explicit retryable/permanent mapping and persist clear failure reasons on import jobs.
 - Prevention: for every external provider adapter, encode retry semantics in exceptions and keep handler behavior deterministic.
 
+## 2026-02-21 - Parse output should include both issues and a validated command candidate
+- Symptom: OCR data can be partially parsed, but downstream flows need to know if payload is directly usable.
+- Root cause: parsing-only output without explicit command candidate forces duplicated validation logic later.
+- Fix: return parsed draft with normalized fields, explicit issues list, and `creationPayload` only when required fields are complete.
+- Prevention: for extraction pipelines, always separate `raw parsed data` from `validated command-ready payload`.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

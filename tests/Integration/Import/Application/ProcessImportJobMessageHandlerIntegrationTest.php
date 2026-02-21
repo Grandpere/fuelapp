@@ -17,6 +17,9 @@ use App\Import\Application\Message\ProcessImportJobMessage;
 use App\Import\Application\MessageHandler\ProcessImportJobMessageHandler;
 use App\Import\Application\Ocr\OcrExtraction;
 use App\Import\Application\Ocr\OcrProvider;
+use App\Import\Application\Parsing\ParsedReceiptDraft;
+use App\Import\Application\Parsing\ParsedReceiptLineDraft;
+use App\Import\Application\Parsing\ReceiptOcrParser;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Domain\Enum\ImportJobStatus;
@@ -77,6 +80,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
             $this->importJobRepository,
             new StaticFileLocator('/tmp/fake.pdf'),
             new StaticOcrProvider(),
+            new StaticReceiptParser(),
             new NullLogger(),
         );
         $handler(new ProcessImportJobMessage($job->id()->toString()));
@@ -107,5 +111,23 @@ final class StaticOcrProvider implements OcrProvider
     public function extract(string $filePath, string $mimeType): OcrExtraction
     {
         return new OcrExtraction('ocr_space', 'TOTAL 80.00', ['TOTAL 80.00'], ['raw' => true]);
+    }
+}
+
+final class StaticReceiptParser implements ReceiptOcrParser
+{
+    public function parse(OcrExtraction $extraction): ParsedReceiptDraft
+    {
+        return new ParsedReceiptDraft(
+            'Total',
+            '1 Rue A',
+            '75001',
+            'Paris',
+            null,
+            8000,
+            1333,
+            [new ParsedReceiptLineDraft('diesel', 10000, 1800, 1800, 20)],
+            [],
+        );
     }
 }

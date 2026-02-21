@@ -16,6 +16,8 @@ namespace App\Import\Application\MessageHandler;
 use App\Import\Application\Message\ProcessImportJobMessage;
 use App\Import\Application\Ocr\OcrProvider;
 use App\Import\Application\Ocr\OcrProviderException;
+use App\Import\Application\Parsing\ParsedReceiptDraft;
+use App\Import\Application\Parsing\ReceiptOcrParser;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Domain\Enum\ImportJobStatus;
@@ -31,6 +33,7 @@ final readonly class ProcessImportJobMessageHandler
         private ImportJobRepository $repository,
         private ImportStoredFileLocator $storedFileLocator,
         private OcrProvider $ocrProvider,
+        private ReceiptOcrParser $receiptParser,
         private LoggerInterface $logger,
     ) {
     }
@@ -64,8 +67,9 @@ final readonly class ProcessImportJobMessageHandler
         try {
             $absolutePath = $this->storedFileLocator->locate($job->storage(), $job->filePath());
             $extraction = $this->ocrProvider->extract($absolutePath, $job->mimeType());
+            $parsedDraft = $this->receiptParser->parse($extraction);
 
-            $payload = $this->buildNeedsReviewPayload($job->id()->toString(), $extraction->provider, $extraction->text, $extraction->pages);
+            $payload = $this->buildNeedsReviewPayload($job->id()->toString(), $extraction->provider, $extraction->text, $extraction->pages, $parsedDraft);
             $job->markNeedsReview($payload);
             $this->repository->save($job);
 
@@ -73,6 +77,7 @@ final readonly class ProcessImportJobMessageHandler
                 'import_job_id' => $job->id()->toString(),
                 'status' => $job->status()->value,
                 'ocr_provider' => $extraction->provider,
+                'parse_issues_count' => count($parsedDraft->issues),
             ]);
         } catch (OcrProviderException $ocrException) {
             $job->markFailed($this->buildProviderFailureReason($ocrException));
@@ -101,13 +106,14 @@ final readonly class ProcessImportJobMessageHandler
     }
 
     /** @param list<string> $pages */
-    private function buildNeedsReviewPayload(string $jobId, string $provider, string $text, array $pages): string
+    private function buildNeedsReviewPayload(string $jobId, string $provider, string $text, array $pages, ParsedReceiptDraft $parsedDraft): string
     {
         $payload = [
             'jobId' => $jobId,
             'provider' => $provider,
-            'text' => $text,
+            'text' => mb_substr($text, 0, 2000),
             'pages' => $pages,
+            'parsedDraft' => $parsedDraft->toArray(),
             'status' => 'needs_review',
         ];
 

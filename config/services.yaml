@@ -87,6 +87,7 @@ services:
             $storageName: '%app.import.storage_name%'
             $baseDirectory: '%app.import.storage_dir%'
     App\Import\Application\Ocr\OcrProvider: '@App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider'
+    App\Import\Application\Parsing\ReceiptOcrParser: '@App\Import\Infrastructure\Parsing\RegexReceiptOcrParser'
     App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider:
         arguments:
             $httpClient: '@http_client'

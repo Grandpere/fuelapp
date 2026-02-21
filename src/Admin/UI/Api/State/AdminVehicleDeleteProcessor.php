@@ -15,6 +15,7 @@ namespace App\Admin\UI\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use App\Vehicle\Domain\Vehicle;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -25,8 +26,10 @@ use Symfony\Component\Uid\Uuid;
  */
 final readonly class AdminVehicleDeleteProcessor implements ProcessorInterface
 {
-    public function __construct(private VehicleRepository $repository)
-    {
+    public function __construct(
+        private VehicleRepository $repository,
+        private AdminAuditTrail $auditTrail,
+    ) {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): void
@@ -42,5 +45,17 @@ final readonly class AdminVehicleDeleteProcessor implements ProcessorInterface
         }
 
         $this->repository->delete($id);
+        $this->auditTrail->record(
+            'admin.vehicle.deleted',
+            'vehicle',
+            $id,
+            [
+                'before' => [
+                    'ownerId' => $vehicle->ownerId(),
+                    'name' => $vehicle->name(),
+                    'plateNumber' => $vehicle->plateNumber(),
+                ],
+            ],
+        );
     }
 }

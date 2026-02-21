@@ -7,11 +7,11 @@
 - Deliver back-office security model and admin tooling.
 
 ## In progress
-- `SP4-006` - Audit trail for admin actions.
+- `SP4-007` - Back-office test suite.
 
 ## Next tickets (ordered)
-1. `SP4-006` - Audit trail for admin actions
-2. `SP4-007` - Back-office test suite
+1. `SP4-007` - Back-office test suite
+2. `SP5-001` - Maintenance context skeleton
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

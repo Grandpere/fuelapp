@@ -15,6 +15,7 @@ namespace App\Admin\UI\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\Station;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -25,8 +26,10 @@ use Symfony\Component\Uid\Uuid;
  */
 final readonly class AdminStationDeleteProcessor implements ProcessorInterface
 {
-    public function __construct(private StationRepository $repository)
-    {
+    public function __construct(
+        private StationRepository $repository,
+        private AdminAuditTrail $auditTrail,
+    ) {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): void
@@ -42,5 +45,18 @@ final readonly class AdminStationDeleteProcessor implements ProcessorInterface
         }
 
         $this->repository->deleteForSystem($id);
+        $this->auditTrail->record(
+            'admin.station.deleted',
+            'station',
+            $id,
+            [
+                'before' => [
+                    'name' => $station->name(),
+                    'streetName' => $station->streetName(),
+                    'postalCode' => $station->postalCode(),
+                    'city' => $station->city(),
+                ],
+            ],
+        );
     }
 }

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Import\Application\Command\RetryImportJobCommand;
 use App\Import\Application\Command\RetryImportJobHandler;
 use InvalidArgumentException;
@@ -24,8 +25,10 @@ use Symfony\Component\Uid\Uuid;
 
 final class AdminImportJobRetryController extends AbstractController
 {
-    public function __construct(private readonly RetryImportJobHandler $retryImportJobHandler)
-    {
+    public function __construct(
+        private readonly RetryImportJobHandler $retryImportJobHandler,
+        private readonly AdminAuditTrail $auditTrail,
+    ) {
     }
 
     #[Route('/ui/admin/imports/{id}/retry', name: 'ui_admin_import_job_retry', requirements: ['id' => self::UUID_ROUTE_REQUIREMENT], methods: ['POST'])]
@@ -42,7 +45,15 @@ final class AdminImportJobRetryController extends AbstractController
         }
 
         try {
-            ($this->retryImportJobHandler)(new RetryImportJobCommand($id));
+            $job = ($this->retryImportJobHandler)(new RetryImportJobCommand($id));
+            $this->auditTrail->record(
+                'admin.import.retry.ui',
+                'import_job',
+                $id,
+                [
+                    'after' => ['status' => $job->status()->value],
+                ],
+            );
             $this->addFlash('success', 'Import job queued for retry.');
         } catch (InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());

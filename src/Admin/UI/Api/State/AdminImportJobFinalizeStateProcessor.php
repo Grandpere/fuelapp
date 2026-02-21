@@ -15,6 +15,7 @@ namespace App\Admin\UI\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Import\Application\Command\FinalizeImportJobCommand;
 use App\Import\Application\Command\FinalizeImportJobHandler;
 use App\Import\Application\Repository\ImportJobRepository;
@@ -38,6 +39,7 @@ final readonly class AdminImportJobFinalizeStateProcessor implements ProcessorIn
         private ImportJobRepository $repository,
         private FinalizeImportJobHandler $handler,
         private ImportJobOutputMapper $outputMapper,
+        private AdminAuditTrail $auditTrail,
     ) {
     }
 
@@ -68,6 +70,19 @@ final readonly class AdminImportJobFinalizeStateProcessor implements ProcessorIn
         } catch (InvalidArgumentException $e) {
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
+
+        $this->auditTrail->record(
+            'admin.import.finalize',
+            'import_job',
+            $updated->id()->toString(),
+            [
+                'before' => ['status' => $job->status()->value],
+                'after' => [
+                    'status' => $updated->status()->value,
+                    'finalizedReceiptId' => $this->readFinalizedReceiptId($updated->errorPayload()),
+                ],
+            ],
+        );
 
         return $this->outputMapper->map($updated);
     }
@@ -103,5 +118,21 @@ final readonly class AdminImportJobFinalizeStateProcessor implements ProcessorIn
         }
 
         return $lines;
+    }
+
+    private function readFinalizedReceiptId(?string $payload): ?string
+    {
+        if (null === $payload || '' === trim($payload)) {
+            return null;
+        }
+
+        $decoded = json_decode($payload, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $id = $decoded['finalizedReceiptId'] ?? null;
+
+        return is_string($id) && '' !== trim($id) ? trim($id) : null;
     }
 }

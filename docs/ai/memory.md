@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: propagate owner context from import job through finalize/create-receipt flow and persist via `ReceiptRepository::saveForOwner`.
 - Prevention: for system/admin workflows acting on user-owned resources, pass explicit owner context instead of relying on current session user.
 
+## 2026-02-21 - Admin mutation flows require immutable audit records with correlation id
+- Symptom: troubleshooting admin-side mutations across API/UI is hard without centralized trace events.
+- Root cause: critical admin actions lacked persisted actor/target/change metadata and request correlation.
+- Fix: add `admin_audit_logs` immutable store and record actions with actor, target, diff summary, timestamp, and correlation id.
+- Prevention: every new admin mutation endpoint/controller must append an audit event through `AdminAuditTrail`.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -15,6 +15,7 @@ namespace App\Admin\UI\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Import\Application\Command\RetryImportJobCommand;
 use App\Import\Application\Command\RetryImportJobHandler;
 use App\Import\UI\Api\Resource\Output\ImportJobOutput;
@@ -32,6 +33,7 @@ final readonly class AdminImportJobRetryStateProcessor implements ProcessorInter
     public function __construct(
         private RetryImportJobHandler $handler,
         private ImportJobOutputMapper $outputMapper,
+        private AdminAuditTrail $auditTrail,
     ) {
     }
 
@@ -47,6 +49,15 @@ final readonly class AdminImportJobRetryStateProcessor implements ProcessorInter
         } catch (InvalidArgumentException $e) {
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
+
+        $this->auditTrail->record(
+            'admin.import.retry',
+            'import_job',
+            $job->id()->toString(),
+            [
+                'after' => ['status' => $job->status()->value],
+            ],
+        );
 
         return $this->outputMapper->map($job);
     }

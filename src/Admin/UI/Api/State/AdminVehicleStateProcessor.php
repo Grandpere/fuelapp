@@ -15,6 +15,7 @@ namespace App\Admin\UI\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Admin\UI\Api\Resource\Input\AdminVehicleInput;
 use App\Admin\UI\Api\Resource\Output\AdminVehicleOutput;
 use App\Vehicle\Application\Repository\VehicleRepository;
@@ -29,8 +30,10 @@ use Symfony\Component\Uid\Uuid;
  */
 final readonly class AdminVehicleStateProcessor implements ProcessorInterface
 {
-    public function __construct(private VehicleRepository $repository)
-    {
+    public function __construct(
+        private VehicleRepository $repository,
+        private AdminAuditTrail $auditTrail,
+    ) {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): AdminVehicleOutput
@@ -41,6 +44,8 @@ final readonly class AdminVehicleStateProcessor implements ProcessorInterface
 
         $id = $uriVariables['id'] ?? null;
         $vehicle = null;
+        $action = 'admin.vehicle.created';
+        $before = [];
 
         if (is_string($id)) {
             if (!Uuid::isValid($id)) {
@@ -51,6 +56,9 @@ final readonly class AdminVehicleStateProcessor implements ProcessorInterface
             if (!$vehicle instanceof Vehicle) {
                 throw new NotFoundHttpException();
             }
+
+            $action = 'admin.vehicle.updated';
+            $before = $this->snapshot($vehicle);
         } else {
             $vehicle = Vehicle::create($data->ownerId, $data->name, $data->plateNumber);
         }
@@ -66,6 +74,17 @@ final readonly class AdminVehicleStateProcessor implements ProcessorInterface
 
         $vehicle->update($data->ownerId, $data->name, $data->plateNumber);
         $this->repository->save($vehicle);
+        $after = $this->snapshot($vehicle);
+        $this->auditTrail->record(
+            $action,
+            'vehicle',
+            $vehicle->id()->toString(),
+            [
+                'before' => $before,
+                'after' => $after,
+                'changed' => $this->diff($before, $after),
+            ],
+        );
 
         return new AdminVehicleOutput(
             $vehicle->id()->toString(),
@@ -75,5 +94,33 @@ final readonly class AdminVehicleStateProcessor implements ProcessorInterface
             $vehicle->createdAt(),
             $vehicle->updatedAt(),
         );
+    }
+
+    /** @return array<string, mixed> */
+    private function snapshot(Vehicle $vehicle): array
+    {
+        return [
+            'ownerId' => $vehicle->ownerId(),
+            'name' => $vehicle->name(),
+            'plateNumber' => $vehicle->plateNumber(),
+        ];
+    }
+
+    /** @param array<string, mixed> $before
+     * @param array<string, mixed> $after
+     *
+     * @return array<string, array{before: mixed, after: mixed}>
+     */
+    private function diff(array $before, array $after): array
+    {
+        $changed = [];
+        foreach ($after as $key => $value) {
+            $previous = $before[$key] ?? null;
+            if ($previous !== $value) {
+                $changed[$key] = ['before' => $previous, 'after' => $value];
+            }
+        }
+
+        return $changed;
     }
 }

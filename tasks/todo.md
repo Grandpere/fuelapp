@@ -1,9 +1,9 @@
-# TODO - SP4-005 Retry/fix/reprocess imports
+# TODO - SP4-006 Audit trail for admin actions
 
 ## Plan
-- [completed] Add retry action in application layer for failed import jobs and re-dispatch async processing.
-- [completed] Add admin API actions for import retry and finalize with manual corrections.
-- [completed] Ensure admin finalize preserves original import owner when creating receipt.
-- [completed] Add admin UI actions on import detail (retry + fix/finalize form).
-- [completed] Add unit/functional coverage for recovery flows.
+- [completed] Introduce immutable admin audit log persistence model with correlation id metadata.
+- [completed] Add audit recording service + context provider (actor identity and request correlation).
+- [completed] Record critical admin mutations (stations, vehicles, import retry/finalize in API and UI flows).
+- [completed] Expose read-only admin audit log endpoint with filters.
+- [completed] Add functional coverage for audit recording and correlation id propagation.
 - [completed] Run quality checks and finalize docs.

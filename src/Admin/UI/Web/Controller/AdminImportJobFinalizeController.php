@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Import\Application\Command\FinalizeImportJobCommand;
 use App\Import\Application\Command\FinalizeImportJobHandler;
 use App\Receipt\Application\Command\CreateReceiptLineCommand;
@@ -28,8 +29,10 @@ use ValueError;
 
 final class AdminImportJobFinalizeController extends AbstractController
 {
-    public function __construct(private readonly FinalizeImportJobHandler $finalizeImportJobHandler)
-    {
+    public function __construct(
+        private readonly FinalizeImportJobHandler $finalizeImportJobHandler,
+        private readonly AdminAuditTrail $auditTrail,
+    ) {
     }
 
     #[Route('/ui/admin/imports/{id}/finalize', name: 'ui_admin_import_job_finalize', requirements: ['id' => self::UUID_ROUTE_REQUIREMENT], methods: ['POST'])]
@@ -46,7 +49,7 @@ final class AdminImportJobFinalizeController extends AbstractController
         }
 
         try {
-            ($this->finalizeImportJobHandler)(new FinalizeImportJobCommand(
+            $updated = ($this->finalizeImportJobHandler)(new FinalizeImportJobCommand(
                 $id,
                 $this->toNullableDateTime($request->request->get('issuedAt')),
                 $this->toNullableLines($request),
@@ -57,6 +60,17 @@ final class AdminImportJobFinalizeController extends AbstractController
                 $this->toNullableInt($request->request->get('latitudeMicroDegrees')),
                 $this->toNullableInt($request->request->get('longitudeMicroDegrees')),
             ));
+            $this->auditTrail->record(
+                'admin.import.finalize.ui',
+                'import_job',
+                $id,
+                [
+                    'after' => [
+                        'status' => $updated->status()->value,
+                        'finalizedReceiptId' => $this->readFinalizedReceiptId($updated->errorPayload()),
+                    ],
+                ],
+            );
             $this->addFlash('success', 'Import job finalized and receipt created.');
         } catch (InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());
@@ -134,6 +148,22 @@ final class AdminImportJobFinalizeController extends AbstractController
         }
 
         return [$line];
+    }
+
+    private function readFinalizedReceiptId(?string $payload): ?string
+    {
+        if (null === $payload || '' === trim($payload)) {
+            return null;
+        }
+
+        $decoded = json_decode($payload, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $id = $decoded['finalizedReceiptId'] ?? null;
+
+        return is_string($id) && '' !== trim($id) ? trim($id) : null;
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

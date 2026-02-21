@@ -21,6 +21,7 @@ use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\Enum\GeocodingStatus;
 use App\Station\Domain\Station;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use RuntimeException;
 
 final class GeocodeStationAddressMessageHandlerTest extends TestCase
@@ -29,7 +30,7 @@ final class GeocodeStationAddressMessageHandlerTest extends TestCase
     {
         $repository = new InMemoryStationRepository([]);
         $geocoder = new StubGeocoder();
-        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder);
+        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder, new NullLogger());
 
         $handler(new GeocodeStationAddressMessage('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01'));
 
@@ -41,7 +42,7 @@ final class GeocodeStationAddressMessageHandlerTest extends TestCase
         $station = Station::create('Total', 'Rue A', '75001', 'Paris', 48856600, 2352200);
         $repository = new InMemoryStationRepository([$station]);
         $geocoder = new StubGeocoder();
-        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder);
+        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder, new NullLogger());
 
         $handler(new GeocodeStationAddressMessage($station->id()->toString()));
 
@@ -54,7 +55,7 @@ final class GeocodeStationAddressMessageHandlerTest extends TestCase
         $station = Station::create('Total', 'Rue A', '75001', 'Paris', null, null);
         $repository = new InMemoryStationRepository([$station]);
         $geocoder = new StubGeocoder(new GeocodedAddress(48856600, 2352200));
-        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder);
+        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder, new NullLogger());
 
         $handler(new GeocodeStationAddressMessage($station->id()->toString()));
 
@@ -70,7 +71,7 @@ final class GeocodeStationAddressMessageHandlerTest extends TestCase
         $station = Station::create('Total', 'Rue A', '75001', 'Paris', null, null);
         $repository = new InMemoryStationRepository([$station]);
         $geocoder = new StubGeocoder(null);
-        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder);
+        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder, new NullLogger());
 
         $handler(new GeocodeStationAddressMessage($station->id()->toString()));
 
@@ -85,7 +86,7 @@ final class GeocodeStationAddressMessageHandlerTest extends TestCase
         $station = Station::create('Total', 'Rue A', '75001', 'Paris', null, null);
         $repository = new InMemoryStationRepository([$station]);
         $geocoder = new ThrowingGeocoder();
-        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder);
+        $handler = new GeocodeStationAddressMessageHandler($repository, $geocoder, new NullLogger());
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('provider down');

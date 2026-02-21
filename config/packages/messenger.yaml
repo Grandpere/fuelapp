@@ -9,6 +9,7 @@ framework:
                     max_retries: 3
                     delay: 1000
                     multiplier: 2
+                    max_delay: 8000
             failed: 'doctrine://default?queue_name=failed'
             sync: 'sync://'
 

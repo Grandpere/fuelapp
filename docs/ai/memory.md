@@ -129,6 +129,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: wrap `NOMINATIM_USER_AGENT` value in double quotes.
 - Prevention: always quote `.env` values when they contain spaces.
 
+## 2026-02-20 - Dev schema changes require explicit migration handover
+- Symptom: runtime failed with missing geocoding columns after restart (`column ... does not exist`).
+- Root cause: migration was executed in test flows but not applied on dev database before manual UI validation.
+- Fix: run `make db-migrate` after schema changes and before user verification.
+- Prevention: in task handover, always list required user commands and explicitly include DB migration when schema changed.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

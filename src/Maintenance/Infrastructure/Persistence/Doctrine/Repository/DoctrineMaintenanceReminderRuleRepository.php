@@ -32,9 +32,9 @@ final readonly class DoctrineMaintenanceReminderRuleRepository implements Mainte
     {
         $entity = $this->em->find(MaintenanceReminderRuleEntity::class, $rule->id()->toString()) ?? new MaintenanceReminderRuleEntity();
         /** @var UserEntity $ownerRef */
-        $ownerRef = $this->em->getReference(UserEntity::class, $rule->ownerId());
+        $ownerRef = $this->em->getReference(UserEntity::class, Uuid::fromString($rule->ownerId()));
         /** @var VehicleEntity $vehicleRef */
-        $vehicleRef = $this->em->getReference(VehicleEntity::class, $rule->vehicleId());
+        $vehicleRef = $this->em->getReference(VehicleEntity::class, Uuid::fromString($rule->vehicleId()));
 
         $entity->setId(Uuid::fromString($rule->id()->toString()));
         $entity->setOwner($ownerRef);

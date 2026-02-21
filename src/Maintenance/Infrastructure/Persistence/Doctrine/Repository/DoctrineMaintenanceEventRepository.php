@@ -33,9 +33,9 @@ final readonly class DoctrineMaintenanceEventRepository implements MaintenanceEv
     {
         $entity = $this->em->find(MaintenanceEventEntity::class, $event->id()->toString()) ?? new MaintenanceEventEntity();
         /** @var UserEntity $ownerRef */
-        $ownerRef = $this->em->getReference(UserEntity::class, $event->ownerId());
+        $ownerRef = $this->em->getReference(UserEntity::class, Uuid::fromString($event->ownerId()));
         /** @var VehicleEntity $vehicleRef */
-        $vehicleRef = $this->em->getReference(VehicleEntity::class, $event->vehicleId());
+        $vehicleRef = $this->em->getReference(VehicleEntity::class, Uuid::fromString($event->vehicleId()));
 
         $entity->setId(Uuid::fromString($event->id()->toString()));
         $entity->setOwner($ownerRef);

@@ -33,11 +33,11 @@ final readonly class DoctrineMaintenanceReminderRepository implements Maintenanc
     public function saveIfNew(MaintenanceReminder $reminder): bool
     {
         /** @var UserEntity $ownerRef */
-        $ownerRef = $this->em->getReference(UserEntity::class, $reminder->ownerId());
+        $ownerRef = $this->em->getReference(UserEntity::class, Uuid::fromString($reminder->ownerId()));
         /** @var VehicleEntity $vehicleRef */
-        $vehicleRef = $this->em->getReference(VehicleEntity::class, $reminder->vehicleId());
+        $vehicleRef = $this->em->getReference(VehicleEntity::class, Uuid::fromString($reminder->vehicleId()));
         /** @var MaintenanceReminderRuleEntity $ruleRef */
-        $ruleRef = $this->em->getReference(MaintenanceReminderRuleEntity::class, $reminder->ruleId());
+        $ruleRef = $this->em->getReference(MaintenanceReminderRuleEntity::class, Uuid::fromString($reminder->ruleId()));
 
         $entity = new MaintenanceReminderEntity();
         $entity->setId(Uuid::fromString($reminder->id()->toString()));

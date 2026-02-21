@@ -33,9 +33,9 @@ final readonly class DoctrineMaintenancePlannedCostRepository implements Mainten
     {
         $entity = $this->em->find(MaintenancePlannedCostEntity::class, $item->id()->toString()) ?? new MaintenancePlannedCostEntity();
         /** @var UserEntity $ownerRef */
-        $ownerRef = $this->em->getReference(UserEntity::class, $item->ownerId());
+        $ownerRef = $this->em->getReference(UserEntity::class, Uuid::fromString($item->ownerId()));
         /** @var VehicleEntity $vehicleRef */
-        $vehicleRef = $this->em->getReference(VehicleEntity::class, $item->vehicleId());
+        $vehicleRef = $this->em->getReference(VehicleEntity::class, Uuid::fromString($item->vehicleId()));
 
         $entity->setId(Uuid::fromString($item->id()->toString()));
         $entity->setOwner($ownerRef);

@@ -177,6 +177,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: compare owner + file checksum upfront, mark job as `duplicate`, persist structured payload (`duplicateOfImportJobId`, fingerprint), and stop processing.
 - Prevention: for async ingest pipelines, enforce idempotency checks before calling external providers.
 
+## 2026-02-21 - API Platform write operations expect JSON-LD by default
+- Symptom: manual finalize endpoint returned `415 Unsupported Media Type` with `application/json`.
+- Root cause: API Platform content negotiation for resource operations defaults to `application/ld+json`.
+- Fix: call endpoint with `Content-Type: application/ld+json` (or widen operation formats explicitly if needed).
+- Prevention: for new API Platform POST/PATCH operations, validate accepted content types in functional tests.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -19,4 +19,4 @@ Some OCR parses will stay uncertain.
 - SP3-005.
 
 ## Status
-- todo
+- done

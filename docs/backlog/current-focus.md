@@ -7,11 +7,11 @@
 - Deliver async import foundations (job model, upload endpoint, orchestration).
 
 ## In progress
-- `SP3-007` - Manual review flow for ambiguous imports.
+- `SP3-008` - Import tests and error-path coverage.
 
 ## Next tickets (ordered)
-1. `SP3-007` - Manual review flow for ambiguous imports
-2. `SP3-008` - Import tests and error-path coverage
+1. `SP3-008` - Import tests and error-path coverage
+2. `SP3-009` - Optional API Platform native upload operation refactor
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -34,6 +34,7 @@
 - `SP3-004` delivered: OCR abstraction + first provider adapter and normalized extraction payload for parser handoff.
 - `SP3-005` delivered: OCR parsing/normalization draft model with validated command payload candidate and parse issues.
 - `SP3-006` delivered: checksum-based duplicate detection with explicit `duplicate` import status and idempotent short-circuit before OCR.
+- `SP3-007` delivered: API review/finalization flow for `needs_review` imports with receipt creation and processed audit payload.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

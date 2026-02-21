@@ -1,8 +1,9 @@
-# TODO - SP3-006 Idempotency and duplicate detection
+# TODO - SP3-007 Manual review flow for ambiguous imports
 
 ## Plan
-- [completed] Define deterministic fingerprint strategy based on file checksum.
-- [completed] Add duplicate check in async import handler before OCR processing.
-- [completed] Persist explicit duplicate terminal status and payload metadata.
-- [completed] Add unit and integration coverage for duplicate detection path.
+- [completed] Expose import jobs in API with review metadata (`parsedDraft`, `issues`, `creationPayload`).
+- [completed] Add finalize API action to confirm/correct `needs_review` imports.
+- [completed] Finalize import by creating receipt via existing domain/application flow.
+- [completed] Persist processed audit payload with `finalizedReceiptId`.
+- [completed] Add unit, integration, and functional coverage for review/finalization.
 - [completed] Run quality checks.

@@ -246,6 +246,12 @@ final class ImportJob
         $this->updatedAt = $at;
     }
 
+    public function markProcessedWithPayload(string $payload, ?DateTimeImmutable $at = null): void
+    {
+        $this->markProcessed($at);
+        $this->errorPayload = mb_substr($payload, 0, 5000);
+    }
+
     public function markFailed(string $errorPayload, ?DateTimeImmutable $at = null): void
     {
         $at ??= new DateTimeImmutable();

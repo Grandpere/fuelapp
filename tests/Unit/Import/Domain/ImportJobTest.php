@@ -71,4 +71,24 @@ final class ImportJobTest extends TestCase
         self::assertSame($processedAt, $job->completedAt());
         self::assertNull($job->errorPayload());
     }
+
+    public function testProcessedPayloadCanBeKeptForAudit(): void
+    {
+        $processedAt = new DateTimeImmutable('2026-02-21 10:03:00');
+        $job = ImportJob::createQueued(
+            '0195c5ad-3f61-75de-b06f-3539f2b3ce61',
+            'local',
+            '2026/02/21/test.pdf',
+            'test.pdf',
+            'application/pdf',
+            1234,
+            str_repeat('a', 64),
+        );
+
+        $job->markProcessedWithPayload('{"status":"processed"}', $processedAt);
+
+        self::assertSame(ImportJobStatus::PROCESSED, $job->status());
+        self::assertSame($processedAt, $job->completedAt());
+        self::assertSame('{"status":"processed"}', $job->errorPayload());
+    }
 }

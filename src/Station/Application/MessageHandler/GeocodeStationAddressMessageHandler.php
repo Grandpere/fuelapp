@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Station\Application\MessageHandler;
 
-use App\Station\Application\Geocoding\GeocoderInterface;
+use App\Station\Application\Geocoding\Geocoder;
 use App\Station\Application\Message\GeocodeStationAddressMessage;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\Enum\GeocodingStatus;
@@ -25,7 +25,7 @@ final readonly class GeocodeStationAddressMessageHandler
 {
     public function __construct(
         private StationRepository $stationRepository,
-        private GeocoderInterface $geocoder,
+        private Geocoder $geocoder,
     ) {
     }
 

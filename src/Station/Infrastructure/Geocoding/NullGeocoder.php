@@ -14,9 +14,9 @@ declare(strict_types=1);
 namespace App\Station\Infrastructure\Geocoding;
 
 use App\Station\Application\Geocoding\GeocodedAddress;
-use App\Station\Application\Geocoding\GeocoderInterface;
+use App\Station\Application\Geocoding\Geocoder;
 
-final class NullGeocoder implements GeocoderInterface
+final class NullGeocoder implements Geocoder
 {
     public function geocode(string $name, string $streetName, string $postalCode, string $city): ?GeocodedAddress
     {

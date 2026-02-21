@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace App\Station\Application\Geocoding;
 
-interface GeocoderInterface
+interface Geocoder
 {
     public function geocode(string $name, string $streetName, string $postalCode, string $city): ?GeocodedAddress;
 }

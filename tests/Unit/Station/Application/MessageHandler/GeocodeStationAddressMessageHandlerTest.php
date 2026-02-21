@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Station\Application\MessageHandler;
 
 use App\Station\Application\Geocoding\GeocodedAddress;
-use App\Station\Application\Geocoding\GeocoderInterface;
+use App\Station\Application\Geocoding\Geocoder;
 use App\Station\Application\Message\GeocodeStationAddressMessage;
 use App\Station\Application\MessageHandler\GeocodeStationAddressMessageHandler;
 use App\Station\Application\Repository\StationRepository;
@@ -101,7 +101,7 @@ final class GeocodeStationAddressMessageHandlerTest extends TestCase
     }
 }
 
-final class StubGeocoder implements GeocoderInterface
+final class StubGeocoder implements Geocoder
 {
     public int $calls = 0;
 
@@ -117,7 +117,7 @@ final class StubGeocoder implements GeocoderInterface
     }
 }
 
-final class ThrowingGeocoder implements GeocoderInterface
+final class ThrowingGeocoder implements Geocoder
 {
     public function geocode(string $name, string $streetName, string $postalCode, string $city): ?GeocodedAddress
     {

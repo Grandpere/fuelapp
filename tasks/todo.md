@@ -1,8 +1,9 @@
-# TODO - SP2-003 Nominatim adapter
+# TODO - SP2-004 Trigger geocoding on station create/update
 
 ## Plan
-- [completed] Implement Nominatim geocoder adapter behind `Geocoder`.
-- [completed] Add policy-safe request controls (User-Agent + 1 req/s throttling + cache).
-- [completed] Wire service configuration/env parameters to use Nominatim in app runtime.
-- [completed] Add unit tests for response mapping and transient error handling.
+- [completed] Add station address update flow with explicit geocoding re-trigger logic.
+- [completed] Dispatch geocoding on create and on address change when station is not already pending.
+- [completed] Avoid unnecessary redispatch when address is unchanged or geocoding is already pending.
+- [completed] Expose station update through API PATCH operation.
+- [completed] Add/update tests for update behavior and status transitions.
 - [completed] Run quality gates and update backlog/docs.

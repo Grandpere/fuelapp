@@ -177,10 +177,42 @@ final class Station
         return $this->geocodingLastError;
     }
 
+    public function updateAddress(string $name, string $streetName, string $postalCode, string $city): bool
+    {
+        if (
+            $this->name === $name
+            && $this->streetName === $streetName
+            && $this->postalCode === $postalCode
+            && $this->city === $city
+        ) {
+            return false;
+        }
+
+        $this->name = $name;
+        $this->streetName = $streetName;
+        $this->postalCode = $postalCode;
+        $this->city = $city;
+        $this->latitudeMicroDegrees = null;
+        $this->longitudeMicroDegrees = null;
+        $this->geocodedAt = null;
+        $this->geocodingFailedAt = null;
+        $this->geocodingLastError = null;
+
+        if (GeocodingStatus::PENDING !== $this->geocodingStatus) {
+            $this->geocodingStatus = GeocodingStatus::PENDING;
+            $this->geocodingRequestedAt = new DateTimeImmutable();
+        }
+
+        return true;
+    }
+
     public function markGeocodingPending(?DateTimeImmutable $requestedAt = null): void
     {
+        $this->latitudeMicroDegrees = null;
+        $this->longitudeMicroDegrees = null;
         $this->geocodingStatus = GeocodingStatus::PENDING;
         $this->geocodingRequestedAt = $requestedAt ?? new DateTimeImmutable();
+        $this->geocodedAt = null;
         $this->geocodingFailedAt = null;
         $this->geocodingLastError = null;
     }

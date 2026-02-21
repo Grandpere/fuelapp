@@ -62,4 +62,16 @@ final class StationGeocodingStatusTest extends TestCase
         self::assertNull($station->geocodingFailedAt());
         self::assertNull($station->geocodingLastError());
     }
+
+    public function testAddressChangeResetsCoordinatesAndKeepsPendingWithoutRedispatchHint(): void
+    {
+        $pendingStation = Station::create('Total', 'Rue A', '75001', 'Paris', null, null);
+
+        $changed = $pendingStation->updateAddress('Total Access', 'Rue B', '75002', 'Paris');
+
+        self::assertTrue($changed);
+        self::assertSame(GeocodingStatus::PENDING, $pendingStation->geocodingStatus());
+        self::assertNull($pendingStation->latitudeMicroDegrees());
+        self::assertNull($pendingStation->longitudeMicroDegrees());
+    }
 }

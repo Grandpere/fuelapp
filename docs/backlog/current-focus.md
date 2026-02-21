@@ -7,11 +7,11 @@
 - Put strong authentication/authorization foundations before async geocoding and import pipeline.
 
 ## In progress
-- `SP2-004` - Trigger geocoding from station creation/update.
+- `SP2-005` - Job observability and retry policy.
 
 ## Next tickets (ordered)
-1. `SP2-004` - Trigger geocoding from station creation/update
-2. `SP2-005` - Job observability and retry policy
+1. `SP2-005` - Job observability and retry policy
+2. `SP2-006` - Geocoding tests and failure scenarios
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

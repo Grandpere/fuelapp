@@ -19,4 +19,4 @@ Import must not block request-response cycle.
 - SP3-001, SP3-002.
 
 ## Status
-- todo
+- done

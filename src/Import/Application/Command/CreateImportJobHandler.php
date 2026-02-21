@@ -13,15 +13,18 @@ declare(strict_types=1);
 
 namespace App\Import\Application\Command;
 
+use App\Import\Application\Message\ProcessImportJobMessage;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Storage\ImportFileStorage;
 use App\Import\Domain\ImportJob;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class CreateImportJobHandler
 {
     public function __construct(
         private ImportFileStorage $storage,
         private ImportJobRepository $repository,
+        private MessageBusInterface $messageBus,
     ) {
     }
 
@@ -40,6 +43,7 @@ final readonly class CreateImportJobHandler
         );
 
         $this->repository->save($job);
+        $this->messageBus->dispatch(new ProcessImportJobMessage($job->id()->toString()));
 
         return $job;
     }

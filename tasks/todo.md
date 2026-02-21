@@ -1,8 +1,8 @@
-# TODO - API docs visibility for import upload
+# TODO - SP3-003 Async pipeline orchestration with Messenger
 
 ## Plan
-- [completed] Add OpenAPI decorator to expose `POST /api/imports` in `/api/docs`.
-- [completed] Ensure JWT bearer security scheme is present for this operation.
-- [completed] Add functional assertion that import upload appears in OpenAPI JSON docs.
-- [completed] Add a backlog ticket for optional later refactor to native API Platform operation.
+- [completed] Dispatch import processing message from upload flow.
+- [completed] Add async import message and handler with status lifecycle transitions.
+- [completed] Route import processing messages to Messenger async transport.
+- [completed] Add unit/integration/functional coverage for dispatch and async transitions.
 - [completed] Run quality checks.

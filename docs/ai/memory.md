@@ -153,6 +153,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: add an OpenAPI factory decorator to register the upload path and schema explicitly.
 - Prevention: for non-API Platform endpoints that must appear in docs, add/update OpenAPI decorator in the same ticket.
 
+## 2026-02-21 - Async import workers must use system-level repository reads
+- Symptom: Messenger handlers cannot rely on user-scoped repository methods.
+- Root cause: worker context has no authenticated user token.
+- Fix: use `ImportJobRepository::getForSystem()` in import async handlers.
+- Prevention: for every worker/cron flow, explicitly use system-level read APIs and keep user-scoped methods for HTTP/UI flows only.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

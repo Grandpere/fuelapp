@@ -15,11 +15,14 @@ namespace App\Tests\Unit\Import\Application\Command;
 
 use App\Import\Application\Command\CreateImportJobCommand;
 use App\Import\Application\Command\CreateImportJobHandler;
+use App\Import\Application\Message\ProcessImportJobMessage;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Storage\ImportFileStorage;
 use App\Import\Application\Storage\StoredImportFile;
 use App\Import\Domain\ImportJob;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class CreateImportJobHandlerTest extends TestCase
 {
@@ -27,8 +30,9 @@ final class CreateImportJobHandlerTest extends TestCase
     {
         $storage = new InMemoryImportFileStorage();
         $repository = new InMemoryImportJobRepository();
+        $messageBus = new RecordingMessageBus();
 
-        $handler = new CreateImportJobHandler($storage, $repository);
+        $handler = new CreateImportJobHandler($storage, $repository, $messageBus);
 
         $job = ($handler)(new CreateImportJobCommand(
             '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
@@ -42,6 +46,22 @@ final class CreateImportJobHandlerTest extends TestCase
         self::assertSame($job->id()->toString(), $repository->saved->id()->toString());
         self::assertSame('/tmp/source.pdf', $storage->lastSourcePath);
         self::assertSame('receipt.pdf', $storage->lastOriginalFilename);
+        self::assertCount(1, $messageBus->messages);
+        self::assertInstanceOf(ProcessImportJobMessage::class, $messageBus->messages[0]);
+        self::assertSame($job->id()->toString(), $messageBus->messages[0]->importJobId);
+    }
+}
+
+final class RecordingMessageBus implements MessageBusInterface
+{
+    /** @var list<object> */
+    public array $messages = [];
+
+    public function dispatch(object $message, array $stamps = []): Envelope
+    {
+        $this->messages[] = $message;
+
+        return new Envelope($message, $stamps);
     }
 }
 

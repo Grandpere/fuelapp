@@ -26,6 +26,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Uid\Uuid;
 
@@ -36,6 +37,7 @@ final class UploadImportControllerTest extends KernelTestCase
     private HttpKernelInterface $httpKernel;
     private ?TerminableInterface $terminableKernel = null;
     private string $importStorageDir;
+    private InMemoryTransport $asyncTransport;
 
     protected function setUp(): void
     {
@@ -73,8 +75,15 @@ final class UploadImportControllerTest extends KernelTestCase
         }
         $this->importStorageDir = $importStorageDir;
 
+        $transport = $container->get('messenger.transport.async');
+        if (!$transport instanceof InMemoryTransport) {
+            throw new RuntimeException('Async transport is not in-memory in test env.');
+        }
+        $this->asyncTransport = $transport;
+
         $this->resetDatabase();
         $this->cleanupImportStorage();
+        $this->asyncTransport->reset();
     }
 
     public function testAnonymousUserGets401OnUploadEndpoint(): void
@@ -148,6 +157,7 @@ final class UploadImportControllerTest extends KernelTestCase
         self::assertSame(ImportJobStatus::QUEUED, $saved->getStatus());
         self::assertSame('local', $saved->getStorage());
         self::assertNotSame('', trim($saved->getFilePath()));
+        self::assertCount(1, $this->asyncTransport->getSent());
     }
 
     /**

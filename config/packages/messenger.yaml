@@ -15,6 +15,7 @@ framework:
 
         routing:
             App\Station\Application\Message\GeocodeStationAddressMessage: async
+            App\Import\Application\Message\ProcessImportJobMessage: async
 
 when@test:
     framework:

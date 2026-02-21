@@ -83,6 +83,12 @@
                     font-size: 0.82rem;
                 }
 
+                .topbar-nav {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                }
+
                 .page-title {
                     margin: 0;
                     font-family: "Space Grotesk", sans-serif;
@@ -306,6 +312,15 @@
                     .app-shell {
                         padding-top: 0.85rem;
                     }
+
+                    .topbar {
+                        flex-direction: column;
+                        align-items: flex-start;
+                    }
+
+                    .topbar-right {
+                        flex-wrap: wrap;
+                    }
                 }
 
                 @media (max-width: 720px) {
@@ -325,6 +340,10 @@
             <header class="topbar">
                 <div class="topbar-brand">FuelApp</div>
                 <div class="topbar-right">
+                    <nav class="topbar-nav">
+                        <a class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;" href="{{ path('ui_receipt_index') }}">Receipts</a>
+                        <a class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
+                    </nav>
                     <span>{{ app.user.userIdentifier }}</span>
                     <form method="post" action="{{ path('ui_logout') }}">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">

@@ -237,6 +237,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: introduce `Shared\Application\Security\AuthenticatedUserIdProvider` with infrastructure implementation and inject the abstraction in UI/API state classes.
 - Prevention: user/session lookup in UI/Application should use dedicated abstractions, never infrastructure entity classes directly.
 
+## 2026-02-21 - Twig dashboard must match read-model fields exactly
+- Symptom: maintenance dashboard returned HTTP 500 with Twig runtime error about missing `currencyCode` on variance model.
+- Root cause: template assumed a field that does not exist on `MaintenanceCostVariance` (`plannedCostCents`, `actualCostCents`, `varianceCents` only).
+- Fix: render KPI currency explicitly (`EUR`) and keep template aligned with actual DTO/read-model properties.
+- Prevention: for new UI pages bound to read models, validate template field names against constructor/public properties and cover with functional UI assertion.
+
 ## Standing Decisions
 - Use integer-based monetary and quantity units in domain/storage.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).

@@ -1,0 +1,286 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Maintenance{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .maintenance-page {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .maintenance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .maintenance-header p {
+            margin: 0.35rem 0 0;
+        }
+
+        .maintenance-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .kpi {
+            padding: 0.95rem;
+        }
+
+        .kpi-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-soft);
+        }
+
+        .kpi-value {
+            margin-top: 0.3rem;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .maintenance-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .panel {
+            padding: 1rem;
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .panel h2 {
+            margin: 0;
+            font-size: 1.08rem;
+        }
+
+        .inline-filter {
+            display: flex;
+            gap: 0.6rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .inline-filter .label {
+            min-width: 250px;
+        }
+
+        .timeline-list,
+        .planner-list {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .timeline-item,
+        .planner-item {
+            padding: 0.78rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .item-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            font-size: 0.94rem;
+        }
+
+        .item-sub {
+            color: var(--text-soft);
+            font-size: 0.83rem;
+        }
+
+        .item-meta {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            font-size: 0.8rem;
+            color: #bcd0de;
+        }
+
+        .empty-state {
+            padding: 0.8rem;
+            border: 1px dashed rgba(147, 178, 198, 0.35);
+            border-radius: 10px;
+            color: var(--text-soft);
+        }
+
+        .planner-section {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        @media (max-width: 1100px) {
+            .maintenance-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .inline-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .inline-filter .label {
+                min-width: 0;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell maintenance-page">
+        <section class="maintenance-header">
+            <div>
+                <h1 class="page-title">Maintenance</h1>
+                <p class="muted">Timeline des interventions, planning à venir et rappels actifs.</p>
+            </div>
+            <div class="maintenance-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Receipts</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new') }}">Add plan</a>
+                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new') }}">Add event</a>
+            </div>
+        </section>
+
+        {% for message in app.flashes('success') %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+
+        <section class="card panel">
+            <form class="inline-filter" method="get" action="{{ path('ui_maintenance_index') }}">
+                <label class="label">
+                    Vehicle filter
+                    <select class="select" name="vehicle_id">
+                        <option value="">All vehicles</option>
+                        {% for optionId, optionLabel in vehicleOptions %}
+                            <option value="{{ optionId }}" {% if vehicleFilter == optionId %}selected{% endif %}>{{ optionLabel }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <button class="btn btn-primary" type="submit">Apply</button>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Reset</a>
+            </form>
+
+            <div class="kpi-grid">
+                <article class="card-subtle kpi">
+                    <div class="kpi-label">Planned ({{ monthStart|date('m/Y') }})</div>
+                    <div class="kpi-value">{{ (variance.plannedCostCents / 100)|number_format(2, '.', ' ') }} EUR</div>
+                </article>
+                <article class="card-subtle kpi">
+                    <div class="kpi-label">Actual ({{ monthStart|date('m/Y') }})</div>
+                    <div class="kpi-value">{{ (variance.actualCostCents / 100)|number_format(2, '.', ' ') }} EUR</div>
+                </article>
+                <article class="card-subtle kpi">
+                    <div class="kpi-label">Variance ({{ monthStart|date('m/Y') }})</div>
+                    <div class="kpi-value">{{ (variance.varianceCents / 100)|number_format(2, '.', ' ') }} EUR</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="maintenance-grid">
+            <article class="card panel">
+                <h2>Timeline events</h2>
+                {% if events is empty %}
+                    <div class="empty-state">No maintenance event yet.</div>
+                {% else %}
+                    <div class="timeline-list">
+                        {% for event in events %}
+                            <div class="card-subtle timeline-item">
+                                <div class="item-title">
+                                    <strong>{{ event.eventType.value|upper }}</strong>
+                                    <span class="muted">{{ event.occurredAt|date('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="item-sub">{{ vehicleOptions[event.vehicleId] ?? event.vehicleId }}</div>
+                                <div class="item-meta">
+                                    {% if event.odometerKilometers is not null %}<span>Odometer: {{ event.odometerKilometers }} km</span>{% endif %}
+                                    {% if event.totalCostCents is not null %}<span>Cost: {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}</span>{% endif %}
+                                </div>
+                                {% if event.description %}<div class="item-sub">{{ event.description }}</div>{% endif %}
+                                <div>
+                                    <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_edit', {id: event.id.toString}) }}">Edit</a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </article>
+
+            <article class="planner-section">
+                <section class="card panel">
+                    <h2>Planner (upcoming)</h2>
+                    {% if upcomingPlans is empty %}
+                        <div class="empty-state">No upcoming planned cost.</div>
+                    {% else %}
+                        <div class="planner-list">
+                            {% for plan in upcomingPlans|slice(0, 8) %}
+                                <div class="card-subtle planner-item">
+                                    <div class="item-title">
+                                        <strong>{{ plan.label }}</strong>
+                                        <span class="muted">{{ plan.plannedFor|date('d/m/Y') }}</span>
+                                    </div>
+                                    <div class="item-sub">{{ vehicleOptions[plan.vehicleId] ?? plan.vehicleId }}</div>
+                                    <div class="item-meta">
+                                        <span>Budget: {{ (plan.plannedCostCents / 100)|number_format(2, '.', ' ') }} {{ plan.currencyCode }}</span>
+                                        {% if plan.eventType is not null %}<span>Type: {{ plan.eventType.value|upper }}</span>{% endif %}
+                                    </div>
+                                    {% if plan.notes %}<div class="item-sub">{{ plan.notes }}</div>{% endif %}
+                                    <div>
+                                        <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_edit', {id: plan.id.toString}) }}">Edit</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </section>
+
+                <section class="card panel">
+                    <h2>Triggered reminders</h2>
+                    {% if reminders is empty %}
+                        <div class="empty-state">No triggered reminder yet. Run reminder dispatch to evaluate rules.</div>
+                    {% else %}
+                        <div class="planner-list">
+                            {% for reminder in reminders|slice(0, 8) %}
+                                <div class="card-subtle planner-item">
+                                    <div class="item-title">
+                                        <strong>{{ ruleNames[reminder.ruleId] ?? reminder.ruleId }}</strong>
+                                        <span class="muted">{{ reminder.createdAt|date('d/m/Y H:i') }}</span>
+                                    </div>
+                                    <div class="item-sub">{{ vehicleOptions[reminder.vehicleId] ?? reminder.vehicleId }}</div>
+                                    <div class="item-meta">
+                                        {% if reminder.dueAtDate is not null %}<span>Due date: {{ reminder.dueAtDate|date('d/m/Y') }}</span>{% endif %}
+                                        {% if reminder.dueAtOdometerKilometers is not null %}<span>Due odometer: {{ reminder.dueAtOdometerKilometers }} km</span>{% endif %}
+                                        {% if reminder.dueByDate %}<span class="pill" style="background: rgba(247,181,0,0.2); color: #ffd27a;">Date due</span>{% endif %}
+                                        {% if reminder.dueByOdometer %}<span class="pill" style="background: rgba(54,180,252,0.2); color: #9fdefe;">Odometer due</span>{% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </section>
+            </article>
+        </section>
+    </main>
+{% endblock %}

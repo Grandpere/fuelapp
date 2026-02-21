@@ -152,4 +152,38 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertSame(20, $draft->lines[0]->vatRatePercent);
         self::assertIsArray($draft->toArray()['creationPayload']);
     }
+
+    public function testItParsesVolumeAndPriceFromNoisyPumpTicket(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                PETRO EST
+                LECLERC SEZANNE HYPER
+                51120 SEZANNE
+                TEL 03 52 78 01 30
+                Date 06-02-2024 11:55:33
+                Pompe 4
+                Volume
+                Prix
+                Gazole
+                40.40 ₽
+                1. 769/8
+                € 71.47
+                TVA
+                20.00 %
+                11.91
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('diesel', $draft->lines[0]->fuelType);
+        self::assertSame(40_400, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1769, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+        self::assertSame(20, $draft->lines[0]->vatRatePercent);
+    }
 }

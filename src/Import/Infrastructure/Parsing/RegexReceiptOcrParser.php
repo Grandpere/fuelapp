@@ -325,7 +325,9 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             }
 
             $context = $line;
-            $window = array_slice($lines, max(0, $index), 7);
+            $windowStart = max(0, $index - 3);
+            $windowLength = min(count($lines) - $windowStart, 10);
+            $window = array_slice($lines, $windowStart, $windowLength);
             if ([] !== $window) {
                 $context = implode(' ', $window);
             }
@@ -425,6 +427,14 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             return $this->decimalToMilliUnits((string) $m['quantity']);
         }
 
+        if (preg_match('/\bvolume\b.{0,40}?(?P<quantity>\d+(?:[\.,]\s?\d{1,3}))/ui', $context, $m)) {
+            return $this->decimalToMilliUnits((string) $m['quantity']);
+        }
+
+        if (preg_match('/(?P<quantity>\d+(?:[\.,]\s?\d{1,3}))\s*[^\d\s]{0,3}\s*$/u', $line, $m)) {
+            return $this->decimalToMilliUnits((string) $m['quantity']);
+        }
+
         return null;
     }
 
@@ -436,6 +446,14 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
         if (preg_match('/prix\s*unit\.?\s*(?:=|:)?\s*(?P<price>\d+(?:[\.,]\s?\d{2,3}))/ui', $context, $m)) {
             return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+        }
+
+        if (preg_match('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))\s*\/\s*[l8]\b/ui', $context, $m)) {
+            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+        }
+
+        if (preg_match('/(?P<major>\d)\s*[\.,]\s*(?P<minor>\d{3})\s*\/\s*[l8]/ui', $context, $m)) {
+            return $this->decimalToDeciCentsPerLiter(sprintf('%s.%s', $m['major'], $m['minor']));
         }
 
         if (preg_match('/prix\s*unit\.?\s*(?:=|:)?\s*(?P<major>\d)\s*(?P<minor>\d{3})\s*(?:eur|€)/ui', $context, $m)) {

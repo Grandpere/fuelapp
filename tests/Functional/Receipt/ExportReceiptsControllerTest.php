@@ -275,7 +275,7 @@ final class ExportReceiptsControllerTest extends KernelTestCase
                 continue;
             }
 
-            $columns = str_getcsv($line);
+            $columns = str_getcsv($line, ',', '"', '\\');
 
             if (null === $headerIndex && in_array('receipt_id', $columns, true)) {
                 $headerIndex = $lineIndex;

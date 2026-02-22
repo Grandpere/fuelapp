@@ -4,12 +4,12 @@
 
 {% block body %}
     <main class="app-shell" style="display:grid; gap: 1rem;">
-        <section class="card" style="padding: 1rem; display:grid; gap: .8rem;">
-            <div>
-                <h1 class="page-title">Import Receipts</h1>
-                <p class="muted" style="margin:.35rem 0 0;">Upload a receipt file and let the async OCR pipeline process it.</p>
-            </div>
+        <header style="display:grid; gap:0.35rem;">
+            <h1 class="page-title">Import Receipts</h1>
+            <p class="muted" style="margin:0;">Upload a receipt file and let the async OCR pipeline process it.</p>
+        </header>
 
+        <section class="card" style="padding: 1rem; display:grid; gap: .8rem;">
             <form method="post" enctype="multipart/form-data" style="display:grid; gap:.7rem; max-width: 560px;">
                 <input type="hidden" name="_token" value="{{ csrf_token('ui_import_upload') }}">
                 <label class="label">

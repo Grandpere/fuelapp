@@ -4,12 +4,11 @@
 
 {% block body %}
     <main class="app-shell" style="display:grid; gap:1rem; max-width:1080px;">
-        <header style="display:flex; justify-content:space-between; align-items:flex-start; gap:.6rem; flex-wrap:wrap;">
+        <header style="display:grid; gap:.35rem;">
             <div style="display:grid; gap:.35rem;">
                 <h1 class="page-title">Edit receipt lines</h1>
                 <p class="muted" style="margin:0;">Receipt {{ receipt.id.toString() }} - update fuel lines and totals recalculation.</p>
             </div>
-            <a class="btn btn-secondary" style="padding:0.35rem 0.7rem; font-size:0.8rem;" href="{{ path('ui_receipt_show', {id: receipt.id.toString()}) }}">Back to detail</a>
         </header>
 
         <section class="card" style="padding:1rem;">

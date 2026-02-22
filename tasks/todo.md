@@ -25,3 +25,13 @@
 - [completed] Update sprint/backlog docs and mark ticket `SP6-007` as done.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP6-008 BrowserKit functional tests migration
+
+## Plan
+- [completed] Migrate admin back-office UI functional suite to BrowserKit client.
+- [completed] Migrate import user UI functional suite to BrowserKit client.
+- [completed] Migrate receipt user UI functional suite to BrowserKit client.
+- [completed] Keep fixture setup and assertions stable while removing manual session/cookie request plumbing.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

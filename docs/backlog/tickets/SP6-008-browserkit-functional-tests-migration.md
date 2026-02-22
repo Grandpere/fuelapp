@@ -33,5 +33,14 @@ This makes UI/API flow tests verbose and harder to maintain.
 - User approval to install dependency: `symfony/browser-kit`.
 - Existing functional suites and test DB lifecycle.
 
+## Delivery notes
+- `symfony/browser-kit` is now available in dev dependencies.
+- Migrated priority UI suites from manual kernel requests to BrowserKit client (`WebTestCase::createClient()`):
+  - `tests/Functional/Admin/AdminBackofficeUiTest.php`
+  - `tests/Functional/Import/ImportWebUiTest.php`
+  - `tests/Functional/Receipt/ReceiptWebUiTest.php`
+- Session/authenticated UI flows now rely on BrowserKit cookie jar instead of manual cookie extraction and request plumbing.
+- Existing fixture setup, DB reset strategy, and assertions were kept to avoid behavior drift.
+
 ## Status
-- todo
+- done

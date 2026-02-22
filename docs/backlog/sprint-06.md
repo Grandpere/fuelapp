@@ -11,4 +11,4 @@ Deliver decision-oriented metrics and robust exports.
 - [SP6-005 - Export service hardening (CSV/XLSX)](tickets/SP6-005-export-service-hardening.md) - P1 - done
 - [SP6-006 - Performance budget and query optimization](tickets/SP6-006-performance-budget-query-optimization.md) - P0 - done
 - [SP6-007 - Analytics validation tests](tickets/SP6-007-analytics-validation-tests.md) - P0 - done
-- [SP6-008 - BrowserKit migration for functional test suite](tickets/SP6-008-browserkit-functional-tests-migration.md) - P1 - todo
+- [SP6-008 - BrowserKit migration for functional test suite](tickets/SP6-008-browserkit-functional-tests-migration.md) - P1 - done

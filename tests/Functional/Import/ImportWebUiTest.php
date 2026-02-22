@@ -20,24 +20,21 @@ use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Symfony\Component\HttpKernel\TerminableInterface;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Uid\Uuid;
 
-final class ImportWebUiTest extends KernelTestCase
+final class ImportWebUiTest extends WebTestCase
 {
+    private KernelBrowser $client;
     private EntityManagerInterface $em;
     private UserPasswordHasherInterface $passwordHasher;
-    private HttpKernelInterface $httpKernel;
-    private ?TerminableInterface $terminableKernel = null;
     private string $importStorageDir;
     private InMemoryTransport $asyncTransport;
 
@@ -45,15 +42,8 @@ final class ImportWebUiTest extends KernelTestCase
     {
         parent::setUp();
 
-        self::bootKernel();
+        $this->client = self::createClient();
         $container = static::getContainer();
-
-        $kernel = $container->get(HttpKernelInterface::class);
-        if (!$kernel instanceof HttpKernelInterface) {
-            throw new RuntimeException('HttpKernel service is invalid.');
-        }
-        $this->httpKernel = $kernel;
-        $this->terminableKernel = $kernel instanceof TerminableInterface ? $kernel : null;
 
         $em = $container->get(EntityManagerInterface::class);
         if (!$em instanceof EntityManagerInterface) {
@@ -336,11 +326,9 @@ final class ImportWebUiTest extends KernelTestCase
      */
     private function request(string $method, string $uri, array $parameters = [], array $files = [], array $cookies = []): Response
     {
-        $request = Request::create($uri, $method, $parameters, $cookies, $files);
-        $response = $this->httpKernel->handle($request);
-        $this->terminableKernel?->terminate($request, $response);
+        $this->client->request($method, $uri, $parameters, $files);
 
-        return $response;
+        return $this->client->getResponse();
     }
 
     /** @return array<string, string> */
@@ -348,9 +336,6 @@ final class ImportWebUiTest extends KernelTestCase
     {
         $loginPageResponse = $this->request('GET', '/ui/login');
         self::assertSame(Response::HTTP_OK, $loginPageResponse->getStatusCode());
-
-        $sessionCookie = $this->extractSessionCookie($loginPageResponse);
-        self::assertNotEmpty($sessionCookie);
 
         $content = (string) $loginPageResponse->getContent();
         preg_match('/name="_csrf_token" value="([^"]+)"/', $content, $matches);
@@ -365,24 +350,9 @@ final class ImportWebUiTest extends KernelTestCase
                 'password' => $password,
                 '_csrf_token' => $csrfToken,
             ],
-            [],
-            $sessionCookie,
         );
 
         self::assertSame(Response::HTTP_FOUND, $loginResponse->getStatusCode());
-
-        return $this->extractSessionCookie($loginResponse) ?: $sessionCookie;
-    }
-
-    /** @return array<string, string> */
-    private function extractSessionCookie(Response $response): array
-    {
-        $cookies = $response->headers->getCookies();
-        foreach ($cookies as $cookie) {
-            if (str_starts_with($cookie->getName(), 'MOCKSESSID') || str_starts_with($cookie->getName(), 'PHPSESSID')) {
-                return [$cookie->getName() => (string) $cookie->getValue()];
-            }
-        }
 
         return [];
     }

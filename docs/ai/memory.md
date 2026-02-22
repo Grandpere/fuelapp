@@ -296,3 +296,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: PostgreSQL query planner often cannot use selective indexes efficiently with broad optional `OR` predicates.
 - Fix: build strict dynamic `WHERE` clauses that include only active filters (`owner`, `vehicle`, `station`, `fuel`, `from/to`).
 - Prevention: for read-heavy analytics endpoints, avoid optional `OR` filter patterns; prefer dynamic predicates + matching composite indexes.
+
+## 2026-02-22 - BrowserKit preferred for session-driven functional tests
+- Symptom: manual `KernelTestCase` + handcrafted requests make UI/session/CSRF functional tests verbose and fragile.
+- Root cause: without BrowserKit client, cookie/session handling was duplicated in many tests.
+- Fix: install `symfony/browser-kit` and migrate priority UI suites to `WebTestCase::createClient()`.
+- Prevention: for authenticated UI/session flows, default to BrowserKit functional client instead of manual kernel request plumbing.

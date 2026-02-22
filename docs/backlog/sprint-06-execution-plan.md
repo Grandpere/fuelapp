@@ -111,7 +111,7 @@ Deliver reliable analytics and hardened exports for product-level reporting.
   - Mitigation: centralized money/units formatting and test fixtures.
 
 ## Definition of done (Sprint 6)
-- `SP6-001` to `SP6-007` done, `SP6-008` pending.
+- `SP6-001` to `SP6-008` done.
 - KPI API + dashboard + exports are consistent.
 - Performance budget met on critical paths.
 - Validation tests and docs are complete.

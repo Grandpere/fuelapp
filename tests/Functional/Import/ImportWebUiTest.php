@@ -125,7 +125,9 @@ final class ImportWebUiTest extends WebTestCase
 
         $saved = $this->em->getRepository(ImportJobEntity::class)->findOneBy(['originalFilename' => 'ticket.png']);
         self::assertInstanceOf(ImportJobEntity::class, $saved);
-        self::assertCount(1, $this->asyncTransport->getSent());
+        $transport = static::getContainer()->get('messenger.transport.async');
+        self::assertInstanceOf(InMemoryTransport::class, $transport);
+        self::assertCount(1, $transport->getSent());
     }
 
     public function testUserCanFinalizeNeedsReviewImportFromUi(): void

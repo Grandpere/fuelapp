@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Receipt;
 
+use App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -32,6 +33,7 @@ use Symfony\Component\Uid\Uuid;
 final class ExportReceiptsControllerTest extends KernelTestCase
 {
     private EntityManagerInterface $em;
+    private ReceiptAnalyticsProjectionRefresher $projectionRefresher;
     private UserPasswordHasherInterface $passwordHasher;
     private HttpKernelInterface $httpKernel;
     private ?TerminableInterface $terminableKernel = null;
@@ -55,6 +57,12 @@ final class ExportReceiptsControllerTest extends KernelTestCase
             throw new RuntimeException('EntityManager service is invalid.');
         }
         $this->em = $em;
+
+        $projectionRefresher = $container->get(ReceiptAnalyticsProjectionRefresher::class);
+        if (!$projectionRefresher instanceof ReceiptAnalyticsProjectionRefresher) {
+            throw new RuntimeException('ReceiptAnalyticsProjectionRefresher service is invalid.');
+        }
+        $this->projectionRefresher = $projectionRefresher;
 
         $passwordHasher = $container->get(UserPasswordHasherInterface::class);
         if (!$passwordHasher instanceof UserPasswordHasherInterface) {
@@ -142,19 +150,9 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         $this->createReceipt($owner, $stationA, new DateTimeImmutable('2026-04-15 10:00:00'), 'diesel', 5000, 20000, 20);
         $this->createReceipt($owner, $stationB, new DateTimeImmutable('2026-04-12 10:00:00'), 'unleaded95', 8000, 17000, 20);
         $this->em->flush();
+        $this->projectionRefresher->refresh();
 
-        $sessionCookie = $this->loginWithUiForm('receipt.export.parity@example.com', 'test1234');
         $token = $this->apiLogin('receipt.export.parity@example.com', 'test1234');
-
-        $exportResponse = $this->request(
-            'GET',
-            '/ui/receipts/export?issued_from=2026-04-01&issued_to=2026-04-30&station_id='.$stationA->getId()->toRfc4122().'&fuel_type=diesel&sort_by=date&sort_direction=asc',
-            [],
-            [],
-            $sessionCookie,
-        );
-        self::assertSame(Response::HTTP_OK, $exportResponse->getStatusCode());
-        $csvTotalCents = $this->sumTotalCentsFromCsv($this->responseContent($exportResponse));
 
         $kpiResponse = $this->request(
             'GET',
@@ -171,6 +169,17 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         foreach ($items as $item) {
             $kpiTotalCents += $this->toInt($item['totalCostCents'] ?? null);
         }
+
+        $sessionCookie = $this->loginWithUiForm('receipt.export.parity@example.com', 'test1234');
+        $exportResponse = $this->request(
+            'GET',
+            '/ui/receipts/export?issued_from=2026-04-01&issued_to=2026-04-30&station_id='.$stationA->getId()->toRfc4122().'&fuel_type=diesel&sort_by=date&sort_direction=asc',
+            [],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_OK, $exportResponse->getStatusCode());
+        $csvTotalCents = $this->sumTotalCentsFromCsv($this->responseContent($exportResponse));
 
         self::assertSame($kpiTotalCents, $csvTotalCents);
     }

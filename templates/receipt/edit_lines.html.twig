@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Receipt Lines{% endblock %}
+
+{% block body %}
+    <main class="app-shell" style="display:grid; gap:1rem; max-width:1080px;">
+        <section class="card" style="padding:1rem;">
+            <div style="display:flex; justify-content:space-between; gap:.6rem; flex-wrap:wrap;">
+                <div>
+                    <h1 class="page-title">Edit receipt lines</h1>
+                    <p class="muted" style="margin:.35rem 0 0;">Receipt {{ receipt.id.toString() }} - update fuel lines and totals recalculation.</p>
+                </div>
+                <a class="btn btn-secondary" style="padding:0.35rem 0.7rem; font-size:0.8rem;" href="{{ path('ui_receipt_show', {id: receipt.id.toString()}) }}">Back to detail</a>
+            </div>
+        </section>
+
+        <section class="card" style="padding:1rem;">
+            {% if errors is not empty %}
+                <div class="flash" style="margin-bottom:1rem; border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                    <ul style="margin:0; padding-left:1.1rem;">
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" style="display:grid; gap:.8rem;">
+                <input type="hidden" name="_token" value="{{ csrfToken }}">
+                <div class="table-wrap">
+                    <table class="app-table" style="min-width:780px;">
+                        <thead>
+                            <tr>
+                                <th>Fuel</th>
+                                <th>Quantity (mL)</th>
+                                <th>Unit Price (deci-cents/L)</th>
+                                <th>VAT %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in formLines %}
+                                <tr class="table-row">
+                                    <td>
+                                        <select class="select" name="lines[{{ loop.index0 }}][fuelType]">
+                                            {% for fuelType in fuelTypes %}
+                                                <option value="{{ fuelType }}" {{ line.fuelType == fuelType ? 'selected' : '' }}>{{ fuelType|upper }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input class="input" type="number" min="1" step="1" name="lines[{{ loop.index0 }}][quantityMilliLiters]" value="{{ line.quantityMilliLiters }}"></td>
+                                    <td><input class="input" type="number" min="0" step="1" name="lines[{{ loop.index0 }}][unitPriceDeciCentsPerLiter]" value="{{ line.unitPriceDeciCentsPerLiter }}"></td>
+                                    <td><input class="input" type="number" min="0" max="100" step="1" name="lines[{{ loop.index0 }}][vatRatePercent]" value="{{ line.vatRatePercent }}"></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                    <button class="btn btn-primary" type="submit">Save lines</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString()}) }}">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+{% endblock %}

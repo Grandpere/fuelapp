@@ -16,6 +16,8 @@ namespace App\Tests\Unit\Import\Application\Command;
 use App\Import\Application\Command\FinalizeImportJobCommand;
 use App\Import\Application\Command\FinalizeImportJobHandler;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Storage\ImportFileStorage;
+use App\Import\Application\Storage\StoredImportFile;
 use App\Import\Domain\ImportJob;
 use App\Receipt\Application\Command\CreateReceiptHandler;
 use App\Receipt\Application\Command\CreateReceiptWithStationHandler;
@@ -69,7 +71,7 @@ final class FinalizeImportJobHandlerTest extends TestCase
             $stationRepository,
             new CreateStationHandler($stationRepository, new FinalizeNullMessageBus()),
         );
-        $handler = new FinalizeImportJobHandler($repository, $createReceiptWithStationHandler);
+        $handler = new FinalizeImportJobHandler($repository, new FinalizeNullImportFileStorage(), $createReceiptWithStationHandler);
 
         $updated = ($handler)(new FinalizeImportJobCommand($job->id()->toString()));
 
@@ -98,12 +100,57 @@ final class FinalizeImportJobHandlerTest extends TestCase
             $stationRepository,
             new CreateStationHandler($stationRepository, new FinalizeNullMessageBus()),
         );
-        $handler = new FinalizeImportJobHandler($repository, $createReceiptWithStationHandler);
+        $handler = new FinalizeImportJobHandler($repository, new FinalizeNullImportFileStorage(), $createReceiptWithStationHandler);
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Only needs_review jobs can be finalized.');
 
         ($handler)(new FinalizeImportJobCommand($job->id()->toString()));
+    }
+
+    public function testItFinalizesWhenCreationPayloadIsNestedUnderParsedDraft(): void
+    {
+        $job = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/file.pdf',
+            'file.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('a', 64),
+        );
+        $job->markNeedsReview(json_encode([
+            'parsedDraft' => [
+                'creationPayload' => [
+                    'issuedAt' => '2026-02-21T10:00:00+00:00',
+                    'stationName' => 'Total',
+                    'stationStreetName' => '1 Rue A',
+                    'stationPostalCode' => '75001',
+                    'stationCity' => 'Paris',
+                    'lines' => [[
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 10000,
+                        'unitPriceDeciCentsPerLiter' => 1800,
+                        'vatRatePercent' => 20,
+                    ]],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        $repository = new FinalizeInMemoryImportJobRepository([$job]);
+        $receiptRepository = new FinalizeInMemoryReceiptRepository();
+        $stationRepository = new FinalizeInMemoryStationRepository();
+        $createReceiptWithStationHandler = new CreateReceiptWithStationHandler(
+            new CreateReceiptHandler($receiptRepository),
+            $stationRepository,
+            new CreateStationHandler($stationRepository, new FinalizeNullMessageBus()),
+        );
+        $handler = new FinalizeImportJobHandler($repository, new FinalizeNullImportFileStorage(), $createReceiptWithStationHandler);
+
+        $updated = ($handler)(new FinalizeImportJobCommand($job->id()->toString()));
+
+        self::assertSame('processed', $updated->status()->value);
+        self::assertSame(1, $receiptRepository->savedCount);
     }
 }
 
@@ -123,6 +170,16 @@ final class FinalizeInMemoryImportJobRepository implements ImportJobRepository
     public function save(ImportJob $job): void
     {
         $this->items[$job->id()->toString()] = $job;
+    }
+
+    public function delete(string $id): void
+    {
+        unset($this->items[$id]);
+    }
+
+    public function deleteForSystem(string $id): void
+    {
+        unset($this->items[$id]);
     }
 
     public function get(string $id): ?ImportJob
@@ -170,11 +227,30 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
         return null;
     }
 
+    public function getForSystem(string $id): ?Receipt
+    {
+        return null;
+    }
+
+    public function ownerIdForSystem(string $id): ?string
+    {
+        return null;
+    }
+
     public function delete(string $id): void
     {
     }
 
+    public function deleteForSystem(string $id): void
+    {
+    }
+
     public function all(): iterable
+    {
+        return [];
+    }
+
+    public function allForSystem(): iterable
     {
         return [];
     }
@@ -253,6 +329,18 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
         ?int $vatRatePercent = null,
     ): array {
         return [];
+    }
+}
+
+final class FinalizeNullImportFileStorage implements ImportFileStorage
+{
+    public function store(string $sourcePath, string $originalFilename): StoredImportFile
+    {
+        return new StoredImportFile('local', 'unused/path', $originalFilename, 'application/pdf', 0, str_repeat('a', 64));
+    }
+
+    public function delete(string $storage, string $path): void
+    {
     }
 }
 

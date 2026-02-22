@@ -87,6 +87,36 @@
                     display: inline-flex;
                     align-items: center;
                     gap: 0.35rem;
+                    padding: 0.2rem;
+                    border: 1px solid rgba(147, 178, 200, 0.22);
+                    border-radius: 999px;
+                    background: rgba(9, 28, 42, 0.5);
+                }
+
+                .topbar-nav-link {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.35rem 0.72rem;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    line-height: 1;
+                    color: #d3e4f0;
+                    text-decoration: none;
+                    border-radius: 999px;
+                    border: 1px solid transparent;
+                    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+                }
+
+                .topbar-nav-link:hover {
+                    transform: translateY(-1px);
+                    background: rgba(40, 70, 90, 0.35);
+                }
+
+                .topbar-nav-link.is-active {
+                    color: #0b1d2b;
+                    background: linear-gradient(120deg, var(--primary) 0%, var(--primary-strong) 100%);
+                    border-color: rgba(240, 138, 0, 0.42);
                 }
 
                 .page-title {
@@ -185,10 +215,12 @@
                 .pill {
                     display: inline-flex;
                     align-items: center;
+                    justify-content: center;
                     border-radius: 999px;
                     padding: 0.22rem 0.56rem;
                     font-size: 0.73rem;
                     font-weight: 700;
+                    line-height: 1;
                     letter-spacing: 0.04em;
                     text-transform: uppercase;
                 }
@@ -337,13 +369,16 @@
     </head>
     <body>
         {% if app.user %}
+            {% set currentRoute = app.request.attributes.get('_route')|default('') %}
             <header class="topbar">
                 <div class="topbar-brand">FuelApp</div>
                 <div class="topbar-right">
                     <nav class="topbar-nav">
-                        <a class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;" href="{{ path('ui_receipt_index') }}">Receipts</a>
-                        <a class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;" href="{{ path('ui_vehicle_list') }}">Vehicles</a>
-                        <a class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
+                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_receipt_' ? 'is-active' : '' }}" href="{{ path('ui_receipt_index') }}">Receipts</a>
+                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_import_' ? 'is-active' : '' }}" href="{{ path('ui_import_index') }}">Import</a>
+                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_vehicle_' ? 'is-active' : '' }}" href="{{ path('ui_vehicle_list') }}">Vehicles</a>
+                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_maintenance_' ? 'is-active' : '' }}" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
+                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_analytics_' ? 'is-active' : '' }}" href="{{ path('ui_analytics_dashboard') }}">Analytics</a>
                     </nav>
                     <span>{{ app.user.userIdentifier }}</span>
                     <form method="post" action="{{ path('ui_logout') }}">

@@ -18,5 +18,10 @@ Metrics correctness is product-critical.
 ## Dependencies
 - SP6-001..SP6-006.
 
+## Delivery notes
+- Added deterministic KPI rounding regression coverage for `averagePriceDeciCentsPerLiter` (`HALF_UP` behavior on `.5` case).
+- Added analytics/export parity functional coverage: CSV `total_cents` aggregation is validated against `/api/analytics/kpis/cost-per-month` for identical filters.
+- Existing KPI fixture-based validation (ownership isolation + filters + monthly aggregates) remains in place as baseline.
+
 ## Status
-- todo
+- done

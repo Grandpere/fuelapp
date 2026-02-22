@@ -83,6 +83,27 @@ final class UpdateStationAddressHandlerTest extends TestCase
         self::assertCount(0, $messageBus->messages);
         self::assertSame(1, $repository->saveCount);
     }
+
+    public function testItFallsBackToSystemReadWhenUserScopedReadReturnsNull(): void
+    {
+        $station = Station::create('Total', 'Rue A', '75001', 'Paris', 48856600, 2352200);
+        $repository = new InMemorySystemOnlyUpdateStationRepository($station);
+        $messageBus = new RecordingUpdateMessageBus();
+        $handler = new UpdateStationAddressHandler($repository, $messageBus);
+
+        $updated = $handler(new UpdateStationAddressCommand(
+            $station->id()->toString(),
+            'Total Admin',
+            'Rue C',
+            '75003',
+            'Paris',
+        ));
+
+        self::assertNotNull($updated);
+        self::assertSame('Total Admin', $updated->name());
+        self::assertSame(1, $repository->saveCount);
+        self::assertCount(1, $messageBus->messages);
+    }
 }
 
 final class RecordingUpdateMessageBus implements MessageBusInterface
@@ -98,7 +119,7 @@ final class RecordingUpdateMessageBus implements MessageBusInterface
     }
 }
 
-final class InMemoryUpdateStationRepository implements StationRepository
+class InMemoryUpdateStationRepository implements StationRepository
 {
     private ?Station $station;
     public int $saveCount = 0;
@@ -175,5 +196,18 @@ final class InMemoryUpdateStationRepository implements StationRepository
     public function allForSystem(): iterable
     {
         return $this->all();
+    }
+}
+
+final class InMemorySystemOnlyUpdateStationRepository extends InMemoryUpdateStationRepository
+{
+    public function get(string $id): ?Station
+    {
+        return null;
+    }
+
+    public function getForSystem(string $id): ?Station
+    {
+        return parent::get($id);
     }
 }

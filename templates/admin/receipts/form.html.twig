@@ -1,0 +1,59 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Edit Admin Receipt{% endblock %}
+
+{% set admin_section = 'receipts' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Edit receipt lines</h2>
+        <p class="muted">Adjust receipt lines and recompute totals.</p>
+
+        {% if errors is not empty %}
+            <div class="flash" style="margin-top: 1rem; border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                <ul style="margin: 0; padding-left: 1.15rem;">
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" style="display:grid; gap:0.8rem; margin-top:1rem;">
+            <input type="hidden" name="_token" value="{{ csrfToken }}">
+            <div class="table-wrap">
+                <table class="app-table" style="min-width:860px;">
+                    <thead>
+                        <tr>
+                            <th>Fuel</th>
+                            <th>Quantity (mL)</th>
+                            <th>Unit Price (deci-cents/L)</th>
+                            <th>VAT %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in formLines %}
+                            <tr class="table-row">
+                                <td>
+                                    <select class="select" name="lines[{{ loop.index0 }}][fuelType]">
+                                        {% for fuelType in fuelTypes %}
+                                            <option value="{{ fuelType }}" {{ line.fuelType == fuelType ? 'selected' : '' }}>{{ fuelType|upper }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input class="input" type="number" min="1" step="1" name="lines[{{ loop.index0 }}][quantityMilliLiters]" value="{{ line.quantityMilliLiters }}"></td>
+                                <td><input class="input" type="number" min="0" step="1" name="lines[{{ loop.index0 }}][unitPriceDeciCentsPerLiter]" value="{{ line.unitPriceDeciCentsPerLiter }}"></td>
+                                <td><input class="input" type="number" min="0" max="100" step="1" name="lines[{{ loop.index0 }}][vatRatePercent]" value="{{ line.vatRatePercent }}"></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="submit">Save changes</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_show', {id: receipt.id.toString()}) }}">Cancel</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

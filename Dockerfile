@@ -14,7 +14,7 @@ ENV SERVER_NAME=:80
 
 # PHP extensions (dev)
 RUN set -eux; \
-    install-php-extensions pdo_pgsql pgsql redis amqp xdebug zip
+    install-php-extensions pdo_pgsql pgsql redis amqp xdebug zip gd
 
 # Composer binary (keeps PHP version aligned with runtime image)
 COPY --from=composer /usr/bin/composer /usr/bin/composer

@@ -22,7 +22,9 @@ use App\Import\Application\Parsing\ParsedReceiptDraft;
 use App\Import\Application\Parsing\ParsedReceiptLineDraft;
 use App\Import\Application\Parsing\ReceiptOcrParser;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Storage\ImportFileStorage;
 use App\Import\Application\Storage\ImportStoredFileLocator;
+use App\Import\Application\Storage\StoredImportFile;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use PHPUnit\Framework\TestCase;
@@ -35,6 +37,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new FakeOcrProvider(new OcrExtraction('fake', 'text', ['text'], [])),
             new FakeReceiptOcrParser(),
@@ -61,6 +64,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new FakeOcrProvider(new OcrExtraction('ocr_space', 'Total\n80.00', ['Total', '80.00'], ['raw' => true])),
             new FakeReceiptOcrParser(),
@@ -93,6 +97,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new ThrowingOcrProvider(OcrProviderException::permanent('invalid file')),
             new FakeReceiptOcrParser(),
@@ -123,6 +128,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
             new FakeReceiptOcrParser(),
@@ -167,6 +173,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$existing, $job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new FakeOcrProvider(new OcrExtraction('ocr_space', 'ignored', ['ignored'], [])),
             new FakeReceiptOcrParser(),
@@ -201,6 +208,16 @@ final class InMemoryImportJobRepository implements ImportJobRepository
     {
         ++$this->saveCount;
         $this->items[$job->id()->toString()] = $job;
+    }
+
+    public function delete(string $id): void
+    {
+        unset($this->items[$id]);
+    }
+
+    public function deleteForSystem(string $id): void
+    {
+        unset($this->items[$id]);
     }
 
     public function get(string $id): ?ImportJob
@@ -245,6 +262,18 @@ final class InMemoryImportJobRepository implements ImportJobRepository
         }
 
         return $latest;
+    }
+}
+
+final class NullImportFileStorage implements ImportFileStorage
+{
+    public function store(string $sourcePath, string $originalFilename): StoredImportFile
+    {
+        return new StoredImportFile('local', 'unused/path', $originalFilename, 'application/pdf', 0, str_repeat('a', 64));
+    }
+
+    public function delete(string $storage, string $path): void
+    {
     }
 }
 

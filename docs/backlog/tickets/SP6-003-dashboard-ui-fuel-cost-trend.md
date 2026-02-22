@@ -19,4 +19,4 @@ KPIs need clear visual consumption.
 - SP6-002.
 
 ## Status
-- todo
+- done

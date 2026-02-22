@@ -52,7 +52,7 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             $issues[] = 'total_missing';
         }
 
-        [$vatRatePercent, $vatAmountCents] = $this->extractVat($text, $totalCents);
+        [$vatRatePercent, $vatAmountCents] = $this->extractVat($normalizedLines, $text, $totalCents);
         if (null === $vatRatePercent) {
             $issues[] = 'vat_rate_missing';
         }
@@ -157,6 +157,23 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
     /** @param list<string> $lines */
     private function extractStreet(array $lines): ?string
     {
+        foreach ($lines as $index => $line) {
+            if (!preg_match('/\b\d{5}\s+[A-Za-zÀ-ÿ]/u', $line)) {
+                continue;
+            }
+
+            if (0 === $index) {
+                continue;
+            }
+
+            $candidate = $lines[$index - 1];
+            if ($this->isNonAddressLine($candidate)) {
+                continue;
+            }
+
+            return mb_substr($candidate, 0, 255);
+        }
+
         foreach ($lines as $line) {
             if (!preg_match('/\d/', $line) || !preg_match('/[A-Za-zÀ-ÿ]/u', $line)) {
                 continue;
@@ -167,6 +184,10 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             }
 
             if (preg_match('/\b(total|ttc|tva|vat)\b/i', $line)) {
+                continue;
+            }
+
+            if ($this->isNonAddressLine($line)) {
                 continue;
             }
 
@@ -181,11 +202,15 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
     {
         $candidates = array_merge($lines, [$fullText]);
         foreach ($candidates as $candidate) {
-            if (preg_match('/\b(?P<d>\d{2})[\/\.-](?P<m>\d{2})[\/\.-](?P<y>\d{4})(?:\s+(?P<h>\d{2})[:h](?P<i>\d{2}))?/u', $candidate, $m)) {
+            if (preg_match('/\b(?P<d>\d{2})[\/\.-](?P<m>\d{2})[\/\.-](?P<y>\d{2,4})(?:\s*(?:a|à)?\s*(?P<h>\d{2})[:h](?P<i>\d{2})(?::\d{2})?)?/ui', $candidate, $m)) {
+                $year = (int) $m['y'];
+                if ($year < 100) {
+                    $year += 2000;
+                }
                 $hour = isset($m['h']) ? (int) $m['h'] : 0;
                 $minute = isset($m['i']) ? (int) $m['i'] : 0;
 
-                return DateTimeImmutable::createFromFormat('!Y-m-d H:i', sprintf('%04d-%02d-%02d %02d:%02d', (int) $m['y'], (int) $m['m'], (int) $m['d'], $hour, $minute)) ?: null;
+                return DateTimeImmutable::createFromFormat('!Y-m-d H:i', sprintf('%04d-%02d-%02d %02d:%02d', $year, (int) $m['m'], (int) $m['d'], $hour, $minute)) ?: null;
             }
 
             if (preg_match('/\b(?P<y>\d{4})-(?P<m>\d{2})-(?P<d>\d{2})(?:[ T](?P<h>\d{2}):(?P<i>\d{2}))?/u', $candidate, $m)) {
@@ -205,15 +230,76 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             return $this->decimalToCents((string) $m['amount']);
         }
 
+        if (preg_match('/\bmontant\s+reel\b(?P<segment>.{0,80})/uis', $text, $m)) {
+            $segment = (string) $m['segment'];
+            if (preg_match('/(?:eur|€)\s*(?P<amount>\d+(?:[\.,]\s?\d{2}))\b/ui', $segment, $amountMatch)) {
+                return $this->decimalToCents((string) $amountMatch['amount']);
+            }
+
+            if (preg_match('/(?P<amount>\d+(?:[\.,]\s?\d{2}))\s*(?:eur|€)?\b/ui', $segment, $amountMatch)) {
+                return $this->decimalToCents((string) $amountMatch['amount']);
+            }
+        }
+
         return null;
     }
 
-    /** @return array{0: ?int, 1: ?int} */
-    private function extractVat(string $text, ?int $totalCents): array
+    /**
+     * @param list<string> $lines
+     *
+     * @return array{0: ?int, 1: ?int}
+     */
+    private function extractVat(array $lines, string $text, ?int $totalCents): array
     {
-        if (preg_match('/\b(tva|vat)\b[^0-9]*(?P<rate>\d{1,2})(?:[\.,]\d)?\s*%[^0-9]*(?P<amount>\d+(?:[\.,]\d{2}))?/ui', $text, $m)) {
-            $rate = (int) $m['rate'];
-            $amount = array_key_exists('amount', $m) ? $this->decimalToCents((string) $m['amount']) : null;
+        foreach ($lines as $index => $line) {
+            if (!preg_match('/\b(tva|vat)\b/ui', $line)) {
+                continue;
+            }
+
+            if (!preg_match('/(?P<rate>\d{1,2})(?:[\.,]\d{1,2})?\s*%/u', $line, $rateMatch)) {
+                continue;
+            }
+
+            $rate = (int) $rateMatch['rate'];
+            $amount = $this->extractVatAmountFromLine($line, $rate);
+
+            if (null === $amount) {
+                foreach ([$index + 1, $index + 2] as $nextIndex) {
+                    if (!array_key_exists($nextIndex, $lines)) {
+                        continue;
+                    }
+
+                    $nextLine = $lines[$nextIndex];
+                    if (preg_match('/(?P<amount>\d+(?:[\.,]\s?\d{2}))/u', $nextLine, $nextMatch)) {
+                        $amount = $this->decimalToCents((string) $nextMatch['amount']);
+                        break;
+                    }
+                }
+            }
+
+            if (null === $amount && null !== $totalCents && $rate > 0) {
+                $amount = (int) round($totalCents - ($totalCents / (1 + ($rate / 100))));
+            }
+
+            return [$rate, $amount];
+        }
+
+        if (preg_match('/\b(tva|vat)\b(?P<segment>.{0,120})/uis', $text, $m)) {
+            $segment = (string) $m['segment'];
+            if (!preg_match('/(?P<rate>\d{1,2})(?:[\.,]\d{1,2})?\s*%/u', $segment, $rateMatch)) {
+                return [null, null];
+            }
+
+            $rate = (int) $rateMatch['rate'];
+            $amount = null;
+            if (preg_match_all('/(?P<amount>\d+(?:[\.,]\s?\d{2}))/u', $segment, $amountMatches)) {
+                foreach ($amountMatches['amount'] as $amountCandidate) {
+                    if (!$this->looksLikeVatRateValue((string) $amountCandidate, $rate)) {
+                        $amount = $this->decimalToCents((string) $amountCandidate);
+                        break;
+                    }
+                }
+            }
 
             if (null === $amount && null !== $totalCents && $rate > 0) {
                 $amount = (int) round($totalCents - ($totalCents / (1 + ($rate / 100))));
@@ -232,24 +318,25 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
     {
         $result = [];
 
-        foreach ($lines as $line) {
+        foreach ($lines as $index => $line) {
             $fuelType = $this->extractFuelType($line);
             if (null === $fuelType) {
                 continue;
             }
 
-            $quantityMilliLiters = null;
-            if (preg_match('/(?P<quantity>\d+(?:[\.,]\d{1,3}))\s*(l|litre|litres|liter|liters)\b/ui', $line, $m)) {
-                $quantityMilliLiters = $this->decimalToMilliUnits((string) $m['quantity']);
+            $context = $line;
+            $windowStart = max(0, $index - 6);
+            $windowLength = min(count($lines) - $windowStart, 14);
+            $window = array_slice($lines, $windowStart, $windowLength);
+            if ([] !== $window) {
+                $context = implode(' ', $window);
             }
 
-            $unitPriceDeciCentsPerLiter = null;
-            if (preg_match('/(?P<price>\d+(?:[\.,]\d{2,3}))\s*(€|eur)?\s*\/\s*l\b/ui', $line, $m)) {
-                $unitPriceDeciCentsPerLiter = $this->decimalToDeciCentsPerLiter((string) $m['price']);
-            }
+            $quantityMilliLiters = $this->extractQuantityMilliLiters($line, $context);
+            $unitPriceDeciCentsPerLiter = $this->extractUnitPriceDeciCentsPerLiter($line, $context);
 
             $lineTotalCents = null;
-            if (preg_match('/(?P<amount>\d+(?:[\.,]\d{2}))\s*(€|eur)?\s*$/ui', $line, $m)) {
+            if (preg_match('/(?P<amount>\d+(?:[\.,]\s?\d{2}))\s*(€|eur)?\s*$/ui', $line, $m)) {
                 $lineTotalCents = $this->decimalToCents((string) $m['amount']);
             }
 
@@ -285,7 +372,7 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
     private function decimalToCents(string $value): ?int
     {
-        $normalized = str_replace(',', '.', trim($value));
+        $normalized = $this->normalizeDecimalString($value);
         if (!is_numeric($normalized)) {
             return null;
         }
@@ -297,7 +384,7 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
     private function decimalToMilliUnits(string $value): ?int
     {
-        $normalized = str_replace(',', '.', trim($value));
+        $normalized = $this->normalizeDecimalString($value);
         if (!is_numeric($normalized)) {
             return null;
         }
@@ -309,7 +396,7 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
     private function decimalToDeciCentsPerLiter(string $value): ?int
     {
-        $normalized = str_replace(',', '.', trim($value));
+        $normalized = $this->normalizeDecimalString($value);
         if (!is_numeric($normalized)) {
             return null;
         }
@@ -317,5 +404,94 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
         $float = (float) $normalized;
 
         return (int) round($float * 1000);
+    }
+
+    private function normalizeDecimalString(string $value): string
+    {
+        $normalized = trim($value);
+        $normalized = preg_replace('/\s+/u', '', $normalized);
+        if (!is_string($normalized)) {
+            return '';
+        }
+
+        return str_replace(',', '.', $normalized);
+    }
+
+    private function extractQuantityMilliLiters(string $line, string $context): ?int
+    {
+        if (preg_match('/(?P<quantity>\d+(?:[\.,]\s?\d{1,3}))\s*(l|litre|litres|liter|liters)\b/ui', $line, $m)) {
+            return $this->decimalToMilliUnits((string) $m['quantity']);
+        }
+
+        if (preg_match('/quantit[eé]?\s*(?:=|:)?\s*(?P<quantity>\d+(?:[\.,]\s?\d{1,3}))/ui', $context, $m)) {
+            return $this->decimalToMilliUnits((string) $m['quantity']);
+        }
+
+        if (preg_match('/\bvolume\b.{0,40}?(?P<quantity>\d+(?:[\.,]\s?\d{1,3}))/ui', $context, $m)) {
+            return $this->decimalToMilliUnits((string) $m['quantity']);
+        }
+
+        if (preg_match('/(?P<quantity>\d+(?:[\.,]\s?\d{1,3}))\s*[^\d\s]{0,3}\s*$/u', $line, $m)) {
+            return $this->decimalToMilliUnits((string) $m['quantity']);
+        }
+
+        return null;
+    }
+
+    private function extractUnitPriceDeciCentsPerLiter(string $line, string $context): ?int
+    {
+        if (preg_match('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))\s*(€|eur)?\s*\/\s*l\b/ui', $line, $m)) {
+            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+        }
+
+        if (preg_match('/prix\s*unit\.?\s*(?:=|:)?\s*(?P<price>\d+(?:[\.,]\s?\d{2,3}))/ui', $context, $m)) {
+            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+        }
+
+        if (preg_match('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))\s*\/\s*[l8]\b/ui', $context, $m)) {
+            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+        }
+
+        if (preg_match('/(?P<major>\d)\s*[\.,]\s*(?P<minor>\d{3})\s*\/\s*[l8]/ui', $context, $m)) {
+            return $this->decimalToDeciCentsPerLiter(sprintf('%s.%s', $m['major'], $m['minor']));
+        }
+
+        if (preg_match('/prix\s*unit\.?\s*(?:=|:)?\s*(?P<major>\d)\s*(?P<minor>\d{3})\s*(?:eur|€)/ui', $context, $m)) {
+            return $this->decimalToDeciCentsPerLiter(sprintf('%s.%s', $m['major'], $m['minor']));
+        }
+
+        return null;
+    }
+
+    private function isNonAddressLine(string $line): bool
+    {
+        return 1 === preg_match('/\b(tel|phone|carte|visa|debit|ticket|montant|auto|pompe|carburant|quantit[eé]?|prix|tva|vat)\b/ui', $line);
+    }
+
+    private function extractVatAmountFromLine(string $line, int $rate): ?int
+    {
+        if (!preg_match_all('/(?P<amount>\d+(?:[\.,]\s?\d{2}))/u', $line, $matches)) {
+            return null;
+        }
+
+        foreach ($matches['amount'] as $amountCandidate) {
+            if ($this->looksLikeVatRateValue((string) $amountCandidate, $rate)) {
+                continue;
+            }
+
+            return $this->decimalToCents((string) $amountCandidate);
+        }
+
+        return null;
+    }
+
+    private function looksLikeVatRateValue(string $value, int $rate): bool
+    {
+        $normalized = $this->normalizeDecimalString($value);
+        if (!is_numeric($normalized)) {
+            return false;
+        }
+
+        return abs((float) $normalized - (float) $rate) < 0.01;
     }
 }

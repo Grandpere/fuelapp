@@ -1,0 +1,77 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Receipt Detail{% endblock %}
+
+{% set admin_section = 'receipts' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <div style="display:flex; justify-content:space-between; gap:0.6rem; align-items:flex-start; flex-wrap:wrap;">
+            <div>
+                <h2 class="page-title">Receipt Detail</h2>
+                <p class="muted">Inspect and control this receipt from back-office.</p>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_edit', {id: receipt.id.toString()}) }}">Edit</a>
+                <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_receipt_delete_' ~ receipt.id.toString()) }}">
+                    <button class="btn btn-danger" type="submit">Delete</button>
+                </form>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_list') }}">Back</a>
+            </div>
+        </div>
+
+        <dl class="admin-dl" style="margin-top:1rem;">
+            <dt class="admin-dt">Receipt ID</dt>
+            <dd class="admin-dd">{{ receipt.id.toString() }}</dd>
+
+            <dt class="admin-dt">Issued At</dt>
+            <dd class="admin-dd">{{ receipt.issuedAt|date('Y-m-d H:i:s') }}</dd>
+
+            <dt class="admin-dt">Total</dt>
+            <dd class="admin-dd">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</dd>
+
+            <dt class="admin-dt">VAT</dt>
+            <dd class="admin-dd">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</dd>
+
+            <dt class="admin-dt">Station</dt>
+            <dd class="admin-dd">
+                {% if station %}
+                    {{ station.name }} - {{ station.streetName }}, {{ station.postalCode }} {{ station.city }}
+                {% else %}
+                    n/a
+                {% endif %}
+            </dd>
+        </dl>
+    </section>
+
+    <section class="card admin-panel">
+        <h3 style="margin-top:0;">Lines</h3>
+        <div class="table-wrap" style="margin-top:1rem;">
+            <table class="app-table" style="min-width:860px;">
+                <thead>
+                <tr>
+                    <th>Fuel Type</th>
+                    <th style="text-align:right;">Quantity (L)</th>
+                    <th style="text-align:right;">Unit Price (EUR/L)</th>
+                    <th style="text-align:right;">VAT %</th>
+                    <th style="text-align:right;">VAT</th>
+                    <th style="text-align:right;">Line Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for line in receipt.lines %}
+                    <tr class="table-row">
+                        <td>{{ line.fuelType.value }}</td>
+                        <td style="text-align:right;">{{ (line.quantityMilliLiters / 1000)|number_format(3, ',', ' ') }}</td>
+                        <td style="text-align:right;">{{ (line.unitPriceDeciCentsPerLiter / 1000)|number_format(3, ',', ' ') }}</td>
+                        <td style="text-align:right;">{{ line.vatRatePercent }}</td>
+                        <td style="text-align:right;">{{ (line.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</td>
+                        <td style="text-align:right;">{{ (line.lineTotalCents / 100)|number_format(2, ',', ' ') }} EUR</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

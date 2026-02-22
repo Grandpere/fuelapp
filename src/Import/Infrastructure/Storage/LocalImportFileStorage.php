@@ -68,6 +68,20 @@ final readonly class LocalImportFileStorage implements ImportFileStorage
         );
     }
 
+    public function delete(string $storage, string $path): void
+    {
+        if ($storage !== $this->storageName) {
+            return;
+        }
+
+        $absolutePath = rtrim($this->baseDirectory, '/').'/'.ltrim($path, '/');
+        if (!is_file($absolutePath)) {
+            return;
+        }
+
+        @unlink($absolutePath);
+    }
+
     private function normalizeFilename(string $originalFilename): string
     {
         $trimmed = trim($originalFilename);

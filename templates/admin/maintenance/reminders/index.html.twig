@@ -54,11 +54,12 @@
                     <th>Due date</th>
                     <th>Due odometer</th>
                     <th>State</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 {% for reminder in reminders %}
-                    <tr class="table-row">
+                    <tr class="table-row" style="cursor:pointer;" onclick="if (!event.target.closest('a,button,input,form,select,textarea,label')) { window.location.href='{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}'; }">
                         <td>{{ reminder.createdAt|date('Y-m-d H:i') }}</td>
                         <td>{{ ruleNames[reminder.ruleId] ?? reminder.ruleId }}</td>
                         <td><code>{{ reminder.ownerId }}</code></td>
@@ -69,10 +70,13 @@
                             {% if reminder.dueByDate %}<span class="pill" style="background: rgba(247,181,0,0.2); color: #ffd27a;">date</span>{% endif %}
                             {% if reminder.dueByOdometer %}<span class="pill" style="background: rgba(54,180,252,0.2); color: #9fdefe;">odometer</span>{% endif %}
                         </td>
+                        <td>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}">Detail</a>
+                        </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="7" class="muted">No reminders found.</td>
+                        <td colspan="8" class="muted">No reminders found.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

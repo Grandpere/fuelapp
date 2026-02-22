@@ -61,6 +61,10 @@
             <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}">Back to list</a>
             <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}">Open user API resource</a>
             <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry">Open admin retry endpoint</a>
+            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" onsubmit="return confirm('Delete this import job and source file?');" style="display: inline-flex;">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
+                <button class="btn btn-danger" type="submit">Delete</button>
+            </form>
         </div>
     </section>
 

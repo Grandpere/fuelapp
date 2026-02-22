@@ -103,6 +103,8 @@ services:
     App\Maintenance\Application\Repository\MaintenancePlannedCostRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenancePlannedCostRepository'
     App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRuleRepository'
     App\Maintenance\Application\Repository\MaintenanceReminderRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRepository'
+    App\Analytics\Application\Kpi\AnalyticsKpiReader: '@App\Analytics\Infrastructure\ReadModel\DoctrineAnalyticsKpiReader'
+    App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher: '@App\Analytics\Infrastructure\Aggregation\DoctrineReceiptAnalyticsProjectionRefresher'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'
     App\Vehicle\Application\Repository\VehicleRepository: '@App\Vehicle\Infrastructure\Persistence\Doctrine\Repository\DoctrineVehicleRepository'
     App\Admin\Application\Audit\AdminAuditContext: '@App\Admin\Infrastructure\Audit\SecurityRequestAdminAuditContext'

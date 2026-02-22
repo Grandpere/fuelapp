@@ -121,6 +121,34 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         return $this->mapEntityToDomain($entity);
     }
 
+    public function getForSystem(string $id): ?Receipt
+    {
+        if (!Uuid::isValid($id)) {
+            return null;
+        }
+
+        $entity = $this->em->find(ReceiptEntity::class, $id);
+        if (!$entity instanceof ReceiptEntity) {
+            return null;
+        }
+
+        return $this->mapEntityToDomain($entity);
+    }
+
+    public function ownerIdForSystem(string $id): ?string
+    {
+        if (!Uuid::isValid($id)) {
+            return null;
+        }
+
+        $entity = $this->em->find(ReceiptEntity::class, $id);
+        if (!$entity instanceof ReceiptEntity) {
+            return null;
+        }
+
+        return $entity->getOwner()?->getId()->toRfc4122();
+    }
+
     public function delete(string $id): void
     {
         $entity = $this->findOwnedEntityById($id);
@@ -132,9 +160,47 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $this->em->flush();
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        if (!Uuid::isValid($id)) {
+            return;
+        }
+
+        $entity = $this->em->find(ReceiptEntity::class, $id);
+        if (!$entity instanceof ReceiptEntity) {
+            return;
+        }
+
+        $this->em->remove($entity);
+        $this->em->flush();
+    }
+
     public function all(): iterable
     {
         $entities = $this->baseListQuery()->getQuery()->getResult();
+        if (!is_iterable($entities)) {
+            return;
+        }
+
+        foreach ($entities as $entity) {
+            if (!$entity instanceof ReceiptEntity) {
+                continue;
+            }
+
+            yield $this->mapEntityToDomain($entity);
+        }
+    }
+
+    public function allForSystem(): iterable
+    {
+        $entities = $this->em
+            ->createQueryBuilder()
+            ->select('r')
+            ->from(ReceiptEntity::class, 'r')
+            ->orderBy('r.issuedAt', 'DESC')
+            ->addOrderBy('r.id', 'DESC')
+            ->getQuery()
+            ->getResult();
         if (!is_iterable($entities)) {
             return;
         }

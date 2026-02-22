@@ -19,6 +19,8 @@ interface ImportJobRepository
 {
     public function save(ImportJob $job): void;
 
+    public function deleteForSystem(string $id): void;
+
     public function get(string $id): ?ImportJob;
 
     public function getForSystem(string $id): ?ImportJob;

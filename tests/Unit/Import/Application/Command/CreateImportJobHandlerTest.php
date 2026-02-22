@@ -84,6 +84,10 @@ final class InMemoryImportFileStorage implements ImportFileStorage
             str_repeat('a', 64),
         );
     }
+
+    public function delete(string $storage, string $path): void
+    {
+    }
 }
 
 final class InMemoryImportJobRepository implements ImportJobRepository
@@ -93,6 +97,13 @@ final class InMemoryImportJobRepository implements ImportJobRepository
     public function save(ImportJob $job): void
     {
         $this->saved = $job;
+    }
+
+    public function deleteForSystem(string $id): void
+    {
+        if (null !== $this->saved && $this->saved->id()->toString() === $id) {
+            $this->saved = null;
+        }
     }
 
     public function get(string $id): ?ImportJob

@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Import Receipts{% endblock %}
+
+{% block body %}
+    <main class="app-shell" style="display:grid; gap: 1rem;">
+        <header style="display:grid; gap:0.35rem;">
+            <h1 class="page-title">Import Receipts</h1>
+            <p class="muted" style="margin:0;">Upload a receipt file and let the async OCR pipeline process it.</p>
+        </header>
+
+        <section class="card" style="padding: 1rem; display:grid; gap: .8rem;">
+            <form method="post" enctype="multipart/form-data" style="display:grid; gap:.7rem; max-width: 560px;">
+                <input type="hidden" name="_token" value="{{ csrf_token('ui_import_upload') }}">
+                <label class="label">
+                    Receipt file (PDF/JPEG/PNG/WEBP, max 1MB)
+                    <input class="input" type="file" name="file" accept=".pdf,image/jpeg,image/png,image/webp" required>
+                </label>
+                <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                    <button class="btn btn-primary" type="submit">Upload and process</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Refresh</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="card" style="padding: 1rem; display:grid; gap:.8rem;">
+            <h2 style="margin:0; font-size:1.05rem;">My import jobs</h2>
+            <div class="table-wrap">
+                <table class="app-table" style="min-width: 980px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Filename</th>
+                            <th>MIME</th>
+                            <th>Size</th>
+                            <th>Created</th>
+                            <th>Updated</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in jobs %}
+                            {% set job = row.job %}
+                            <tr class="table-row" style="cursor:pointer;" onclick="if (!event.target.closest('a,button,input,form,select,textarea,label')) { window.location.href='{{ path('ui_import_show', {id: job.id.toString}) }}'; }">
+                                <td>{{ job.id.toString }}</td>
+                                <td>
+                                    <span class="pill pill-energy" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color:#1d1405;">
+                                        {{ statusLabels[job.status.value] ?? job.status.value }}
+                                    </span>
+                                </td>
+                                <td>{{ job.originalFilename }}</td>
+                                <td>{{ job.mimeType }}</td>
+                                <td>{{ job.fileSizeBytes }} bytes</td>
+                                <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
+                                <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
+                                <td style="white-space:nowrap;">
+                                    <div style="display:flex; gap:.45rem; align-items:center; flex-wrap:nowrap;">
+                                        {% if job.status.value == 'needs_review' %}
+                                            <a class="btn btn-primary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Review</a>
+                                        {% elseif row.canAutoFinalize %}
+                                            <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Detail</a>
+                                        {% else %}
+                                            <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}">Detail</a>
+                                        {% endif %}
+                                        <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" style="display:inline-flex;" onsubmit="return confirm('Delete this import file?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
+                                            <button class="btn btn-danger" type="submit">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="muted">No imports yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+{% endblock %}

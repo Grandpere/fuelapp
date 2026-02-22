@@ -113,7 +113,7 @@ Deliver an operational back-office for entities and import jobs with secure admi
   - Mitigation: mandatory audit events on mutating actions.
 
 ## Definition of done (Sprint 4)
-- All `SP4-*` tickets done.
+- `SP4-001` to `SP4-006` done, `SP4-007` pending closure.
 - Back-office is restricted to admin users.
 - Import operations are manageable from UI/API.
 - Audit trail is persisted and queryable.

@@ -94,6 +94,11 @@ final class RetryInMemoryImportJobRepository implements ImportJobRepository
         $this->items[$job->id()->toString()] = $job;
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        unset($this->items[$id]);
+    }
+
     public function get(string $id): ?ImportJob
     {
         return $this->items[$id] ?? null;

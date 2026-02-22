@@ -1,0 +1,70 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Edit Admin Maintenance Event{% endblock %}
+
+{% set admin_section = 'maintenance_events' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Edit maintenance event</h2>
+        <p class="muted">Back-office update flow for recorded maintenance operations.</p>
+
+        {% if errors is not empty %}
+            <div class="flash" style="margin-top: 1rem; border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                <ul style="margin: 0; padding-left: 1.15rem;">
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" action="" style="display:grid; gap:0.8rem; margin-top:1rem; max-width:820px;">
+            <input type="hidden" name="_token" value="{{ csrfToken }}">
+            <div class="form-grid-2">
+                <label class="label">
+                    Vehicle
+                    <select class="select" name="vehicleId" required>
+                        <option value="">Select vehicle</option>
+                        {% for id, label in vehicleOptions %}
+                            <option value="{{ id }}" {% if formData.vehicleId == id %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
+                    Event type
+                    <select class="select" name="eventType" required>
+                        {% for eventType in eventTypes %}
+                            <option value="{{ eventType }}" {% if formData.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
+                    Occurred at
+                    <input class="input" type="datetime-local" name="occurredAt" value="{{ formData.occurredAt }}" required>
+                </label>
+                <label class="label">
+                    Odometer (km)
+                    <input class="input" type="number" name="odometerKilometers" value="{{ formData.odometerKilometers }}" min="0" step="1">
+                </label>
+                <label class="label">
+                    Total cost (cents)
+                    <input class="input" type="number" name="totalCostCents" value="{{ formData.totalCostCents }}" min="0" step="1">
+                </label>
+                <label class="label">
+                    Currency
+                    <input class="input" type="text" name="currencyCode" value="{{ formData.currencyCode }}" maxlength="3" required>
+                </label>
+            </div>
+            <label class="label">
+                Description
+                <textarea class="input" name="description" rows="4">{{ formData.description }}</textarea>
+            </label>
+
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="submit">Save changes</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Back to list</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

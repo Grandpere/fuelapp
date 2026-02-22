@@ -189,11 +189,41 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: run `make phpunit-integration` and `make phpunit-functional` sequentially.
 - Prevention: avoid parallel execution of suites that reset shared database state.
 
+## 2026-02-21 - Import file lifecycle after OCR review flow
+- Symptom: uploaded import files accumulated even when no longer useful.
+- Root cause: files were persisted for async OCR but not cleaned after terminal business outcomes.
+- Fix: delete stored file when import becomes `duplicate` or is finalized to `processed`; keep file for `failed`/`needs_review` to preserve retry/review capability.
+- Prevention: define file retention behavior per import status explicitly whenever import workflow changes.
+
 ## 2026-02-21 - API Platform metadata compatibility: use `openapi` operation object
 - Symptom: static analysis failed with unknown `openapiContext` argument on `ApiPlatform\Metadata\Post`.
 - Root cause: project API Platform metadata version expects `openapi` (`ApiPlatform\OpenApi\Model\Operation`) instead of legacy context argument.
 - Fix: define upload docs with `openapi: new Operation(...)` on the resource operation.
 - Prevention: when adding custom docs on metadata operations, align constructor args with installed API Platform version.
+
+## 2026-02-21 - DBAL datetime parameter type must match immutable values
+- Symptom: analytics projection refresh crashed in integration tests with `Could not convert PHP value of type DateTimeImmutable to type DateTimeType`.
+- Root cause: DBAL statement parameter types were declared as `datetime` while values were `DateTimeImmutable`.
+- Fix: use `datetime_immutable` for DBAL parameter type mapping in projection state upserts.
+- Prevention: when binding `DateTimeImmutable` in DBAL queries, always declare `datetime_immutable` explicitly.
+
+## 2026-02-21 - PostgreSQL nullable filter params need explicit safe casting
+- Symptom: analytics KPI endpoints failed with SQLSTATE errors (`indeterminate datatype` / `invalid input syntax for type uuid: ""`) when optional filters were absent.
+- Root cause: SQL expressions attempted direct casts on nullable/empty-string parameters inside `OR` predicates.
+- Fix: normalize optional filters to empty string and cast with `NULLIF(:param, '')` (UUID) or explicit `CAST(... AS date)` for date filters.
+- Prevention: for optional DBAL filters on PostgreSQL, avoid direct casting of raw nullable params; normalize inputs and cast only sanitized values.
+
+## 2026-02-21 - Deci-cents fuel price formatting in UI
+- Symptom: analytics dashboard tests expected wrong average EUR/L display.
+- Root cause: `averagePriceDeciCentsPerLiter` unit was interpreted as cents instead of deci-cents in assertions.
+- Fix: convert deci-cents per liter to EUR/L with `/ 1000` and align tests/UI labels to that unit.
+- Prevention: when exposing derived pricing metrics, keep explicit unit labels in DTO/UI and validate conversion formula in functional tests.
+
+## 2026-02-21 - PhpSpreadsheet requires GD extension in app image
+- Symptom: `composer require phpoffice/phpspreadsheet` failed with missing `ext-gd`.
+- Root cause: project Docker image did not install the PHP GD extension required by PhpSpreadsheet.
+- Fix: add `gd` to `install-php-extensions` in `Dockerfile` and rebuild the app image before installing dependency.
+- Prevention: when adding spreadsheet/image-capable libraries, verify required PHP extensions against container image in the same change set.
 
 ## 2026-02-21 - Access control assertions need real routed endpoints
 - Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
@@ -206,6 +236,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: API Platform attempted default pre-read on DTO resources without matching entity provider.
 - Fix: set `read: false` on PATCH/DELETE operations and load domain objects in custom processors.
 - Prevention: for non-entity API resources driven by custom processors, explicitly choose `read` behavior per operation.
+
+## 2026-02-21 - Import review payload can be nested under `parsedDraft.creationPayload`
+- Symptom: user UI had no finalize action on `needs_review` imports even when extracted data looked complete.
+- Root cause: UI/controller logic only checked root `creationPayload`, while async parser payload stores command-ready data under `parsedDraft.creationPayload`.
+- Fix: support both payload shapes in UI action visibility and finalize handler fallback path resolution.
+- Prevention: when reading import payload fields, always account for both legacy/root and nested parser structures.
 
 ## 2026-02-21 - UI layer must not depend on Infrastructure entities
 - Symptom: PHPStan architecture rule (`phpat`) failed when an API processor referenced `UserEntity`.
@@ -254,3 +290,15 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).
 - Prefer async for external/slow operations (geocoding, OCR/import).
 - Sprint and backlog source of truth lives in `/docs/backlog`.
+
+## 2026-02-22 - Analytics optional filters must use dynamic SQL for index usage
+- Symptom: KPI endpoints can degrade with larger datasets when optional filters are encoded as `(:param = '' OR column = ...)` predicates.
+- Root cause: PostgreSQL query planner often cannot use selective indexes efficiently with broad optional `OR` predicates.
+- Fix: build strict dynamic `WHERE` clauses that include only active filters (`owner`, `vehicle`, `station`, `fuel`, `from/to`).
+- Prevention: for read-heavy analytics endpoints, avoid optional `OR` filter patterns; prefer dynamic predicates + matching composite indexes.
+
+## 2026-02-22 - BrowserKit preferred for session-driven functional tests
+- Symptom: manual `KernelTestCase` + handcrafted requests make UI/session/CSRF functional tests verbose and fragile.
+- Root cause: without BrowserKit client, cookie/session handling was duplicated in many tests.
+- Fix: install `symfony/browser-kit` and migrate priority UI suites to `WebTestCase::createClient()`.
+- Prevention: for authenticated UI/session flows, default to BrowserKit functional client instead of manual kernel request plumbing.

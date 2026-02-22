@@ -230,14 +230,34 @@ final class InMemoryReceiptRepository implements ReceiptRepository
         return $this->items[$id] ?? null;
     }
 
+    public function getForSystem(string $id): ?Receipt
+    {
+        return $this->get($id);
+    }
+
+    public function ownerIdForSystem(string $id): ?string
+    {
+        return null;
+    }
+
     public function delete(string $id): void
     {
         unset($this->items[$id]);
     }
 
+    public function deleteForSystem(string $id): void
+    {
+        $this->delete($id);
+    }
+
     public function all(): iterable
     {
         return array_values($this->items);
+    }
+
+    public function allForSystem(): iterable
+    {
+        return $this->all();
     }
 
     public function paginate(int $page, int $perPage): iterable

@@ -70,6 +70,7 @@
                 <p class="muted" style="margin: 0.35rem 0 0;">Traceable fuel purchase snapshot.</p>
             </div>
             <div class="show-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString()}) }}">Edit lines</a>
                 <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');" style="display:inline;">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">
                     <input type="hidden" name="_redirect" value="{{ path('ui_receipt_index') }}">
@@ -118,7 +119,18 @@
         </section>
 
         <section class="card show-card">
-            <h2>Lines</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.6rem; margin-bottom:0.7rem; flex-wrap:wrap;">
+                <h2 style="margin:0;">Lines</h2>
+                <a
+                    class="btn btn-secondary"
+                    href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString()}) }}"
+                    style="padding:0.35rem 0.7rem; font-size:0.8rem;"
+                    aria-label="Edit lines"
+                    title="Edit lines"
+                >
+                    ✎
+                </a>
+            </div>
             <div class="table-wrap">
                 <table class="app-table" style="min-width: 740px;">
                     <thead>

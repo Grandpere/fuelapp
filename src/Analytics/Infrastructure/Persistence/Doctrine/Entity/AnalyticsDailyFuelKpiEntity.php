@@ -24,6 +24,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Index(name: 'idx_analytics_daily_owner_day', columns: ['owner_id', 'day'])]
 #[ORM\Index(name: 'idx_analytics_daily_owner_vehicle_day', columns: ['owner_id', 'vehicle_id', 'day'])]
 #[ORM\Index(name: 'idx_analytics_daily_owner_station_day', columns: ['owner_id', 'station_id', 'day'])]
+#[ORM\Index(name: 'idx_analytics_daily_owner_fuel_day', columns: ['owner_id', 'fuel_type', 'day'])]
 class AnalyticsDailyFuelKpiEntity
 {
     #[ORM\Id]

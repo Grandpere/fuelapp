@@ -7,12 +7,11 @@
 - Deliver decision-oriented metrics and robust exports.
 
 ## In progress
-- `SP6-004` - Time-window and multi-filter analytics.
+- `SP6-007` - Analytics validation tests.
 
 ## Next tickets (ordered)
-1. `SP6-004` - Time-window and multi-filter analytics
-2. `SP6-005` - Export service hardening (CSV/XLSX)
-3. `SP6-006` - Performance budget and query optimization
+1. `SP6-007` - Analytics validation tests
+2. `SP6-008` - BrowserKit migration for functional test suite
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -56,6 +55,9 @@
 - `SP6-001` delivered: analytics daily fuel KPI read-model, refresh pipeline (sync/async), and projection freshness metadata.
 - `SP6-002` delivered: KPI API endpoints (cost/month, consumption/month, average fuel price) with period/vehicle filters and explicit units.
 - `SP6-003` delivered: responsive analytics dashboard UI with period/vehicle filters, KPI cards, and monthly trend views.
+- `SP6-004` delivered: station/fuel/date multi-filter parity across KPI APIs and dashboard UI.
+- `SP6-005` delivered: hardened export flow with streaming CSV/XLSX and export metadata.
+- `SP6-006` delivered: KPI query optimization (dynamic SQL filters) with documented performance budget + indexing strategy.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

@@ -22,40 +22,15 @@ use Doctrine\DBAL\Connection;
 
 final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
 {
+    private const string KPI_TABLE = 'analytics_daily_fuel_kpis';
+
     public function __construct(private Connection $connection)
     {
     }
 
     public function readCostPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
     {
-        $normalizedVehicleId = $vehicleId ?? '';
-        $normalizedStationId = $stationId ?? '';
-        $normalizedFuelType = $fuelType ?? '';
-        $normalizedFromDate = $from?->format('Y-m-d') ?? '';
-        $normalizedToDate = $to?->format('Y-m-d') ?? '';
-
-        $rows = $this->connection->fetchAllAssociative(
-            <<<'SQL'
-                    SELECT TO_CHAR(DATE_TRUNC('month', day::timestamp), 'YYYY-MM') AS month, SUM(total_cost_cents) AS total_cost_cents
-                    FROM analytics_daily_fuel_kpis
-                    WHERE owner_id = :ownerId
-                      AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
-                      AND (:stationId = '' OR station_id = CAST(NULLIF(:stationId, '') AS uuid))
-                      AND (:fuelType = '' OR fuel_type = :fuelType)
-                      AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
-                      AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
-                    GROUP BY DATE_TRUNC('month', day::timestamp)
-                    ORDER BY DATE_TRUNC('month', day::timestamp)
-                SQL,
-            [
-                'ownerId' => $ownerId,
-                'vehicleId' => $normalizedVehicleId,
-                'stationId' => $normalizedStationId,
-                'fuelType' => $normalizedFuelType,
-                'fromDate' => $normalizedFromDate,
-                'toDate' => $normalizedToDate,
-            ],
-        );
+        $rows = $this->fetchMonthlySumRows('total_cost_cents', $ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         $items = [];
         foreach ($rows as $row) {
@@ -64,7 +39,7 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                 continue;
             }
 
-            $items[] = new MonthlyCostKpi($month, $this->toInt($row['total_cost_cents'] ?? null));
+            $items[] = new MonthlyCostKpi($month, $this->toInt($row['total_value'] ?? null));
         }
 
         return $items;
@@ -72,34 +47,7 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
 
     public function readConsumptionPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
     {
-        $normalizedVehicleId = $vehicleId ?? '';
-        $normalizedStationId = $stationId ?? '';
-        $normalizedFuelType = $fuelType ?? '';
-        $normalizedFromDate = $from?->format('Y-m-d') ?? '';
-        $normalizedToDate = $to?->format('Y-m-d') ?? '';
-
-        $rows = $this->connection->fetchAllAssociative(
-            <<<'SQL'
-                    SELECT TO_CHAR(DATE_TRUNC('month', day::timestamp), 'YYYY-MM') AS month, SUM(total_quantity_milli_liters) AS total_quantity_milli_liters
-                    FROM analytics_daily_fuel_kpis
-                    WHERE owner_id = :ownerId
-                      AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
-                      AND (:stationId = '' OR station_id = CAST(NULLIF(:stationId, '') AS uuid))
-                      AND (:fuelType = '' OR fuel_type = :fuelType)
-                      AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
-                      AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
-                    GROUP BY DATE_TRUNC('month', day::timestamp)
-                    ORDER BY DATE_TRUNC('month', day::timestamp)
-                SQL,
-            [
-                'ownerId' => $ownerId,
-                'vehicleId' => $normalizedVehicleId,
-                'stationId' => $normalizedStationId,
-                'fuelType' => $normalizedFuelType,
-                'fromDate' => $normalizedFromDate,
-                'toDate' => $normalizedToDate,
-            ],
-        );
+        $rows = $this->fetchMonthlySumRows('total_quantity_milli_liters', $ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         $items = [];
         foreach ($rows as $row) {
@@ -108,7 +56,7 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                 continue;
             }
 
-            $items[] = new MonthlyConsumptionKpi($month, $this->toInt($row['total_quantity_milli_liters'] ?? null));
+            $items[] = new MonthlyConsumptionKpi($month, $this->toInt($row['total_value'] ?? null));
         }
 
         return $items;
@@ -116,33 +64,21 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
 
     public function readAveragePrice(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): AverageFuelPriceKpi
     {
-        $normalizedVehicleId = $vehicleId ?? '';
-        $normalizedStationId = $stationId ?? '';
-        $normalizedFuelType = $fuelType ?? '';
-        $normalizedFromDate = $from?->format('Y-m-d') ?? '';
-        $normalizedToDate = $to?->format('Y-m-d') ?? '';
+        [$whereClause, $params] = $this->buildFilters($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         $row = $this->connection->fetchAssociative(
-            <<<'SQL'
-                    SELECT
-                        COALESCE(SUM(total_cost_cents), 0) AS total_cost_cents,
-                        COALESCE(SUM(total_quantity_milli_liters), 0) AS total_quantity_milli_liters
-                    FROM analytics_daily_fuel_kpis
-                    WHERE owner_id = :ownerId
-                      AND (:vehicleId = '' OR vehicle_id = CAST(NULLIF(:vehicleId, '') AS uuid))
-                      AND (:stationId = '' OR station_id = CAST(NULLIF(:stationId, '') AS uuid))
-                      AND (:fuelType = '' OR fuel_type = :fuelType)
-                      AND (:fromDate = '' OR day >= CAST(NULLIF(:fromDate, '') AS date))
-                      AND (:toDate = '' OR day <= CAST(NULLIF(:toDate, '') AS date))
-                SQL,
-            [
-                'ownerId' => $ownerId,
-                'vehicleId' => $normalizedVehicleId,
-                'stationId' => $normalizedStationId,
-                'fuelType' => $normalizedFuelType,
-                'fromDate' => $normalizedFromDate,
-                'toDate' => $normalizedToDate,
-            ],
+            sprintf(
+                <<<'SQL'
+                        SELECT
+                            COALESCE(SUM(total_cost_cents), 0) AS total_cost_cents,
+                            COALESCE(SUM(total_quantity_milli_liters), 0) AS total_quantity_milli_liters
+                        FROM %s
+                        WHERE %s
+                    SQL,
+                self::KPI_TABLE,
+                $whereClause,
+            ),
+            $params,
         );
 
         if (!is_array($row)) {
@@ -160,6 +96,68 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
             $totalQuantityMilliLiters,
             $averagePriceDeciCentsPerLiter,
         );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchMonthlySumRows(string $column, string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
+    {
+        [$whereClause, $params] = $this->buildFilters($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+
+        return $this->connection->fetchAllAssociative(
+            sprintf(
+                <<<'SQL'
+                        SELECT
+                            TO_CHAR(DATE_TRUNC('month', day::timestamp), 'YYYY-MM') AS month,
+                            SUM(%s) AS total_value
+                        FROM %s
+                        WHERE %s
+                        GROUP BY DATE_TRUNC('month', day::timestamp)
+                        ORDER BY DATE_TRUNC('month', day::timestamp)
+                    SQL,
+                $column,
+                self::KPI_TABLE,
+                $whereClause,
+            ),
+            $params,
+        );
+    }
+
+    /**
+     * @return array{string, array<string, scalar>}
+     */
+    private function buildFilters(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
+    {
+        $filters = ['owner_id = :ownerId'];
+        $params = ['ownerId' => $ownerId];
+
+        if (null !== $vehicleId) {
+            $filters[] = 'vehicle_id = CAST(:vehicleId AS uuid)';
+            $params['vehicleId'] = $vehicleId;
+        }
+
+        if (null !== $stationId) {
+            $filters[] = 'station_id = CAST(:stationId AS uuid)';
+            $params['stationId'] = $stationId;
+        }
+
+        if (null !== $fuelType) {
+            $filters[] = 'fuel_type = :fuelType';
+            $params['fuelType'] = $fuelType;
+        }
+
+        if (null !== $from) {
+            $filters[] = 'day >= :fromDate';
+            $params['fromDate'] = $from->format('Y-m-d');
+        }
+
+        if (null !== $to) {
+            $filters[] = 'day <= :toDate';
+            $params['toDate'] = $to->format('Y-m-d');
+        }
+
+        return [implode(' AND ', $filters), $params];
     }
 
     private function toInt(mixed $value): int

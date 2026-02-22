@@ -290,3 +290,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Keep feature-first DDD foldering (`Receipt/*`, `Station/*`, etc.).
 - Prefer async for external/slow operations (geocoding, OCR/import).
 - Sprint and backlog source of truth lives in `/docs/backlog`.
+
+## 2026-02-22 - Analytics optional filters must use dynamic SQL for index usage
+- Symptom: KPI endpoints can degrade with larger datasets when optional filters are encoded as `(:param = '' OR column = ...)` predicates.
+- Root cause: PostgreSQL query planner often cannot use selective indexes efficiently with broad optional `OR` predicates.
+- Fix: build strict dynamic `WHERE` clauses that include only active filters (`owner`, `vehicle`, `station`, `fuel`, `from/to`).
+- Prevention: for read-heavy analytics endpoints, avoid optional `OR` filter patterns; prefer dynamic predicates + matching composite indexes.

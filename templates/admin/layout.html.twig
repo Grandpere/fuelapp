@@ -150,6 +150,7 @@
             <nav class="admin-nav">
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'dashboard' ? 'is-active' : '' }}" href="{{ path('ui_admin_dashboard') }}">Dashboard</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'stations' ? 'is-active' : '' }}" href="{{ path('ui_admin_station_list') }}">Stations</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'receipts' ? 'is-active' : '' }}" href="{{ path('ui_admin_receipt_list') }}">Receipts</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'vehicles' ? 'is-active' : '' }}" href="{{ path('ui_admin_vehicle_list') }}">Vehicles</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'maintenance_events' ? 'is-active' : '' }}" href="{{ path('ui_admin_maintenance_event_list') }}">Maintenance Events</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'maintenance_reminders' ? 'is-active' : '' }}" href="{{ path('ui_admin_maintenance_reminder_list') }}">Maintenance Reminders</a>

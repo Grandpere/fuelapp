@@ -129,13 +129,20 @@ final readonly class DoctrineStationRepository implements StationRepository
             return;
         }
 
-        $entity = $this->em->find(StationEntity::class, $id);
-        if (!$entity instanceof StationEntity) {
-            return;
-        }
-
-        $this->em->remove($entity);
-        $this->em->flush();
+        // Keep deletion deterministic even if FK behavior drifts: detach receipts first.
+        $this->em->getConnection()->executeStatement(
+            'UPDATE receipts SET station_id = NULL WHERE station_id = :stationId',
+            ['stationId' => $id],
+        );
+        $this->em->getConnection()->executeStatement(
+            'UPDATE analytics_daily_fuel_kpis SET station_id = NULL WHERE station_id = :stationId',
+            ['stationId' => $id],
+        );
+        $this->em->getConnection()->executeStatement(
+            'DELETE FROM stations WHERE id = :stationId',
+            ['stationId' => $id],
+        );
+        $this->em->clear();
     }
 
     public function getByIds(array $ids): array

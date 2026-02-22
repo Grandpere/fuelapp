@@ -24,10 +24,19 @@ interface ReceiptRepository
 
     public function get(string $id): ?Receipt;
 
+    public function getForSystem(string $id): ?Receipt;
+
+    public function ownerIdForSystem(string $id): ?string;
+
     public function delete(string $id): void;
+
+    public function deleteForSystem(string $id): void;
 
     /** @return iterable<Receipt> */
     public function all(): iterable;
+
+    /** @return iterable<Receipt> */
+    public function allForSystem(): iterable;
 
     /** @return iterable<Receipt> */
     public function paginate(int $page, int $perPage): iterable;

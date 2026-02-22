@@ -21,6 +21,8 @@ use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderEntity;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderRuleEntity;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
@@ -85,6 +87,7 @@ final class AdminBackofficeUiTest extends KernelTestCase
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         $maintenanceEventsResponse = $this->request('GET', '/ui/admin/maintenance/events', [], [], $sessionCookie);
         $maintenanceRemindersResponse = $this->request('GET', '/ui/admin/maintenance/reminders', [], [], $sessionCookie);
+        $receiptsResponse = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
         $importsResponse = $this->request('GET', '/ui/admin/imports', [], [], $sessionCookie);
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs', [], [], $sessionCookie);
 
@@ -93,6 +96,7 @@ final class AdminBackofficeUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_FORBIDDEN, $vehiclesResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceEventsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceRemindersResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $receiptsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $importsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $auditResponse->getStatusCode());
     }
@@ -152,6 +156,23 @@ final class AdminBackofficeUiTest extends KernelTestCase
         $maintenanceEvent->setCreatedAt(new DateTimeImmutable('2026-02-22 08:30:00'));
         $maintenanceEvent->setUpdatedAt(new DateTimeImmutable('2026-02-22 08:30:00'));
         $this->em->persist($maintenanceEvent);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setVehicle($vehicle);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-02-22 08:10:00'));
+        $receipt->setTotalCents(18000);
+        $receipt->setVatAmountCents(3000);
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(10000);
+        $line->setUnitPriceDeciCentsPerLiter(1800);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+        $this->em->persist($receipt);
 
         $rule = new MaintenanceReminderRuleEntity();
         $rule->setId(Uuid::v7());
@@ -218,6 +239,10 @@ final class AdminBackofficeUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_OK, $maintenanceRemindersResponse->getStatusCode());
         self::assertStringContainsString('Maintenance Reminders', (string) $maintenanceRemindersResponse->getContent());
         self::assertStringContainsString('UI rule', (string) $maintenanceRemindersResponse->getContent());
+
+        $receiptsResponse = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptsResponse->getStatusCode());
+        self::assertStringContainsString((string) $receipt->getId(), (string) $receiptsResponse->getContent());
 
         $importsResponse = $this->request('GET', '/ui/admin/imports', ['status' => 'needs_review'], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $importsResponse->getStatusCode());
@@ -413,12 +438,30 @@ final class AdminBackofficeUiTest extends KernelTestCase
         $reminder->setCreatedAt(new DateTimeImmutable('2026-03-02 10:06:00'));
         $this->em->persist($reminder);
 
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setVehicle($vehicle);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-02 09:50:00'));
+        $receipt->setTotalCents(19000);
+        $receipt->setVatAmountCents(3167);
+        $receiptLine = new ReceiptLineEntity();
+        $receiptLine->setId(Uuid::v7());
+        $receiptLine->setFuelType('diesel');
+        $receiptLine->setQuantityMilliLiters(10000);
+        $receiptLine->setUnitPriceDeciCentsPerLiter(1900);
+        $receiptLine->setVatRatePercent(20);
+        $receipt->addLine($receiptLine);
+        $this->em->persist($receipt);
+
         $this->em->flush();
 
         $stationId = $station->getId()->toRfc4122();
         $eventId = $event->getId()->toRfc4122();
         $vehicleId = $vehicle->getId()->toRfc4122();
         $reminderId = $reminder->getId()->toRfc4122();
+        $receiptId = $receipt->getId()->toRfc4122();
         $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
 
         $stationEditPage = $this->request('GET', '/ui/admin/stations/'.$stationId.'/edit', [], [], $sessionCookie);
@@ -505,12 +548,59 @@ final class AdminBackofficeUiTest extends KernelTestCase
         $reminderShow = $this->request('GET', '/ui/admin/maintenance/reminders/'.$reminderId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $reminderShow->getStatusCode());
         self::assertStringContainsString('Reminder detail rule', (string) $reminderShow->getContent());
+
+        $receiptShow = $this->request('GET', '/ui/admin/receipts/'.$receiptId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptShow->getStatusCode());
+        self::assertStringContainsString('Receipt Detail', (string) $receiptShow->getContent());
+        self::assertStringContainsString('diesel', (string) $receiptShow->getContent());
+
+        $receiptEditPage = $this->request('GET', '/ui/admin/receipts/'.$receiptId.'/edit', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptEditPage->getStatusCode());
+        $receiptCsrf = $this->extractFormCsrf((string) $receiptEditPage->getContent());
+
+        $receiptEditResponse = $this->request(
+            'POST',
+            '/ui/admin/receipts/'.$receiptId.'/edit',
+            [
+                '_token' => $receiptCsrf,
+                'lines' => [[
+                    'fuelType' => 'sp95',
+                    'quantityMilliLiters' => '12000',
+                    'unitPriceDeciCentsPerLiter' => '1700',
+                    'vatRatePercent' => '20',
+                ]],
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $receiptEditResponse->getStatusCode());
+
+        $afterReceiptEdit = $this->request('GET', '/ui/admin/receipts/'.$receiptId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterReceiptEdit->getStatusCode());
+        self::assertStringContainsString('sp95', (string) $afterReceiptEdit->getContent());
+
+        $receiptList = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptList->getStatusCode());
+        $receiptDeleteToken = $this->extractDeleteCsrfForReceipt((string) $receiptList->getContent(), $receiptId);
+
+        $receiptDeleteResponse = $this->request(
+            'POST',
+            '/ui/admin/receipts/'.$receiptId.'/delete',
+            ['_token' => $receiptDeleteToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $receiptDeleteResponse->getStatusCode());
+
+        $afterReceiptDelete = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterReceiptDelete->getStatusCode());
+        self::assertStringNotContainsString($receiptId, (string) $afterReceiptDelete->getContent());
     }
 
     /**
-     * @param array<string, string|int|float|bool|null> $parameters
-     * @param array<string, string>                     $server
-     * @param array<string, string>                     $cookies
+     * @param array<string, string|int|float|bool|array<int, array<string, string>>|null> $parameters
+     * @param array<string, string>                                                       $server
+     * @param array<string, string>                                                       $cookies
      */
     private function request(string $method, string $uri, array $parameters = [], array $server = [], array $cookies = []): Response
     {
@@ -604,6 +694,18 @@ final class AdminBackofficeUiTest extends KernelTestCase
     private function extractDeleteCsrfForMaintenanceEvent(string $content, string $eventId): string
     {
         $pattern = '#/ui/admin/maintenance/events/'.preg_quote($eventId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractDeleteCsrfForReceipt(string $content, string $receiptId): string
+    {
+        $pattern = '#/ui/admin/receipts/'.preg_quote($receiptId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

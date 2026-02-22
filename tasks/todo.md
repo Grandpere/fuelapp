@@ -1,8 +1,9 @@
-# TODO - User UI import review/finalize
+# TODO - Receipts Front/Admin Edition
 
 ## Plan
-- [completed] Add `/ui/imports/{id}` review page with prefilled extracted values and corrections form.
-- [completed] Extend user finalize POST controller to accept optional corrected fields/line values.
-- [completed] Update import list actions to route user through review page.
-- [completed] Add/adjust functional tests for review + finalize (auto and corrected cases).
-- [completed] Run quality gates and prepare commit.
+- [completed] Add front UI receipt lines edit flow (`/ui/receipts/{id}/edit`) with CSRF and owner-scoped access.
+- [completed] Add application/repository support for receipt updates and admin system-scope reads/deletes.
+- [completed] Add admin receipts section: list, detail, edit, delete, row-click behavior, and audit logging.
+- [completed] Add/update functional tests for front/admin receipt edit-delete coverage.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Functional test validation done with user-run `make phpunit-functional`; fixes applied.

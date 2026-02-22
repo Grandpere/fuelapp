@@ -227,11 +227,30 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
         return null;
     }
 
+    public function getForSystem(string $id): ?Receipt
+    {
+        return null;
+    }
+
+    public function ownerIdForSystem(string $id): ?string
+    {
+        return null;
+    }
+
     public function delete(string $id): void
     {
     }
 
+    public function deleteForSystem(string $id): void
+    {
+    }
+
     public function all(): iterable
+    {
+        return [];
+    }
+
+    public function allForSystem(): iterable
     {
         return [];
     }

@@ -172,6 +172,34 @@ final class AnalyticsKpiApiTest extends KernelTestCase
         self::assertSame(18667, $this->toInt($stationFuelItems[0]['averagePriceDeciCentsPerLiter'] ?? null));
     }
 
+    public function testAveragePriceUsesHalfUpRoundingForDeciCentsPerLiter(): void
+    {
+        $owner = $this->createUser('analytics.kpi.rounding@example.com', 'test1234', ['ROLE_USER']);
+        $station = $this->createStation('Rounding Station', '3 Round St', '31000', 'Toulouse');
+        $this->em->flush();
+
+        // 313 deci-cents/L over 32 mL gives total 1 cent and average 312.5 deci-cents/L => 313 (half-up).
+        $this->createReceipt($owner, null, $station, new DateTimeImmutable('2026-03-01 10:00:00'), [
+            ['diesel', 32, 313, 20],
+        ]);
+        $this->em->flush();
+        $this->projectionRefresher->refresh();
+
+        $token = $this->apiLogin('analytics.kpi.rounding@example.com', 'test1234');
+        $response = $this->request(
+            'GET',
+            '/api/analytics/kpis/average-price?from=2026-03-01&to=2026-03-31',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $items = $this->extractCollectionItems(json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertCount(1, $items);
+        self::assertSame(1, $this->toInt($items[0]['totalCostCents'] ?? null));
+        self::assertSame(32, $this->toInt($items[0]['totalQuantityMilliLiters'] ?? null));
+        self::assertSame(313, $this->toInt($items[0]['averagePriceDeciCentsPerLiter'] ?? null));
+    }
+
     /** @param array<string, string> $server */
     private function request(string $method, string $uri, array $server = [], ?string $content = null): Response
     {

@@ -16,3 +16,12 @@
 - [completed] Document performance budget and profiling checks in backlog ticket/docs.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP6-007 Analytics validation tests
+
+## Plan
+- [completed] Add deterministic KPI precision regression test for half-up rounding.
+- [completed] Add functional parity test between analytics KPI totals and CSV export totals for identical filters.
+- [completed] Update sprint/backlog docs and mark ticket `SP6-007` as done.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

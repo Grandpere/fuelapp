@@ -7,11 +7,10 @@
 - Deliver decision-oriented metrics and robust exports.
 
 ## In progress
-- `SP6-007` - Analytics validation tests.
+- `SP6-008` - BrowserKit migration for functional test suite.
 
 ## Next tickets (ordered)
-1. `SP6-007` - Analytics validation tests
-2. `SP6-008` - BrowserKit migration for functional test suite
+1. `SP6-008` - BrowserKit migration for functional test suite
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -58,6 +57,7 @@
 - `SP6-004` delivered: station/fuel/date multi-filter parity across KPI APIs and dashboard UI.
 - `SP6-005` delivered: hardened export flow with streaming CSV/XLSX and export metadata.
 - `SP6-006` delivered: KPI query optimization (dynamic SQL filters) with documented performance budget + indexing strategy.
+- `SP6-007` delivered: deterministic analytics validation tests for KPI correctness, rounding precision, and export/API parity.
 
 ## Ready for coding checklist
 - [ ] Confirm auth strategy for Sprint 01: local users + password hash

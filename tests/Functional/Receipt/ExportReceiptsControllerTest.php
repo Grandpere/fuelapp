@@ -131,14 +131,58 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         self::assertTrue(str_starts_with($content, 'PK'));
     }
 
+    public function testCsvExportTotalsMatchAnalyticsCostKpiForSameFilters(): void
+    {
+        $owner = $this->createUser('receipt.export.parity@example.com', 'test1234', ['ROLE_USER']);
+        $stationA = $this->createStation('Parity Station A', '1 Main St', '75001', 'Paris');
+        $stationB = $this->createStation('Parity Station B', '2 Oak Ave', '69001', 'Lyon');
+        $this->em->flush();
+
+        $this->createReceipt($owner, $stationA, new DateTimeImmutable('2026-04-10 10:00:00'), 'diesel', 10000, 18000, 20);
+        $this->createReceipt($owner, $stationA, new DateTimeImmutable('2026-04-15 10:00:00'), 'diesel', 5000, 20000, 20);
+        $this->createReceipt($owner, $stationB, new DateTimeImmutable('2026-04-12 10:00:00'), 'unleaded95', 8000, 17000, 20);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm('receipt.export.parity@example.com', 'test1234');
+        $token = $this->apiLogin('receipt.export.parity@example.com', 'test1234');
+
+        $exportResponse = $this->request(
+            'GET',
+            '/ui/receipts/export?issued_from=2026-04-01&issued_to=2026-04-30&station_id='.$stationA->getId()->toRfc4122().'&fuel_type=diesel&sort_by=date&sort_direction=asc',
+            [],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_OK, $exportResponse->getStatusCode());
+        $csvTotalCents = $this->sumTotalCentsFromCsv($this->responseContent($exportResponse));
+
+        $kpiResponse = $this->request(
+            'GET',
+            '/api/analytics/kpis/cost-per-month?from=2026-04-01&to=2026-04-30&stationId='.$stationA->getId()->toRfc4122().'&fuelType=diesel',
+            [],
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $kpiResponse->getStatusCode());
+
+        /** @var array{member?: list<array<string, mixed>>} $payload */
+        $payload = json_decode((string) $kpiResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        $items = $payload['member'] ?? [];
+        $kpiTotalCents = 0;
+        foreach ($items as $item) {
+            $kpiTotalCents += $this->toInt($item['totalCostCents'] ?? null);
+        }
+
+        self::assertSame($kpiTotalCents, $csvTotalCents);
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server
      * @param array<string, string>                     $cookies
      */
-    private function request(string $method, string $uri, array $parameters = [], array $server = [], array $cookies = []): Response
+    private function request(string $method, string $uri, array $parameters = [], array $server = [], array $cookies = [], ?string $content = null): Response
     {
-        $request = Request::create($uri, $method, $parameters, $cookies, server: $server);
+        $request = Request::create($uri, $method, $parameters, $cookies, server: $server, content: $content);
         $response = $this->httpKernel->handle($request);
         $this->terminableKernel?->terminate($request, $response);
 
@@ -199,6 +243,68 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         }
 
         return (string) $response->getContent();
+    }
+
+    private function apiLogin(string $email, string $password): string
+    {
+        $response = $this->request(
+            'POST',
+            '/api/login',
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            [],
+            json_encode(['email' => $email, 'password' => $password], JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        /** @var array{token: string} $data */
+        $data = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+
+        return $data['token'];
+    }
+
+    private function sumTotalCentsFromCsv(string $csv): int
+    {
+        $lines = preg_split('/\R/', $csv) ?: [];
+        $headerIndex = null;
+        $totalColumnIndex = null;
+        $total = 0;
+
+        foreach ($lines as $lineIndex => $line) {
+            if ('' === trim($line)) {
+                continue;
+            }
+
+            $columns = str_getcsv($line);
+
+            if (null === $headerIndex && in_array('receipt_id', $columns, true)) {
+                $headerIndex = $lineIndex;
+                $totalColumnIndex = array_search('total_cents', $columns, true);
+                continue;
+            }
+
+            if (null === $headerIndex || !is_int($totalColumnIndex) || $lineIndex <= $headerIndex) {
+                continue;
+            }
+
+            $value = $columns[$totalColumnIndex] ?? null;
+            $total += $this->toInt($value);
+        }
+
+        return $total;
+    }
+
+    private function toInt(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && ctype_digit($value)) {
+            return (int) $value;
+        }
+
+        return 0;
     }
 
     /** @param list<string> $roles */

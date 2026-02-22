@@ -46,6 +46,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         parent::setUp();
 
         $this->client = self::createClient();
+        $this->client->disableReboot();
         $container = static::getContainer();
 
         $em = $container->get(EntityManagerInterface::class);

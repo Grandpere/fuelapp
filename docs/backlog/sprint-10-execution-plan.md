@@ -7,15 +7,15 @@ Ship a usable local observability setup fast, then decide if/when to migrate to 
 
 ### Step 1 - SigNoZ baseline
 - Ticket: `SP10-001`
-- Outcome: in progress
+- Outcome: done
 
 ### Step 2 - Structured logs and correlation
 - Ticket: `SP10-002`
-- Outcome: todo
+- Outcome: done
 
 ### Step 3 - Runbook and diagnostics
 - Ticket: `SP10-003`
-- Outcome: todo
+- Outcome: done
 
 ### Step 4 - Modular stack decision ticket
 - Ticket: `SP10-004`

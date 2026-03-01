@@ -8,4 +8,4 @@ Need deterministic troubleshooting across HTTP and async jobs.
 - Propagate correlation ID from HTTP to Messenger handlers.
 
 ## Status
-- todo
+- done

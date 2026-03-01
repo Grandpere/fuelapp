@@ -9,4 +9,4 @@ Need quick local observability value with minimal setup and no paid service.
 - Provide local runbook with URLs/ports and first checks.
 
 ## Status
-- in_progress
+- done

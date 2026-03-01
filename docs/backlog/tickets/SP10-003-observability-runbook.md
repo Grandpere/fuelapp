@@ -8,4 +8,4 @@ Need repeatable local diagnostics and production preparation.
 - Document local/prod differences and rollout notes.
 
 ## Status
-- todo
+- done

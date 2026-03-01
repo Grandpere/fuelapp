@@ -145,4 +145,13 @@
 - [completed] Enable structured JSON logs processor through Monolog config.
 - [completed] Dependency approval obtained and `symfony/monolog-bundle` installed.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`) on current code state.
-- [pending] Ask user to run `make phpunit-functional` and share any failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP10-003 Observability runbook
+
+## Plan
+- [completed] Expand local SigNoZ runbook with standard diagnostics flow and troubleshooting steps.
+- [completed] Add canonical query patterns (`correlation_id`, `user`, `route`, `job`) for incident triage.
+- [completed] Document local vs production operational differences and rollout notes.
+- [completed] Align Sprint 10/backlog ticket statuses with delivered work (`SP10-001` to `SP10-003`).
+- [completed] Documentation-only ticket: no code quality/test commands executed.

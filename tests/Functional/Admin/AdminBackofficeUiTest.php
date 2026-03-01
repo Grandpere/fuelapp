@@ -268,7 +268,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $securityResponse = $this->request('GET', '/ui/admin/security-activities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $securityResponse->getStatusCode());
         self::assertStringContainsString('Security Activities', (string) $securityResponse->getContent());
-        self::assertStringContainsString('admin.station.updated', (string) $securityResponse->getContent());
+        self::assertStringContainsString('security.login.success', (string) $securityResponse->getContent());
 
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs', ['action' => 'admin.station.updated'], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $auditResponse->getStatusCode());

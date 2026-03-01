@@ -435,10 +435,13 @@
     {{ parent() }}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        const initAnalyticsStationMap = () => {
             const mapContainer = document.getElementById('analytics-station-map');
             const dataContainer = document.getElementById('analytics-station-map-data');
             if (!mapContainer || !dataContainer || typeof L === 'undefined') {
+                return;
+            }
+            if (mapContainer.dataset.mapInitialized === '1') {
                 return;
             }
 
@@ -481,6 +484,12 @@
             } else {
                 map.setView([46.603354, 1.888334], 5);
             }
-        });
+
+            mapContainer.dataset.mapInitialized = '1';
+            setTimeout(() => map.invalidateSize(), 0);
+        };
+
+        document.addEventListener('DOMContentLoaded', initAnalyticsStationMap);
+        document.addEventListener('turbo:load', initAnalyticsStationMap);
     </script>
 {% endblock %}

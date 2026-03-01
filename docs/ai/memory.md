@@ -308,3 +308,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: without BrowserKit client, cookie/session handling was duplicated in many tests.
 - Fix: install `symfony/browser-kit` and migrate priority UI suites to `WebTestCase::createClient()`.
 - Prevention: for authenticated UI/session flows, default to BrowserKit functional client instead of manual kernel request plumbing.
+
+## 2026-03-01 - SigNoZ standalone container needs explicit ClickHouse backend wiring
+- Symptom: SigNoZ UI returned `internal` with message `failed to get tbl statement`.
+- Root cause: `signoz/signoz` container was running without reachable ClickHouse (`dial tcp [::1]:9000: connect: connection refused`), then with default ClickHouse user network-disabled.
+- Fix: add dedicated `clickhouse` service in observability profile, configure `SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN` with explicit credentials, align `CLICKHOUSE_USER`/`CLICKHOUSE_PASSWORD`, and restart observability stack.
+- Prevention: for SigNoZ local setup, always provision ClickHouse + DSN + credentials together; treat `failed to get tbl statement` as ClickHouse connectivity/auth first.

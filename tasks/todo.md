@@ -172,4 +172,5 @@
 - [completed] Add HTTP request tracing subscriber with correlation attributes.
 - [completed] Extend Messenger middleware to emit dispatch/consume spans with correlation attributes.
 - [completed] Update observability runbook with concrete first telemetry checks.
+- [completed] Fix observability runtime by adding ClickHouse backend and explicit SigNoZ DSN credentials.
 - [completed] Run syntax-only verification on touched PHP files (no tests executed).

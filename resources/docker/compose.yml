@@ -100,6 +100,13 @@ services:
   signoz:
     image: signoz/signoz:${SIGNOZ_VERSION:-latest}
     profiles: ["observability"]
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    environment:
+      SIGNOZ_TELEMETRYSTORE_PROVIDER: "${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}"
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: "${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-clickhouse://signoz:signoz@clickhouse:9000/signoz}"
+      SIGNOZ_TOKENIZER_JWT_SECRET: "${SIGNOZ_TOKENIZER_JWT_SECRET:-ChangeMeToAtLeast32CharsForSigNozJwt}"
     ports:
       - "${SIGNOZ_PORT:-3301}:8080"
       - "${SIGNOZ_OTLP_GRPC_PORT:-14317}:4317"
@@ -112,8 +119,26 @@ services:
       timeout: 5s
       retries: 10
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-24.8-alpine}
+    profiles: ["observability"]
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-signoz}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-signoz}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-signoz}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_log:/var/log/clickhouse-server
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --query 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
 volumes:
   database_data:
   rabbitmq_data:
   redis_data:
   signoz_data:
+  clickhouse_data:
+  clickhouse_log:

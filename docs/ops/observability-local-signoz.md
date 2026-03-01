@@ -67,6 +67,11 @@ It is isolated behind Docker profile `observability`.
   1. Confirm service is running: `make ps`.
   2. Check service logs: `make observability-logs`.
   3. Ensure `SIGNOZ_PORT` is free on host.
+- SigNoZ UI shows `internal / failed to get tbl statement`:
+  1. Check SigNoZ logs for ClickHouse errors (`dial tcp ...:9000` or auth failures).
+  2. Ensure `clickhouse` service is up and healthy in `make ps`.
+  3. Ensure `SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN` matches `CLICKHOUSE_USER`/`CLICKHOUSE_PASSWORD`.
+  4. Restart observability stack: `make observability-down && make observability-up`.
 - Logs visible in app stdout but not in SigNoZ:
   1. Validate OTLP port mapping in `resources/docker/compose.yml`.
   2. Confirm app telemetry export target matches `SIGNOZ_OTLP_*` endpoints.

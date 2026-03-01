@@ -239,6 +239,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $importsResponse->getStatusCode());
         self::assertStringContainsString('ui-import.pdf', (string) $importsResponse->getContent());
         self::assertStringContainsString('needs_review', (string) $importsResponse->getContent());
+        self::assertStringContainsString('data-controller="row-link"', (string) $importsResponse->getContent());
 
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs', ['action' => 'admin.station.updated'], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $auditResponse->getStatusCode());

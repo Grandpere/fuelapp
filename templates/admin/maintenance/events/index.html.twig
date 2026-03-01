@@ -59,7 +59,13 @@
                 </thead>
                 <tbody>
                 {% for event in events %}
-                    <tr class="table-row" style="cursor:pointer;" onclick="if (!event.target.closest('a,button,input,form,select,textarea,label')) { window.location.href='{{ path('ui_admin_maintenance_event_show', {id: event.id.toString}) }}'; }">
+                    <tr
+                        class="table-row"
+                        style="cursor:pointer;"
+                        data-controller="row-link"
+                        data-action="click->row-link#navigate"
+                        data-row-link-url-value="{{ path('ui_admin_maintenance_event_show', {id: event.id.toString}) }}"
+                    >
                         <td>{{ event.occurredAt|date('Y-m-d H:i') }}</td>
                         <td><span class="pill pill-energy">{{ event.eventType.value }}</span></td>
                         <td><code>{{ event.ownerId }}</code></td>
@@ -74,9 +80,9 @@
                         <td>{{ event.odometerKilometers ?? 'n/a' }}</td>
                         <td>{{ event.description ?? 'n/a' }}</td>
                         <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_show', {id: event.id.toString}) }}">Detail</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString}) }}">Edit</a>
-                            <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" onsubmit="return confirm('Delete this maintenance event?');">
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_show', {id: event.id.toString}) }}" data-turbo-frame="_top">Detail</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString}) }}" data-turbo-frame="_top">Edit</a>
+                            <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this maintenance event?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.id.toString) }}">
                                 <button class="btn btn-danger" type="submit">Delete</button>
                             </form>

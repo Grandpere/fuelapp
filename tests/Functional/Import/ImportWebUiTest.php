@@ -123,6 +123,7 @@ final class ImportWebUiTest extends WebTestCase
         $listContent = (string) $listResponse->getContent();
         self::assertStringContainsString('ticket.png', $listContent);
         self::assertStringContainsString('Queued', $listContent);
+        self::assertStringContainsString('data-controller="row-link"', $listContent);
 
         $saved = $this->em->getRepository(ImportJobEntity::class)->findOneBy(['originalFilename' => 'ticket.png']);
         self::assertInstanceOf(ImportJobEntity::class, $saved);

@@ -30,7 +30,7 @@
     <main class="app-shell vehicle-form-page">
         <header class="vehicle-form-header">
             <h1 class="page-title">{% if isEdit %}Edit vehicle{% else %}Add vehicle{% endif %}</h1>
-            <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}">Back</a>
+            <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}" data-turbo-frame="_top">Back</a>
         </header>
 
         <section class="card vehicle-form-card">
@@ -44,7 +44,7 @@
                 </div>
             {% endif %}
 
-            <form method="post" action="" style="display:grid; gap:0.9rem;">
+            <form method="post" action="" data-turbo-frame="_top" style="display:grid; gap:0.9rem;">
                 <input type="hidden" name="_token" value="{{ csrfToken }}">
                 <label class="label">
                     Name
@@ -57,7 +57,7 @@
 
                 <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
                     <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create vehicle{% endif %}</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}">Cancel</a>
+                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}" data-turbo-frame="_top">Cancel</a>
                 </div>
             </form>
         </section>

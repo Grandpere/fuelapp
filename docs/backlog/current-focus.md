@@ -1,17 +1,17 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 07 - UX flow and odometer bridge
+- Sprint 08 - Visual analytics
 
 ## Current goal
-- Prepare Sprint 08 visual analytics delivery.
+- Deliver map and trend visualizations with existing analytics filter parity.
 
 ## In progress
-- Sprint 07 closure and Sprint 08 kickoff.
+- `SP8-001` visited stations map.
 
 ## Next tickets (ordered)
-1. `SP8-001` visited stations map (Leaflet/OpenStreetMap)
-2. `SP8-002` fuel price evolution series
+1. `SP8-002` fuel price evolution series
+2. `SP8-003` compared cost series (fuel vs maintenance vs total)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

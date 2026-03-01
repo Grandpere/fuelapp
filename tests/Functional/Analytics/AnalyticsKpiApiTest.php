@@ -170,6 +170,20 @@ final class AnalyticsKpiApiTest extends KernelTestCase
         self::assertSame(28000, $this->toInt($stationFuelItems[0]['totalCostCents'] ?? null));
         self::assertSame(15000, $this->toInt($stationFuelItems[0]['totalQuantityMilliLiters'] ?? null));
         self::assertSame(18667, $this->toInt($stationFuelItems[0]['averagePriceDeciCentsPerLiter'] ?? null));
+
+        $visitedStationsResponse = $this->request(
+            'GET',
+            '/api/analytics/stations/visited?stationId='.$stationA->getId()->toRfc4122().'&fuelType=diesel&from=2026-01-01&to=2026-02-28',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $visitedStationsResponse->getStatusCode());
+        $visitedStationsItems = $this->extractCollectionItems(json_decode((string) $visitedStationsResponse->getContent(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertCount(1, $visitedStationsItems);
+        self::assertSame($stationA->getId()->toRfc4122(), $visitedStationsItems[0]['stationId'] ?? null);
+        self::assertSame('Station A', $visitedStationsItems[0]['stationName'] ?? null);
+        self::assertSame(2, $this->toInt($visitedStationsItems[0]['receiptCount'] ?? null));
+        self::assertSame(28000, $this->toInt($visitedStationsItems[0]['totalCostCents'] ?? null));
+        self::assertSame(15000, $this->toInt($visitedStationsItems[0]['totalQuantityMilliLiters'] ?? null));
     }
 
     public function testAveragePriceUsesHalfUpRoundingForDeciCentsPerLiter(): void
@@ -275,6 +289,8 @@ final class AnalyticsKpiApiTest extends KernelTestCase
         $station->setStreetName($street);
         $station->setPostalCode($postalCode);
         $station->setCity($city);
+        $station->setLatitudeMicroDegrees(48_856_600);
+        $station->setLongitudeMicroDegrees(2_352_200);
         $this->em->persist($station);
 
         return $station;

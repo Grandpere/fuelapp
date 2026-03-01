@@ -4,6 +4,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
     <style>
         .analytics-page {
             display: grid;
@@ -70,6 +71,48 @@
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0.85rem;
+        }
+
+        .map-card {
+            padding: 1rem;
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .map-card h2 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .map-canvas {
+            height: 360px;
+            border-radius: 12px;
+            border: 1px solid rgba(92, 133, 159, 0.35);
+            overflow: hidden;
+            background: rgba(6, 26, 38, 0.55);
+        }
+
+        .station-map-list {
+            display: grid;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .station-map-item {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.9rem;
+            padding: 0.6rem 0.7rem;
+            border-radius: 10px;
+            border: 1px solid rgba(92, 133, 159, 0.24);
+            background: rgba(8, 26, 38, 0.5);
+            font-size: 0.86rem;
+        }
+
+        .station-map-item strong {
+            color: #e6f0f6;
         }
 
         .trend-card {
@@ -227,6 +270,27 @@
             </article>
         </section>
 
+        <section class="card map-card">
+            <h2>Visited stations map</h2>
+            {% if stationMapPoints is empty %}
+                <div class="empty-state">No geocoded station data for current filters.</div>
+            {% else %}
+                <div class="map-canvas" id="analytics-station-map"></div>
+                <ul class="station-map-list">
+                    {% for point in stationMapPoints %}
+                        <li class="station-map-item">
+                            <strong>{{ point.stationName }}</strong>
+                            <span>{{ point.address }}</span>
+                            <span>{{ (point.totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                            <span>{{ (point.totalQuantityMilliLiters / 1000)|number_format(2, '.', ' ') }} L</span>
+                            <span>{{ point.receiptCount }} receipt(s)</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <script type="application/json" id="analytics-station-map-data">{{ stationMapPoints|json_encode }}</script>
+            {% endif %}
+        </section>
+
         <section class="trend-grid">
             <article class="card trend-card">
                 <h2>Cost trend by month</h2>
@@ -267,4 +331,58 @@
             </article>
         </section>
     </main>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        (function () {
+            const mapContainer = document.getElementById('analytics-station-map');
+            const dataContainer = document.getElementById('analytics-station-map-data');
+            if (!mapContainer || !dataContainer || typeof L === 'undefined') {
+                return;
+            }
+
+            let points = [];
+            try {
+                points = JSON.parse(dataContainer.textContent || '[]');
+            } catch (error) {
+                points = [];
+            }
+
+            if (!Array.isArray(points) || points.length === 0) {
+                return;
+            }
+
+            const map = L.map(mapContainer, {scrollWheelZoom: false});
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            const bounds = [];
+            points.forEach((point) => {
+                if (typeof point.latitude !== 'number' || typeof point.longitude !== 'number') {
+                    return;
+                }
+
+                const marker = L.marker([point.latitude, point.longitude]).addTo(map);
+                marker.bindPopup(
+                    `<strong>${point.stationName}</strong><br>` +
+                    `${point.address}<br>` +
+                    `${(point.totalCostCents / 100).toFixed(2)} EUR · ${(point.totalQuantityMilliLiters / 1000).toFixed(2)} L`
+                );
+                bounds.push([point.latitude, point.longitude]);
+            });
+
+            if (bounds.length === 1) {
+                map.setView(bounds[0], 12);
+            } else if (bounds.length > 1) {
+                map.fitBounds(bounds, {padding: [20, 20]});
+            } else {
+                map.setView([46.603354, 1.888334], 5);
+            }
+        })();
+    </script>
 {% endblock %}

@@ -118,6 +118,9 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('280.00 EUR', $content);
         self::assertStringContainsString('2026-02', $content);
         self::assertStringContainsString('20.00 L', $content);
+        self::assertStringContainsString('Visited stations map', $content);
+        self::assertStringContainsString('Station A', $content);
+        self::assertStringContainsString('receipt(s)', $content);
 
         $vehicleResponse = $this->request(
             'GET',
@@ -229,6 +232,8 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $station->setStreetName($street);
         $station->setPostalCode($postalCode);
         $station->setCity($city);
+        $station->setLatitudeMicroDegrees(48_856_600);
+        $station->setLongitudeMicroDegrees(2_352_200);
         $this->em->persist($station);
 
         return $station;

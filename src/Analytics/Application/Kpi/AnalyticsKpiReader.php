@@ -24,4 +24,7 @@ interface AnalyticsKpiReader
     public function readConsumptionPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
 
     public function readAveragePrice(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): AverageFuelPriceKpi;
+
+    /** @return list<VisitedStationPointKpi> */
+    public function readVisitedStations(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
 }

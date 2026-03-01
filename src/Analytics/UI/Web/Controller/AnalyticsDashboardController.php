@@ -16,6 +16,7 @@ namespace App\Analytics\UI\Web\Controller;
 use App\Analytics\Application\Kpi\AnalyticsKpiReader;
 use App\Analytics\Application\Kpi\MonthlyConsumptionKpi;
 use App\Analytics\Application\Kpi\MonthlyCostKpi;
+use App\Analytics\Application\Kpi\VisitedStationPointKpi;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Station\Application\Repository\StationRepository;
@@ -55,6 +56,7 @@ final class AnalyticsDashboardController extends AbstractController
         $costPerMonth = $this->kpiReader->readCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $consumptionPerMonth = $this->kpiReader->readConsumptionPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $averagePrice = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $visitedStations = $this->kpiReader->readVisitedStations($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         return $this->render('analytics/index.html.twig', [
             'vehicleOptions' => $this->vehicleOptions($ownerId),
@@ -72,6 +74,8 @@ final class AnalyticsDashboardController extends AbstractController
             'totalCostCents' => $averagePrice->totalCostCents,
             'totalQuantityMilliLiters' => $averagePrice->totalQuantityMilliLiters,
             'averagePriceDeciCentsPerLiter' => $averagePrice->averagePriceDeciCentsPerLiter,
+            'visitedStations' => $visitedStations,
+            'stationMapPoints' => $this->stationMapPoints($visitedStations),
             'exportQueryParams' => [
                 'issued_from' => $from?->format('Y-m-d'),
                 'issued_to' => $to?->format('Y-m-d'),
@@ -238,5 +242,38 @@ final class AnalyticsDashboardController extends AbstractController
         }
 
         return $trend;
+    }
+
+    /**
+     * @param list<VisitedStationPointKpi> $items
+     *
+     * @return list<array{
+     *     stationId:string,
+     *     stationName:string,
+     *     address:string,
+     *     latitude:float,
+     *     longitude:float,
+     *     receiptCount:int,
+     *     totalCostCents:int,
+     *     totalQuantityMilliLiters:int
+     * }>
+     */
+    private function stationMapPoints(array $items): array
+    {
+        $points = [];
+        foreach ($items as $item) {
+            $points[] = [
+                'stationId' => $item->stationId,
+                'stationName' => $item->stationName,
+                'address' => sprintf('%s, %s %s', $item->streetName, $item->postalCode, $item->city),
+                'latitude' => $item->latitudeMicroDegrees / 1_000_000,
+                'longitude' => $item->longitudeMicroDegrees / 1_000_000,
+                'receiptCount' => $item->receiptCount,
+                'totalCostCents' => $item->totalCostCents,
+                'totalQuantityMilliLiters' => $item->totalQuantityMilliLiters,
+            ];
+        }
+
+        return $points;
     }
 }

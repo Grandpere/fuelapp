@@ -64,3 +64,13 @@
 - [completed] Add unit/integration coverage for receipt-driven mileage due reminders.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share any failures.
+
+# TODO - SP8-001 visited stations map
+
+## Plan
+- [completed] Add analytics read-model method for visited geocoded stations with existing filters parity.
+- [completed] Expose visited stations data through a dedicated API Platform collection endpoint.
+- [completed] Render visited stations map on analytics dashboard (Leaflet + OSM) with fallback list.
+- [completed] Add/adjust functional tests for API and analytics dashboard map section.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

@@ -2,6 +2,7 @@ SHELL := /bin/sh
 
 DC := docker compose -f resources/docker/compose.yml --env-file resources/docker/.env
 DC_EXEC := $(DC) exec -T app
+DC_OBS := $(DC) --profile observability
 
 .PHONY: help
 help: ## Show help
@@ -47,6 +48,18 @@ ps: ## List containers
 .PHONY: restart-app
 restart-app: ## Restart app container only
 	$(DC) restart app
+
+.PHONY: observability-up
+observability-up: ## Start local observability stack (SigNoz profile)
+	$(DC_OBS) up -d signoz
+
+.PHONY: observability-down
+observability-down: ## Stop local observability stack (SigNoz profile)
+	$(DC_OBS) stop signoz
+
+.PHONY: observability-logs
+observability-logs: ## Follow SigNoz logs
+	$(DC_OBS) logs -f signoz
 
 .PHONY: shell
 shell: ## Open a shell in app container

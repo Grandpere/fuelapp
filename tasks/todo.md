@@ -125,3 +125,13 @@
 - [completed] Add/update functional tests for new API/UI controls.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP10-001 Local observability stack (SigNoZ baseline)
+
+## Plan
+- [completed] Add SigNoZ service to Docker compose using `observability` profile.
+- [completed] Add make targets for observability start/stop/logs.
+- [completed] Add local runbook with URLs, ports, and first checks.
+- [completed] Add explicit backlog ticket for possible migration to modular stack later (`SP10-004`).
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

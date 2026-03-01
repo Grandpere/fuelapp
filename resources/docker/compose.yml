@@ -89,7 +89,23 @@ services:
       timeout: 5s
       retries: 5
 
+  signoz:
+    image: signoz/signoz:${SIGNOZ_VERSION:-latest}
+    profiles: ["observability"]
+    ports:
+      - "${SIGNOZ_PORT:-3301}:8080"
+      - "${SIGNOZ_OTLP_GRPC_PORT:-14317}:4317"
+      - "${SIGNOZ_OTLP_HTTP_PORT:-14318}:4318"
+    volumes:
+      - signoz_data:/var/lib/signoz
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
 volumes:
   database_data:
   rabbitmq_data:
   redis_data:
+  signoz_data:

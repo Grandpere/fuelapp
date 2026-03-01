@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of a FuelApp project.
+ *
+ * (c) Lorenzo Marozzo <lorenzo.marozzo@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Admin\Application\Identity;
+
+final readonly class AdminIdentityRecord
+{
+    /** @param list<string> $userRoles */
+    public function __construct(
+        public string $id,
+        public string $userId,
+        public string $userEmail,
+        public array $userRoles,
+        public string $provider,
+        public string $subject,
+        public ?string $email,
+    ) {
+    }
+}

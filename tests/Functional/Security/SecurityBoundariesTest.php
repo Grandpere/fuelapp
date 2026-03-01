@@ -132,6 +132,8 @@ final class SecurityBoundariesTest extends KernelTestCase
         $stationsResponse = $this->request('GET', '/ui/admin/stations');
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles');
         $importsResponse = $this->request('GET', '/ui/admin/imports');
+        $identitiesResponse = $this->request('GET', '/ui/admin/identities');
+        $securityActivitiesResponse = $this->request('GET', '/ui/admin/security-activities');
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs');
 
         self::assertSame(Response::HTTP_FOUND, $stationsResponse->getStatusCode());
@@ -140,6 +142,10 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertStringStartsWith('/ui/login', (string) $vehiclesResponse->headers->get('Location'));
         self::assertSame(Response::HTTP_FOUND, $importsResponse->getStatusCode());
         self::assertStringStartsWith('/ui/login', (string) $importsResponse->headers->get('Location'));
+        self::assertSame(Response::HTTP_FOUND, $identitiesResponse->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $identitiesResponse->headers->get('Location'));
+        self::assertSame(Response::HTTP_FOUND, $securityActivitiesResponse->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $securityActivitiesResponse->headers->get('Location'));
         self::assertSame(Response::HTTP_FOUND, $auditResponse->getStatusCode());
         self::assertStringStartsWith('/ui/login', (string) $auditResponse->headers->get('Location'));
     }

@@ -4,14 +4,14 @@
 - Sprint 09 - BO users and identities
 
 ## Current goal
-- Deliver BO users operational controls (`SP9-001`).
+- Deliver BO identities management and security activities (`SP9-002`, `SP9-003`).
 
 ## In progress
-- `SP9-001` BO users controls (filters, activation, admin role).
+- `SP9-002` BO identities management (list/relink/unlink on API + UI).
+- `SP9-003` Security activities timeline (API/UI + login success/failure feed).
 
 ## Next tickets (ordered)
-1. `SP9-002` BO identities management
-2. `SP9-003` Security activities view
+1. `SP9-004` Password reset and email verification admin controls
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

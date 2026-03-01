@@ -13,12 +13,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Admin;
 
+use App\Admin\Infrastructure\Persistence\Doctrine\Entity\AdminAuditLogEntity;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderEntity;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderRuleEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\User\Infrastructure\Persistence\Doctrine\Entity\UserIdentityEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -78,12 +80,16 @@ final class AdminApiManagementTest extends KernelTestCase
         $stationsResponse = $this->request('GET', '/api/admin/stations', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $vehiclesResponse = $this->request('GET', '/api/admin/vehicles', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $usersResponse = $this->request('GET', '/api/admin/users', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
+        $identitiesResponse = $this->request('GET', '/api/admin/identities', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
+        $securityActivitiesResponse = $this->request('GET', '/api/admin/security-activities', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $maintenanceEventsResponse = $this->request('GET', '/api/admin/maintenance/events', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $maintenanceRemindersResponse = $this->request('GET', '/api/admin/maintenance/reminders', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
 
         self::assertSame(Response::HTTP_FORBIDDEN, $stationsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $vehiclesResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $usersResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $identitiesResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $securityActivitiesResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceEventsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceRemindersResponse->getStatusCode());
     }
@@ -144,6 +150,86 @@ final class AdminApiManagementTest extends KernelTestCase
         self::assertSame(Response::HTTP_OK, $adminOnlyResponse->getStatusCode());
         $adminItems = $this->extractCollectionItems(json_decode((string) $adminOnlyResponse->getContent(), true, 512, JSON_THROW_ON_ERROR));
         self::assertNotEmpty($adminItems);
+    }
+
+    public function testAdminCanFilterRelinkAndDeleteIdentities(): void
+    {
+        $token = $this->createAdminAndLogin('admin.identities@example.com');
+        $ownerA = $this->createUser('identity.owner.a@example.com', 'test1234', ['ROLE_USER']);
+        $ownerB = $this->createUser('identity.owner.b@example.com', 'test1234', ['ROLE_USER']);
+        $identity = $this->createIdentity($ownerA, 'google', 'sub-google-001', 'identity.owner.a@example.com');
+        $this->em->flush();
+
+        $listResponse = $this->request(
+            'GET',
+            '/api/admin/identities?provider=google&q=sub-google-001',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        $identities = $this->extractCollectionItems(json_decode((string) $listResponse->getContent(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertCount(1, $identities);
+        self::assertSame($identity->getId()->toRfc4122(), $identities[0]['id'] ?? null);
+        self::assertSame($ownerA->getId()->toRfc4122(), $identities[0]['userId'] ?? null);
+
+        $relinkResponse = $this->request(
+            'PATCH',
+            '/api/admin/identities/'.$identity->getId()->toRfc4122(),
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/merge-patch+json',
+            ],
+            json_encode(['userId' => $ownerB->getId()->toRfc4122()], JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_OK, $relinkResponse->getStatusCode());
+        $relinked = json_decode((string) $relinkResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($relinked);
+        self::assertSame($ownerB->getId()->toRfc4122(), $relinked['userId'] ?? null);
+
+        $deleteResponse = $this->request(
+            'DELETE',
+            '/api/admin/identities/'.$identity->getId()->toRfc4122(),
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_NO_CONTENT, $deleteResponse->getStatusCode());
+
+        $deletedLookup = $this->request(
+            'GET',
+            '/api/admin/identities/'.$identity->getId()->toRfc4122(),
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_NOT_FOUND, $deletedLookup->getStatusCode());
+    }
+
+    public function testAdminCanFilterSecurityActivitiesTimeline(): void
+    {
+        $token = $this->createAdminAndLogin('admin.security.activity@example.com');
+        $admin = $this->createUser('security.actor@example.com', 'test1234', ['ROLE_ADMIN']);
+        $this->em->flush();
+
+        $entry = new AdminAuditLogEntity();
+        $entry->setId(Uuid::v7());
+        $entry->setActorId($admin->getId());
+        $entry->setActorEmail($admin->getEmail());
+        $entry->setAction('admin.user.updated');
+        $entry->setTargetType('user');
+        $entry->setTargetId($admin->getId()->toRfc4122());
+        $entry->setDiffSummary(['isActive' => ['before' => true, 'after' => false]]);
+        $entry->setMetadata(['source' => 'functional-test']);
+        $entry->setCorrelationId('corr-security-activity-001');
+        $entry->setCreatedAt(new DateTimeImmutable('2026-03-01 12:00:00'));
+        $this->em->persist($entry);
+        $this->em->flush();
+
+        $response = $this->request(
+            'GET',
+            '/api/admin/security-activities?action=admin.user.updated&actorId='.$admin->getId()->toRfc4122(),
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $activities = $this->extractCollectionItems(json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertNotEmpty($activities);
+        self::assertSame('admin.user.updated', $activities[0]['action'] ?? null);
+        self::assertSame($admin->getId()->toRfc4122(), $activities[0]['actorId'] ?? null);
     }
 
     public function testAdminCanManageVehicleWithoutCreateOperation(): void
@@ -424,5 +510,18 @@ final class AdminApiManagementTest extends KernelTestCase
         $this->em->persist($user);
 
         return $user;
+    }
+
+    private function createIdentity(UserEntity $owner, string $provider, string $subject, ?string $email = null): UserIdentityEntity
+    {
+        $identity = new UserIdentityEntity();
+        $identity->setId(Uuid::v7());
+        $identity->setUser($owner);
+        $identity->setProvider($provider);
+        $identity->setSubject($subject);
+        $identity->setEmail($email);
+        $this->em->persist($identity);
+
+        return $identity;
     }
 }

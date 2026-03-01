@@ -104,3 +104,14 @@
 - [completed] Add/update functional coverage for admin API/UI user management.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share any failures.
+
+# TODO - SP9 batch B (SP9-002 + SP9-003)
+
+## Plan
+- [completed] SP9-002 identities domain/app layer: add admin identity repository + manager contracts.
+- [completed] SP9-002 identities API/UI: list/relink/unlink + filters + audit logging.
+- [completed] SP9-003 security activities: add dedicated read model/API/UI timeline.
+- [completed] SP9-003 activity feed: log login success/failure and include account-role/status events in timeline.
+- [completed] Add/update admin functional coverage for identities and security activities.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

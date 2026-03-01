@@ -7,15 +7,15 @@ Enable safe administrative control over users, identities and security activity.
 
 ### Step 1 - BO users controls
 - Ticket: `SP9-001`
-- Outcome: in progress
+- Outcome: done
 
 ### Step 2 - BO identities
 - Ticket: `SP9-002`
-- Outcome: todo
+- Outcome: in progress
 
 ### Step 3 - Security activity timeline
 - Ticket: `SP9-003`
-- Outcome: todo
+- Outcome: in progress
 
 ### Step 4 - Password reset and email verification controls
 - Ticket: `SP9-004`

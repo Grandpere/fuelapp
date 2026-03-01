@@ -27,21 +27,34 @@ final class Receipt
     private array $lines;
     private ?StationId $stationId;
     private ?VehicleId $vehicleId;
+    private ?int $odometerKilometers;
 
     /** @param array<ReceiptLine> $lines */
-    private function __construct(ReceiptId $id, DateTimeImmutable $issuedAt, array $lines, ?StationId $stationId, ?VehicleId $vehicleId)
-    {
+    private function __construct(
+        ReceiptId $id,
+        DateTimeImmutable $issuedAt,
+        array $lines,
+        ?StationId $stationId,
+        ?VehicleId $vehicleId,
+        ?int $odometerKilometers,
+    ) {
         $this->id = $id;
         $this->issuedAt = $issuedAt;
         $this->lines = $lines;
         $this->stationId = $stationId;
         $this->vehicleId = $vehicleId;
+        $this->odometerKilometers = self::assertOdometerKilometers($odometerKilometers);
     }
 
     /** @param array<ReceiptLine> $lines */
-    public static function create(DateTimeImmutable $issuedAt, array $lines, ?StationId $stationId, ?VehicleId $vehicleId = null): self
-    {
-        return new self(ReceiptId::new(), $issuedAt, self::assertLines($lines), $stationId, $vehicleId);
+    public static function create(
+        DateTimeImmutable $issuedAt,
+        array $lines,
+        ?StationId $stationId,
+        ?VehicleId $vehicleId = null,
+        ?int $odometerKilometers = null,
+    ): self {
+        return new self(ReceiptId::new(), $issuedAt, self::assertLines($lines), $stationId, $vehicleId, $odometerKilometers);
     }
 
     /** @param array<ReceiptLine> $lines */
@@ -51,8 +64,9 @@ final class Receipt
         array $lines,
         ?StationId $stationId,
         ?VehicleId $vehicleId = null,
+        ?int $odometerKilometers = null,
     ): self {
-        return new self($id, $issuedAt, self::assertLines($lines), $stationId, $vehicleId);
+        return new self($id, $issuedAt, self::assertLines($lines), $stationId, $vehicleId, $odometerKilometers);
     }
 
     public function id(): ReceiptId
@@ -79,6 +93,11 @@ final class Receipt
     public function vehicleId(): ?VehicleId
     {
         return $this->vehicleId;
+    }
+
+    public function odometerKilometers(): ?int
+    {
+        return $this->odometerKilometers;
     }
 
     public function totalCents(): int
@@ -111,5 +130,14 @@ final class Receipt
         }
 
         return $lines;
+    }
+
+    private static function assertOdometerKilometers(?int $odometerKilometers): ?int
+    {
+        if (null !== $odometerKilometers && $odometerKilometers < 0) {
+            throw new InvalidArgumentException('Receipt odometer must be non-negative.');
+        }
+
+        return $odometerKilometers;
     }
 }

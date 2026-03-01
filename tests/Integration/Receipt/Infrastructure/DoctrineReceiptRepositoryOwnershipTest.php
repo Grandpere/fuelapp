@@ -81,11 +81,14 @@ final class DoctrineReceiptRepositoryOwnershipTest extends KernelTestCase
             new DateTimeImmutable('2026-02-20 09:00:00'),
             [ReceiptLine::create(FuelType::DIESEL, 10_000, 1800, 20)],
             null,
+            odometerKilometers: 124_500,
         );
         $this->receiptRepository->save($receipt);
 
         self::assertSame(1, $this->receiptRepository->countAll());
-        self::assertNotNull($this->receiptRepository->get($receipt->id()->toString()));
+        $loaded = $this->receiptRepository->get($receipt->id()->toString());
+        self::assertNotNull($loaded);
+        self::assertSame(124_500, $loaded->odometerKilometers());
 
         $this->authenticate($other);
         self::assertSame(0, $this->receiptRepository->countAll());

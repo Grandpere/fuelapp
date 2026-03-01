@@ -72,6 +72,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $entity->setIssuedAt($receipt->issuedAt());
         $entity->setTotalCents($receipt->totalCents());
         $entity->setVatAmountCents($receipt->vatAmountCents());
+        $entity->setOdometerKilometers($receipt->odometerKilometers());
 
         if (null !== $receipt->stationId()) {
             $stationRef = $this->em->getReference(StationEntity::class, $receipt->stationId()->toString());
@@ -371,7 +372,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
         $rows = $this->em
             ->createQueryBuilder()
-            ->select('r.id AS id, r.issuedAt AS issuedAt, r.totalCents AS totalCents, r.vatAmountCents AS vatAmountCents, s.name AS stationName, s.streetName AS stationStreetName, s.postalCode AS stationPostalCode, s.city AS stationCity, rl.fuelType AS fuelType, rl.quantityMilliLiters AS quantityMilliLiters, rl.unitPriceDeciCentsPerLiter AS unitPriceDeciCentsPerLiter, rl.vatRatePercent AS vatRatePercent')
+            ->select('r.id AS id, r.issuedAt AS issuedAt, r.totalCents AS totalCents, r.vatAmountCents AS vatAmountCents, r.odometerKilometers AS odometerKilometers, s.name AS stationName, s.streetName AS stationStreetName, s.postalCode AS stationPostalCode, s.city AS stationCity, rl.fuelType AS fuelType, rl.quantityMilliLiters AS quantityMilliLiters, rl.unitPriceDeciCentsPerLiter AS unitPriceDeciCentsPerLiter, rl.vatRatePercent AS vatRatePercent')
             ->from(ReceiptEntity::class, 'r')
             ->leftJoin('r.station', 's')
             ->leftJoin('r.lines', 'rl')
@@ -397,6 +398,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
          *     issuedAt: mixed,
          *     totalCents: mixed,
          *     vatAmountCents: mixed,
+         *     odometerKilometers: mixed,
          *     stationName: ?string,
          *     stationStreetName: ?string,
          *     stationPostalCode: ?string,
@@ -416,6 +418,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
                 'issuedAt' => $this->toDateTimeImmutableValue($row['issuedAt'], 'issuedAt'),
                 'totalCents' => $this->toIntValue($row['totalCents'], 'totalCents'),
                 'vatAmountCents' => $this->toIntValue($row['vatAmountCents'], 'vatAmountCents'),
+                'odometerKilometers' => $this->toNullableIntValue($row['odometerKilometers'], 'odometerKilometers'),
                 'stationName' => $this->toNullableStringValue($row['stationName'], 'stationName'),
                 'stationStreetName' => $this->toNullableStringValue($row['stationStreetName'], 'stationStreetName'),
                 'stationPostalCode' => $this->toNullableStringValue($row['stationPostalCode'], 'stationPostalCode'),
@@ -635,6 +638,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $lines,
             $stationId,
             $vehicleId,
+            $entity->getOdometerKilometers(),
         );
     }
 

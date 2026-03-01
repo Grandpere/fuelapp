@@ -82,7 +82,7 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         $stationB = $this->createStation('Station B', '2 Oak Ave', '69001', 'Lyon');
         $this->em->flush();
 
-        $this->createReceipt($owner, $stationA, new DateTimeImmutable('2026-02-10 10:00:00'), 'diesel', 10000, 18000, 20);
+        $this->createReceipt($owner, $stationA, new DateTimeImmutable('2026-02-10 10:00:00'), 'diesel', 10000, 18000, 20, 123456);
         $this->createReceipt($owner, $stationB, new DateTimeImmutable('2026-02-12 10:00:00'), 'unleaded95', 15000, 17000, 20);
         $this->em->flush();
 
@@ -105,6 +105,8 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         self::assertStringContainsString('filter_station_id,'.$stationA->getId()->toRfc4122(), $content);
         self::assertStringContainsString('filter_fuel_type,diesel', $content);
         self::assertStringContainsString('receipt_id,issued_at,station_name', $content);
+        self::assertStringContainsString('odometer_kilometers', $content);
+        self::assertStringContainsString('123456', $content);
         self::assertStringContainsString('Station A', $content);
         self::assertStringNotContainsString('Station B', $content);
     }
@@ -350,6 +352,7 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         int $quantityMilliLiters,
         int $unitPriceDeciCentsPerLiter,
         int $vatRatePercent,
+        ?int $odometerKilometers = null,
     ): void {
         $receipt = new ReceiptEntity();
         $receipt->setId(Uuid::v7());
@@ -357,6 +360,7 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         $receipt->setStation($station);
         $receipt->setVehicle(null);
         $receipt->setIssuedAt($issuedAt);
+        $receipt->setOdometerKilometers($odometerKilometers);
 
         $line = new ReceiptLineEntity();
         $line->setId(Uuid::v7());

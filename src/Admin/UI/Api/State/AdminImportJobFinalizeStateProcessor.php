@@ -66,6 +66,7 @@ final readonly class AdminImportJobFinalizeStateProcessor implements ProcessorIn
                 $data->stationCity,
                 $data->latitudeMicroDegrees,
                 $data->longitudeMicroDegrees,
+                $data->odometerKilometers,
             ));
         } catch (InvalidArgumentException $e) {
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);

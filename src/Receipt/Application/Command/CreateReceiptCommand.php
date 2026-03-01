@@ -26,6 +26,7 @@ final readonly class CreateReceiptCommand
         public ?StationId $stationId,
         public ?VehicleId $vehicleId = null,
         public ?string $ownerId = null,
+        public ?int $odometerKilometers = null,
     ) {
     }
 }

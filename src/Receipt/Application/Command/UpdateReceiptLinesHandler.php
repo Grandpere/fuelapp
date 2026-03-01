@@ -56,6 +56,7 @@ final readonly class UpdateReceiptLinesHandler
             $lines,
             $receipt->stationId(),
             $receipt->vehicleId(),
+            $receipt->odometerKilometers(),
         );
 
         if (null !== $ownerIdForSave) {

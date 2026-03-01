@@ -40,6 +40,7 @@ final readonly class CreateReceiptHandler
             $lines,
             $command->stationId,
             $command->vehicleId,
+            $command->odometerKilometers,
         );
 
         if (null !== $command->ownerId) {

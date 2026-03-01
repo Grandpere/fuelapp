@@ -153,6 +153,7 @@ final class ImportWebUiTest extends WebTestCase
                     'stationStreetName' => '1 Rue de Rivoli',
                     'stationPostalCode' => '75001',
                     'stationCity' => 'Paris',
+                    'odometerKilometers' => 101250,
                     'lines' => [[
                         'fuelType' => 'diesel',
                         'quantityMilliLiters' => 40000,
@@ -194,6 +195,9 @@ final class ImportWebUiTest extends WebTestCase
 
         $receiptCount = $this->em->getRepository(ReceiptEntity::class)->count([]);
         self::assertSame(1, $receiptCount);
+        $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
+        self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
+        self::assertSame(101250, $savedReceipt->getOdometerKilometers());
     }
 
     public function testUserCanFinalizeNeedsReviewImportWithManualCorrectionsFromUi(): void
@@ -257,6 +261,7 @@ final class ImportWebUiTest extends WebTestCase
                 'lineQuantityMilliLiters' => '40000',
                 'lineUnitPriceDeciCentsPerLiter' => '1879',
                 'lineVatRatePercent' => '20',
+                'odometerKilometers' => '152320',
             ],
             [],
             $sessionCookie,
@@ -271,6 +276,9 @@ final class ImportWebUiTest extends WebTestCase
 
         $receiptCount = $this->em->getRepository(ReceiptEntity::class)->count([]);
         self::assertSame(1, $receiptCount);
+        $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
+        self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
+        self::assertSame(152320, $savedReceipt->getOdometerKilometers());
     }
 
     public function testUserCanDeleteOwnImportFromUiList(): void

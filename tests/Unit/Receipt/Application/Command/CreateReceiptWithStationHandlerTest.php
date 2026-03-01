@@ -326,6 +326,7 @@ final class InMemoryReceiptRepository implements ReceiptRepository
                 'issuedAt' => $receipt->issuedAt(),
                 'totalCents' => $receipt->totalCents(),
                 'vatAmountCents' => $receipt->vatAmountCents(),
+                'odometerKilometers' => $receipt->odometerKilometers(),
                 'stationName' => null,
                 'stationStreetName' => null,
                 'stationPostalCode' => null,

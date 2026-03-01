@@ -48,9 +48,9 @@
 # TODO - SP7-002 receipt odometer support
 
 ## Plan
-- [in_progress] Add `odometerKilometers` on receipt domain + persistence model.
-- [pending] Expose odometer in API inputs/outputs and web create/edit flows.
-- [pending] Extend import review/finalize flow with odometer value.
-- [pending] Add/update unit/integration/functional coverage for odometer scenarios.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share any failures.
+- [completed] Add `odometerKilometers` on receipt domain + persistence model.
+- [completed] Expose odometer in API inputs/outputs and web create/edit flows.
+- [completed] Extend import review/finalize flow with odometer value.
+- [completed] Add/update unit/integration/functional coverage for odometer scenarios.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share any failures.

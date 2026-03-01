@@ -40,6 +40,9 @@ class ReceiptEntity
     #[ORM\Column(type: 'integer')]
     private int $vatAmountCents = 0;
 
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $odometerKilometers = null;
+
     #[ORM\ManyToOne(targetEntity: StationEntity::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?StationEntity $station = null;
@@ -99,6 +102,16 @@ class ReceiptEntity
     public function setVatAmountCents(int $vatAmountCents): void
     {
         $this->vatAmountCents = $vatAmountCents;
+    }
+
+    public function getOdometerKilometers(): ?int
+    {
+        return $this->odometerKilometers;
+    }
+
+    public function setOdometerKilometers(?int $odometerKilometers): void
+    {
+        $this->odometerKilometers = $odometerKilometers;
     }
 
     public function getStation(): ?StationEntity

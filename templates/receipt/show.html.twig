@@ -86,6 +86,7 @@
                 <div class="show-kv">
                     <div><strong>ID:</strong> {{ receipt.id.toString() }}</div>
                     <div><strong>Date:</strong> {{ receipt.issuedAt|date('d/m/Y H:i') }}</div>
+                    <div><strong>Odometer:</strong> {{ receipt.odometerKilometers is not null ? receipt.odometerKilometers ~ ' km' : 'n/a' }}</div>
                     <div><strong>Total:</strong> {{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</div>
                     <div><strong>VAT:</strong> {{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</div>
                 </div>

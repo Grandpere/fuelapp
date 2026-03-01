@@ -38,6 +38,7 @@ final readonly class ReceiptStreamPublisher
             'issuedAt' => $receipt->issuedAt(),
             'totalCents' => $receipt->totalCents(),
             'vatAmountCents' => $receipt->vatAmountCents(),
+            'odometerKilometers' => $receipt->odometerKilometers(),
             'stationName' => $station?->name(),
             'stationStreetName' => $station?->streetName(),
             'stationPostalCode' => $station?->postalCode(),

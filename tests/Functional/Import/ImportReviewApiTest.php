@@ -104,6 +104,7 @@ final class ImportReviewApiTest extends KernelTestCase
                 'stationStreetName' => '1 Rue A',
                 'stationPostalCode' => '75001',
                 'stationCity' => 'Paris',
+                'odometerKilometers' => 99999,
                 'lines' => [[
                     'fuelType' => 'diesel',
                     'quantityMilliLiters' => 10000,
@@ -149,6 +150,10 @@ final class ImportReviewApiTest extends KernelTestCase
         self::assertIsNumeric($receiptCountRaw);
         $receiptCount = (int) $receiptCountRaw;
         self::assertSame(1, $receiptCount);
+
+        $odometerRaw = $this->em->getConnection()->fetchOne('SELECT odometer_kilometers FROM receipts LIMIT 1');
+        self::assertIsNumeric($odometerRaw);
+        self::assertSame(99999, (int) $odometerRaw);
     }
 
     public function testFinalizeReturns422WhenJobIsNotNeedsReview(): void

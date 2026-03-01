@@ -1,16 +1,17 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 06 - Analytics and exports
+- Sprint 07 - UX flow and odometer bridge
 
 ## Current goal
-- Deliver decision-oriented metrics and robust exports.
+- Deliver fast UX iterations and close odometer/maintenance loop.
 
 ## In progress
-- Sprint 06 wrap-up and next sprint prioritization.
+- `SP7-003` maintenance due-state bridge from receipt odometer.
 
 ## Next tickets (ordered)
-1. Define Sprint 07 kickoff priorities
+1. `SP7-003` bridge receipt odometer -> maintenance reminders/notices
+2. Prepare Sprint 08 visual analytics kickoff (`SP8-001`)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

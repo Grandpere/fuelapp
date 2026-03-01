@@ -12,9 +12,13 @@ A future migration to modular stack may offer finer control and interoperability
   - production portability.
 - Produce migration/no-migration recommendation and phased plan if migration is approved.
 
+## Delivery
+- Decision document: `/docs/ops/observability-stack-decision.md`
+- Recommendation: keep SigNoZ now, re-evaluate migration when explicit trigger criteria are met.
+
 ## Decision criteria
 - Keep SigNoZ if target capabilities are met with acceptable operational cost.
 - Migrate only if modular stack gives clear measurable value for project goals.
 
 ## Status
-- todo
+- done

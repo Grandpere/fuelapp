@@ -19,7 +19,7 @@ Ship a usable local observability setup fast, then decide if/when to migrate to 
 
 ### Step 4 - Modular stack decision ticket
 - Ticket: `SP10-004`
-- Outcome: todo
+- Outcome: done
 
 ## Mandatory checks per ticket
 - `make phpstan`

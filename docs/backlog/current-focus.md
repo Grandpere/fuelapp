@@ -4,13 +4,13 @@
 - Sprint 10 - Local observability stack
 
 ## Current goal
-- Close Sprint 10 with observability runbook completed and prepare `SP10-004` decision work.
+- Close Sprint 10 and prepare next sprint prioritization.
 
 ## In progress
-- `SP10-004` Evaluate migration to modular OTel/Loki/Tempo/Prometheus/Grafana stack.
+- Sprint 10 completed (`SP10-001` to `SP10-004` done).
 
 ## Next tickets (ordered)
-1. `SP10-004` Evaluate migration to modular observability stack
+1. `SP3-010` Bulk import multi-file/ZIP
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

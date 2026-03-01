@@ -155,3 +155,11 @@
 - [completed] Document local vs production operational differences and rollout notes.
 - [completed] Align Sprint 10/backlog ticket statuses with delivered work (`SP10-001` to `SP10-003`).
 - [completed] Documentation-only ticket: no code quality/test commands executed.
+
+# TODO - SP10-004 Modular stack evaluation decision
+
+## Plan
+- [completed] Produce explicit comparison matrix between SigNoZ baseline and modular OTel/Loki/Tempo/Prometheus/Grafana stack.
+- [completed] Document migration decision, trigger criteria, and phased rollout strategy if migration is approved later.
+- [completed] Link decision artifact in backlog ticket and mark Sprint 10 execution plan as completed.
+- [completed] Documentation-only ticket: no code quality/test commands executed.

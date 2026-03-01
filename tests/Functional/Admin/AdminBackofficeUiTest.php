@@ -450,9 +450,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         );
         self::assertContains($deleteResponse->getStatusCode(), [Response::HTTP_FOUND, Response::HTTP_SEE_OTHER]);
 
-        $afterDelete = $this->request('GET', '/ui/admin/identities?q=ui-owner-subject-001', [], [], $sessionCookie);
+        $afterDelete = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
         self::assertStringNotContainsString('ui-owner-subject-001', (string) $afterDelete->getContent());
+        self::assertStringContainsString('No identities found.', (string) $afterDelete->getContent());
     }
 
     public function testAdminCanFilterSecurityActivitiesFromBackofficeUi(): void

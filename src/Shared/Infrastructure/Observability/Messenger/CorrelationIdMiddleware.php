@@ -14,9 +14,13 @@ declare(strict_types=1);
 namespace App\Shared\Infrastructure\Observability\Messenger;
 
 use App\Shared\Infrastructure\Observability\CorrelationIdContext;
+use OpenTelemetry\API\Globals;
+use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\API\Trace\StatusCode;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Middleware\MiddlewareInterface;
 use Symfony\Component\Messenger\Middleware\StackInterface;
+use Symfony\Component\Messenger\Stamp\ReceivedStamp;
 
 final readonly class CorrelationIdMiddleware implements MiddlewareInterface
 {
@@ -28,6 +32,9 @@ final readonly class CorrelationIdMiddleware implements MiddlewareInterface
     {
         $previous = $this->context->current();
         $stamp = $envelope->last(CorrelationIdStamp::class);
+        $isConsumed = null !== $envelope->last(ReceivedStamp::class);
+        $operation = $isConsumed ? 'consume' : 'dispatch';
+        $spanKind = $isConsumed ? SpanKind::KIND_CONSUMER : SpanKind::KIND_PRODUCER;
 
         $correlationId = $stamp instanceof CorrelationIdStamp
             ? $stamp->correlationId
@@ -39,9 +46,33 @@ final readonly class CorrelationIdMiddleware implements MiddlewareInterface
 
         $this->context->set($correlationId);
 
+        $messageClass = $envelope->getMessage()::class;
+        $tracer = Globals::tracerProvider()->getTracer('fuelapp.messenger');
+        $span = $tracer
+            ->spanBuilder(sprintf('messenger %s %s', $operation, $messageClass))
+            ->setSpanKind($spanKind)
+            ->setAttribute('messaging.system', 'rabbitmq')
+            ->setAttribute('messaging.operation', $operation)
+            ->setAttribute('messaging.destination.name', 'async')
+            ->setAttribute('messaging.message.class', $messageClass)
+            ->setAttribute('correlation_id', $correlationId)
+            ->startSpan();
+        $scope = $span->activate();
+
         try {
-            return $stack->next()->handle($envelope, $stack);
+            $result = $stack->next()->handle($envelope, $stack);
+            $span->setStatus(StatusCode::STATUS_OK);
+
+            return $result;
+        } catch (\Throwable $exception) {
+            $span->recordException($exception);
+            $span->setStatus(StatusCode::STATUS_ERROR, $exception->getMessage());
+
+            throw $exception;
         } finally {
+            $scope->detach();
+            $span->end();
+
             if (null === $previous) {
                 $this->context->clear();
             } else {

@@ -163,3 +163,13 @@
 - [completed] Document migration decision, trigger criteria, and phased rollout strategy if migration is approved later.
 - [completed] Link decision artifact in backlog ticket and mark Sprint 10 execution plan as completed.
 - [completed] Documentation-only ticket: no code quality/test commands executed.
+
+# TODO - SP10 follow-up OTEL wiring to SigNoZ
+
+## Plan
+- [completed] Add OpenTelemetry dependencies (`api`, `sdk`, `exporter-otlp`) with user approval.
+- [completed] Wire OTEL environment in Docker app service for SigNoZ OTLP endpoint.
+- [completed] Add HTTP request tracing subscriber with correlation attributes.
+- [completed] Extend Messenger middleware to emit dispatch/consume spans with correlation attributes.
+- [completed] Update observability runbook with concrete first telemetry checks.
+- [completed] Run syntax-only verification on touched PHP files (no tests executed).

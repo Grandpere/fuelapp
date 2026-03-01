@@ -16,8 +16,16 @@ It is isolated behind Docker profile `observability`.
 
 ## First checks
 1. Run `make observability-up`.
-2. Open SigNoZ UI on `http://localhost:3301` (default).
-3. Confirm container health with `make ps`.
+2. Restart app container once to load OTEL env vars: `make restart-app`.
+3. Open SigNoZ UI on `http://localhost:3301` (default).
+4. Confirm container health with `make ps`.
+5. Generate traffic:
+   - open front pages (`/ui/*`),
+   - run one async flow (example: import or geocoding),
+   - optionally consume jobs with `make messenger-consume-async`.
+6. In SigNoZ, check:
+   - Traces for service `fuelapp`,
+   - metrics related to request/job activity.
 
 ## Signals available in this baseline
 - Logs: structured JSON on app output with `correlation_id`, `request_id`, `user_id`, `user_email`, `job_id`, `http_method`, `http_path`, `http_route`.

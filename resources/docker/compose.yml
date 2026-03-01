@@ -14,6 +14,14 @@ services:
       MERCURE_URL: "http://mercure/.well-known/mercure"
       MERCURE_PUBLIC_URL: "http://localhost:${MERCURE_PORT:-3000}/.well-known/mercure"
       MERCURE_JWT_SECRET: "${MERCURE_JWT_SECRET:-!ChangeMe!}"
+      OTEL_PHP_AUTOLOAD_ENABLED: "${OTEL_PHP_AUTOLOAD_ENABLED:-1}"
+      OTEL_SERVICE_NAME: "${OTEL_SERVICE_NAME:-fuelapp}"
+      OTEL_TRACES_EXPORTER: "${OTEL_TRACES_EXPORTER:-otlp}"
+      OTEL_METRICS_EXPORTER: "${OTEL_METRICS_EXPORTER:-otlp}"
+      OTEL_LOGS_EXPORTER: "${OTEL_LOGS_EXPORTER:-none}"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://signoz:4318}"
+      OTEL_EXPORTER_OTLP_TIMEOUT: "${OTEL_EXPORTER_OTLP_TIMEOUT:-1000}"
     depends_on:
       - database
       - redis

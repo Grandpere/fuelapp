@@ -121,6 +121,9 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('Visited stations map', $content);
         self::assertStringContainsString('Station A', $content);
         self::assertStringContainsString('receipt(s)', $content);
+        self::assertStringContainsString('Fuel price trend by month', $content);
+        self::assertStringContainsString('2026-01 · diesel', $content);
+        self::assertStringContainsString('2026-02 · unleaded95', $content);
 
         $vehicleResponse = $this->request(
             'GET',

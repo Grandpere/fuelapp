@@ -27,4 +27,7 @@ interface AnalyticsKpiReader
 
     /** @return list<VisitedStationPointKpi> */
     public function readVisitedStations(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
+
+    /** @return list<MonthlyFuelPriceKpi> */
+    public function readFuelPricePerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
 }

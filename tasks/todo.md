@@ -74,3 +74,13 @@
 - [completed] Add/adjust functional tests for API and analytics dashboard map section.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share any failures.
+
+# TODO - SP8-002 fuel price evolution graph
+
+## Plan
+- [completed] Add monthly fuel price evolution read-model query with existing analytics filters.
+- [completed] Expose monthly fuel price trend via API endpoint.
+- [completed] Render a new fuel price trend panel in analytics dashboard.
+- [completed] Extend functional tests for API and dashboard rendering.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

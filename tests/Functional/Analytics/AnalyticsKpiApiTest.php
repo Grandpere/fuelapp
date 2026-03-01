@@ -184,6 +184,21 @@ final class AnalyticsKpiApiTest extends KernelTestCase
         self::assertSame(2, $this->toInt($visitedStationsItems[0]['receiptCount'] ?? null));
         self::assertSame(28000, $this->toInt($visitedStationsItems[0]['totalCostCents'] ?? null));
         self::assertSame(15000, $this->toInt($visitedStationsItems[0]['totalQuantityMilliLiters'] ?? null));
+
+        $fuelPricePerMonthResponse = $this->request(
+            'GET',
+            '/api/analytics/kpis/fuel-price-per-month?from=2026-01-01&to=2026-02-28',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $fuelPricePerMonthResponse->getStatusCode());
+        $fuelPricePerMonthItems = $this->extractCollectionItems(json_decode((string) $fuelPricePerMonthResponse->getContent(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertCount(2, $fuelPricePerMonthItems);
+        self::assertSame('2026-01', $fuelPricePerMonthItems[0]['month'] ?? null);
+        self::assertSame('diesel', $fuelPricePerMonthItems[0]['fuelType'] ?? null);
+        self::assertSame(18667, $this->toInt($fuelPricePerMonthItems[0]['averagePriceDeciCentsPerLiter'] ?? null));
+        self::assertSame('2026-02', $fuelPricePerMonthItems[1]['month'] ?? null);
+        self::assertSame('unleaded95', $fuelPricePerMonthItems[1]['fuelType'] ?? null);
+        self::assertSame(17000, $this->toInt($fuelPricePerMonthItems[1]['averagePriceDeciCentsPerLiter'] ?? null));
     }
 
     public function testAveragePriceUsesHalfUpRoundingForDeciCentsPerLiter(): void

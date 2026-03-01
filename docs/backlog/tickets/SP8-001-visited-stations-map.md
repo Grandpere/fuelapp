@@ -24,4 +24,4 @@ Users need spatial visibility on where fuel spend happens with same filters as a
 - Added functional coverage for API and dashboard rendering.
 
 ## Status
-- in_progress
+- done

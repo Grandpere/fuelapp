@@ -7,11 +7,11 @@ Add immediately usable visual analytics with strict filter consistency.
 
 ### Step 1 - Stations map
 - Ticket: `SP8-001`
-- Outcome: in progress
+- Outcome: done
 
 ### Step 2 - Fuel price evolution
 - Ticket: `SP8-002`
-- Outcome: todo
+- Outcome: done
 
 ### Step 3 - Compared cost chart
 - Ticket: `SP8-003`

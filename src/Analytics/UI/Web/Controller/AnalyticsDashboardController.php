@@ -16,6 +16,7 @@ namespace App\Analytics\UI\Web\Controller;
 use App\Analytics\Application\Kpi\AnalyticsKpiReader;
 use App\Analytics\Application\Kpi\MonthlyConsumptionKpi;
 use App\Analytics\Application\Kpi\MonthlyCostKpi;
+use App\Analytics\Application\Kpi\MonthlyFuelPriceKpi;
 use App\Analytics\Application\Kpi\VisitedStationPointKpi;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
@@ -56,6 +57,7 @@ final class AnalyticsDashboardController extends AbstractController
         $costPerMonth = $this->kpiReader->readCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $consumptionPerMonth = $this->kpiReader->readConsumptionPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $averagePrice = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $fuelPricePerMonth = $this->kpiReader->readFuelPricePerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $visitedStations = $this->kpiReader->readVisitedStations($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         return $this->render('analytics/index.html.twig', [
@@ -71,6 +73,7 @@ final class AnalyticsDashboardController extends AbstractController
             'consumptionPerMonth' => $consumptionPerMonth,
             'costTrend' => $this->costTrend($costPerMonth),
             'consumptionTrend' => $this->consumptionTrend($consumptionPerMonth),
+            'fuelPriceTrend' => $this->fuelPriceTrend($fuelPricePerMonth),
             'totalCostCents' => $averagePrice->totalCostCents,
             'totalQuantityMilliLiters' => $averagePrice->totalQuantityMilliLiters,
             'averagePriceDeciCentsPerLiter' => $averagePrice->averagePriceDeciCentsPerLiter,
@@ -275,5 +278,40 @@ final class AnalyticsDashboardController extends AbstractController
         }
 
         return $points;
+    }
+
+    /**
+     * @param list<MonthlyFuelPriceKpi> $items
+     *
+     * @return list<array{
+     *     month:string,
+     *     fuelType:string,
+     *     averagePriceDeciCentsPerLiter:?int,
+     *     totalCostCents:int,
+     *     totalQuantityMilliLiters:int,
+     *     ratio:int
+     * }>
+     */
+    private function fuelPriceTrend(array $items): array
+    {
+        $max = 0;
+        foreach ($items as $item) {
+            $max = max($max, $item->averagePriceDeciCentsPerLiter ?? 0);
+        }
+
+        $trend = [];
+        foreach ($items as $item) {
+            $average = $item->averagePriceDeciCentsPerLiter;
+            $trend[] = [
+                'month' => $item->month,
+                'fuelType' => $item->fuelType,
+                'averagePriceDeciCentsPerLiter' => $average,
+                'totalCostCents' => $item->totalCostCents,
+                'totalQuantityMilliLiters' => $item->totalQuantityMilliLiters,
+                'ratio' => null !== $average && $max > 0 ? max(8, (int) round(($average / $max) * 100, 0, PHP_ROUND_HALF_UP)) : 0,
+            ];
+        }
+
+        return $trend;
     }
 }

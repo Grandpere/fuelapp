@@ -166,6 +166,10 @@
             background: linear-gradient(120deg, rgba(97, 221, 255, 0.88), rgba(38, 167, 241, 0.94));
         }
 
+        .trend-bar-price {
+            background: linear-gradient(120deg, rgba(189, 255, 121, 0.88), rgba(76, 207, 78, 0.94));
+        }
+
         .trend-value {
             font-size: 0.82rem;
             color: #d6e5ef;
@@ -324,6 +328,31 @@
                                     <div class="trend-bar trend-bar-consumption" style="width: {{ item.ratio }}%;"></div>
                                 </div>
                                 <span class="trend-value">{{ (item.value / 1000)|number_format(2, '.', ' ') }} L</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </article>
+
+            <article class="card trend-card">
+                <h2>Fuel price trend by month</h2>
+                {% if fuelPriceTrend is empty %}
+                    <div class="empty-state">No fuel price data for current filters.</div>
+                {% else %}
+                    <div class="trend-list">
+                        {% for item in fuelPriceTrend %}
+                            <div class="trend-row">
+                                <span class="trend-month">{{ item.month }} · {{ item.fuelType }}</span>
+                                <div class="trend-bar-wrap">
+                                    <div class="trend-bar trend-bar-price" style="width: {{ item.ratio }}%;"></div>
+                                </div>
+                                <span class="trend-value">
+                                    {% if item.averagePriceDeciCentsPerLiter is not null %}
+                                        {{ (item.averagePriceDeciCentsPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
+                                    {% else %}
+                                        n/a
+                                    {% endif %}
+                                </span>
                             </div>
                         {% endfor %}
                     </div>

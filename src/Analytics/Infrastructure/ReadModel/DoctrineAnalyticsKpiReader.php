@@ -17,6 +17,7 @@ use App\Analytics\Application\Kpi\AnalyticsKpiReader;
 use App\Analytics\Application\Kpi\AverageFuelPriceKpi;
 use App\Analytics\Application\Kpi\MonthlyConsumptionKpi;
 use App\Analytics\Application\Kpi\MonthlyCostKpi;
+use App\Analytics\Application\Kpi\MonthlyFuelPriceKpi;
 use App\Analytics\Application\Kpi\VisitedStationPointKpi;
 use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
@@ -168,6 +169,55 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
                 $this->toInt($row['receipt_count'] ?? null),
                 $this->toInt($row['total_cost_cents'] ?? null),
                 $this->toInt($row['total_quantity_milli_liters'] ?? null),
+            );
+        }
+
+        return $items;
+    }
+
+    public function readFuelPricePerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
+    {
+        [$whereClause, $params] = $this->buildFilters($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+
+        $rows = $this->connection->fetchAllAssociative(
+            sprintf(
+                <<<'SQL'
+                        SELECT
+                            TO_CHAR(DATE_TRUNC('month', day::timestamp), 'YYYY-MM') AS month,
+                            fuel_type,
+                            COALESCE(SUM(total_cost_cents), 0) AS total_cost_cents,
+                            COALESCE(SUM(total_quantity_milli_liters), 0) AS total_quantity_milli_liters
+                        FROM %s
+                        WHERE %s
+                        GROUP BY DATE_TRUNC('month', day::timestamp), fuel_type
+                        ORDER BY DATE_TRUNC('month', day::timestamp), fuel_type
+                    SQL,
+                self::KPI_TABLE,
+                $whereClause,
+            ),
+            $params,
+        );
+
+        $items = [];
+        foreach ($rows as $row) {
+            $month = $row['month'] ?? null;
+            $fuelTypeValue = $row['fuel_type'] ?? null;
+            if (!is_string($month) || '' === trim($month) || !is_string($fuelTypeValue) || '' === trim($fuelTypeValue)) {
+                continue;
+            }
+
+            $totalCostCents = $this->toInt($row['total_cost_cents'] ?? null);
+            $totalQuantityMilliLiters = $this->toInt($row['total_quantity_milli_liters'] ?? null);
+            $averagePriceDeciCentsPerLiter = $totalQuantityMilliLiters > 0
+                ? (int) round(($totalCostCents * 10000) / $totalQuantityMilliLiters, 0, PHP_ROUND_HALF_UP)
+                : null;
+
+            $items[] = new MonthlyFuelPriceKpi(
+                $month,
+                $fuelTypeValue,
+                $totalCostCents,
+                $totalQuantityMilliLiters,
+                $averagePriceDeciCentsPerLiter,
             );
         }
 

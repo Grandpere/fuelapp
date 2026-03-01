@@ -1,17 +1,17 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 08 - Visual analytics
+- Sprint 09 - BO users and identities
 
 ## Current goal
-- Prepare Sprint 09 BO users/identities/security kickoff.
+- Deliver BO users operational controls (`SP9-001`).
 
 ## In progress
-- Sprint 08 wrap-up and Sprint 09 planning.
+- `SP9-001` BO users controls (filters, activation, admin role).
 
 ## Next tickets (ordered)
-1. Sprint 09 - BO users CRUD (`SP9-001`)
-2. Sprint 09 - identities management (`SP9-002`)
+1. `SP9-002` BO identities management
+2. `SP9-003` Security activities view
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

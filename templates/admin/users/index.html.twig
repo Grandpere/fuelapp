@@ -1,0 +1,87 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Users{% endblock %}
+
+{% set admin_section = 'users' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Users</h2>
+        <p class="muted">Filter users, activate/deactivate accounts, and manage admin access.</p>
+
+        <form method="get" action="{{ path('ui_admin_user_list') }}" style="margin-top: 1rem; display:grid; gap:0.6rem; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items:end;">
+            <label class="label">
+                Search
+                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="email">
+            </label>
+            <label class="label">
+                Role
+                <select class="select" name="role">
+                    <option value="" {% if filters.role == '' %}selected{% endif %}>All roles</option>
+                    <option value="admin" {% if filters.role == 'admin' %}selected{% endif %}>Admin</option>
+                    <option value="user" {% if filters.role == 'user' %}selected{% endif %}>User</option>
+                </select>
+            </label>
+            <label class="label">
+                Status
+                <select class="select" name="is_active">
+                    <option value="" {% if filters.is_active == '' %}selected{% endif %}>All</option>
+                    <option value="1" {% if filters.is_active == '1' %}selected{% endif %}>Active</option>
+                    <option value="0" {% if filters.is_active == '0' %}selected{% endif %}>Inactive</option>
+                </select>
+            </label>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="submit">Apply</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_user_list') }}">Reset</a>
+            </div>
+        </form>
+
+        <div class="table-wrap" style="margin-top: 1rem;">
+            <table class="app-table" style="min-width: 900px;">
+                <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Roles</th>
+                    <th>Identities</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.isActive %}
+                                <span class="pill" style="background: rgba(46, 204, 113, 0.2); color: #84f7b4;">active</span>
+                            {% else %}
+                                <span class="pill" style="background: rgba(255, 95, 86, 0.2); color: #ffb8b3;">inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.roles|join(', ') }}</td>
+                        <td>{{ user.identityCount }}</td>
+                        <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                            <form method="post" action="{{ path('ui_admin_user_toggle_active', {id: user.id}) }}" data-turbo-frame="_top">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_active_' ~ user.id) }}">
+                                <button class="btn {{ user.isActive ? 'btn-danger' : 'btn-secondary' }}" type="submit">
+                                    {{ user.isActive ? 'Deactivate' : 'Activate' }}
+                                </button>
+                            </form>
+                            <form method="post" action="{{ path('ui_admin_user_toggle_admin', {id: user.id}) }}" data-turbo-frame="_top">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_admin_' ~ user.id) }}">
+                                <button class="btn btn-secondary" type="submit">
+                                    {{ user.isAdmin ? 'Remove admin' : 'Make admin' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="muted">No users found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

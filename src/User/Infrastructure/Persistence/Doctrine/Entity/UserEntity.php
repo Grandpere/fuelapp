@@ -40,6 +40,9 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface, A
     #[ORM\Column(type: 'string')]
     private string $password;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    private bool $isActive = true;
+
     public function getId(): Uuid
     {
         return $this->id;
@@ -97,5 +100,15 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface, A
 
     public function eraseCredentials(): void
     {
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(bool $isActive): void
+    {
+        $this->isActive = $isActive;
     }
 }

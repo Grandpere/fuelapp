@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: convert deci-cents per liter to EUR/L with `/ 1000` and align tests/UI labels to that unit.
 - Prevention: when exposing derived pricing metrics, keep explicit unit labels in DTO/UI and validate conversion formula in functional tests.
 
+## 2026-03-01 - Admin layers must not depend on infrastructure entities
+- Symptom: architecture/static checks failed after adding BO user management (`Admin\Application`/`Admin\UI` referenced `UserEntity`).
+- Root cause: cross-layer leak from Doctrine entity (Infrastructure) into Application/UI contracts.
+- Fix: introduce application-level `AdminUserRecord` + `AdminUserRepository` interface and map Doctrine entities only in infrastructure implementation.
+- Prevention: for new admin features, keep DTO/contracts in Application and bind infrastructure repositories via interfaces in DI.
+
 ## 2026-02-21 - PhpSpreadsheet requires GD extension in app image
 - Symptom: `composer require phpoffice/phpspreadsheet` failed with missing `ext-gd`.
 - Root cause: project Docker image did not install the PHP GD extension required by PhpSpreadsheet.

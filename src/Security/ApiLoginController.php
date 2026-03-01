@@ -50,6 +50,9 @@ final class ApiLoginController extends AbstractController
         if (null === $user || !$this->passwordHasher->isPasswordValid($user, $password)) {
             return $this->json(['message' => 'Invalid credentials.'], Response::HTTP_UNAUTHORIZED);
         }
+        if (!$user->isActive()) {
+            return $this->json(['message' => 'Account disabled.'], Response::HTTP_FORBIDDEN);
+        }
 
         $token = $this->jwtTokenManager->create($user);
         $claims = $this->jwtTokenManager->parseAndValidate($token);

@@ -77,13 +77,73 @@ final class AdminApiManagementTest extends KernelTestCase
         $token = $this->apiLogin($email, $password);
         $stationsResponse = $this->request('GET', '/api/admin/stations', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $vehiclesResponse = $this->request('GET', '/api/admin/vehicles', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
+        $usersResponse = $this->request('GET', '/api/admin/users', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $maintenanceEventsResponse = $this->request('GET', '/api/admin/maintenance/events', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $maintenanceRemindersResponse = $this->request('GET', '/api/admin/maintenance/reminders', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
 
         self::assertSame(Response::HTTP_FORBIDDEN, $stationsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $vehiclesResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $usersResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceEventsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceRemindersResponse->getStatusCode());
+    }
+
+    public function testAdminCanFilterAndToggleUserStatusAndRole(): void
+    {
+        $token = $this->createAdminAndLogin('admin.users@example.com');
+        $user = $this->createUser('managed.user@example.com', 'test1234', ['ROLE_USER']);
+        $this->em->flush();
+
+        $listResponse = $this->request(
+            'GET',
+            '/api/admin/users?q=managed.user&role=user&isActive=true',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        $decodedUsers = json_decode((string) $listResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        $users = $this->extractCollectionItems($decodedUsers);
+        self::assertCount(1, $users);
+        self::assertSame($user->getId()->toRfc4122(), $users[0]['id'] ?? null);
+        self::assertTrue((bool) ($users[0]['isActive'] ?? false));
+
+        $deactivateResponse = $this->request(
+            'PATCH',
+            '/api/admin/users/'.$user->getId()->toRfc4122(),
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/merge-patch+json',
+            ],
+            json_encode(['isActive' => false], JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_OK, $deactivateResponse->getStatusCode());
+
+        $disabledLogin = $this->request(
+            'POST',
+            '/api/login',
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['email' => 'managed.user@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_FORBIDDEN, $disabledLogin->getStatusCode());
+
+        $promoteResponse = $this->request(
+            'PATCH',
+            '/api/admin/users/'.$user->getId()->toRfc4122(),
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/merge-patch+json',
+            ],
+            json_encode(['isActive' => true, 'isAdmin' => true], JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_OK, $promoteResponse->getStatusCode());
+
+        $adminOnlyResponse = $this->request(
+            'GET',
+            '/api/admin/users?role=admin',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+        self::assertSame(Response::HTTP_OK, $adminOnlyResponse->getStatusCode());
+        $adminItems = $this->extractCollectionItems(json_decode((string) $adminOnlyResponse->getContent(), true, 512, JSON_THROW_ON_ERROR));
+        self::assertNotEmpty($adminItems);
     }
 
     public function testAdminCanManageVehicleWithoutCreateOperation(): void

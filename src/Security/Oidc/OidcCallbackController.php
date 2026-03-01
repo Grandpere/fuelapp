@@ -81,6 +81,12 @@ final class OidcCallbackController extends AbstractController
             return $this->redirectToRoute('ui_login');
         }
 
+        if (!$user->isActive()) {
+            $this->addFlash('error', 'Account disabled.');
+
+            return $this->redirectToRoute('ui_login');
+        }
+
         $this->security->login($user, LoginFormAuthenticator::class, 'main');
 
         return $this->redirectToRoute('ui_receipt_index');

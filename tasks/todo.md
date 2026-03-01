@@ -93,3 +93,14 @@
 - [completed] Extend functional coverage for new API endpoint and UI block.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share any failures.
+
+# TODO - SP9-001 BO users CRUD operational controls
+
+## Plan
+- [completed] Add user activation flag and enforce disabled-user blocking on auth entry points.
+- [completed] Add admin API users resource (list/detail/update role+status with filters).
+- [completed] Add admin UI users page with filters and toggle actions.
+- [completed] Add audit entries for user admin actions.
+- [completed] Add/update functional coverage for admin API/UI user management.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

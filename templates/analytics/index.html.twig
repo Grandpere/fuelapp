@@ -366,7 +366,7 @@
     {{ parent() }}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
-        (function () {
+        document.addEventListener('DOMContentLoaded', function () {
             const mapContainer = document.getElementById('analytics-station-map');
             const dataContainer = document.getElementById('analytics-station-map-data');
             if (!mapContainer || !dataContainer || typeof L === 'undefined') {
@@ -412,6 +412,6 @@
             } else {
                 map.setView([46.603354, 1.888334], 5);
             }
-        })();
+        });
     </script>
 {% endblock %}

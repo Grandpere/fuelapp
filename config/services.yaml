@@ -56,6 +56,10 @@ services:
         tags:
             - { name: 'serializer.normalizer', priority: 100 }
 
+    App\Shared\Infrastructure\Observability\Logging\ObservabilityLogProcessor:
+        tags:
+            - { name: monolog.processor }
+
     App\Security\JwtTokenManager:
         arguments:
             $jwtSecret: '%app.jwt_secret%'

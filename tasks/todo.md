@@ -135,3 +135,14 @@
 - [completed] Add explicit backlog ticket for possible migration to modular stack later (`SP10-004`).
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share any failures.
+
+# TODO - SP10-002 Structured logs + correlation
+
+## Plan
+- [completed] Add correlation context and HTTP request/response subscriber (`X-Correlation-Id`).
+- [completed] Add Messenger correlation stamp + middleware propagation.
+- [completed] Add integration/functional coverage for correlation propagation.
+- [completed] Enable structured JSON logs processor through Monolog config.
+- [completed] Dependency approval obtained and `symfony/monolog-bundle` installed.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`) on current code state.
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

@@ -154,9 +154,13 @@ final class SecurityBoundariesTest extends KernelTestCase
     {
         $htmlResponse = $this->request('GET', '/api/docs');
         self::assertSame(Response::HTTP_OK, $htmlResponse->getStatusCode());
+        self::assertNotNull($htmlResponse->headers->get('X-Correlation-Id'));
+        self::assertTrue(Uuid::isValid((string) $htmlResponse->headers->get('X-Correlation-Id')));
 
         $openApiResponse = $this->request('GET', '/api/docs.jsonopenapi');
         self::assertSame(Response::HTTP_OK, $openApiResponse->getStatusCode());
+        self::assertNotNull($openApiResponse->headers->get('X-Correlation-Id'));
+        self::assertTrue(Uuid::isValid((string) $openApiResponse->headers->get('X-Correlation-Id')));
 
         /** @var array{paths?: array<string, mixed>} $openApi */
         $openApi = json_decode((string) $openApiResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);

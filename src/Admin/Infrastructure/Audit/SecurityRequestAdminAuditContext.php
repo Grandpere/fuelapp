@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Admin\Infrastructure\Audit;
 
 use App\Admin\Application\Audit\AdminAuditContext;
+use App\Shared\Infrastructure\Observability\CorrelationIdContext;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -25,6 +26,7 @@ final readonly class SecurityRequestAdminAuditContext implements AdminAuditConte
     public function __construct(
         private TokenStorageInterface $tokenStorage,
         private RequestStack $requestStack,
+        private CorrelationIdContext $correlationIdContext,
     ) {
     }
 
@@ -42,6 +44,11 @@ final readonly class SecurityRequestAdminAuditContext implements AdminAuditConte
 
     public function correlationId(): string
     {
+        $current = $this->correlationIdContext->current();
+        if (is_string($current) && '' !== trim($current)) {
+            return trim($current);
+        }
+
         $request = $this->requestStack->getCurrentRequest();
         if (!$request instanceof Request) {
             return Uuid::v7()->toRfc4122();

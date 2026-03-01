@@ -291,7 +291,7 @@
                         </li>
                     {% endfor %}
                 </ul>
-                <script type="application/json" id="analytics-station-map-data">{{ stationMapPoints|json_encode }}</script>
+                <script type="application/json" id="analytics-station-map-data">{{ stationMapPoints|json_encode|raw }}</script>
             {% endif %}
         </section>
 

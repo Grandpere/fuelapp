@@ -35,3 +35,22 @@
 - [completed] Keep fixture setup and assertions stable while removing manual session/cookie request plumbing.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP7 batch A (SP7-001 + SP7-004)
+
+## Plan
+- [completed] SP7-001: define/apply Turbo conventions on critical front/admin flows (imports + vehicle/maintenance forms).
+- [completed] SP7-004: add `/ui/contact` page and admin shortcut in front nav.
+- [completed] Update functional tests for touched front/admin flows.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` for batch validation and share errors.
+
+# TODO - SP7-002 receipt odometer support
+
+## Plan
+- [in_progress] Add `odometerKilometers` on receipt domain + persistence model.
+- [pending] Expose odometer in API inputs/outputs and web create/edit flows.
+- [pending] Extend import review/finalize flow with odometer value.
+- [pending] Add/update unit/integration/functional coverage for odometer scenarios.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

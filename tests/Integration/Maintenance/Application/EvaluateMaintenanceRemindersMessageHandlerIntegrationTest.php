@@ -25,6 +25,11 @@ use App\Maintenance\Domain\MaintenanceReminderRule;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceEventRepository;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRepository;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceReminderRuleRepository;
+use App\Maintenance\Infrastructure\Reminder\EventAndReceiptCurrentOdometerResolver;
+use App\Receipt\Domain\Enum\FuelType;
+use App\Receipt\Domain\Receipt;
+use App\Receipt\Domain\ReceiptLine;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use App\Vehicle\Domain\Vehicle;
@@ -33,6 +38,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Uid\Uuid;
 
 final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends KernelTestCase
@@ -92,12 +98,14 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
         $ruleRepository->save($rule);
 
         $eventRepository = new DoctrineMaintenanceEventRepository($this->em);
+        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage());
         $reminderRepository = new DoctrineMaintenanceReminderRepository($this->em);
         $calculator = new ReminderDueCalculator($ruleRepository, $eventRepository);
+        $odometerResolver = new EventAndReceiptCurrentOdometerResolver($eventRepository, $receiptRepository);
         $notifier = new SpyNotifier();
         $handler = new EvaluateMaintenanceRemindersMessageHandler(
             $ruleRepository,
-            $eventRepository,
+            $odometerResolver,
             $calculator,
             $reminderRepository,
             $notifier,
@@ -128,6 +136,7 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
 
         $ruleRepository = new DoctrineMaintenanceReminderRuleRepository($this->em);
         $eventRepository = new DoctrineMaintenanceEventRepository($this->em);
+        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage());
         $reminderRepository = new DoctrineMaintenanceReminderRepository($this->em);
 
         $rule = MaintenanceReminderRule::create(
@@ -155,10 +164,11 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
         $eventRepository->save($serviceEvent);
 
         $calculator = new ReminderDueCalculator($ruleRepository, $eventRepository);
+        $odometerResolver = new EventAndReceiptCurrentOdometerResolver($eventRepository, $receiptRepository);
         $notifier = new SpyNotifier();
         $handler = new EvaluateMaintenanceRemindersMessageHandler(
             $ruleRepository,
-            $eventRepository,
+            $odometerResolver,
             $calculator,
             $reminderRepository,
             $notifier,
@@ -171,6 +181,80 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
         $count = (int) $rawCount;
         self::assertSame(0, $count);
         self::assertCount(0, $notifier->notifiedReminderIds);
+    }
+
+    public function testHandlerUsesReceiptOdometerToTriggerMileageReminder(): void
+    {
+        $owner = new UserEntity();
+        $owner->setId(Uuid::v7());
+        $owner->setEmail('maintenance.scheduler.receipt-odometer@example.com');
+        $owner->setRoles(['ROLE_USER']);
+        $owner->setPassword($this->passwordHasher->hashPassword($owner, 'test1234'));
+        $this->em->persist($owner);
+        $this->em->flush();
+
+        $vehicle = Vehicle::create($owner->getId()->toRfc4122(), 'Clio', 'cd-789-ef');
+        $this->vehicleRepository->save($vehicle);
+
+        $ruleRepository = new DoctrineMaintenanceReminderRuleRepository($this->em);
+        $eventRepository = new DoctrineMaintenanceEventRepository($this->em);
+        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage());
+        $reminderRepository = new DoctrineMaintenanceReminderRepository($this->em);
+
+        $rule = MaintenanceReminderRule::create(
+            $owner->getId()->toRfc4122(),
+            $vehicle->id()->toString(),
+            'Mileage check',
+            ReminderRuleTriggerMode::ODOMETER,
+            MaintenanceEventType::SERVICE,
+            null,
+            20000,
+        );
+        $ruleRepository->save($rule);
+
+        $serviceEvent = MaintenanceEvent::create(
+            $owner->getId()->toRfc4122(),
+            $vehicle->id()->toString(),
+            MaintenanceEventType::SERVICE,
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+            'reference service',
+            100000,
+            10000,
+            'EUR',
+            new DateTimeImmutable('2030-01-01 10:00:00'),
+        );
+        $eventRepository->save($serviceEvent);
+
+        $receipt = Receipt::create(
+            new DateTimeImmutable('2030-04-01 10:00:00'),
+            [ReceiptLine::create(FuelType::DIESEL, 30000, 1750, 20)],
+            null,
+            $vehicle->id(),
+            121000,
+        );
+        $receiptRepository->saveForOwner($receipt, $owner->getId()->toRfc4122());
+
+        $calculator = new ReminderDueCalculator($ruleRepository, $eventRepository);
+        $odometerResolver = new EventAndReceiptCurrentOdometerResolver($eventRepository, $receiptRepository);
+        $notifier = new SpyNotifier();
+        $handler = new EvaluateMaintenanceRemindersMessageHandler(
+            $ruleRepository,
+            $odometerResolver,
+            $calculator,
+            $reminderRepository,
+            $notifier,
+        );
+
+        $handler(new EvaluateMaintenanceRemindersMessage());
+
+        $rawCount = $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM maintenance_reminders');
+        self::assertTrue(is_int($rawCount) || (is_string($rawCount) && ctype_digit($rawCount)));
+        self::assertSame(1, (int) $rawCount);
+
+        $dueAtOdometerRaw = $this->em->getConnection()->fetchOne('SELECT due_at_odometer_kilometers FROM maintenance_reminders LIMIT 1');
+        self::assertTrue(is_int($dueAtOdometerRaw) || (is_string($dueAtOdometerRaw) && ctype_digit($dueAtOdometerRaw)));
+        self::assertSame(120000, (int) $dueAtOdometerRaw);
+        self::assertCount(1, $notifier->notifiedReminderIds);
     }
 }
 

@@ -15,7 +15,7 @@ Reduce full page refreshes on critical flows and enable odometer-driven maintena
 
 ### Step 3 - Reminder bridge from odometer
 - Ticket: `SP7-003`
-- Outcome: in progress
+- Outcome: done
 
 ### Step 4 - Contact page + admin shortcut
 - Ticket: `SP7-004`

@@ -90,6 +90,7 @@ services:
     App\Import\Application\Parsing\ReceiptOcrParser: '@App\Import\Infrastructure\Parsing\RegexReceiptOcrParser'
     App\Shared\Application\Security\AuthenticatedUserIdProvider: '@App\Shared\Infrastructure\Security\TokenStorageAuthenticatedUserIdProvider'
     App\Maintenance\Application\Notification\MaintenanceReminderNotifier: '@App\Maintenance\Infrastructure\Notification\InAppMaintenanceReminderNotifier'
+    App\Maintenance\Application\Reminder\VehicleCurrentOdometerResolver: '@App\Maintenance\Infrastructure\Reminder\EventAndReceiptCurrentOdometerResolver'
     App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider:
         arguments:
             $httpClient: '@http_client'

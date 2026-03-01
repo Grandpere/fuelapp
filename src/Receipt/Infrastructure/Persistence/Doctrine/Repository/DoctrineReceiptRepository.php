@@ -463,6 +463,26 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         );
     }
 
+    public function maxOdometerKilometersForOwnerAndVehicle(string $ownerId, string $vehicleId): ?int
+    {
+        if (!Uuid::isValid($ownerId) || !Uuid::isValid($vehicleId)) {
+            return null;
+        }
+
+        $raw = $this->em
+            ->createQueryBuilder()
+            ->select('MAX(r.odometerKilometers)')
+            ->from(ReceiptEntity::class, 'r')
+            ->andWhere('IDENTITY(r.owner) = :ownerId')
+            ->andWhere('IDENTITY(r.vehicle) = :vehicleId')
+            ->setParameter('ownerId', $ownerId)
+            ->setParameter('vehicleId', $vehicleId)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $this->toNullableIntValue($raw, 'maxOdometerKilometers');
+    }
+
     private function toDateTimeImmutableValue(mixed $value, string $field): DateTimeImmutable
     {
         if ($value instanceof DateTimeImmutable) {

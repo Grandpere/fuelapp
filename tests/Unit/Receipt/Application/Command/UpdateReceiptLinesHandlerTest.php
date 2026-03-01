@@ -228,4 +228,9 @@ final class InMemoryUpdateReceiptRepository implements ReceiptRepository
     ): array {
         return [];
     }
+
+    public function maxOdometerKilometersForOwnerAndVehicle(string $ownerId, string $vehicleId): ?int
+    {
+        return null;
+    }
 }

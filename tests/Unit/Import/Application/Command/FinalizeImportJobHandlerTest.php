@@ -330,6 +330,11 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
     ): array {
         return [];
     }
+
+    public function maxOdometerKilometersForOwnerAndVehicle(string $ownerId, string $vehicleId): ?int
+    {
+        return null;
+    }
 }
 
 final class FinalizeNullImportFileStorage implements ImportFileStorage

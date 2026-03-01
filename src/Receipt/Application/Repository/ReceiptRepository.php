@@ -131,4 +131,6 @@ interface ReceiptRepository
         ?int $unitPriceDeciCentsPerLiterMax = null,
         ?int $vatRatePercent = null,
     ): array;
+
+    public function maxOdometerKilometersForOwnerAndVehicle(string $ownerId, string $vehicleId): ?int;
 }

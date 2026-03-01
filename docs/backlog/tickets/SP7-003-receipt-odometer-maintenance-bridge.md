@@ -15,5 +15,13 @@ Maintenance due-state currently relies on maintenance events only; receipt milea
 - Kilometer-based rules become due when latest known mileage exceeds threshold.
 - Reminder creation stays deduplicated and ownership-safe.
 
+## Delivery notes
+- Added `VehicleCurrentOdometerResolver` and default implementation aggregating:
+  - max odometer from maintenance events,
+  - max odometer from receipts for the same owner+vehicle.
+- Reminder evaluation handler now relies on this resolver before due-state computation.
+- Added receipt repository contract method `maxOdometerKilometersForOwnerAndVehicle`.
+- Added unit and integration coverage for receipt-driven kilometer due reminders.
+
 ## Status
-- in_progress
+- done

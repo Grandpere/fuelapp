@@ -54,3 +54,13 @@
 - [completed] Add/update unit/integration/functional coverage for odometer scenarios.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share any failures.
+
+# TODO - SP7-003 receipt odometer -> maintenance reminder bridge
+
+## Plan
+- [completed] Add resolver that computes current vehicle odometer from maintenance events + receipt odometer history.
+- [completed] Wire reminder evaluation handler to use the aggregated resolver.
+- [completed] Extend repository contract with owner+vehicle max receipt odometer lookup for system jobs.
+- [completed] Add unit/integration coverage for receipt-driven mileage due reminders.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

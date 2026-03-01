@@ -17,7 +17,7 @@ use App\Maintenance\Application\Message\EvaluateMaintenanceRemindersMessage;
 use App\Maintenance\Application\Notification\MaintenanceReminderNotifier;
 use App\Maintenance\Application\Reminder\ReminderDueCalculator;
 use App\Maintenance\Application\Reminder\ReminderDueState;
-use App\Maintenance\Application\Repository\MaintenanceEventRepository;
+use App\Maintenance\Application\Reminder\VehicleCurrentOdometerResolver;
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository;
 use App\Maintenance\Domain\MaintenanceReminder;
@@ -28,7 +28,7 @@ final readonly class EvaluateMaintenanceRemindersMessageHandler
 {
     public function __construct(
         private MaintenanceReminderRuleRepository $ruleRepository,
-        private MaintenanceEventRepository $eventRepository,
+        private VehicleCurrentOdometerResolver $odometerResolver,
         private ReminderDueCalculator $dueCalculator,
         private MaintenanceReminderRepository $reminderRepository,
         private MaintenanceReminderNotifier $notifier,
@@ -42,7 +42,7 @@ final readonly class EvaluateMaintenanceRemindersMessageHandler
         foreach ($pairs as $pair) {
             $ownerId = $pair['ownerId'];
             $vehicleId = $pair['vehicleId'];
-            $currentOdometer = $this->resolveCurrentOdometer($ownerId, $vehicleId);
+            $currentOdometer = $this->odometerResolver->resolve($ownerId, $vehicleId);
 
             $states = $this->dueCalculator->computeForVehicle($ownerId, $vehicleId, $currentOdometer);
             foreach ($states as $state) {
@@ -72,21 +72,6 @@ final readonly class EvaluateMaintenanceRemindersMessageHandler
         }
 
         return array_values($pairs);
-    }
-
-    private function resolveCurrentOdometer(string $ownerId, string $vehicleId): ?int
-    {
-        $max = null;
-        foreach ($this->eventRepository->allForOwnerAndVehicle($ownerId, $vehicleId) as $event) {
-            $odometer = $event->odometerKilometers();
-            if (null === $odometer) {
-                continue;
-            }
-
-            $max = null === $max ? $odometer : max($max, $odometer);
-        }
-
-        return $max;
     }
 
     private function toReminder(string $ownerId, string $vehicleId, ReminderDueState $state): MaintenanceReminder

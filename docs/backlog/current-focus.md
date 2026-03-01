@@ -4,14 +4,14 @@
 - Sprint 07 - UX flow and odometer bridge
 
 ## Current goal
-- Deliver fast UX iterations and close odometer/maintenance loop.
+- Prepare Sprint 08 visual analytics delivery.
 
 ## In progress
-- `SP7-003` maintenance due-state bridge from receipt odometer.
+- Sprint 07 closure and Sprint 08 kickoff.
 
 ## Next tickets (ordered)
-1. `SP7-003` bridge receipt odometer -> maintenance reminders/notices
-2. Prepare Sprint 08 visual analytics kickoff (`SP8-001`)
+1. `SP8-001` visited stations map (Leaflet/OpenStreetMap)
+2. `SP8-002` fuel price evolution series
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

@@ -370,6 +370,11 @@ final class InMemoryReceiptRepository implements ReceiptRepository
             $vatRatePercent,
         );
     }
+
+    public function maxOdometerKilometersForOwnerAndVehicle(string $ownerId, string $vehicleId): ?int
+    {
+        return null;
+    }
 }
 
 final readonly class FailingCreateStationHandler extends CreateStationHandler

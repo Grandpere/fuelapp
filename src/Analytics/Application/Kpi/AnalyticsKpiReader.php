@@ -30,4 +30,7 @@ interface AnalyticsKpiReader
 
     /** @return list<MonthlyFuelPriceKpi> */
     public function readFuelPricePerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
+
+    /** @return list<MonthlyComparedCostKpi> */
+    public function readComparedCostPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
 }

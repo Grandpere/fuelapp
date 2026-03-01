@@ -4,13 +4,14 @@
 - Sprint 08 - Visual analytics
 
 ## Current goal
-- Deliver map and trend visualizations with existing analytics filter parity.
+- Prepare Sprint 09 BO users/identities/security kickoff.
 
 ## In progress
-- `SP8-003` compared cost series (fuel vs maintenance vs total).
+- Sprint 08 wrap-up and Sprint 09 planning.
 
 ## Next tickets (ordered)
-1. Prepare Sprint 09 BO users/identities kickoff after SP8-003
+1. Sprint 09 - BO users CRUD (`SP9-001`)
+2. Sprint 09 - identities management (`SP9-002`)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

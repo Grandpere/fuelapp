@@ -15,7 +15,7 @@ Add immediately usable visual analytics with strict filter consistency.
 
 ### Step 3 - Compared cost chart
 - Ticket: `SP8-003`
-- Outcome: todo
+- Outcome: done
 
 ## Mandatory checks per ticket
 - `make phpstan`

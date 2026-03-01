@@ -84,3 +84,12 @@
 - [completed] Extend functional tests for API and dashboard rendering.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share any failures.
+
+# TODO - SP8-003 compared cost graph (fuel vs maintenance vs total)
+
+## Plan
+- [completed] Add read-model/API series combining monthly fuel and maintenance costs.
+- [completed] Add analytics dashboard compared-cost panel.
+- [completed] Extend functional coverage for new API endpoint and UI block.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.

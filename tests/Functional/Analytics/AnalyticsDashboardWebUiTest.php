@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Analytics;
 
 use App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher;
+use App\Maintenance\Domain\Enum\MaintenanceEventType;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -100,6 +102,8 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $this->createReceipt($owner, null, $stationB, new DateTimeImmutable('2026-02-01 10:00:00'), [
             ['unleaded95', 20000, 17000, 20],
         ]);
+        $this->createMaintenanceEvent($owner, $vehicle, new DateTimeImmutable('2026-01-12 10:00:00'), 5000);
+        $this->createMaintenanceEvent($owner, $vehicle, new DateTimeImmutable('2026-02-08 10:00:00'), 2000);
         $this->em->flush();
 
         $this->projectionRefresher->refresh();
@@ -124,6 +128,9 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('Fuel price trend by month', $content);
         self::assertStringContainsString('2026-01 · diesel', $content);
         self::assertStringContainsString('2026-02 · unleaded95', $content);
+        self::assertStringContainsString('Compared cost trend (fuel vs maintenance vs total)', $content);
+        self::assertStringContainsString('330.00 EUR', $content);
+        self::assertStringContainsString('360.00 EUR', $content);
 
         $vehicleResponse = $this->request(
             'GET',
@@ -275,5 +282,22 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $receipt->setTotalCents($total);
         $receipt->setVatAmountCents($totalVat);
         $this->em->persist($receipt);
+    }
+
+    private function createMaintenanceEvent(UserEntity $owner, VehicleEntity $vehicle, DateTimeImmutable $occurredAt, int $totalCostCents): void
+    {
+        $event = new MaintenanceEventEntity();
+        $event->setId(Uuid::v7());
+        $event->setOwner($owner);
+        $event->setVehicle($vehicle);
+        $event->setEventType(MaintenanceEventType::SERVICE);
+        $event->setOccurredAt($occurredAt);
+        $event->setDescription('Maintenance event for analytics compared cost test');
+        $event->setOdometerKilometers(null);
+        $event->setTotalCostCents($totalCostCents);
+        $event->setCurrencyCode('EUR');
+        $event->setCreatedAt($occurredAt);
+        $event->setUpdatedAt($occurredAt);
+        $this->em->persist($event);
     }
 }

@@ -69,6 +69,8 @@ final readonly class AdminUserStateProvider implements ProviderInterface
             $user->isActive,
             $user->isAdmin(),
             $user->identityCount,
+            $user->isEmailVerified(),
+            $user->emailVerifiedAt,
         );
     }
 

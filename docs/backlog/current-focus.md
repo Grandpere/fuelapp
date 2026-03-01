@@ -1,17 +1,16 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 09 - BO users and identities
+- Sprint 10 - Local observability stack
 
 ## Current goal
-- Deliver BO identities management and security activities (`SP9-002`, `SP9-003`).
+- Deliver local observability baseline (`SP10-001`).
 
 ## In progress
-- `SP9-002` BO identities management (list/relink/unlink on API + UI).
-- `SP9-003` Security activities timeline (API/UI + login success/failure feed).
+- `SP10-001` Local observability stack (Grafana/Loki/Prometheus/Tempo/OTel collector).
 
 ## Next tickets (ordered)
-1. `SP9-004` Password reset and email verification admin controls
+1. `SP10-002` Structured logs and correlation
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

@@ -60,7 +60,7 @@ final readonly class AdminUserStateProcessor implements ProcessorInterface
         $actorId = $this->actorId();
 
         try {
-            $updated = $this->userManager->updateUser($id, $data->isActive, $data->isAdmin, $actorId);
+            $updated = $this->userManager->updateUser($id, $data->isActive, $data->isAdmin, $data->isEmailVerified, $actorId);
         } catch (LogicException $e) {
             throw new ConflictHttpException($e->getMessage(), $e);
         }
@@ -95,6 +95,7 @@ final readonly class AdminUserStateProcessor implements ProcessorInterface
             'roles' => $user->roles,
             'isActive' => $user->isActive,
             'identityCount' => $user->identityCount,
+            'isEmailVerified' => $user->isEmailVerified(),
         ];
     }
 
@@ -107,6 +108,8 @@ final readonly class AdminUserStateProcessor implements ProcessorInterface
             $user->isActive,
             $user->isAdmin(),
             $user->identityCount,
+            $user->isEmailVerified(),
+            $user->emailVerifiedAt,
         );
     }
 

@@ -11,14 +11,14 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace App\Admin\UI\Api\Resource\Input;
+namespace App\Admin\UI\Api\Resource\Output;
 
-final readonly class AdminUserUpdateInput
+final readonly class AdminUserVerificationDispatchOutput
 {
     public function __construct(
-        public ?bool $isActive = null,
-        public ?bool $isAdmin = null,
-        public ?bool $isEmailVerified = null,
+        public string $userId,
+        public string $email,
+        public string $status,
     ) {
     }
 }

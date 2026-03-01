@@ -8,4 +8,4 @@ Support needs limited controls for account recovery and verification.
 - Force/resend email verification controls.
 
 ## Status
-- todo
+- done

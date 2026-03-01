@@ -8,4 +8,4 @@ Operations need visibility and controls on linked auth identities.
 - Support safe link/unlink actions.
 
 ## Status
-- in_progress
+- done

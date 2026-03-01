@@ -33,14 +33,14 @@ final readonly class AdminUserManager
         return $this->repository->get($id);
     }
 
-    public function updateUser(string $targetId, ?bool $isActive, ?bool $isAdmin, ?string $actorId): AdminUserRecord
+    public function updateUser(string $targetId, ?bool $isActive, ?bool $isAdmin, ?bool $isEmailVerified, ?string $actorId): AdminUserRecord
     {
         $user = $this->repository->get($targetId);
         if (!$user instanceof AdminUserRecord) {
             throw new LogicException('User not found.');
         }
 
-        if (null === $isActive && null === $isAdmin) {
+        if (null === $isActive && null === $isAdmin && null === $isEmailVerified) {
             throw new LogicException('Nothing to update.');
         }
 
@@ -57,11 +57,21 @@ final readonly class AdminUserManager
             throw new LogicException('At least one active admin account is required.');
         }
 
-        $updated = $this->repository->update($user->id, $isActive, $isAdmin);
+        $updated = $this->repository->update($user->id, $isActive, $isAdmin, $isEmailVerified);
         if (!$updated instanceof AdminUserRecord) {
             throw new LogicException('User not found.');
         }
 
         return $updated;
+    }
+
+    public function resetPassword(string $targetId): AdminUserPasswordResetResult
+    {
+        $result = $this->repository->resetPassword($targetId);
+        if (!$result instanceof AdminUserPasswordResetResult) {
+            throw new LogicException('User not found.');
+        }
+
+        return $result;
     }
 }

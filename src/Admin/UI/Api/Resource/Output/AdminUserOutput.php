@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Api\Resource\Output;
 
+use DateTimeImmutable;
+
 final readonly class AdminUserOutput
 {
     /** @param list<string> $roles */
@@ -23,6 +25,8 @@ final readonly class AdminUserOutput
         public bool $isActive,
         public bool $isAdmin,
         public int $identityCount,
+        public bool $isEmailVerified,
+        public ?DateTimeImmutable $emailVerifiedAt,
     ) {
     }
 }

@@ -11,14 +11,13 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace App\Admin\UI\Api\Resource\Input;
+namespace App\Admin\Application\User;
 
-final readonly class AdminUserUpdateInput
+final readonly class AdminUserPasswordResetResult
 {
     public function __construct(
-        public ?bool $isActive = null,
-        public ?bool $isAdmin = null,
-        public ?bool $isEmailVerified = null,
+        public AdminUserRecord $user,
+        public string $temporaryPassword,
     ) {
     }
 }

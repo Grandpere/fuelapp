@@ -26,7 +26,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
 
-final class AdminUserToggleActiveController extends AbstractController
+final class AdminUserToggleVerificationController extends AbstractController
 {
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F\\-]{36}';
 
@@ -36,7 +36,7 @@ final class AdminUserToggleActiveController extends AbstractController
     ) {
     }
 
-    #[Route('/ui/admin/users/{id}/toggle-active', name: 'ui_admin_user_toggle_active', methods: ['POST'], requirements: ['id' => self::UUID_ROUTE_REQUIREMENT])]
+    #[Route('/ui/admin/users/{id}/toggle-verification', name: 'ui_admin_user_toggle_verification', methods: ['POST'], requirements: ['id' => self::UUID_ROUTE_REQUIREMENT])]
     public function __invoke(Request $request, string $id): RedirectResponse
     {
         if (!Uuid::isValid($id)) {
@@ -44,12 +44,12 @@ final class AdminUserToggleActiveController extends AbstractController
         }
 
         $user = $this->userManager->getUser($id);
-        if (null === $user) {
+        if (!$user instanceof AdminUserRecord) {
             throw new NotFoundHttpException();
         }
 
         $token = $request->request->get('_token');
-        if (!is_scalar($token) || !$this->isCsrfTokenValid('admin_user_toggle_active_'.$id, (string) $token)) {
+        if (!is_scalar($token) || !$this->isCsrfTokenValid('admin_user_toggle_verification_'.$id, (string) $token)) {
             throw new NotFoundHttpException();
         }
 
@@ -58,7 +58,7 @@ final class AdminUserToggleActiveController extends AbstractController
         $actorId = $actor instanceof AuthenticatedUser ? $actor->getId()->toRfc4122() : null;
 
         try {
-            $updated = $this->userManager->updateUser($id, !$user->isActive, null, null, $actorId);
+            $updated = $this->userManager->updateUser($id, null, null, !$user->isEmailVerified(), $actorId);
         } catch (LogicException $e) {
             $this->addFlash('error', $e->getMessage());
 
@@ -67,7 +67,7 @@ final class AdminUserToggleActiveController extends AbstractController
 
         $after = $this->snapshot($updated);
         $this->auditTrail->record(
-            'admin.user.toggled_active.ui',
+            'admin.user.toggled_verification.ui',
             'user',
             $updated->id,
             [
@@ -77,7 +77,7 @@ final class AdminUserToggleActiveController extends AbstractController
             ],
         );
 
-        $this->addFlash('success', sprintf('User %s is now %s.', $updated->email, $updated->isActive ? 'active' : 'inactive'));
+        $this->addFlash('success', sprintf('User %s is now %s.', $updated->email, $updated->isEmailVerified() ? 'verified' : 'unverified'));
 
         return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
     }

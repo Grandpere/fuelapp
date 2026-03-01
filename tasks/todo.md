@@ -114,4 +114,14 @@
 - [completed] SP9-003 activity feed: log login success/failure and include account-role/status events in timeline.
 - [completed] Add/update admin functional coverage for identities and security activities.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share any failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP9-004 Admin password reset + email verification controls
+
+## Plan
+- [completed] Add user email verification persistence flag (`emailVerifiedAt`) and expose it in admin user API/UI.
+- [completed] Add admin API controls for user email verification status + resend verification request + password reset.
+- [completed] Add admin UI controls for toggle verification, resend verification, and temporary password reset.
+- [completed] Add/update functional tests for new API/UI controls.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).

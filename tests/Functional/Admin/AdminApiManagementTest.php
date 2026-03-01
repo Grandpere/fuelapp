@@ -25,6 +25,7 @@ use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
+use stdClass;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -82,6 +83,15 @@ final class AdminApiManagementTest extends KernelTestCase
         $usersResponse = $this->request('GET', '/api/admin/users', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $identitiesResponse = $this->request('GET', '/api/admin/identities', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $securityActivitiesResponse = $this->request('GET', '/api/admin/security-activities', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
+        $resetPasswordResponse = $this->request(
+            'POST',
+            '/api/admin/users/'.$this->createUser('admin.api.other.user@example.com', 'test1234', ['ROLE_USER'])->getId()->toRfc4122().'/reset-password',
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/ld+json',
+            ],
+            json_encode(new stdClass(), JSON_THROW_ON_ERROR),
+        );
         $maintenanceEventsResponse = $this->request('GET', '/api/admin/maintenance/events', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
         $maintenanceRemindersResponse = $this->request('GET', '/api/admin/maintenance/reminders', ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)]);
 
@@ -90,11 +100,12 @@ final class AdminApiManagementTest extends KernelTestCase
         self::assertSame(Response::HTTP_FORBIDDEN, $usersResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $identitiesResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $securityActivitiesResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $resetPasswordResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceEventsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceRemindersResponse->getStatusCode());
     }
 
-    public function testAdminCanFilterAndToggleUserStatusAndRole(): void
+    public function testAdminCanFilterAndManageUserStatusRoleVerificationAndResetPassword(): void
     {
         $token = $this->createAdminAndLogin('admin.users@example.com');
         $user = $this->createUser('managed.user@example.com', 'test1234', ['ROLE_USER']);
@@ -111,6 +122,7 @@ final class AdminApiManagementTest extends KernelTestCase
         self::assertCount(1, $users);
         self::assertSame($user->getId()->toRfc4122(), $users[0]['id'] ?? null);
         self::assertTrue((bool) ($users[0]['isActive'] ?? false));
+        self::assertFalse((bool) ($users[0]['isEmailVerified'] ?? false));
 
         $deactivateResponse = $this->request(
             'PATCH',
@@ -141,6 +153,58 @@ final class AdminApiManagementTest extends KernelTestCase
             json_encode(['isActive' => true, 'isAdmin' => true], JSON_THROW_ON_ERROR),
         );
         self::assertSame(Response::HTTP_OK, $promoteResponse->getStatusCode());
+
+        $verifyResponse = $this->request(
+            'PATCH',
+            '/api/admin/users/'.$user->getId()->toRfc4122(),
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/merge-patch+json',
+            ],
+            json_encode(['isEmailVerified' => true], JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_OK, $verifyResponse->getStatusCode());
+        $verifiedPayload = json_decode((string) $verifyResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($verifiedPayload);
+        self::assertTrue((bool) ($verifiedPayload['isEmailVerified'] ?? false));
+
+        $resendVerificationResponse = $this->request(
+            'POST',
+            '/api/admin/users/'.$user->getId()->toRfc4122().'/resend-verification',
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/ld+json',
+            ],
+            json_encode(new stdClass(), JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_CREATED, $resendVerificationResponse->getStatusCode());
+        $resendPayload = json_decode((string) $resendVerificationResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($resendPayload);
+        self::assertSame('queued_locally_without_mailer', $resendPayload['status'] ?? null);
+
+        $resetPasswordResponse = $this->request(
+            'POST',
+            '/api/admin/users/'.$user->getId()->toRfc4122().'/reset-password',
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/ld+json',
+            ],
+            json_encode(new stdClass(), JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_CREATED, $resetPasswordResponse->getStatusCode());
+        $resetPayload = json_decode((string) $resetPasswordResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($resetPayload);
+        $temporaryPassword = $resetPayload['temporaryPassword'] ?? null;
+        self::assertIsString($temporaryPassword);
+        self::assertNotSame('', trim($temporaryPassword));
+
+        $loginWithTemporaryPassword = $this->request(
+            'POST',
+            '/api/login',
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['email' => 'managed.user@example.com', 'password' => $temporaryPassword], JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(Response::HTTP_OK, $loginWithTemporaryPassword->getStatusCode());
 
         $adminOnlyResponse = $this->request(
             'GET',

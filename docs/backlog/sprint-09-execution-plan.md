@@ -11,15 +11,15 @@ Enable safe administrative control over users, identities and security activity.
 
 ### Step 2 - BO identities
 - Ticket: `SP9-002`
-- Outcome: in progress
+- Outcome: done
 
 ### Step 3 - Security activity timeline
 - Ticket: `SP9-003`
-- Outcome: in progress
+- Outcome: done
 
 ### Step 4 - Password reset and email verification controls
 - Ticket: `SP9-004`
-- Outcome: todo
+- Outcome: done
 
 ## Mandatory checks per ticket
 - `make phpstan`

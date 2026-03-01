@@ -7,4 +7,4 @@ Back-office needs security event timelines for investigation and support.
 - Add security activity read model and BO listing with filters.
 
 ## Status
-- in_progress
+- done

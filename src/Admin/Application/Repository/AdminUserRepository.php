@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\Application\Repository;
 
+use App\Admin\Application\User\AdminUserPasswordResetResult;
 use App\Admin\Application\User\AdminUserRecord;
 
 interface AdminUserRepository
@@ -22,7 +23,9 @@ interface AdminUserRepository
 
     public function get(string $id): ?AdminUserRecord;
 
-    public function update(string $id, ?bool $isActive, ?bool $isAdmin): ?AdminUserRecord;
+    public function update(string $id, ?bool $isActive, ?bool $isAdmin, ?bool $isEmailVerified): ?AdminUserRecord;
+
+    public function resetPassword(string $id): ?AdminUserPasswordResetResult;
 
     public function countActiveAdmins(): int;
 }

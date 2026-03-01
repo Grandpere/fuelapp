@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Admin\Application\User;
 
+use DateTimeImmutable;
+
 final readonly class AdminUserRecord
 {
     /** @param list<string> $roles */
@@ -22,11 +24,17 @@ final readonly class AdminUserRecord
         public array $roles,
         public bool $isActive,
         public int $identityCount,
+        public ?DateTimeImmutable $emailVerifiedAt,
     ) {
     }
 
     public function isAdmin(): bool
     {
         return in_array('ROLE_ADMIN', $this->roles, true);
+    }
+
+    public function isEmailVerified(): bool
+    {
+        return $this->emailVerifiedAt instanceof DateTimeImmutable;
     }
 }

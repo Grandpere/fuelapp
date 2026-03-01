@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\User\Infrastructure\Persistence\Doctrine\Entity;
 
 use App\Security\AuthenticatedUser;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use LogicException;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -42,6 +43,9 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface, A
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $isActive = true;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?DateTimeImmutable $emailVerifiedAt = null;
 
     public function getId(): Uuid
     {
@@ -110,5 +114,25 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface, A
     public function setIsActive(bool $isActive): void
     {
         $this->isActive = $isActive;
+    }
+
+    public function emailVerifiedAt(): ?DateTimeImmutable
+    {
+        return $this->emailVerifiedAt;
+    }
+
+    public function isEmailVerified(): bool
+    {
+        return $this->emailVerifiedAt instanceof DateTimeImmutable;
+    }
+
+    public function markEmailVerified(?DateTimeImmutable $verifiedAt = null): void
+    {
+        $this->emailVerifiedAt = $verifiedAt ?? new DateTimeImmutable();
+    }
+
+    public function markEmailUnverified(): void
+    {
+        $this->emailVerifiedAt = null;
     }
 }

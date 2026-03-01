@@ -14,15 +14,19 @@ declare(strict_types=1);
 namespace App\Admin\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Admin\Application\Repository\AdminUserRepository;
+use App\Admin\Application\User\AdminUserPasswordResetResult;
 use App\Admin\Application\User\AdminUserRecord;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Uid\Uuid;
 
 final readonly class DoctrineAdminUserRepository implements AdminUserRepository
 {
-    public function __construct(private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+        private UserPasswordHasherInterface $passwordHasher,
+    ) {
     }
 
     public function list(?string $query = null, ?string $role = null, ?bool $isActive = null): array
@@ -61,7 +65,7 @@ final readonly class DoctrineAdminUserRepository implements AdminUserRepository
         return $this->map($user);
     }
 
-    public function update(string $id, ?bool $isActive, ?bool $isAdmin): ?AdminUserRecord
+    public function update(string $id, ?bool $isActive, ?bool $isAdmin, ?bool $isEmailVerified): ?AdminUserRecord
     {
         if (!Uuid::isValid($id)) {
             return null;
@@ -93,10 +97,37 @@ final readonly class DoctrineAdminUserRepository implements AdminUserRepository
             $user->setRoles(array_values(array_unique($roles)));
         }
 
+        if (true === $isEmailVerified) {
+            $user->markEmailVerified();
+        }
+
+        if (false === $isEmailVerified) {
+            $user->markEmailUnverified();
+        }
+
         $this->em->persist($user);
         $this->em->flush();
 
         return $this->map($user);
+    }
+
+    public function resetPassword(string $id): ?AdminUserPasswordResetResult
+    {
+        if (!Uuid::isValid($id)) {
+            return null;
+        }
+
+        $user = $this->em->find(UserEntity::class, $id);
+        if (!$user instanceof UserEntity) {
+            return null;
+        }
+
+        $temporaryPassword = rtrim(strtr(base64_encode(random_bytes(12)), '+/', '-_'), '=');
+        $user->setPassword($this->passwordHasher->hashPassword($user, $temporaryPassword));
+        $this->em->persist($user);
+        $this->em->flush();
+
+        return new AdminUserPasswordResetResult($this->map($user), $temporaryPassword);
     }
 
     public function countActiveAdmins(): int
@@ -120,6 +151,7 @@ final readonly class DoctrineAdminUserRepository implements AdminUserRepository
             $user->getRoles(),
             $user->isActive(),
             $this->countIdentities($user->getId()->toRfc4122()),
+            $user->emailVerifiedAt(),
         );
     }
 

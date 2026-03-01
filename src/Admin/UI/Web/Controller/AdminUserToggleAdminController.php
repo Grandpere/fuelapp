@@ -59,7 +59,7 @@ final class AdminUserToggleAdminController extends AbstractController
         $isAdmin = $user->isAdmin();
 
         try {
-            $updated = $this->userManager->updateUser($id, null, !$isAdmin, $actorId);
+            $updated = $this->userManager->updateUser($id, null, !$isAdmin, null, $actorId);
         } catch (LogicException $e) {
             $this->addFlash('error', $e->getMessage());
 
@@ -90,6 +90,7 @@ final class AdminUserToggleAdminController extends AbstractController
             'email' => $user->email,
             'roles' => $user->roles,
             'isActive' => $user->isActive,
+            'isEmailVerified' => $user->isEmailVerified(),
         ];
     }
 

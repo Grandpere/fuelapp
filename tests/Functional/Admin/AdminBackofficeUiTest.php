@@ -343,7 +343,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringNotContainsString('BO-200-BB', (string) $afterDelete->getContent());
     }
 
-    public function testAdminCanToggleUserActiveAndAdminFlagsFromBackofficeUi(): void
+    public function testAdminCanToggleUserFlagsResetPasswordAndResendVerificationFromBackofficeUi(): void
     {
         $adminEmail = 'ui.admin.user.write@example.com';
         $adminPassword = 'test1234';
@@ -397,6 +397,44 @@ final class AdminBackofficeUiTest extends WebTestCase
         $onlyAdmins = $this->request('GET', '/ui/admin/users?role=admin', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $onlyAdmins->getStatusCode());
         self::assertStringContainsString('ui.managed.user@example.com', (string) $onlyAdmins->getContent());
+
+        $toggleVerificationToken = $this->extractToggleVerificationCsrf((string) $adminList->getContent(), $managedId);
+        $verifyResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/toggle-verification',
+            ['_token' => $toggleVerificationToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $verifyResponse->getStatusCode());
+
+        $afterVerify = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterVerify->getStatusCode());
+        self::assertStringContainsString('verified', (string) $afterVerify->getContent());
+
+        $resendToken = $this->extractResendVerificationCsrf((string) $afterVerify->getContent(), $managedId);
+        $resendResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/resend-verification',
+            ['_token' => $resendToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $resendResponse->getStatusCode());
+
+        $resetToken = $this->extractResetPasswordCsrf((string) $afterVerify->getContent(), $managedId);
+        $resetResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/reset-password',
+            ['_token' => $resetToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $resetResponse->getStatusCode());
+
+        $afterReset = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterReset->getStatusCode());
+        self::assertStringContainsString('Temporary password for ui.managed.user@example.com:', (string) $afterReset->getContent());
     }
 
     public function testAdminCanRelinkAndDeleteIdentityFromBackofficeUi(): void
@@ -890,6 +928,42 @@ final class AdminBackofficeUiTest extends WebTestCase
     private function extractToggleAdminCsrf(string $content, string $userId): string
     {
         $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/toggle-admin.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractToggleVerificationCsrf(string $content, string $userId): string
+    {
+        $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/toggle-verification.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractResendVerificationCsrf(string $content, string $userId): string
+    {
+        $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/resend-verification.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractResetPasswordCsrf(string $content, string $userId): string
+    {
+        $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/reset-password.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

@@ -18,8 +18,13 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Admin\UI\Api\Resource\Input\AdminUserUpdateInput;
 use App\Admin\UI\Api\Resource\Output\AdminUserOutput;
+use App\Admin\UI\Api\Resource\Output\AdminUserPasswordResetOutput;
+use App\Admin\UI\Api\Resource\Output\AdminUserVerificationDispatchOutput;
+use App\Admin\UI\Api\State\AdminUserResendVerificationStateProcessor;
+use App\Admin\UI\Api\State\AdminUserResetPasswordStateProcessor;
 use App\Admin\UI\Api\State\AdminUserStateProcessor;
 use App\Admin\UI\Api\State\AdminUserStateProvider;
 
@@ -41,6 +46,20 @@ use App\Admin\UI\Api\State\AdminUserStateProvider;
             input: AdminUserUpdateInput::class,
             output: AdminUserOutput::class,
             processor: AdminUserStateProcessor::class,
+            read: false,
+            requirements: ['id' => self::UUID_ROUTE_REQUIREMENT],
+        ),
+        new Post(
+            uriTemplate: '/admin/users/{id}/reset-password',
+            output: AdminUserPasswordResetOutput::class,
+            processor: AdminUserResetPasswordStateProcessor::class,
+            read: false,
+            requirements: ['id' => self::UUID_ROUTE_REQUIREMENT],
+        ),
+        new Post(
+            uriTemplate: '/admin/users/{id}/resend-verification',
+            output: AdminUserVerificationDispatchOutput::class,
+            processor: AdminUserResendVerificationStateProcessor::class,
             read: false,
             requirements: ['id' => self::UUID_ROUTE_REQUIREMENT],
         ),

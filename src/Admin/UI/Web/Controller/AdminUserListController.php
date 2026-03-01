@@ -41,6 +41,7 @@ final class AdminUserListController extends AbstractController
                 'isActive' => $user->isActive,
                 'isAdmin' => $user->isAdmin(),
                 'identityCount' => $user->identityCount,
+                'isEmailVerified' => $user->isEmailVerified(),
             ];
         }
 

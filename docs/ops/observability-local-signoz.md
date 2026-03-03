@@ -101,6 +101,7 @@ It is isolated behind Docker profile `observability`.
   2. Replace at least `SIGNOZ_JWT_SECRET` and `SIGNOZ_TOKENIZER_JWT_SECRET` with strong random values.
 
 ## Alerting baseline (minimum)
+- Detailed alerting setup: `docs/ops/observability-alerting-baseline.md`
 Define these alerts in SigNoZ to keep noise low and response actionable:
 1. HTTP 5xx rate spike
 - Signal: traces/requests

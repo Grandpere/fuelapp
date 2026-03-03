@@ -84,6 +84,12 @@ restart-app: ## Restart app container only
 observability-logs: ## Follow observability logs
 	$(DC_OBS) logs -f signoz otel-collector clickhouse
 
+.PHONY: observability-health
+observability-health: ## Quick health check (services + trace/log ingestion counters)
+	$(DC_OBS) ps signoz otel-collector clickhouse
+	$(DC_OBS) exec -T clickhouse clickhouse-client -q "SELECT count() AS traces_last_15m FROM signoz_traces.signoz_index_v3 WHERE timestamp >= now() - INTERVAL 15 MINUTE"
+	$(DC_OBS) exec -T clickhouse clickhouse-client -q "SELECT count() AS logs_last_15m FROM signoz_logs.logs_v2 WHERE toDateTime(timestamp/1000000000) >= now() - INTERVAL 15 MINUTE"
+
 .PHONY: shell
 shell: ## Open a shell in app container
 	$(DC_EXEC) sh

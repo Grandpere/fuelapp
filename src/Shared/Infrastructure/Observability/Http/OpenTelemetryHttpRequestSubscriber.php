@@ -123,13 +123,21 @@ final class OpenTelemetryHttpRequestSubscriber implements EventSubscriberInterfa
         $span->end();
     }
 
+    /**
+     * @return non-empty-string
+     */
     private function buildSpanName(Request $request): string
     {
+        $method = trim($request->getMethod());
+        if ('' === $method) {
+            $method = 'HTTP';
+        }
+
         $path = trim($request->getPathInfo());
         if ('' === $path) {
             $path = '/';
         }
 
-        return sprintf('%s %s', $request->getMethod(), $path);
+        return sprintf('%s %s', $method, $path);
     }
 }

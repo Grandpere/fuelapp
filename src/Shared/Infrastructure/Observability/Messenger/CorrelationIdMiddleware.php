@@ -21,6 +21,7 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Middleware\MiddlewareInterface;
 use Symfony\Component\Messenger\Middleware\StackInterface;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
+use Throwable;
 
 final readonly class CorrelationIdMiddleware implements MiddlewareInterface
 {
@@ -64,7 +65,7 @@ final readonly class CorrelationIdMiddleware implements MiddlewareInterface
             $span->setStatus(StatusCode::STATUS_OK);
 
             return $result;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $span->recordException($exception);
             $span->setStatus(StatusCode::STATUS_ERROR, $exception->getMessage());
 

@@ -216,6 +216,30 @@ final class AdminApiManagementTest extends KernelTestCase
         self::assertNotEmpty($adminItems);
     }
 
+    public function testAdminCanRemoveAdminRoleFromInactiveAdminWhenOnlyOneActiveAdminRemains(): void
+    {
+        $token = $this->createAdminAndLogin('admin.primary@example.com');
+        $inactiveAdmin = $this->createUser('admin.inactive@example.com', 'test1234', ['ROLE_ADMIN']);
+        $inactiveAdmin->setIsActive(false);
+        $this->em->flush();
+
+        $demoteResponse = $this->request(
+            'PATCH',
+            '/api/admin/users/'.$inactiveAdmin->getId()->toRfc4122(),
+            [
+                'HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token),
+                'CONTENT_TYPE' => 'application/merge-patch+json',
+            ],
+            json_encode(['isAdmin' => false], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(Response::HTTP_OK, $demoteResponse->getStatusCode());
+        $payload = json_decode((string) $demoteResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+        self::assertFalse((bool) ($payload['isAdmin'] ?? true));
+        self::assertFalse((bool) ($payload['isActive'] ?? true));
+    }
+
     public function testAdminCanFilterRelinkAndDeleteIdentities(): void
     {
         $token = $this->createAdminAndLogin('admin.identities@example.com');

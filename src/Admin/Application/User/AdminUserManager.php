@@ -53,7 +53,7 @@ final readonly class AdminUserManager
             throw new LogicException('You cannot remove your own admin role.');
         }
 
-        if (false === $isAdmin && $user->isAdmin() && $this->repository->countActiveAdmins() <= 1) {
+        if (false === $isAdmin && $user->isAdmin() && $user->isActive && $this->repository->countActiveAdmins() <= 1) {
             throw new LogicException('At least one active admin account is required.');
         }
 

@@ -213,6 +213,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: truncate correlation IDs to 80 chars in request correlation subscriber/context and enforce same bound in Doctrine audit trail before persist.
 - Prevention: when correlation/request IDs are user-controlled headers, cap them to DB-safe length at ingress and at persistence boundaries.
 
+## 2026-03-03 - Last-admin guard must apply only to active target admins
+- Symptom: demoting an inactive admin could be blocked when there was only one active admin account.
+- Root cause: last-admin guard checked global active admin count but not whether the target being demoted was active.
+- Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
+- Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
+
 ## 2026-02-21 - DBAL datetime parameter type must match immutable values
 - Symptom: analytics projection refresh crashed in integration tests with `Could not convert PHP value of type DateTimeImmutable to type DateTimeType`.
 - Root cause: DBAL statement parameter types were declared as `datetime` while values were `DateTimeImmutable`.

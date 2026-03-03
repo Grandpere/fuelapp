@@ -134,6 +134,7 @@ final class ListReceiptsController extends AbstractController
         $sortDirection = 'asc' === strtolower((string) $request->query->get('sort_direction')) ? 'asc' : 'desc';
 
         $total = $this->receiptRepository->countFiltered(
+            null,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -150,6 +151,7 @@ final class ListReceiptsController extends AbstractController
         $rows = $this->receiptRepository->paginateFilteredListRows(
             $page,
             $perPage,
+            null,
             $stationId,
             $issuedFrom,
             $issuedTo,

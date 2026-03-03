@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-03 - Analytics export links must propagate active dashboard filters
+- Symptom: `/ui/analytics` with `vehicle_id` filter could export receipts from other vehicles.
+- Root cause: analytics dashboard export params omitted `vehicle_id`, and export-side filtering did not apply vehicle constraint.
+- Fix: propagate `vehicle_id` in analytics export query params and apply vehicle filter in export repository queries/metadata.
+- Prevention: when dashboard KPIs and exports share a filter model, keep a single explicit propagation list and assert parity in functional tests.
+
 ## 2026-02-21 - DBAL datetime parameter type must match immutable values
 - Symptom: analytics projection refresh crashed in integration tests with `Could not convert PHP value of type DateTimeImmutable to type DateTimeType`.
 - Root cause: DBAL statement parameter types were declared as `datetime` while values were `DateTimeImmutable`.

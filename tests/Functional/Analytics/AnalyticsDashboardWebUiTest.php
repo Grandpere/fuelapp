@@ -144,6 +144,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('280.00 EUR', $vehicleContent);
         self::assertStringContainsString('15.00 L', $vehicleContent);
         self::assertStringContainsString('18.667 EUR/L', $vehicleContent);
+        self::assertStringContainsString('vehicle_id='.$vehicle->getId()->toRfc4122(), $vehicleContent);
 
         $stationFuelResponse = $this->request(
             'GET',

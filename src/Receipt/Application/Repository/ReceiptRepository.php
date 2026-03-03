@@ -47,6 +47,7 @@ interface ReceiptRepository
     public function paginateFiltered(
         int $page,
         int $perPage,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -61,6 +62,7 @@ interface ReceiptRepository
     ): iterable;
 
     public function countFiltered(
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -90,6 +92,7 @@ interface ReceiptRepository
     public function paginateFilteredListRows(
         int $page,
         int $perPage,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -119,6 +122,7 @@ interface ReceiptRepository
      *     vatRatePercent: ?int
      * }> */
     public function listFilteredRowsForExport(
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,

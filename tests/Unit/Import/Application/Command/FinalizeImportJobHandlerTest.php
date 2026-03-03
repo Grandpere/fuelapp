@@ -268,6 +268,7 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
     public function paginateFiltered(
         int $page,
         int $perPage,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -284,6 +285,7 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
     }
 
     public function countFiltered(
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -300,6 +302,7 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
     public function paginateFilteredListRows(
         int $page,
         int $perPage,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -316,6 +319,7 @@ final class FinalizeInMemoryReceiptRepository implements ReceiptRepository
     }
 
     public function listFilteredRowsForExport(
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,

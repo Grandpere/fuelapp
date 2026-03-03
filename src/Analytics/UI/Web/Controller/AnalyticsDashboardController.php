@@ -83,6 +83,7 @@ final class AnalyticsDashboardController extends AbstractController
             'visitedStations' => $visitedStations,
             'stationMapPoints' => $this->stationMapPoints($visitedStations),
             'exportQueryParams' => [
+                'vehicle_id' => $vehicleId,
                 'issued_from' => $from?->format('Y-m-d'),
                 'issued_to' => $to?->format('Y-m-d'),
                 'station_id' => $stationId,

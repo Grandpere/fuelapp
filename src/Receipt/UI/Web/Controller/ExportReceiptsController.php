@@ -107,6 +107,7 @@ final class ExportReceiptsController extends AbstractController
     #[Route('/ui/receipts/export', name: 'ui_receipt_export', methods: ['GET'])]
     public function __invoke(Request $request): Response
     {
+        $vehicleId = $this->nullableString($request->query->get('vehicle_id'));
         $stationId = $this->nullableString($request->query->get('station_id'));
         $issuedFrom = $this->parseDate($request->query->get('issued_from'));
         $issuedTo = $this->parseDate($request->query->get('issued_to'));
@@ -127,6 +128,7 @@ final class ExportReceiptsController extends AbstractController
         $generatedAt = new DateTimeImmutable();
         $metadataRows = $this->buildMetadataRows(
             $generatedAt,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -149,6 +151,7 @@ final class ExportReceiptsController extends AbstractController
                 $filenameBase.'.xlsx',
                 $metadataRows,
                 $columns,
+                $vehicleId,
                 $stationId,
                 $issuedFrom,
                 $issuedTo,
@@ -167,6 +170,7 @@ final class ExportReceiptsController extends AbstractController
             $filenameBase.'.csv',
             $metadataRows,
             $columns,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -189,6 +193,7 @@ final class ExportReceiptsController extends AbstractController
         string $filename,
         array $metadataRows,
         array $columns,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -204,6 +209,7 @@ final class ExportReceiptsController extends AbstractController
         $response = new StreamedResponse(function () use (
             $metadataRows,
             $columns,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -233,6 +239,7 @@ final class ExportReceiptsController extends AbstractController
             fputcsv($stream, $headers);
 
             foreach ($this->iterateRowsForExport(
+                $vehicleId,
                 $stationId,
                 $issuedFrom,
                 $issuedTo,
@@ -270,6 +277,7 @@ final class ExportReceiptsController extends AbstractController
         string $filename,
         array $metadataRows,
         array $columns,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -285,6 +293,7 @@ final class ExportReceiptsController extends AbstractController
         $response = new StreamedResponse(function () use (
             $metadataRows,
             $columns,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -317,6 +326,7 @@ final class ExportReceiptsController extends AbstractController
             ++$rowIndex;
 
             foreach ($this->iterateRowsForExport(
+                $vehicleId,
                 $stationId,
                 $issuedFrom,
                 $issuedTo,
@@ -356,6 +366,7 @@ final class ExportReceiptsController extends AbstractController
      */
     private function buildMetadataRows(
         DateTimeImmutable $generatedAt,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -373,6 +384,7 @@ final class ExportReceiptsController extends AbstractController
         return [
             ['generated_at', $generatedAt->format(DATE_ATOM)],
             ['format', $format],
+            ['filter_vehicle_id', $vehicleId ?? ''],
             ['filter_station_id', $stationId ?? ''],
             ['filter_issued_from', $issuedFrom?->format('Y-m-d') ?? ''],
             ['filter_issued_to', $issuedTo?->format('Y-m-d') ?? ''],
@@ -406,6 +418,7 @@ final class ExportReceiptsController extends AbstractController
      * }>
      */
     private function iterateRowsForExport(
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -423,6 +436,7 @@ final class ExportReceiptsController extends AbstractController
             $rows = $this->receiptRepository->paginateFilteredListRows(
                 $page,
                 self::EXPORT_CHUNK_SIZE,
+                $vehicleId,
                 $stationId,
                 $issuedFrom,
                 $issuedTo,

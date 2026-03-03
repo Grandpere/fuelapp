@@ -14,13 +14,13 @@ services:
       MERCURE_URL: "http://mercure/.well-known/mercure"
       MERCURE_PUBLIC_URL: "http://localhost:${MERCURE_PORT:-3000}/.well-known/mercure"
       MERCURE_JWT_SECRET: "${MERCURE_JWT_SECRET:-!ChangeMe!}"
-      OTEL_PHP_AUTOLOAD_ENABLED: "${OTEL_PHP_AUTOLOAD_ENABLED:-1}"
+      OTEL_PHP_AUTOLOAD_ENABLED: "${OTEL_PHP_AUTOLOAD_ENABLED:-true}"
       OTEL_SERVICE_NAME: "${OTEL_SERVICE_NAME:-fuelapp}"
       OTEL_TRACES_EXPORTER: "${OTEL_TRACES_EXPORTER:-otlp}"
       OTEL_METRICS_EXPORTER: "${OTEL_METRICS_EXPORTER:-otlp}"
       OTEL_LOGS_EXPORTER: "${OTEL_LOGS_EXPORTER:-none}"
       OTEL_EXPORTER_OTLP_PROTOCOL: "${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://signoz:4318}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}"
       OTEL_EXPORTER_OTLP_TIMEOUT: "${OTEL_EXPORTER_OTLP_TIMEOUT:-1000}"
     depends_on:
       - database
@@ -97,43 +97,137 @@ services:
       timeout: 5s
       retries: 5
 
-  signoz:
-    image: signoz/signoz:${SIGNOZ_VERSION:-latest}
+  init-clickhouse:
+    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-25.5.6}
+    profiles: ["observability"]
+    command:
+      - bash
+      - -c
+      - |
+        version="v0.0.1"
+        node_os=$$(uname -s | tr '[:upper:]' '[:lower:]')
+        node_arch=$$(uname -m | sed s/aarch64/arm64/ | sed s/x86_64/amd64/)
+        cd /tmp
+        wget -O histogram-quantile.tar.gz "https://github.com/SigNoz/signoz/releases/download/histogram-quantile%2F$${version}/histogram-quantile_$${node_os}_$${node_arch}.tar.gz"
+        tar -xvzf histogram-quantile.tar.gz
+        mv histogram-quantile /var/lib/clickhouse/user_scripts/histogramQuantile
+    restart: on-failure
+    volumes:
+      - clickhouse_user_scripts:/var/lib/clickhouse/user_scripts
+
+  zookeeper-1:
+    image: signoz/zookeeper:3.7.1
+    profiles: ["observability"]
+    user: root
+    volumes:
+      - zookeeper_1:/bitnami/zookeeper
+    environment:
+      - ZOO_SERVER_ID=1
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_AUTOPURGE_INTERVAL=1
+      - ZOO_ENABLE_PROMETHEUS_METRICS=yes
+      - ZOO_PROMETHEUS_METRICS_PORT_NUMBER=9141
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -m 2 http://localhost:8080/commands/ruok | grep error | grep null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-25.5.6}
+    profiles: ["observability"]
+    depends_on:
+      init-clickhouse:
+        condition: service_completed_successfully
+      zookeeper-1:
+        condition: service_healthy
+    environment:
+      CLICKHOUSE_SKIP_USER_SETUP: "1"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_log:/var/log/clickhouse-server
+      - clickhouse_user_scripts:/var/lib/clickhouse/user_scripts
+      - ./signoz/clickhouse-cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "0.0.0.0:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  signoz-telemetrystore-migrator:
+    image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.142.0}
     profiles: ["observability"]
     depends_on:
       clickhouse:
         condition: service_healthy
     environment:
+      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
+      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER=cluster
+      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION=true
+      - SIGNOZ_OTEL_COLLECTOR_TIMEOUT=10m
+    entrypoint:
+      - /bin/sh
+    command:
+      - -c
+      - |
+        /signoz-otel-collector migrate bootstrap &&
+        /signoz-otel-collector migrate sync up &&
+        /signoz-otel-collector migrate async up
+    restart: on-failure
+
+  signoz:
+    image: signoz/signoz:${SIGNOZ_VERSION:-v0.113.0}
+    profiles: ["observability"]
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      signoz-telemetrystore-migrator:
+        condition: service_completed_successfully
+    environment:
       SIGNOZ_TELEMETRYSTORE_PROVIDER: "${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}"
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: "${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-clickhouse://signoz:signoz@clickhouse:9000/signoz}"
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: "${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://clickhouse:9000}"
       SIGNOZ_TOKENIZER_JWT_SECRET: "${SIGNOZ_TOKENIZER_JWT_SECRET:-ChangeMeToAtLeast32CharsForSigNozJwt}"
+      SIGNOZ_JWT_SECRET: "${SIGNOZ_JWT_SECRET:-ChangeMeToAtLeast32CharsForSigNozJwt}"
+      SIGNOZ_SQLSTORE_SQLITE_PATH: /var/lib/signoz/signoz.db
     ports:
       - "${SIGNOZ_PORT:-3301}:8080"
-      - "${SIGNOZ_OTLP_GRPC_PORT:-14317}:4317"
-      - "${SIGNOZ_OTLP_HTTP_PORT:-14318}:4318"
     volumes:
       - signoz_data:/var/lib/signoz
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080"]
+      test: ["CMD", "wget", "--spider", "-q", "localhost:8080/api/v1/health"]
       interval: 15s
       timeout: 5s
       retries: 10
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-24.8-alpine}
+  otel-collector:
+    image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.142.0}
     profiles: ["observability"]
-    environment:
-      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-signoz}
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-signoz}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-signoz}
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      signoz-telemetrystore-migrator:
+        condition: service_completed_successfully
+      signoz:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+    command:
+      - -c
+      - |
+        /signoz-otel-collector migrate sync check &&
+        /signoz-otel-collector --config=/etc/otel-collector-config.yaml --copy-path=/var/tmp/collector-config.yaml --feature-gates=-pkg.translator.prometheus.NormalizeName
     volumes:
-      - clickhouse_data:/var/lib/clickhouse
-      - clickhouse_log:/var/log/clickhouse-server
-    healthcheck:
-      test: ["CMD-SHELL", "clickhouse-client --query 'SELECT 1'"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
+      - ./signoz/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
+      - LOW_CARDINAL_EXCEPTION_GROUPING=false
+      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
+      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER=cluster
+      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION=true
+      - SIGNOZ_OTEL_COLLECTOR_TIMEOUT=10m
+    ports:
+      - "${SIGNOZ_OTLP_GRPC_PORT:-14317}:4317"
+      - "${SIGNOZ_OTLP_HTTP_PORT:-14318}:4318"
 
 volumes:
   database_data:
@@ -142,3 +236,5 @@ volumes:
   signoz_data:
   clickhouse_data:
   clickhouse_log:
+  clickhouse_user_scripts:
+  zookeeper_1:

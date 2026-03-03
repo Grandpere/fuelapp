@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f8d45a645bc70eff3f00b7f09cab300b",
+    "content-hash": "bfb9848b0fa224940d85fadcb0d49729",
     "packages": [
         {
             "name": "api-platform/doctrine-common",
@@ -3445,6 +3445,132 @@
                 "source": "https://github.com/open-telemetry/opentelemetry-php"
             },
             "time": "2025-09-17T23:10:12+00:00"
+        },
+        {
+            "name": "open-telemetry/opentelemetry-auto-symfony",
+            "version": "1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/opentelemetry-php/contrib-auto-symfony.git",
+                "reference": "9562c1d00e51da9f5bbf4b7be8cc244b62dfd8e7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/opentelemetry-php/contrib-auto-symfony/zipball/9562c1d00e51da9f5bbf4b7be8cc244b62dfd8e7",
+                "reference": "9562c1d00e51da9f5bbf4b7be8cc244b62dfd8e7",
+                "shasum": ""
+            },
+            "require": {
+                "ext-opentelemetry": "*",
+                "open-telemetry/api": "^1.6",
+                "open-telemetry/sem-conv": "^1.32",
+                "php": "^8.1",
+                "symfony/http-client-contracts": "*",
+                "symfony/http-kernel": "*"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3",
+                "open-telemetry/sdk": "^1.8",
+                "phan/phan": "^5.0",
+                "php-http/mock-client": "*",
+                "phpstan/phpstan": "^1.1",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "phpunit/phpunit": "^9.5",
+                "psalm/plugin-phpunit": "^0.19.2",
+                "symfony/http-client": "^5.4||^6.0",
+                "symfony/messenger": "^5.4||^6.0",
+                "vimeo/psalm": "6.4.0"
+            },
+            "suggest": {
+                "open-telemetry/opentelemetry-propagation-server-timing": "Automatically propagate the context to the client through server-timing headers.",
+                "open-telemetry/opentelemetry-propagation-traceresponse": "Automatically propagate the context to the client through trace-response headers."
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "_register.php"
+                ],
+                "psr-4": {
+                    "OpenTelemetry\\Contrib\\Instrumentation\\Symfony\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "OpenTelemetry auto-instrumentation for Symfony",
+            "homepage": "https://opentelemetry.io/docs/php",
+            "keywords": [
+                "instrumentation",
+                "open-telemetry",
+                "opentelemetry",
+                "otel",
+                "symfony",
+                "tracing"
+            ],
+            "support": {
+                "source": "https://github.com/opentelemetry-php/contrib-auto-symfony/tree/1.1.1"
+            },
+            "time": "2025-11-25T10:46:47+00:00"
+        },
+        {
+            "name": "open-telemetry/opentelemetry-logger-monolog",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/opentelemetry-php/contrib-logger-monolog.git",
+                "reference": "e188fa2c2fba5f69f92913f8ec486398e89ef971"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/opentelemetry-php/contrib-logger-monolog/zipball/e188fa2c2fba5f69f92913f8ec486398e89ef971",
+                "reference": "e188fa2c2fba5f69f92913f8ec486398e89ef971",
+                "shasum": ""
+            },
+            "require": {
+                "monolog/monolog": "^1.1|^2|^3",
+                "open-telemetry/api": "^1.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3",
+                "google/protobuf": ">=3.5.0",
+                "guzzlehttp/guzzle": "^7.4",
+                "nyholm/psr7": "^1.6",
+                "open-telemetry/exporter-otlp": ">=1.0",
+                "open-telemetry/sdk": ">=1.0",
+                "phan/phan": "^5.0",
+                "phpbench/phpbench": "^1.2",
+                "phpstan/phpstan": "^1.1",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "phpunit/phpunit": "^9.5",
+                "psalm/plugin-phpunit": "^0.19.2",
+                "vimeo/psalm": "6.4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "OpenTelemetry\\Contrib\\Logs\\Monolog\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "OpenTelemetry Monolog handler.",
+            "homepage": "https://opentelemetry.io",
+            "keywords": [
+                "handler",
+                "logs",
+                "monolog",
+                "open-telemetry",
+                "opentelemetry",
+                "otel"
+            ],
+            "support": {
+                "source": "https://github.com/opentelemetry-php/contrib-logger-monolog/tree/1.1.0"
+            },
+            "time": "2025-02-25T01:30:01+00:00"
         },
         {
             "name": "open-telemetry/sdk",

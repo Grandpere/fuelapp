@@ -12,6 +12,9 @@ ENV FRANKENPHP_CONFIG="worker ./public/index.php"
 # Avoid automatic HTTPS in containers
 ENV SERVER_NAME=:80
 
+RUN pecl install opentelemetry \
+    && docker-php-ext-enable opentelemetry
+
 # PHP extensions (dev)
 RUN set -eux; \
     install-php-extensions pdo_pgsql pgsql redis amqp xdebug zip gd

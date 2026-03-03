@@ -4,6 +4,9 @@ DC := docker compose -f resources/docker/compose.yml --env-file resources/docker
 DC_EXEC := $(DC) exec -T app
 DC_OBS := $(DC) --profile observability
 
+APP_SERVICES := app database redis rabbitmq mercure
+OBS_SERVICES := clickhouse zookeeper-1 signoz-telemetrystore-migrator signoz otel-collector
+
 .PHONY: help
 help: ## Show help
 	@echo "For global application, use Makefile at the root project."
@@ -17,17 +20,39 @@ help: ## Show help
 ##---------------------------------------------------------------------------
 
 .PHONY: up
-up: ## Start stack
-	$(DC) up -d
-
-.PHONY: up-rebuild
-up-rebuild: ## Start stack (rebuild + force recreate)
-	$(DC) down --remove-orphans
-	$(DC) up -d --build --force-recreate
+up: app-up ## Alias: start app stack
 
 .PHONY: down
-down: ## Stop all containers
+down: app-down ## Alias: stop app stack
+
+.PHONY: app-up
+app-up: ## Start app stack (without observability)
+	$(DC) up -d $(APP_SERVICES)
+
+.PHONY: app-down
+app-down: ## Stop app stack (without observability)
+	$(DC) stop $(APP_SERVICES)
+
+.PHONY: observability-up
+observability-up: ## Start observability stack (SigNoz + ClickHouse)
+	$(DC_OBS) up -d $(OBS_SERVICES)
+
+.PHONY: observability-down
+observability-down: ## Stop observability stack
+	$(DC_OBS) stop $(OBS_SERVICES)
+
+.PHONY: full-up
+full-up: ## Start full stack (app + observability)
+	$(DC_OBS) up -d
+
+.PHONY: full-down
+full-down: ## Stop full stack
+	$(DC_OBS) down --remove-orphans
+
+.PHONY: up-rebuild
+up-rebuild: ## Rebuild and start app stack
 	$(DC) down --remove-orphans
+	$(DC) up -d --build --force-recreate $(APP_SERVICES)
 
 .PHONY: build
 build: ## Build images
@@ -49,17 +74,10 @@ ps: ## List containers
 restart-app: ## Restart app container only
 	$(DC) restart app
 
-.PHONY: observability-up
-observability-up: ## Start local observability stack (SigNoz profile)
-	$(DC_OBS) up -d signoz
-
-.PHONY: observability-down
-observability-down: ## Stop local observability stack (SigNoz profile)
-	$(DC_OBS) stop signoz
 
 .PHONY: observability-logs
-observability-logs: ## Follow SigNoz logs
-	$(DC_OBS) logs -f signoz
+observability-logs: ## Follow observability logs
+	$(DC_OBS) logs -f signoz otel-collector clickhouse
 
 .PHONY: shell
 shell: ## Open a shell in app container

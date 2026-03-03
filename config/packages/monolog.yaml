@@ -8,6 +8,10 @@ monolog:
             level: info
             formatter: monolog.formatter.json
             channels: ['!event']
+        otel:
+            type: service
+            id: App\Shared\Infrastructure\Observability\Logging\OpenTelemetryMonologHandler
+            channels: ['!event']
         console:
             type: console
             process_psr_3_messages: false

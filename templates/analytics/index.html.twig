@@ -4,6 +4,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
     <style>
         .analytics-page {
             display: grid;
@@ -72,6 +73,48 @@
             gap: 0.85rem;
         }
 
+        .map-card {
+            padding: 1rem;
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .map-card h2 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .map-canvas {
+            height: 360px;
+            border-radius: 12px;
+            border: 1px solid rgba(92, 133, 159, 0.35);
+            overflow: hidden;
+            background: rgba(6, 26, 38, 0.55);
+        }
+
+        .station-map-list {
+            display: grid;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .station-map-item {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.9rem;
+            padding: 0.6rem 0.7rem;
+            border-radius: 10px;
+            border: 1px solid rgba(92, 133, 159, 0.24);
+            background: rgba(8, 26, 38, 0.5);
+            font-size: 0.86rem;
+        }
+
+        .station-map-item strong {
+            color: #e6f0f6;
+        }
+
         .trend-card {
             padding: 1rem;
             display: grid;
@@ -121,6 +164,49 @@
 
         .trend-bar-consumption {
             background: linear-gradient(120deg, rgba(97, 221, 255, 0.88), rgba(38, 167, 241, 0.94));
+        }
+
+        .trend-bar-price {
+            background: linear-gradient(120deg, rgba(189, 255, 121, 0.88), rgba(76, 207, 78, 0.94));
+        }
+
+        .trend-bar-fuel {
+            background: linear-gradient(120deg, rgba(247, 181, 0, 0.88), rgba(240, 138, 0, 0.94));
+        }
+
+        .trend-bar-maintenance {
+            background: linear-gradient(120deg, rgba(255, 143, 170, 0.88), rgba(226, 75, 126, 0.94));
+        }
+
+        .trend-bar-total {
+            background: linear-gradient(120deg, rgba(97, 221, 255, 0.88), rgba(38, 167, 241, 0.94));
+        }
+
+        .compared-trend-grid {
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .compared-trend-row {
+            display: grid;
+            gap: 0.45rem;
+            padding: 0.55rem 0.6rem;
+            border: 1px solid rgba(92, 133, 159, 0.25);
+            border-radius: 10px;
+            background: rgba(8, 26, 38, 0.5);
+        }
+
+        .compared-trend-label {
+            color: var(--text-soft);
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .compared-trend-track {
+            display: grid;
+            grid-template-columns: 88px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .trend-value {
@@ -227,6 +313,27 @@
             </article>
         </section>
 
+        <section class="card map-card">
+            <h2>Visited stations map</h2>
+            {% if stationMapPoints is empty %}
+                <div class="empty-state">No geocoded station data for current filters.</div>
+            {% else %}
+                <div class="map-canvas" id="analytics-station-map"></div>
+                <ul class="station-map-list">
+                    {% for point in stationMapPoints %}
+                        <li class="station-map-item">
+                            <strong>{{ point.stationName }}</strong>
+                            <span>{{ point.address }}</span>
+                            <span>{{ (point.totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                            <span>{{ (point.totalQuantityMilliLiters / 1000)|number_format(2, '.', ' ') }} L</span>
+                            <span>{{ point.receiptCount }} receipt(s)</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <script type="application/json" id="analytics-station-map-data">{{ stationMapPoints|json_encode|raw }}</script>
+            {% endif %}
+        </section>
+
         <section class="trend-grid">
             <article class="card trend-card">
                 <h2>Cost trend by month</h2>
@@ -265,6 +372,133 @@
                     </div>
                 {% endif %}
             </article>
+
+            <article class="card trend-card">
+                <h2>Fuel price trend by month</h2>
+                {% if fuelPriceTrend is empty %}
+                    <div class="empty-state">No fuel price data for current filters.</div>
+                {% else %}
+                    <div class="trend-list">
+                        {% for item in fuelPriceTrend %}
+                            <div class="trend-row">
+                                <span class="trend-month">{{ item.month }} · {{ item.fuelType }}</span>
+                                <div class="trend-bar-wrap">
+                                    <div class="trend-bar trend-bar-price" style="width: {{ item.ratio }}%;"></div>
+                                </div>
+                                <span class="trend-value">
+                                    {% if item.averagePriceDeciCentsPerLiter is not null %}
+                                        {{ (item.averagePriceDeciCentsPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
+                                    {% else %}
+                                        n/a
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </article>
+
+            <article class="card trend-card">
+                <h2>Compared cost trend (fuel vs maintenance vs total)</h2>
+                {% if comparedCostTrend is empty %}
+                    <div class="empty-state">No compared cost data for current filters.</div>
+                {% else %}
+                    <div class="compared-trend-grid">
+                        {% for item in comparedCostTrend %}
+                            <div class="compared-trend-row">
+                                <div class="compared-trend-label">{{ item.month }}</div>
+                                <div class="compared-trend-track">
+                                    <span class="trend-month">Fuel</span>
+                                    <div class="trend-bar-wrap"><div class="trend-bar trend-bar-fuel" style="width: {{ item.fuelRatio }}%;"></div></div>
+                                    <span class="trend-value">{{ (item.fuelCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                                </div>
+                                <div class="compared-trend-track">
+                                    <span class="trend-month">Maint.</span>
+                                    <div class="trend-bar-wrap"><div class="trend-bar trend-bar-maintenance" style="width: {{ item.maintenanceRatio }}%;"></div></div>
+                                    <span class="trend-value">{{ (item.maintenanceCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                                </div>
+                                <div class="compared-trend-track">
+                                    <span class="trend-month">Total</span>
+                                    <div class="trend-bar-wrap"><div class="trend-bar trend-bar-total" style="width: {{ item.totalRatio }}%;"></div></div>
+                                    <span class="trend-value">{{ (item.totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </article>
         </section>
     </main>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        const initAnalyticsStationMap = () => {
+            const mapContainer = document.getElementById('analytics-station-map');
+            const dataContainer = document.getElementById('analytics-station-map-data');
+            if (!mapContainer || !dataContainer || typeof L === 'undefined') {
+                return;
+            }
+            if (mapContainer.dataset.mapInitialized === '1') {
+                return;
+            }
+
+            let points = [];
+            try {
+                points = JSON.parse(dataContainer.textContent || '[]');
+            } catch (error) {
+                points = [];
+            }
+
+            if (!Array.isArray(points) || points.length === 0) {
+                return;
+            }
+
+            const map = L.map(mapContainer, {scrollWheelZoom: false});
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            const bounds = [];
+            points.forEach((point) => {
+                if (typeof point.latitude !== 'number' || typeof point.longitude !== 'number') {
+                    return;
+                }
+
+                const marker = L.marker([point.latitude, point.longitude]).addTo(map);
+                const stationName = escapeHtml(point.stationName);
+                const address = escapeHtml(point.address);
+                marker.bindPopup(
+                    `<strong>${stationName}</strong><br>` +
+                    `${address}<br>` +
+                    `${(point.totalCostCents / 100).toFixed(2)} EUR · ${(point.totalQuantityMilliLiters / 1000).toFixed(2)} L`
+                );
+                bounds.push([point.latitude, point.longitude]);
+            });
+
+            if (bounds.length === 1) {
+                map.setView(bounds[0], 12);
+            } else if (bounds.length > 1) {
+                map.fitBounds(bounds, {padding: [20, 20]});
+            } else {
+                map.setView([46.603354, 1.888334], 5);
+            }
+
+            mapContainer.dataset.mapInitialized = '1';
+            setTimeout(() => map.invalidateSize(), 0);
+        };
+
+        document.addEventListener('DOMContentLoaded', initAnalyticsStationMap);
+        document.addEventListener('turbo:load', initAnalyticsStationMap);
+    </script>
 {% endblock %}

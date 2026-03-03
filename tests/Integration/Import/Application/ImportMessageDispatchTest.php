@@ -16,6 +16,7 @@ namespace App\Tests\Integration\Import\Application;
 use App\Import\Application\Command\CreateImportJobCommand;
 use App\Import\Application\Command\CreateImportJobHandler;
 use App\Import\Application\Message\ProcessImportJobMessage;
+use App\Shared\Infrastructure\Observability\Messenger\CorrelationIdStamp;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -80,5 +81,8 @@ final class ImportMessageDispatchTest extends KernelTestCase
         $message = $sent[0]->getMessage();
         self::assertInstanceOf(ProcessImportJobMessage::class, $message);
         self::assertSame($job->id()->toString(), $message->importJobId);
+        $stamp = $sent[0]->last(CorrelationIdStamp::class);
+        self::assertInstanceOf(CorrelationIdStamp::class, $stamp);
+        self::assertTrue(Uuid::isValid($stamp->correlationId));
     }
 }

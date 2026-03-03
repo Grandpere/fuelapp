@@ -93,6 +93,7 @@ final class CreateReceiptController extends AbstractController
             'stationCity' => '',
             'latitudeMicroDegrees' => '',
             'longitudeMicroDegrees' => '',
+            'odometerKilometers' => '',
             '_token' => '',
         ];
     }
@@ -133,6 +134,8 @@ final class CreateReceiptController extends AbstractController
             $this->nullIfEmpty($formData['stationCity']),
             $this->toNullableInt($formData['latitudeMicroDegrees']),
             $this->toNullableInt($formData['longitudeMicroDegrees']),
+            null,
+            $this->toNullableInt($formData['odometerKilometers']),
         );
 
         $errors = [];
@@ -166,6 +169,7 @@ final class CreateReceiptController extends AbstractController
             $formData['stationCity'],
             $this->toNullableInt($formData['latitudeMicroDegrees']),
             $this->toNullableInt($formData['longitudeMicroDegrees']),
+            odometerKilometers: $this->toNullableInt($formData['odometerKilometers']),
         );
 
         $receipt = ($this->createReceiptWithStationHandler)($command);

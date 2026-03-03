@@ -10,7 +10,7 @@
                     <h1 class="page-title">Import Review</h1>
                     <p class="muted" style="margin:.35rem 0 0;">Review extracted values, optionally correct fields, then finalize to create the receipt.</p>
                 </div>
-                <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Back to imports</a>
+                <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
             </div>
 
             <dl style="display:grid; grid-template-columns: 180px 1fr; gap:.35rem .8rem; margin:0;">
@@ -38,7 +38,7 @@
             <section class="card" style="padding: 1rem;">
                 <h2 style="margin:0 0 .35rem; font-size:1.05rem;">Fix And Finalize</h2>
                 <p class="muted" style="margin:0 0 .8rem;">Leave empty to use extracted values when available.</p>
-                <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" style="display:grid; gap:.8rem;">
+                <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" style="display:grid; gap:.8rem;">
                     <input type="hidden" name="_token" value="{{ csrf_token('ui_import_finalize_' ~ job.id.toString) }}">
 
                     <div class="form-grid-2">
@@ -71,6 +71,10 @@
                             <input class="input" type="number" name="longitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.longitudeMicroDegrees is defined ? creationPayload.longitudeMicroDegrees : '' }}" step="1">
                         </label>
                         <label class="label">
+                            Odometer (km)
+                            <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : (parsedDraft is not null and parsedDraft.odometerKilometers is defined ? parsedDraft.odometerKilometers : '') }}" min="0" step="1">
+                        </label>
+                        <label class="label">
                             Line fuel type
                             <input class="input" type="text" name="lineFuelType" value="{{ firstLine is not null and firstLine.fuelType is defined ? firstLine.fuelType : '' }}" placeholder="diesel">
                         </label>
@@ -90,12 +94,12 @@
 
                     <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
                         <button class="btn btn-primary" type="submit">Finalize import</button>
-                        <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Cancel</a>
-                        <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" onsubmit="return confirm('Delete this import file?');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
-                            <button class="btn btn-danger" type="submit">Delete import</button>
-                        </form>
+                        <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Cancel</a>
                     </div>
+                </form>
+                <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
+                    <button class="btn btn-danger" type="submit">Delete import</button>
                 </form>
             </section>
         {% else %}

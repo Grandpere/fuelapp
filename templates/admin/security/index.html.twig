@@ -1,0 +1,76 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Security Activities{% endblock %}
+
+{% set admin_section = 'security_activities' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <h2 class="page-title">Security Activities</h2>
+        <p class="muted">Track login attempts and security-sensitive account changes.</p>
+
+        <form method="get" action="{{ path('ui_admin_security_activity_list') }}" style="margin-top: 1rem; display:grid; gap:0.6rem; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items:end;">
+            <label class="label">
+                Action
+                <input class="input" type="text" name="action" value="{{ filters.action }}" placeholder="security.login.failure">
+            </label>
+            <label class="label">
+                Actor id
+                <input class="input" type="text" name="actorId" value="{{ filters.actorId }}" placeholder="UUID">
+            </label>
+            <label class="label">
+                From
+                <input class="input" type="date" name="from" value="{{ filters.from }}">
+            </label>
+            <label class="label">
+                To
+                <input class="input" type="date" name="to" value="{{ filters.to }}">
+            </label>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="submit">Apply</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_security_activity_list') }}">Reset</a>
+            </div>
+        </form>
+
+        <div class="table-wrap" style="margin-top: 1rem;">
+            <table class="app-table" style="min-width: 1080px;">
+                <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Action</th>
+                    <th>Actor</th>
+                    <th>Target</th>
+                    <th>Correlation</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for entry in entries %}
+                    <tr>
+                        <td>{{ entry.createdAt|date('Y-m-d H:i:s') }}</td>
+                        <td><code>{{ entry.action }}</code></td>
+                        <td>
+                            {% if entry.actorEmail %}
+                                {{ entry.actorEmail }}
+                            {% else %}
+                                <span class="muted">anonymous</span>
+                            {% endif %}
+                            {% if entry.actorId %}
+                                <div><small class="muted">{{ entry.actorId }}</small></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>{{ entry.targetType }}</div>
+                            <small class="muted">{{ entry.targetId }}</small>
+                        </td>
+                        <td><small>{{ entry.correlationId }}</small></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="muted">No security activity found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

@@ -36,6 +36,8 @@ final class ImportFinalizeInput
         public ?int $latitudeMicroDegrees = null,
         #[Assert\Range(min: -180000000, max: 180000000)]
         public ?int $longitudeMicroDegrees = null,
+        #[Assert\GreaterThanOrEqual(0)]
+        public ?int $odometerKilometers = null,
     ) {
     }
 }

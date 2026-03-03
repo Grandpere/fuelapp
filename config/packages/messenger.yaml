@@ -1,5 +1,11 @@
 framework:
     messenger:
+        buses:
+            messenger.bus.default:
+                default_middleware: true
+                middleware:
+                    - App\Shared\Infrastructure\Observability\Messenger\CorrelationIdMiddleware
+
         failure_transport: failed
 
         transports:

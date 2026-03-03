@@ -44,6 +44,7 @@ final class ExportReceiptsController extends AbstractController
         'station_street_name',
         'station_postal_code',
         'station_city',
+        'odometer_kilometers',
         'fuel_type',
         'quantity_milli_liters',
         'unit_price_deci_cents_per_liter',
@@ -60,6 +61,7 @@ final class ExportReceiptsController extends AbstractController
         'station_street_name' => 'station_street_name',
         'station_postal_code' => 'station_postal_code',
         'station_city' => 'station_city',
+        'odometer_kilometers' => 'odometer_kilometers',
         'fuel_type' => 'fuel_type',
         'quantity_milli_liters' => 'quantity_milli_liters',
         'unit_price_deci_cents_per_liter' => 'unit_price_deci_cents_per_liter',
@@ -73,6 +75,7 @@ final class ExportReceiptsController extends AbstractController
         self::PRESET_COMPACT => [
             'issued_at',
             'station_name',
+            'odometer_kilometers',
             'fuel_type',
             'quantity_milli_liters',
             'total_cents',
@@ -87,6 +90,7 @@ final class ExportReceiptsController extends AbstractController
             'id',
             'issued_at',
             'station_name',
+            'odometer_kilometers',
             'fuel_type',
             'quantity_milli_liters',
             'unit_price_deci_cents_per_liter',
@@ -103,6 +107,7 @@ final class ExportReceiptsController extends AbstractController
     #[Route('/ui/receipts/export', name: 'ui_receipt_export', methods: ['GET'])]
     public function __invoke(Request $request): Response
     {
+        $vehicleId = $this->nullableString($request->query->get('vehicle_id'));
         $stationId = $this->nullableString($request->query->get('station_id'));
         $issuedFrom = $this->parseDate($request->query->get('issued_from'));
         $issuedTo = $this->parseDate($request->query->get('issued_to'));
@@ -123,6 +128,7 @@ final class ExportReceiptsController extends AbstractController
         $generatedAt = new DateTimeImmutable();
         $metadataRows = $this->buildMetadataRows(
             $generatedAt,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -145,6 +151,7 @@ final class ExportReceiptsController extends AbstractController
                 $filenameBase.'.xlsx',
                 $metadataRows,
                 $columns,
+                $vehicleId,
                 $stationId,
                 $issuedFrom,
                 $issuedTo,
@@ -163,6 +170,7 @@ final class ExportReceiptsController extends AbstractController
             $filenameBase.'.csv',
             $metadataRows,
             $columns,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -185,6 +193,7 @@ final class ExportReceiptsController extends AbstractController
         string $filename,
         array $metadataRows,
         array $columns,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -200,6 +209,7 @@ final class ExportReceiptsController extends AbstractController
         $response = new StreamedResponse(function () use (
             $metadataRows,
             $columns,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -229,6 +239,7 @@ final class ExportReceiptsController extends AbstractController
             fputcsv($stream, $headers);
 
             foreach ($this->iterateRowsForExport(
+                $vehicleId,
                 $stationId,
                 $issuedFrom,
                 $issuedTo,
@@ -266,6 +277,7 @@ final class ExportReceiptsController extends AbstractController
         string $filename,
         array $metadataRows,
         array $columns,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -281,6 +293,7 @@ final class ExportReceiptsController extends AbstractController
         $response = new StreamedResponse(function () use (
             $metadataRows,
             $columns,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -313,6 +326,7 @@ final class ExportReceiptsController extends AbstractController
             ++$rowIndex;
 
             foreach ($this->iterateRowsForExport(
+                $vehicleId,
                 $stationId,
                 $issuedFrom,
                 $issuedTo,
@@ -352,6 +366,7 @@ final class ExportReceiptsController extends AbstractController
      */
     private function buildMetadataRows(
         DateTimeImmutable $generatedAt,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -369,6 +384,7 @@ final class ExportReceiptsController extends AbstractController
         return [
             ['generated_at', $generatedAt->format(DATE_ATOM)],
             ['format', $format],
+            ['filter_vehicle_id', $vehicleId ?? ''],
             ['filter_station_id', $stationId ?? ''],
             ['filter_issued_from', $issuedFrom?->format('Y-m-d') ?? ''],
             ['filter_issued_to', $issuedTo?->format('Y-m-d') ?? ''],
@@ -390,6 +406,7 @@ final class ExportReceiptsController extends AbstractController
      *     issuedAt: DateTimeImmutable,
      *     totalCents: int,
      *     vatAmountCents: int,
+     *     odometerKilometers: ?int,
      *     stationName: ?string,
      *     stationStreetName: ?string,
      *     stationPostalCode: ?string,
@@ -401,6 +418,7 @@ final class ExportReceiptsController extends AbstractController
      * }>
      */
     private function iterateRowsForExport(
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -418,6 +436,7 @@ final class ExportReceiptsController extends AbstractController
             $rows = $this->receiptRepository->paginateFilteredListRows(
                 $page,
                 self::EXPORT_CHUNK_SIZE,
+                $vehicleId,
                 $stationId,
                 $issuedFrom,
                 $issuedTo,
@@ -453,6 +472,7 @@ final class ExportReceiptsController extends AbstractController
      *     issuedAt: DateTimeImmutable,
      *     totalCents: int,
      *     vatAmountCents: int,
+     *     odometerKilometers: ?int,
      *     stationName: ?string,
      *     stationStreetName: ?string,
      *     stationPostalCode: ?string,
@@ -472,6 +492,7 @@ final class ExportReceiptsController extends AbstractController
             'station_street_name' => $row['stationStreetName'] ?? '',
             'station_postal_code' => $row['stationPostalCode'] ?? '',
             'station_city' => $row['stationCity'] ?? '',
+            'odometer_kilometers' => null === $row['odometerKilometers'] ? '' : (string) $row['odometerKilometers'],
             'fuel_type' => $row['fuelType'] ?? '',
             'quantity_milli_liters' => null === $row['quantityMilliLiters'] ? '' : (string) $row['quantityMilliLiters'],
             'unit_price_deci_cents_per_liter' => null === $row['unitPriceDeciCentsPerLiter'] ? '' : (string) $row['unitPriceDeciCentsPerLiter'],

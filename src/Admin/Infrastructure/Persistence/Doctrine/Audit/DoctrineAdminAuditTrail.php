@@ -22,6 +22,8 @@ use Symfony\Component\Uid\Uuid;
 
 final readonly class DoctrineAdminAuditTrail implements AdminAuditTrail
 {
+    private const int MAX_CORRELATION_ID_LENGTH = 80;
+
     public function __construct(
         private EntityManagerInterface $em,
         private AdminAuditContext $context,
@@ -42,10 +44,20 @@ final readonly class DoctrineAdminAuditTrail implements AdminAuditTrail
         $entry->setTargetId(trim($targetId));
         $entry->setDiffSummary($diffSummary);
         $entry->setMetadata(array_merge($this->context->metadata(), $metadata));
-        $entry->setCorrelationId($this->context->correlationId());
+        $entry->setCorrelationId($this->normalizeCorrelationId($this->context->correlationId()));
         $entry->setCreatedAt(new DateTimeImmutable());
 
         $this->em->persist($entry);
         $this->em->flush();
+    }
+
+    private function normalizeCorrelationId(string $correlationId): string
+    {
+        $normalized = trim($correlationId);
+        if ('' === $normalized) {
+            $normalized = Uuid::v7()->toRfc4122();
+        }
+
+        return mb_substr($normalized, 0, self::MAX_CORRELATION_ID_LENGTH);
     }
 }

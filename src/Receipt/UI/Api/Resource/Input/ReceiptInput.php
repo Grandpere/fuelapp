@@ -43,6 +43,8 @@ final class ReceiptInput
         public ?int $longitudeMicroDegrees = null,
         #[Assert\Uuid]
         public ?string $vehicleId = null,
+        #[Assert\GreaterThanOrEqual(0)]
+        public ?int $odometerKilometers = null,
     ) {
     }
 }

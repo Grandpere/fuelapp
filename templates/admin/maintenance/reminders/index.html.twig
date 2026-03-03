@@ -59,7 +59,13 @@
                 </thead>
                 <tbody>
                 {% for reminder in reminders %}
-                    <tr class="table-row" style="cursor:pointer;" onclick="if (!event.target.closest('a,button,input,form,select,textarea,label')) { window.location.href='{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}'; }">
+                    <tr
+                        class="table-row"
+                        style="cursor:pointer;"
+                        data-controller="row-link"
+                        data-action="click->row-link#navigate"
+                        data-row-link-url-value="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}"
+                    >
                         <td>{{ reminder.createdAt|date('Y-m-d H:i') }}</td>
                         <td>{{ ruleNames[reminder.ruleId] ?? reminder.ruleId }}</td>
                         <td><code>{{ reminder.ownerId }}</code></td>
@@ -71,7 +77,7 @@
                             {% if reminder.dueByOdometer %}<span class="pill" style="background: rgba(54,180,252,0.2); color: #9fdefe;">odometer</span>{% endif %}
                         </td>
                         <td>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}">Detail</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}" data-turbo-frame="_top">Detail</a>
                         </td>
                     </tr>
                 {% else %}

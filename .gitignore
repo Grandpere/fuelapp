@@ -27,3 +27,4 @@ phpstan.neon
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
+resources/docker/.env.local

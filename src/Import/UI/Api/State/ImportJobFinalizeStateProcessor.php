@@ -63,6 +63,7 @@ final readonly class ImportJobFinalizeStateProcessor implements ProcessorInterfa
                 $data->stationCity,
                 $data->latitudeMicroDegrees,
                 $data->longitudeMicroDegrees,
+                $data->odometerKilometers,
             ));
         } catch (InvalidArgumentException $e) {
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);

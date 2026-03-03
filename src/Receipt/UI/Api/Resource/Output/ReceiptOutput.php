@@ -24,6 +24,7 @@ final class ReceiptOutput
         public DateTimeImmutable $issuedAt,
         public int $totalCents,
         public int $vatAmountCents,
+        public ?int $odometerKilometers,
         public ?Uuid $stationId,
         public ?Uuid $vehicleId,
         public array $lines,

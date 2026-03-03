@@ -72,6 +72,7 @@ final readonly class ReceiptStateProcessor implements ProcessorInterface
             $data->latitudeMicroDegrees,
             $data->longitudeMicroDegrees,
             $data->vehicleId,
+            odometerKilometers: $data->odometerKilometers,
         ));
 
         $station = null;
@@ -97,6 +98,7 @@ final readonly class ReceiptStateProcessor implements ProcessorInterface
             $receipt->issuedAt(),
             $receipt->totalCents(),
             $receipt->vatAmountCents(),
+            $receipt->odometerKilometers(),
             null === $receipt->stationId() ? null : Uuid::fromString($receipt->stationId()->toString()),
             null === $receipt->vehicleId() ? null : Uuid::fromString($receipt->vehicleId()->toString()),
             $outputLines,

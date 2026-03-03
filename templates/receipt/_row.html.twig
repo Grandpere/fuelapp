@@ -6,6 +6,7 @@
     'station_street_name',
     'station_postal_code',
     'station_city',
+    'odometer_kilometers',
     'fuel_type',
     'quantity_milli_liters',
     'unit_price_deci_cents_per_liter',
@@ -20,6 +21,7 @@
     {% if 'station_street_name' in visibleColumns %}<td>{{ receipt.stationStreetName ?: '-' }}</td>{% endif %}
     {% if 'station_postal_code' in visibleColumns %}<td>{{ receipt.stationPostalCode ?: '-' }}</td>{% endif %}
     {% if 'station_city' in visibleColumns %}<td>{{ receipt.stationCity ?: '-' }}</td>{% endif %}
+    {% if 'odometer_kilometers' in visibleColumns %}<td style="text-align:right;">{{ receipt.odometerKilometers is not null ? receipt.odometerKilometers ~ ' km' : '-' }}</td>{% endif %}
     {% if 'fuel_type' in visibleColumns %}
         <td>
             {% if receipt.fuelType %}

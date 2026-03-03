@@ -18,6 +18,7 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -82,7 +83,7 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         $stationB = $this->createStation('Station B', '2 Oak Ave', '69001', 'Lyon');
         $this->em->flush();
 
-        $this->createReceipt($owner, $stationA, new DateTimeImmutable('2026-02-10 10:00:00'), 'diesel', 10000, 18000, 20);
+        $this->createReceipt($owner, $stationA, new DateTimeImmutable('2026-02-10 10:00:00'), 'diesel', 10000, 18000, 20, 123456);
         $this->createReceipt($owner, $stationB, new DateTimeImmutable('2026-02-12 10:00:00'), 'unleaded95', 15000, 17000, 20);
         $this->em->flush();
 
@@ -105,6 +106,8 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         self::assertStringContainsString('filter_station_id,'.$stationA->getId()->toRfc4122(), $content);
         self::assertStringContainsString('filter_fuel_type,diesel', $content);
         self::assertStringContainsString('receipt_id,issued_at,station_name', $content);
+        self::assertStringContainsString('odometer_kilometers', $content);
+        self::assertStringContainsString('123456', $content);
         self::assertStringContainsString('Station A', $content);
         self::assertStringNotContainsString('Station B', $content);
     }
@@ -182,6 +185,33 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         $csvTotalCents = $this->sumTotalCentsFromCsv($this->responseContent($exportResponse));
 
         self::assertSame($kpiTotalCents, $csvTotalCents);
+    }
+
+    public function testCsvExportAppliesVehicleFilter(): void
+    {
+        $owner = $this->createUser('receipt.export.vehicle@example.com', 'test1234', ['ROLE_USER']);
+        $vehicleA = $this->createVehicle($owner, 'Vehicle A', 'VH-100-AA');
+        $vehicleB = $this->createVehicle($owner, 'Vehicle B', 'VH-200-BB');
+        $station = $this->createStation('Vehicle Filter Station', '4 Pine St', '33000', 'Bordeaux');
+        $this->em->flush();
+
+        $this->createReceipt($owner, $station, new DateTimeImmutable('2026-04-10 10:00:00'), 'diesel', 10000, 20000, 20, null, $vehicleA);
+        $this->createReceipt($owner, $station, new DateTimeImmutable('2026-04-11 10:00:00'), 'diesel', 5000, 30000, 20, null, $vehicleB);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm('receipt.export.vehicle@example.com', 'test1234');
+        $response = $this->request(
+            'GET',
+            '/ui/receipts/export?vehicle_id='.$vehicleA->getId()->toRfc4122().'&issued_from=2026-04-01&issued_to=2026-04-30&sort_by=date&sort_direction=asc',
+            [],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = $this->responseContent($response);
+        self::assertStringContainsString('filter_vehicle_id,'.$vehicleA->getId()->toRfc4122(), $content);
+        self::assertSame(20000, $this->sumTotalCentsFromCsv($content));
     }
 
     /**
@@ -342,6 +372,20 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         return $station;
     }
 
+    private function createVehicle(UserEntity $owner, string $name, string $plateNumber): VehicleEntity
+    {
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($owner);
+        $vehicle->setName($name);
+        $vehicle->setPlateNumber($plateNumber);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-01-01 00:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-01-01 00:00:00'));
+        $this->em->persist($vehicle);
+
+        return $vehicle;
+    }
+
     private function createReceipt(
         UserEntity $owner,
         ?StationEntity $station,
@@ -350,13 +394,16 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         int $quantityMilliLiters,
         int $unitPriceDeciCentsPerLiter,
         int $vatRatePercent,
+        ?int $odometerKilometers = null,
+        ?VehicleEntity $vehicle = null,
     ): void {
         $receipt = new ReceiptEntity();
         $receipt->setId(Uuid::v7());
         $receipt->setOwner($owner);
         $receipt->setStation($station);
-        $receipt->setVehicle(null);
+        $receipt->setVehicle($vehicle);
         $receipt->setIssuedAt($issuedAt);
+        $receipt->setOdometerKilometers($odometerKilometers);
 
         $line = new ReceiptLineEntity();
         $line->setId(Uuid::v7());

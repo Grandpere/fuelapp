@@ -56,6 +56,14 @@ services:
         tags:
             - { name: 'serializer.normalizer', priority: 100 }
 
+    App\Shared\Infrastructure\Observability\Logging\ObservabilityLogProcessor:
+        tags:
+            - { name: monolog.processor }
+
+    App\Shared\Infrastructure\Observability\Logging\OpenTelemetryMonologHandler:
+        class: OpenTelemetry\Contrib\Logs\Monolog\Handler
+        factory: ['App\Shared\Infrastructure\Observability\Logging\OpenTelemetryMonologHandlerFactory', 'create']
+
     App\Security\JwtTokenManager:
         arguments:
             $jwtSecret: '%app.jwt_secret%'
@@ -90,6 +98,7 @@ services:
     App\Import\Application\Parsing\ReceiptOcrParser: '@App\Import\Infrastructure\Parsing\RegexReceiptOcrParser'
     App\Shared\Application\Security\AuthenticatedUserIdProvider: '@App\Shared\Infrastructure\Security\TokenStorageAuthenticatedUserIdProvider'
     App\Maintenance\Application\Notification\MaintenanceReminderNotifier: '@App\Maintenance\Infrastructure\Notification\InAppMaintenanceReminderNotifier'
+    App\Maintenance\Application\Reminder\VehicleCurrentOdometerResolver: '@App\Maintenance\Infrastructure\Reminder\EventAndReceiptCurrentOdometerResolver'
     App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider:
         arguments:
             $httpClient: '@http_client'
@@ -110,3 +119,6 @@ services:
     App\Admin\Application\Audit\AdminAuditContext: '@App\Admin\Infrastructure\Audit\SecurityRequestAdminAuditContext'
     App\Admin\Application\Audit\AdminAuditTrail: '@App\Admin\Infrastructure\Persistence\Doctrine\Audit\DoctrineAdminAuditTrail'
     App\Admin\Application\Audit\AdminAuditLogReader: '@App\Admin\Infrastructure\Persistence\Doctrine\Repository\DoctrineAdminAuditLogReader'
+    App\Admin\Application\Repository\AdminUserRepository: '@App\Admin\Infrastructure\Persistence\Doctrine\Repository\DoctrineAdminUserRepository'
+    App\Admin\Application\Repository\AdminIdentityRepository: '@App\Admin\Infrastructure\Persistence\Doctrine\Repository\DoctrineAdminIdentityRepository'
+    App\Admin\Application\Security\SecurityActivityReader: '@App\Admin\Infrastructure\Persistence\Doctrine\Repository\DoctrineSecurityActivityReader'

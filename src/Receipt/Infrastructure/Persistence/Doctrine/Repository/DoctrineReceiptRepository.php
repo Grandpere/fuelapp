@@ -72,6 +72,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $entity->setIssuedAt($receipt->issuedAt());
         $entity->setTotalCents($receipt->totalCents());
         $entity->setVatAmountCents($receipt->vatAmountCents());
+        $entity->setOdometerKilometers($receipt->odometerKilometers());
 
         if (null !== $receipt->stationId()) {
             $stationRef = $this->em->getReference(StationEntity::class, $receipt->stationId()->toString());
@@ -253,6 +254,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
     public function paginateFiltered(
         int $page,
         int $perPage,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -279,7 +281,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         };
         $safeSortDirection = 'asc' === strtolower($sortDirection) ? 'ASC' : 'DESC';
 
-        $qb = $this->filteredQuery($stationId, $issuedFrom, $issuedTo)
+        $qb = $this->filteredQuery($vehicleId, $stationId, $issuedFrom, $issuedTo)
             ->orderBy($sortField, $safeSortDirection)
             ->addOrderBy('r.id', $safeSortDirection)
             ->setFirstResult($offset)
@@ -309,6 +311,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
     }
 
     public function countFiltered(
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -326,7 +329,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->leftJoin('r.lines', 'rl');
 
         $this->applyOwnerFilter($qb);
-        $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
+        $this->applyFilters($qb, $vehicleId, $stationId, $issuedFrom, $issuedTo);
         $this->applyLineFilters(
             $qb,
             $fuelType,
@@ -343,6 +346,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
     public function paginateFilteredListRows(
         int $page,
         int $perPage,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -371,7 +375,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
         $rows = $this->em
             ->createQueryBuilder()
-            ->select('r.id AS id, r.issuedAt AS issuedAt, r.totalCents AS totalCents, r.vatAmountCents AS vatAmountCents, s.name AS stationName, s.streetName AS stationStreetName, s.postalCode AS stationPostalCode, s.city AS stationCity, rl.fuelType AS fuelType, rl.quantityMilliLiters AS quantityMilliLiters, rl.unitPriceDeciCentsPerLiter AS unitPriceDeciCentsPerLiter, rl.vatRatePercent AS vatRatePercent')
+            ->select('r.id AS id, r.issuedAt AS issuedAt, r.totalCents AS totalCents, r.vatAmountCents AS vatAmountCents, r.odometerKilometers AS odometerKilometers, s.name AS stationName, s.streetName AS stationStreetName, s.postalCode AS stationPostalCode, s.city AS stationCity, rl.fuelType AS fuelType, rl.quantityMilliLiters AS quantityMilliLiters, rl.unitPriceDeciCentsPerLiter AS unitPriceDeciCentsPerLiter, rl.vatRatePercent AS vatRatePercent')
             ->from(ReceiptEntity::class, 'r')
             ->leftJoin('r.station', 's')
             ->leftJoin('r.lines', 'rl')
@@ -381,7 +385,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->setMaxResults($safePerPage);
 
         $this->applyOwnerFilter($rows);
-        $this->applyFilters($rows, $stationId, $issuedFrom, $issuedTo);
+        $this->applyFilters($rows, $vehicleId, $stationId, $issuedFrom, $issuedTo);
         $this->applyLineFilters(
             $rows,
             $fuelType,
@@ -397,6 +401,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
          *     issuedAt: mixed,
          *     totalCents: mixed,
          *     vatAmountCents: mixed,
+         *     odometerKilometers: mixed,
          *     stationName: ?string,
          *     stationStreetName: ?string,
          *     stationPostalCode: ?string,
@@ -416,6 +421,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
                 'issuedAt' => $this->toDateTimeImmutableValue($row['issuedAt'], 'issuedAt'),
                 'totalCents' => $this->toIntValue($row['totalCents'], 'totalCents'),
                 'vatAmountCents' => $this->toIntValue($row['vatAmountCents'], 'vatAmountCents'),
+                'odometerKilometers' => $this->toNullableIntValue($row['odometerKilometers'], 'odometerKilometers'),
                 'stationName' => $this->toNullableStringValue($row['stationName'], 'stationName'),
                 'stationStreetName' => $this->toNullableStringValue($row['stationStreetName'], 'stationStreetName'),
                 'stationPostalCode' => $this->toNullableStringValue($row['stationPostalCode'], 'stationPostalCode'),
@@ -431,6 +437,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
     }
 
     public function listFilteredRowsForExport(
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
@@ -446,6 +453,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         return $this->paginateFilteredListRows(
             1,
             2000000000,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -458,6 +466,26 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $unitPriceDeciCentsPerLiterMax,
             $vatRatePercent,
         );
+    }
+
+    public function maxOdometerKilometersForOwnerAndVehicle(string $ownerId, string $vehicleId): ?int
+    {
+        if (!Uuid::isValid($ownerId) || !Uuid::isValid($vehicleId)) {
+            return null;
+        }
+
+        $raw = $this->em
+            ->createQueryBuilder()
+            ->select('MAX(r.odometerKilometers)')
+            ->from(ReceiptEntity::class, 'r')
+            ->andWhere('IDENTITY(r.owner) = :ownerId')
+            ->andWhere('IDENTITY(r.vehicle) = :vehicleId')
+            ->setParameter('ownerId', $ownerId)
+            ->setParameter('vehicleId', $vehicleId)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $this->toNullableIntValue($raw, 'maxOdometerKilometers');
     }
 
     private function toDateTimeImmutableValue(mixed $value, string $field): DateTimeImmutable
@@ -535,7 +563,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         return $qb;
     }
 
-    private function filteredQuery(?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): QueryBuilder
+    private function filteredQuery(?string $vehicleId, ?string $stationId, ?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo): QueryBuilder
     {
         $qb = $this->em
             ->createQueryBuilder()
@@ -544,7 +572,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->leftJoin('r.lines', 'rl');
 
         $this->applyOwnerFilter($qb);
-        $this->applyFilters($qb, $stationId, $issuedFrom, $issuedTo);
+        $this->applyFilters($qb, $vehicleId, $stationId, $issuedFrom, $issuedTo);
 
         return $qb;
     }
@@ -585,10 +613,23 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
 
     private function applyFilters(
         QueryBuilder $qb,
+        ?string $vehicleId,
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
     ): void {
+        if (null !== $vehicleId && '' !== $vehicleId) {
+            if (!Uuid::isValid($vehicleId)) {
+                $qb->andWhere('1 = 0');
+
+                return;
+            }
+
+            $qb
+                ->andWhere('IDENTITY(r.vehicle) = :vehicleId')
+                ->setParameter('vehicleId', $vehicleId);
+        }
+
         if (null !== $stationId && '' !== $stationId) {
             if (!Uuid::isValid($stationId)) {
                 $qb->andWhere('1 = 0');
@@ -635,6 +676,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             $lines,
             $stationId,
             $vehicleId,
+            $entity->getOdometerKilometers(),
         );
     }
 

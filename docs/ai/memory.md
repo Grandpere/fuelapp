@@ -201,6 +201,30 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: define upload docs with `openapi: new Operation(...)` on the resource operation.
 - Prevention: when adding custom docs on metadata operations, align constructor args with installed API Platform version.
 
+## 2026-03-03 - Audit target_id length must be bounded on authentication failures
+- Symptom: overlong user-supplied email on login failure could trigger SQL error and return 500 instead of auth error.
+- Root cause: raw credential identifier was stored into `admin_audit_logs.target_id` (`VARCHAR(120)`) without truncation.
+- Fix: normalize (`trim` + lowercase), fallback to `anonymous`, and truncate to 120 chars before audit writes in API and UI login failure paths.
+- Prevention: for any audit field backed by fixed-length DB columns, normalize and bound untrusted input at the call site.
+
+## 2026-03-03 - Correlation IDs from headers must be bounded before audit persistence
+- Symptom: oversized `X-Correlation-Id` / `X-Request-Id` could make login failure auditing crash and return 500.
+- Root cause: `admin_audit_logs.correlation_id` is `VARCHAR(80)` but request/header correlation IDs were not length-bounded.
+- Fix: truncate correlation IDs to 80 chars in request correlation subscriber/context and enforce same bound in Doctrine audit trail before persist.
+- Prevention: when correlation/request IDs are user-controlled headers, cap them to DB-safe length at ingress and at persistence boundaries.
+
+## 2026-03-03 - Last-admin guard must apply only to active target admins
+- Symptom: demoting an inactive admin could be blocked when there was only one active admin account.
+- Root cause: last-admin guard checked global active admin count but not whether the target being demoted was active.
+- Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
+- Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
+
+## 2026-03-03 - Analytics export links must propagate active dashboard filters
+- Symptom: `/ui/analytics` with `vehicle_id` filter could export receipts from other vehicles.
+- Root cause: analytics dashboard export params omitted `vehicle_id`, and export-side filtering did not apply vehicle constraint.
+- Fix: propagate `vehicle_id` in analytics export query params and apply vehicle filter in export repository queries/metadata.
+- Prevention: when dashboard KPIs and exports share a filter model, keep a single explicit propagation list and assert parity in functional tests.
+
 ## 2026-02-21 - DBAL datetime parameter type must match immutable values
 - Symptom: analytics projection refresh crashed in integration tests with `Could not convert PHP value of type DateTimeImmutable to type DateTimeType`.
 - Root cause: DBAL statement parameter types were declared as `datetime` while values were `DateTimeImmutable`.
@@ -218,6 +242,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: `averagePriceDeciCentsPerLiter` unit was interpreted as cents instead of deci-cents in assertions.
 - Fix: convert deci-cents per liter to EUR/L with `/ 1000` and align tests/UI labels to that unit.
 - Prevention: when exposing derived pricing metrics, keep explicit unit labels in DTO/UI and validate conversion formula in functional tests.
+
+## 2026-03-01 - Admin layers must not depend on infrastructure entities
+- Symptom: architecture/static checks failed after adding BO user management (`Admin\Application`/`Admin\UI` referenced `UserEntity`).
+- Root cause: cross-layer leak from Doctrine entity (Infrastructure) into Application/UI contracts.
+- Fix: introduce application-level `AdminUserRecord` + `AdminUserRepository` interface and map Doctrine entities only in infrastructure implementation.
+- Prevention: for new admin features, keep DTO/contracts in Application and bind infrastructure repositories via interfaces in DI.
 
 ## 2026-02-21 - PhpSpreadsheet requires GD extension in app image
 - Symptom: `composer require phpoffice/phpspreadsheet` failed with missing `ext-gd`.
@@ -302,3 +332,15 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: without BrowserKit client, cookie/session handling was duplicated in many tests.
 - Fix: install `symfony/browser-kit` and migrate priority UI suites to `WebTestCase::createClient()`.
 - Prevention: for authenticated UI/session flows, default to BrowserKit functional client instead of manual kernel request plumbing.
+
+## 2026-03-01 - SigNoZ standalone container needs explicit ClickHouse backend wiring
+- Symptom: SigNoZ UI returned `internal` with message `failed to get tbl statement`.
+- Root cause: `signoz/signoz` container was running without reachable ClickHouse (`dial tcp [::1]:9000: connect: connection refused`), then with default ClickHouse user network-disabled.
+- Fix: add dedicated `clickhouse` service in observability profile, configure `SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN` with explicit credentials, align `CLICKHOUSE_USER`/`CLICKHOUSE_PASSWORD`, and restart observability stack.
+- Prevention: for SigNoZ local setup, always provision ClickHouse + DSN + credentials together; treat `failed to get tbl statement` as ClickHouse connectivity/auth first.
+
+## 2026-03-03 - OTel env booleans must use true/false (not 1/0)
+- Symptom: telemetry looked enabled but instrumentation/export behaved unexpectedly, with warning `Invalid boolean value "1" interpreted as "false"`.
+- Root cause: OpenTelemetry PHP SDK does not accept `1/0` for boolean env vars like `OTEL_PHP_AUTOLOAD_ENABLED` and `OTEL_SDK_DISABLED`.
+- Fix: use explicit boolean strings (`true`/`false`) in env files.
+- Prevention: for all OTel boolean env vars, never use numeric booleans; enforce textual booleans in `.env*` and docs.

@@ -1,16 +1,16 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 06 - Analytics and exports
+- Sprint 10 - Local observability stack
 
 ## Current goal
-- Deliver decision-oriented metrics and robust exports.
+- Sprint 10 complete. Proceed with next product tickets.
 
 ## In progress
-- Sprint 06 wrap-up and next sprint prioritization.
+- Sprint 10 completed (`SP10-001` to `SP10-005` done).
 
 ## Next tickets (ordered)
-1. Define Sprint 07 kickoff priorities
+1. `SP3-010` Bulk import multi-file/ZIP
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

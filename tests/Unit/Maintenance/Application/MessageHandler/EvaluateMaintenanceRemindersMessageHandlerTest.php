@@ -17,6 +17,7 @@ use App\Maintenance\Application\Message\EvaluateMaintenanceRemindersMessage;
 use App\Maintenance\Application\MessageHandler\EvaluateMaintenanceRemindersMessageHandler;
 use App\Maintenance\Application\Notification\MaintenanceReminderNotifier;
 use App\Maintenance\Application\Reminder\ReminderDueCalculator;
+use App\Maintenance\Application\Reminder\VehicleCurrentOdometerResolver;
 use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository;
@@ -49,10 +50,11 @@ final class EvaluateMaintenanceRemindersMessageHandlerTest extends TestCase
         $reminderRepository = new InMemoryReminderRepository();
         $notifier = new SpyNotifier();
         $calculator = new ReminderDueCalculator($ruleRepository, $eventRepository);
+        $odometerResolver = new StaticVehicleCurrentOdometerResolver();
 
         $handler = new EvaluateMaintenanceRemindersMessageHandler(
             $ruleRepository,
-            $eventRepository,
+            $odometerResolver,
             $calculator,
             $reminderRepository,
             $notifier,
@@ -134,6 +136,14 @@ final class NoopEventRepository implements MaintenanceEventRepository
     public function sumActualCostsForOwner(?string $vehicleId, ?DateTimeImmutable $from, ?DateTimeImmutable $to, string $ownerId): int
     {
         return 0;
+    }
+}
+
+final class StaticVehicleCurrentOdometerResolver implements VehicleCurrentOdometerResolver
+{
+    public function resolve(string $ownerId, string $vehicleId): ?int
+    {
+        return null;
     }
 }
 

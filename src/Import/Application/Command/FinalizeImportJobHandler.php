@@ -57,6 +57,7 @@ final readonly class FinalizeImportJobHandler
         $stationCity = $this->coalesceString($command->stationCity, $this->readString($payload, $creationPayloadPath.'.stationCity'));
         $latitudeMicroDegrees = $command->latitudeMicroDegrees ?? $this->readInt($payload, $creationPayloadPath.'.latitudeMicroDegrees');
         $longitudeMicroDegrees = $command->longitudeMicroDegrees ?? $this->readInt($payload, $creationPayloadPath.'.longitudeMicroDegrees');
+        $odometerKilometers = $command->odometerKilometers ?? $this->readInt($payload, $creationPayloadPath.'.odometerKilometers');
         $lines = $command->lines ?? $this->readLinesFromPayload($payload, $creationPayloadPath);
 
         if (
@@ -80,6 +81,7 @@ final readonly class FinalizeImportJobHandler
             $latitudeMicroDegrees,
             $longitudeMicroDegrees,
             ownerId: $job->ownerId(),
+            odometerKilometers: $odometerKilometers,
         ));
 
         $job->markProcessedWithPayload($this->buildProcessedPayload(

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Security;
 
+use App\Admin\Infrastructure\Persistence\Doctrine\Entity\AdminAuditLogEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -78,6 +79,55 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
     }
 
+    public function testApiLoginFailureWithOverlongEmailDoesNotReturnServerError(): void
+    {
+        $overlongEmail = str_repeat('ab', 70).'@example.com';
+        $response = $this->request(
+            'POST',
+            '/api/login',
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['email' => $overlongEmail, 'password' => 'wrong-password'], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+        self::assertStringContainsString('Invalid credentials.', (string) $response->getContent());
+
+        $entry = $this->em->getRepository(AdminAuditLogEntity::class)->findOneBy(
+            ['action' => 'security.login.failure'],
+            ['createdAt' => 'DESC'],
+        );
+        self::assertInstanceOf(AdminAuditLogEntity::class, $entry);
+        self::assertSame(120, mb_strlen($entry->getTargetId()));
+        self::assertSame(mb_substr(mb_strtolower(trim($overlongEmail)), 0, 120), $entry->getTargetId());
+    }
+
+    public function testApiLoginFailureWithOverlongCorrelationHeaderDoesNotReturnServerError(): void
+    {
+        $overlongCorrelationId = str_repeat('req-', 30);
+
+        $response = $this->request(
+            'POST',
+            '/api/login',
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_CORRELATION_ID' => $overlongCorrelationId,
+            ],
+            json_encode(['email' => 'missing@example.com', 'password' => 'wrong-password'], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+        self::assertStringContainsString('Invalid credentials.', (string) $response->getContent());
+        self::assertSame(mb_substr($overlongCorrelationId, 0, 80), (string) $response->headers->get('X-Correlation-Id'));
+
+        $entry = $this->em->getRepository(AdminAuditLogEntity::class)->findOneBy(
+            ['action' => 'security.login.failure'],
+            ['createdAt' => 'DESC'],
+        );
+        self::assertInstanceOf(AdminAuditLogEntity::class, $entry);
+        self::assertSame(80, mb_strlen($entry->getCorrelationId()));
+        self::assertSame(mb_substr($overlongCorrelationId, 0, 80), $entry->getCorrelationId());
+    }
+
     public function testAnonymousUserGets401OnAdminApiPrefix(): void
     {
         $response = $this->request('GET', '/api/admin/ping');
@@ -132,6 +182,8 @@ final class SecurityBoundariesTest extends KernelTestCase
         $stationsResponse = $this->request('GET', '/ui/admin/stations');
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles');
         $importsResponse = $this->request('GET', '/ui/admin/imports');
+        $identitiesResponse = $this->request('GET', '/ui/admin/identities');
+        $securityActivitiesResponse = $this->request('GET', '/ui/admin/security-activities');
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs');
 
         self::assertSame(Response::HTTP_FOUND, $stationsResponse->getStatusCode());
@@ -140,6 +192,10 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertStringStartsWith('/ui/login', (string) $vehiclesResponse->headers->get('Location'));
         self::assertSame(Response::HTTP_FOUND, $importsResponse->getStatusCode());
         self::assertStringStartsWith('/ui/login', (string) $importsResponse->headers->get('Location'));
+        self::assertSame(Response::HTTP_FOUND, $identitiesResponse->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $identitiesResponse->headers->get('Location'));
+        self::assertSame(Response::HTTP_FOUND, $securityActivitiesResponse->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $securityActivitiesResponse->headers->get('Location'));
         self::assertSame(Response::HTTP_FOUND, $auditResponse->getStatusCode());
         self::assertStringStartsWith('/ui/login', (string) $auditResponse->headers->get('Location'));
     }
@@ -148,9 +204,13 @@ final class SecurityBoundariesTest extends KernelTestCase
     {
         $htmlResponse = $this->request('GET', '/api/docs');
         self::assertSame(Response::HTTP_OK, $htmlResponse->getStatusCode());
+        self::assertNotNull($htmlResponse->headers->get('X-Correlation-Id'));
+        self::assertTrue(Uuid::isValid((string) $htmlResponse->headers->get('X-Correlation-Id')));
 
         $openApiResponse = $this->request('GET', '/api/docs.jsonopenapi');
         self::assertSame(Response::HTTP_OK, $openApiResponse->getStatusCode());
+        self::assertNotNull($openApiResponse->headers->get('X-Correlation-Id'));
+        self::assertTrue(Uuid::isValid((string) $openApiResponse->headers->get('X-Correlation-Id')));
 
         /** @var array{paths?: array<string, mixed>} $openApi */
         $openApi = json_decode((string) $openApiResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
@@ -243,7 +303,7 @@ final class SecurityBoundariesTest extends KernelTestCase
 
     private function resetDatabase(): void
     {
-        $this->em->getConnection()->executeStatement('TRUNCATE TABLE receipt_lines, receipts, stations, users CASCADE');
+        $this->em->getConnection()->executeStatement('TRUNCATE TABLE admin_audit_logs, receipt_lines, receipts, stations, users CASCADE');
     }
 
     /** @param list<string> $roles */

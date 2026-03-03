@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Station\Application;
 
+use App\Shared\Infrastructure\Observability\Messenger\CorrelationIdStamp;
 use App\Station\Application\Command\CreateStationCommand;
 use App\Station\Application\Command\CreateStationHandler;
 use App\Station\Application\Message\GeocodeStationAddressMessage;
@@ -20,6 +21,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
+use Symfony\Component\Uid\Uuid;
 
 final class GeocodingMessageDispatchTest extends KernelTestCase
 {
@@ -70,6 +72,9 @@ final class GeocodingMessageDispatchTest extends KernelTestCase
         $message = $sent[0]->getMessage();
         self::assertInstanceOf(GeocodeStationAddressMessage::class, $message);
         self::assertSame($station->id()->toString(), $message->stationId);
+        $stamp = $sent[0]->last(CorrelationIdStamp::class);
+        self::assertInstanceOf(CorrelationIdStamp::class, $stamp);
+        self::assertTrue(Uuid::isValid($stamp->correlationId));
     }
 
     public function testCreateStationWithCoordinatesDoesNotDispatchGeocodingMessage(): void

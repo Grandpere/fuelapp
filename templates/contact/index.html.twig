@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contact{% endblock %}
+
+{% block body %}
+    <main class="app-shell" style="display:grid; gap:1rem;">
+        <header style="display:grid; gap:.35rem;">
+            <h1 class="page-title">Contact</h1>
+            <p class="muted" style="margin:0;">Need help with imports, receipts or account access? Use the direct contact details below.</p>
+        </header>
+
+        <section class="card" style="padding:1rem; display:grid; gap:.8rem; max-width:760px;">
+            <div class="card-subtle" style="padding:.85rem;">
+                <p style="margin:0; font-weight:700;">Support email</p>
+                <p style="margin:.3rem 0 0;"><a href="mailto:lorenzo.marozzo@gmail.com">lorenzo.marozzo@gmail.com</a></p>
+            </div>
+            <div class="card-subtle" style="padding:.85rem;">
+                <p style="margin:0; font-weight:700;">Suggested information</p>
+                <ul style="margin:.4rem 0 0; padding-left:1.1rem;">
+                    <li>Your user email</li>
+                    <li>Import job ID or receipt ID when relevant</li>
+                    <li>Short description of the issue and expected behavior</li>
+                </ul>
+            </div>
+            <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Back to receipts</a>
+            </div>
+        </section>
+    </main>
+{% endblock %}

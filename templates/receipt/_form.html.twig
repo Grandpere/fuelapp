@@ -16,6 +16,10 @@
             Date
             <input class="input" type="text" name="issuedAt" value="{{ formData.issuedAt }}" data-datepicker="datetime" autocomplete="off" required>
         </label>
+        <label class="label">
+            Odometer (km, optional)
+            <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
+        </label>
 
         <fieldset class="card-subtle" style="padding: 0.9rem; border: 1px solid rgba(147,178,198,0.3);">
             <legend class="muted">Fuel line</legend>

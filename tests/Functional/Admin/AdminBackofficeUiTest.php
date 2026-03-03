@@ -25,6 +25,7 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\User\Infrastructure\Persistence\Doctrine\Entity\UserIdentityEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -74,6 +75,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         $sessionCookie = $this->loginWithUiForm($email, $password);
 
         $dashboardResponse = $this->request('GET', '/ui/admin', [], [], $sessionCookie);
+        $usersResponse = $this->request('GET', '/ui/admin/users', [], [], $sessionCookie);
+        $identitiesResponse = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
+        $securityActivitiesResponse = $this->request('GET', '/ui/admin/security-activities', [], [], $sessionCookie);
         $stationsResponse = $this->request('GET', '/ui/admin/stations', [], [], $sessionCookie);
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         $maintenanceEventsResponse = $this->request('GET', '/ui/admin/maintenance/events', [], [], $sessionCookie);
@@ -83,6 +87,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs', [], [], $sessionCookie);
 
         self::assertSame(Response::HTTP_FORBIDDEN, $dashboardResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $usersResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $identitiesResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $securityActivitiesResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $stationsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $vehiclesResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceEventsResponse->getStatusCode());
@@ -99,6 +106,13 @@ final class AdminBackofficeUiTest extends WebTestCase
         $admin = $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
 
         $owner = $this->createUser('ui.owner@example.com', 'test1234', ['ROLE_USER']);
+        $identity = new UserIdentityEntity();
+        $identity->setId(Uuid::v7());
+        $identity->setUser($owner);
+        $identity->setProvider('google');
+        $identity->setSubject('ui-owner-google-sub');
+        $identity->setEmail('ui.owner@example.com');
+        $this->em->persist($identity);
 
         $station = new StationEntity();
         $station->setId(Uuid::v7());
@@ -216,6 +230,16 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $stationsResponse->getStatusCode());
         self::assertStringContainsString('UI Station', (string) $stationsResponse->getContent());
 
+        $usersResponse = $this->request('GET', '/ui/admin/users', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $usersResponse->getStatusCode());
+        self::assertStringContainsString('Users', (string) $usersResponse->getContent());
+        self::assertStringContainsString('ui.owner@example.com', (string) $usersResponse->getContent());
+
+        $identitiesResponse = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $identitiesResponse->getStatusCode());
+        self::assertStringContainsString('Identities', (string) $identitiesResponse->getContent());
+        self::assertStringContainsString('ui-owner-google-sub', (string) $identitiesResponse->getContent());
+
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $vehiclesResponse->getStatusCode());
         self::assertStringContainsString('UI Vehicle', (string) $vehiclesResponse->getContent());
@@ -239,6 +263,12 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $importsResponse->getStatusCode());
         self::assertStringContainsString('ui-import.pdf', (string) $importsResponse->getContent());
         self::assertStringContainsString('needs_review', (string) $importsResponse->getContent());
+        self::assertStringContainsString('data-controller="row-link"', (string) $importsResponse->getContent());
+
+        $securityResponse = $this->request('GET', '/ui/admin/security-activities', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $securityResponse->getStatusCode());
+        self::assertStringContainsString('Security Activities', (string) $securityResponse->getContent());
+        self::assertStringContainsString('security.login.success', (string) $securityResponse->getContent());
 
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs', ['action' => 'admin.station.updated'], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $auditResponse->getStatusCode());
@@ -311,6 +341,190 @@ final class AdminBackofficeUiTest extends WebTestCase
         $afterDelete = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
         self::assertStringNotContainsString('BO-200-BB', (string) $afterDelete->getContent());
+    }
+
+    public function testAdminCanToggleUserFlagsResetPasswordAndResendVerificationFromBackofficeUi(): void
+    {
+        $adminEmail = 'ui.admin.user.write@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $managed = $this->createUser('ui.managed.user@example.com', 'test1234', ['ROLE_USER']);
+        $this->em->flush();
+
+        $managedId = $managed->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $listResponse = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        self::assertStringContainsString('ui.managed.user@example.com', (string) $listResponse->getContent());
+
+        $activeToken = $this->extractToggleActiveCsrf((string) $listResponse->getContent(), $managedId);
+        $deactivateResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/toggle-active',
+            ['_token' => $activeToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $deactivateResponse->getStatusCode());
+
+        $afterDeactivate = $this->request('GET', '/ui/admin/users?is_active=0', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterDeactivate->getStatusCode());
+        self::assertStringContainsString('inactive', (string) $afterDeactivate->getContent());
+
+        $reactivateToken = $this->extractToggleActiveCsrf((string) $afterDeactivate->getContent(), $managedId);
+        $reactivateResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/toggle-active',
+            ['_token' => $reactivateToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $reactivateResponse->getStatusCode());
+
+        $adminList = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $adminList->getStatusCode());
+        $adminToken = $this->extractToggleAdminCsrf((string) $adminList->getContent(), $managedId);
+        $promoteResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/toggle-admin',
+            ['_token' => $adminToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $promoteResponse->getStatusCode());
+
+        $onlyAdmins = $this->request('GET', '/ui/admin/users?role=admin', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $onlyAdmins->getStatusCode());
+        self::assertStringContainsString('ui.managed.user@example.com', (string) $onlyAdmins->getContent());
+
+        $toggleVerificationToken = $this->extractToggleVerificationCsrf((string) $adminList->getContent(), $managedId);
+        $verifyResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/toggle-verification',
+            ['_token' => $toggleVerificationToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $verifyResponse->getStatusCode());
+
+        $afterVerify = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterVerify->getStatusCode());
+        self::assertStringContainsString('verified', (string) $afterVerify->getContent());
+
+        $resendToken = $this->extractResendVerificationCsrf((string) $afterVerify->getContent(), $managedId);
+        $resendResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/resend-verification',
+            ['_token' => $resendToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $resendResponse->getStatusCode());
+
+        $resetToken = $this->extractResetPasswordCsrf((string) $afterVerify->getContent(), $managedId);
+        $resetResponse = $this->request(
+            'POST',
+            '/ui/admin/users/'.$managedId.'/reset-password',
+            ['_token' => $resetToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $resetResponse->getStatusCode());
+
+        $afterReset = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterReset->getStatusCode());
+        self::assertStringContainsString('Temporary password for ui.managed.user@example.com:', (string) $afterReset->getContent());
+    }
+
+    public function testAdminCanRelinkAndDeleteIdentityFromBackofficeUi(): void
+    {
+        $adminEmail = 'ui.admin.identity.write@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $ownerA = $this->createUser('ui.identity.owner.a@example.com', 'test1234', ['ROLE_USER']);
+        $ownerB = $this->createUser('ui.identity.owner.b@example.com', 'test1234', ['ROLE_USER']);
+        $identity = new UserIdentityEntity();
+        $identity->setId(Uuid::v7());
+        $identity->setUser($ownerA);
+        $identity->setProvider('google');
+        $identity->setSubject('ui-owner-subject-001');
+        $identity->setEmail('ui.identity.owner.a@example.com');
+        $this->em->persist($identity);
+        $this->em->flush();
+
+        $identityId = $identity->getId()->toRfc4122();
+        $ownerBId = $ownerB->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $listResponse = $this->request('GET', '/ui/admin/identities?q=ui-owner-subject-001', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        self::assertStringContainsString('ui-owner-subject-001', (string) $listResponse->getContent());
+
+        $relinkToken = $this->extractIdentityRelinkCsrf((string) $listResponse->getContent(), $identityId);
+        $relinkResponse = $this->request(
+            'POST',
+            '/ui/admin/identities/'.$identityId.'/relink',
+            [
+                '_token' => $relinkToken,
+                'user_id' => $ownerBId,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $relinkResponse->getStatusCode());
+
+        $afterRelink = $this->request('GET', '/ui/admin/identities?user_id='.$ownerBId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterRelink->getStatusCode());
+        self::assertStringContainsString('ui.identity.owner.b@example.com', (string) $afterRelink->getContent());
+
+        $deleteToken = $this->extractIdentityDeleteCsrf((string) $afterRelink->getContent(), $identityId);
+        $deleteResponse = $this->request(
+            'POST',
+            '/ui/admin/identities/'.$identityId.'/delete',
+            ['_token' => $deleteToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertContains($deleteResponse->getStatusCode(), [Response::HTTP_FOUND, Response::HTTP_SEE_OTHER]);
+
+        $afterDelete = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
+        self::assertStringNotContainsString('ui-owner-subject-001', (string) $afterDelete->getContent());
+        self::assertStringContainsString('No identities found.', (string) $afterDelete->getContent());
+    }
+
+    public function testAdminCanFilterSecurityActivitiesFromBackofficeUi(): void
+    {
+        $adminEmail = 'ui.admin.security.filter@example.com';
+        $adminPassword = 'test1234';
+        $admin = $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+
+        $entry = new AdminAuditLogEntity();
+        $entry->setId(Uuid::v7());
+        $entry->setActorId($admin->getId());
+        $entry->setActorEmail($adminEmail);
+        $entry->setAction('security.login.failure');
+        $entry->setTargetType('credential');
+        $entry->setTargetId('ui.admin.security.filter@example.com');
+        $entry->setDiffSummary([]);
+        $entry->setMetadata(['reason' => 'Invalid credentials.']);
+        $entry->setCorrelationId('corr-ui-security-001');
+        $entry->setCreatedAt(new DateTimeImmutable('2026-03-01 16:45:00'));
+        $this->em->persist($entry);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $response = $this->request(
+            'GET',
+            '/ui/admin/security-activities?action=security.login.failure&actorId='.$admin->getId()->toRfc4122(),
+            [],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        self::assertStringContainsString('security.login.failure', (string) $response->getContent());
+        self::assertStringContainsString('corr-ui-security-001', (string) $response->getContent());
     }
 
     public function testAdminCanDeleteImportJobFromBackofficeUi(): void
@@ -690,6 +904,90 @@ final class AdminBackofficeUiTest extends WebTestCase
     private function extractDeleteCsrfForReceipt(string $content, string $receiptId): string
     {
         $pattern = '#/ui/admin/receipts/'.preg_quote($receiptId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractToggleActiveCsrf(string $content, string $userId): string
+    {
+        $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/toggle-active.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractToggleAdminCsrf(string $content, string $userId): string
+    {
+        $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/toggle-admin.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractToggleVerificationCsrf(string $content, string $userId): string
+    {
+        $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/toggle-verification.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractResendVerificationCsrf(string $content, string $userId): string
+    {
+        $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/resend-verification.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractResetPasswordCsrf(string $content, string $userId): string
+    {
+        $pattern = '#/ui/admin/users/'.preg_quote($userId, '#').'/reset-password.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractIdentityRelinkCsrf(string $content, string $identityId): string
+    {
+        $pattern = '#/ui/admin/identities/'.preg_quote($identityId, '#').'/relink.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractIdentityDeleteCsrf(string $content, string $identityId): string
+    {
+        $pattern = '#/ui/admin/identities/'.preg_quote($identityId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

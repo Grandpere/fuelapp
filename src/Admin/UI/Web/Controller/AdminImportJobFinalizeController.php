@@ -59,6 +59,7 @@ final class AdminImportJobFinalizeController extends AbstractController
                 $this->toNullableString($request->request->get('stationCity')),
                 $this->toNullableInt($request->request->get('latitudeMicroDegrees')),
                 $this->toNullableInt($request->request->get('longitudeMicroDegrees')),
+                $this->toNullableInt($request->request->get('odometerKilometers')),
             ));
             $this->auditTrail->record(
                 'admin.import.finalize.ui',

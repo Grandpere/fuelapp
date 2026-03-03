@@ -58,10 +58,10 @@
         {% endif %}
 
         <div style="margin-top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap;">
-            <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}">Back to list</a>
-            <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}">Open user API resource</a>
-            <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry">Open admin retry endpoint</a>
-            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" onsubmit="return confirm('Delete this import job and source file?');" style="display: inline-flex;">
+            <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}" data-turbo-frame="_top">Back to list</a>
+            <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}" data-turbo-frame="_top">Open user API resource</a>
+            <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry" data-turbo-frame="_top">Open admin retry endpoint</a>
+            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');" style="display: inline-flex;">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
                 <button class="btn btn-danger" type="submit">Delete</button>
             </form>
@@ -72,7 +72,7 @@
         <section class="card admin-panel" style="margin-top: 1rem;">
             <h3 style="margin-top: 0;">Retry Failed Job</h3>
             <p class="muted">Queue this failed import job for async reprocessing.</p>
-            <form method="post" action="{{ path('ui_admin_import_job_retry', {id: job.id.toString}) }}">
+            <form method="post" action="{{ path('ui_admin_import_job_retry', {id: job.id.toString}) }}" data-turbo-frame="_top">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_retry_' ~ job.id.toString) }}">
                 <button class="btn btn-primary" type="submit">Retry job</button>
             </form>
@@ -84,7 +84,7 @@
             <h3 style="margin-top: 0;">Fix And Finalize</h3>
             <p class="muted">Optional corrections can be provided before finalization. Leave fields empty to use payload values.</p>
 
-            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" style="display: grid; gap: .8rem;">
+            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" style="display: grid; gap: .8rem;">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_finalize_' ~ job.id.toString) }}">
 
                 <div class="form-grid-2">
@@ -115,6 +115,10 @@
                     <label class="label">
                         Longitude (micro degrees)
                         <input class="input" type="number" name="longitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.longitudeMicroDegrees is defined ? creationPayload.longitudeMicroDegrees : '' }}" step="1">
+                    </label>
+                    <label class="label">
+                        Odometer (km)
+                        <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : '' }}" min="0" step="1">
                     </label>
                     <label class="label">
                         Line fuel type

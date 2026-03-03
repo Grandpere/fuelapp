@@ -14,8 +14,11 @@ declare(strict_types=1);
 namespace App\Analytics\UI\Web\Controller;
 
 use App\Analytics\Application\Kpi\AnalyticsKpiReader;
+use App\Analytics\Application\Kpi\MonthlyComparedCostKpi;
 use App\Analytics\Application\Kpi\MonthlyConsumptionKpi;
 use App\Analytics\Application\Kpi\MonthlyCostKpi;
+use App\Analytics\Application\Kpi\MonthlyFuelPriceKpi;
+use App\Analytics\Application\Kpi\VisitedStationPointKpi;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Station\Application\Repository\StationRepository;
@@ -55,6 +58,9 @@ final class AnalyticsDashboardController extends AbstractController
         $costPerMonth = $this->kpiReader->readCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $consumptionPerMonth = $this->kpiReader->readConsumptionPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $averagePrice = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $fuelPricePerMonth = $this->kpiReader->readFuelPricePerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $comparedCostPerMonth = $this->kpiReader->readComparedCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $visitedStations = $this->kpiReader->readVisitedStations($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         return $this->render('analytics/index.html.twig', [
             'vehicleOptions' => $this->vehicleOptions($ownerId),
@@ -69,10 +75,15 @@ final class AnalyticsDashboardController extends AbstractController
             'consumptionPerMonth' => $consumptionPerMonth,
             'costTrend' => $this->costTrend($costPerMonth),
             'consumptionTrend' => $this->consumptionTrend($consumptionPerMonth),
+            'fuelPriceTrend' => $this->fuelPriceTrend($fuelPricePerMonth),
+            'comparedCostTrend' => $this->comparedCostTrend($comparedCostPerMonth),
             'totalCostCents' => $averagePrice->totalCostCents,
             'totalQuantityMilliLiters' => $averagePrice->totalQuantityMilliLiters,
             'averagePriceDeciCentsPerLiter' => $averagePrice->averagePriceDeciCentsPerLiter,
+            'visitedStations' => $visitedStations,
+            'stationMapPoints' => $this->stationMapPoints($visitedStations),
             'exportQueryParams' => [
+                'vehicle_id' => $vehicleId,
                 'issued_from' => $from?->format('Y-m-d'),
                 'issued_to' => $to?->format('Y-m-d'),
                 'station_id' => $stationId,
@@ -234,6 +245,110 @@ final class AnalyticsDashboardController extends AbstractController
                 'month' => $item->month,
                 'value' => $item->totalQuantityMilliLiters,
                 'ratio' => $max > 0 ? max(8, (int) round(($item->totalQuantityMilliLiters / $max) * 100, 0, PHP_ROUND_HALF_UP)) : 0,
+            ];
+        }
+
+        return $trend;
+    }
+
+    /**
+     * @param list<VisitedStationPointKpi> $items
+     *
+     * @return list<array{
+     *     stationId:string,
+     *     stationName:string,
+     *     address:string,
+     *     latitude:float,
+     *     longitude:float,
+     *     receiptCount:int,
+     *     totalCostCents:int,
+     *     totalQuantityMilliLiters:int
+     * }>
+     */
+    private function stationMapPoints(array $items): array
+    {
+        $points = [];
+        foreach ($items as $item) {
+            $points[] = [
+                'stationId' => $item->stationId,
+                'stationName' => $item->stationName,
+                'address' => sprintf('%s, %s %s', $item->streetName, $item->postalCode, $item->city),
+                'latitude' => $item->latitudeMicroDegrees / 1_000_000,
+                'longitude' => $item->longitudeMicroDegrees / 1_000_000,
+                'receiptCount' => $item->receiptCount,
+                'totalCostCents' => $item->totalCostCents,
+                'totalQuantityMilliLiters' => $item->totalQuantityMilliLiters,
+            ];
+        }
+
+        return $points;
+    }
+
+    /**
+     * @param list<MonthlyFuelPriceKpi> $items
+     *
+     * @return list<array{
+     *     month:string,
+     *     fuelType:string,
+     *     averagePriceDeciCentsPerLiter:?int,
+     *     totalCostCents:int,
+     *     totalQuantityMilliLiters:int,
+     *     ratio:int
+     * }>
+     */
+    private function fuelPriceTrend(array $items): array
+    {
+        $max = 0;
+        foreach ($items as $item) {
+            $max = max($max, $item->averagePriceDeciCentsPerLiter ?? 0);
+        }
+
+        $trend = [];
+        foreach ($items as $item) {
+            $average = $item->averagePriceDeciCentsPerLiter;
+            $trend[] = [
+                'month' => $item->month,
+                'fuelType' => $item->fuelType,
+                'averagePriceDeciCentsPerLiter' => $average,
+                'totalCostCents' => $item->totalCostCents,
+                'totalQuantityMilliLiters' => $item->totalQuantityMilliLiters,
+                'ratio' => null !== $average && $max > 0 ? max(8, (int) round(($average / $max) * 100, 0, PHP_ROUND_HALF_UP)) : 0,
+            ];
+        }
+
+        return $trend;
+    }
+
+    /**
+     * @param list<MonthlyComparedCostKpi> $items
+     *
+     * @return list<array{
+     *     month:string,
+     *     fuelCostCents:int,
+     *     maintenanceCostCents:int,
+     *     totalCostCents:int,
+     *     fuelRatio:int,
+     *     maintenanceRatio:int,
+     *     totalRatio:int
+     * }>
+     */
+    private function comparedCostTrend(array $items): array
+    {
+        $max = 0;
+        foreach ($items as $item) {
+            $max = max($max, $item->totalCostCents);
+        }
+
+        $trend = [];
+        foreach ($items as $item) {
+            $trend[] = [
+                'month' => $item->month,
+                'fuelCostCents' => $item->fuelCostCents,
+                'maintenanceCostCents' => $item->maintenanceCostCents,
+                'totalCostCents' => $item->totalCostCents,
+                'fuelRatio' => $max > 0 ? max(8, (int) round(($item->fuelCostCents / $max) * 100, 0, PHP_ROUND_HALF_UP)) : 0,
+                'maintenanceRatio' => $max > 0 ? max(8, (int) round(($item->maintenanceCostCents / $max) * 100, 0, PHP_ROUND_HALF_UP)) : 0,
+                'totalRatio' => $max > 0 ? max(8, (int) round(($item->totalCostCents / $max) * 100, 0, PHP_ROUND_HALF_UP)) : 0,
             ];
         }
 

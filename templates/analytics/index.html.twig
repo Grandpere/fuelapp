@@ -462,6 +462,13 @@
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
+            const escapeHtml = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
             const bounds = [];
             points.forEach((point) => {
                 if (typeof point.latitude !== 'number' || typeof point.longitude !== 'number') {
@@ -469,9 +476,11 @@
                 }
 
                 const marker = L.marker([point.latitude, point.longitude]).addTo(map);
+                const stationName = escapeHtml(point.stationName);
+                const address = escapeHtml(point.address);
                 marker.bindPopup(
-                    `<strong>${point.stationName}</strong><br>` +
-                    `${point.address}<br>` +
+                    `<strong>${stationName}</strong><br>` +
+                    `${address}<br>` +
                     `${(point.totalCostCents / 100).toFixed(2)} EUR · ${(point.totalQuantityMilliLiters / 1000).toFixed(2)} L`
                 );
                 bounds.push([point.latitude, point.longitude]);

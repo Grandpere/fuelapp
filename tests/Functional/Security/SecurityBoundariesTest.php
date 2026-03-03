@@ -101,6 +101,33 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertSame(mb_substr(mb_strtolower(trim($overlongEmail)), 0, 120), $entry->getTargetId());
     }
 
+    public function testApiLoginFailureWithOverlongCorrelationHeaderDoesNotReturnServerError(): void
+    {
+        $overlongCorrelationId = str_repeat('req-', 30);
+
+        $response = $this->request(
+            'POST',
+            '/api/login',
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_CORRELATION_ID' => $overlongCorrelationId,
+            ],
+            json_encode(['email' => 'missing@example.com', 'password' => 'wrong-password'], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+        self::assertStringContainsString('Invalid credentials.', (string) $response->getContent());
+        self::assertSame(mb_substr($overlongCorrelationId, 0, 80), (string) $response->headers->get('X-Correlation-Id'));
+
+        $entry = $this->em->getRepository(AdminAuditLogEntity::class)->findOneBy(
+            ['action' => 'security.login.failure'],
+            ['createdAt' => 'DESC'],
+        );
+        self::assertInstanceOf(AdminAuditLogEntity::class, $entry);
+        self::assertSame(80, mb_strlen($entry->getCorrelationId()));
+        self::assertSame(mb_substr($overlongCorrelationId, 0, 80), $entry->getCorrelationId());
+    }
+
     public function testAnonymousUserGets401OnAdminApiPrefix(): void
     {
         $response = $this->request('GET', '/api/admin/ping');

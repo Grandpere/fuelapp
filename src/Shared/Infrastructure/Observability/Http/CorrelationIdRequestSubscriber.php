@@ -22,6 +22,8 @@ use Symfony\Component\Uid\Uuid;
 
 final readonly class CorrelationIdRequestSubscriber implements EventSubscriberInterface
 {
+    private const int MAX_CORRELATION_ID_LENGTH = 80;
+
     public function __construct(private CorrelationIdContext $context)
     {
     }
@@ -44,7 +46,7 @@ final readonly class CorrelationIdRequestSubscriber implements EventSubscriberIn
         $headerCorrelation = $request->headers->get('X-Correlation-Id') ?? $request->headers->get('X-Request-Id');
 
         $correlationId = is_string($headerCorrelation) && '' !== trim($headerCorrelation)
-            ? trim($headerCorrelation)
+            ? $this->normalizeCorrelationId($headerCorrelation)
             : Uuid::v7()->toRfc4122();
 
         $request->attributes->set('_correlation_id', $correlationId);
@@ -61,5 +63,15 @@ final readonly class CorrelationIdRequestSubscriber implements EventSubscriberIn
         $correlationId = $this->context->current() ?? $this->context->getOrCreate();
         $response->headers->set('X-Correlation-Id', $correlationId);
         $this->context->clear();
+    }
+
+    private function normalizeCorrelationId(string $value): string
+    {
+        $normalized = trim($value);
+        if ('' === $normalized) {
+            return Uuid::v7()->toRfc4122();
+        }
+
+        return mb_substr($normalized, 0, self::MAX_CORRELATION_ID_LENGTH);
     }
 }

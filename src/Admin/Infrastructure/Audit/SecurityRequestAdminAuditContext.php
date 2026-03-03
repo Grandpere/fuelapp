@@ -23,6 +23,8 @@ use Symfony\Component\Uid\Uuid;
 
 final readonly class SecurityRequestAdminAuditContext implements AdminAuditContext
 {
+    private const int MAX_CORRELATION_ID_LENGTH = 80;
+
     public function __construct(
         private TokenStorageInterface $tokenStorage,
         private RequestStack $requestStack,
@@ -46,7 +48,7 @@ final readonly class SecurityRequestAdminAuditContext implements AdminAuditConte
     {
         $current = $this->correlationIdContext->current();
         if (is_string($current) && '' !== trim($current)) {
-            return trim($current);
+            return $this->normalizeCorrelationId($current);
         }
 
         $request = $this->requestStack->getCurrentRequest();
@@ -56,11 +58,13 @@ final readonly class SecurityRequestAdminAuditContext implements AdminAuditConte
 
         $existing = $request->attributes->get('_admin_audit_correlation_id');
         if (is_string($existing) && '' !== trim($existing)) {
-            return trim($existing);
+            return $this->normalizeCorrelationId($existing);
         }
 
         $header = $request->headers->get('X-Correlation-Id') ?? $request->headers->get('X-Request-Id');
-        $correlationId = is_string($header) && '' !== trim($header) ? trim($header) : Uuid::v7()->toRfc4122();
+        $correlationId = is_string($header) && '' !== trim($header)
+            ? $this->normalizeCorrelationId($header)
+            : Uuid::v7()->toRfc4122();
 
         $request->attributes->set('_admin_audit_correlation_id', $correlationId);
 
@@ -92,5 +96,10 @@ final readonly class SecurityRequestAdminAuditContext implements AdminAuditConte
         $user = $token->getUser();
 
         return $user instanceof UserEntity ? $user : null;
+    }
+
+    private function normalizeCorrelationId(string $value): string
+    {
+        return mb_substr(trim($value), 0, self::MAX_CORRELATION_ID_LENGTH);
     }
 }

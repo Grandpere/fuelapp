@@ -207,6 +207,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: normalize (`trim` + lowercase), fallback to `anonymous`, and truncate to 120 chars before audit writes in API and UI login failure paths.
 - Prevention: for any audit field backed by fixed-length DB columns, normalize and bound untrusted input at the call site.
 
+## 2026-03-03 - Correlation IDs from headers must be bounded before audit persistence
+- Symptom: oversized `X-Correlation-Id` / `X-Request-Id` could make login failure auditing crash and return 500.
+- Root cause: `admin_audit_logs.correlation_id` is `VARCHAR(80)` but request/header correlation IDs were not length-bounded.
+- Fix: truncate correlation IDs to 80 chars in request correlation subscriber/context and enforce same bound in Doctrine audit trail before persist.
+- Prevention: when correlation/request IDs are user-controlled headers, cap them to DB-safe length at ingress and at persistence boundaries.
+
 ## 2026-02-21 - DBAL datetime parameter type must match immutable values
 - Symptom: analytics projection refresh crashed in integration tests with `Could not convert PHP value of type DateTimeImmutable to type DateTimeType`.
 - Root cause: DBAL statement parameter types were declared as `datetime` while values were `DateTimeImmutable`.

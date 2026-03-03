@@ -380,8 +380,11 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
             return $value;
         }
 
-        if (is_string($value) && ctype_digit($value)) {
-            return (int) $value;
+        if (is_string($value)) {
+            $normalized = trim($value);
+            if ('' !== $normalized && 1 === preg_match('/^[+-]?\d+$/', $normalized)) {
+                return (int) $normalized;
+            }
         }
 
         return 0;

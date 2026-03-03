@@ -1,11 +1,12 @@
 SHELL := /bin/sh
 
 DOCKER_ENV_FILE := resources/docker/.env
+DOCKER_ENV_FLAGS := --env-file $(DOCKER_ENV_FILE)
 ifneq ("$(wildcard resources/docker/.env.local)","")
-DOCKER_ENV_FILE := resources/docker/.env.local
+DOCKER_ENV_FLAGS := --env-file $(DOCKER_ENV_FILE) --env-file resources/docker/.env.local
 endif
 
-DC := docker compose -f resources/docker/compose.yml --env-file $(DOCKER_ENV_FILE)
+DC := docker compose -f resources/docker/compose.yml $(DOCKER_ENV_FLAGS)
 DC_EXEC := $(DC) exec -T app
 DC_OBS := $(DC) --profile observability
 

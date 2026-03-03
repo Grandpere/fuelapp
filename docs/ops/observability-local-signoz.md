@@ -90,3 +90,31 @@ It is isolated behind Docker profile `observability`.
   - hardening of PII policy in logs (minimize sensitive fields where needed).
 - Decision follow-up:
   - modular stack evaluation remains tracked in `SP10-004`.
+
+
+## Secrets policy
+- Default committed values in `resources/docker/.env` must stay non-sensitive placeholders.
+- Local sensitive values must be set in `resources/docker/.env.local` (ignored by git).
+- `Makefile` automatically uses `resources/docker/.env.local` when present, otherwise falls back to `resources/docker/.env`.
+- Recommended local bootstrap:
+  1. `cp resources/docker/.env.local.example resources/docker/.env.local`
+  2. Replace at least `SIGNOZ_JWT_SECRET` and `SIGNOZ_TOKENIZER_JWT_SECRET` with strong random values.
+
+## Alerting baseline (minimum)
+Define these alerts in SigNoZ to keep noise low and response actionable:
+1. HTTP 5xx rate spike
+- Signal: traces/requests
+- Threshold: `5xx_rate > 2%` for `5 min` on service `fuelapp`
+- Action: inspect top failing routes and latest deployments/config changes.
+2. Latency p95 degradation
+- Signal: request duration p95
+- Threshold: `p95 > 1.5s` for `10 min` on key UI/API endpoints
+- Action: check DB latency, slow queries, external dependencies.
+3. Telemetry ingestion failure
+- Signal: collector/exporter errors (otel-collector logs)
+- Threshold: `error log count > 0` for `5 min`
+- Action: verify `otel-collector` health, ClickHouse connectivity, DSN/env consistency.
+4. Queue backlog guardrail (optional but recommended)
+- Signal: Messenger/RabbitMQ queue depth
+- Threshold: backlog above project-specific limit for `10 min`
+- Action: scale/restart worker consumers and inspect failed jobs.

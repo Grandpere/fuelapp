@@ -314,3 +314,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: `signoz/signoz` container was running without reachable ClickHouse (`dial tcp [::1]:9000: connect: connection refused`), then with default ClickHouse user network-disabled.
 - Fix: add dedicated `clickhouse` service in observability profile, configure `SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN` with explicit credentials, align `CLICKHOUSE_USER`/`CLICKHOUSE_PASSWORD`, and restart observability stack.
 - Prevention: for SigNoZ local setup, always provision ClickHouse + DSN + credentials together; treat `failed to get tbl statement` as ClickHouse connectivity/auth first.
+
+## 2026-03-03 - OTel env booleans must use true/false (not 1/0)
+- Symptom: telemetry looked enabled but instrumentation/export behaved unexpectedly, with warning `Invalid boolean value "1" interpreted as "false"`.
+- Root cause: OpenTelemetry PHP SDK does not accept `1/0` for boolean env vars like `OTEL_PHP_AUTOLOAD_ENABLED` and `OTEL_SDK_DISABLED`.
+- Fix: use explicit boolean strings (`true`/`false`) in env files.
+- Prevention: for all OTel boolean env vars, never use numeric booleans; enforce textual booleans in `.env*` and docs.

@@ -37,4 +37,4 @@ This ticket secures day-2 operations before scaling usage.
 - SP10-001 to SP10-004 (completed baseline + runbook + stack decision).
 
 ## Status
-- todo
+- done

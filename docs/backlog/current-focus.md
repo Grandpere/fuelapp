@@ -4,14 +4,13 @@
 - Sprint 10 - Local observability stack
 
 ## Current goal
-- Close Sprint 10 with hardening (`SP10-005`), then proceed with next product tickets.
+- Sprint 10 complete. Proceed with next product tickets.
 
 ## In progress
-- `SP10-005` Observability hardening (secrets + alerting baseline) - todo.
+- Sprint 10 completed (`SP10-001` to `SP10-005` done).
 
 ## Next tickets (ordered)
-1. `SP10-005` Observability hardening (secrets + alerting baseline)
-2. `SP3-010` Bulk import multi-file/ZIP
+1. `SP3-010` Bulk import multi-file/ZIP
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

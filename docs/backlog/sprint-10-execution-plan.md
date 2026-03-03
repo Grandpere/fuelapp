@@ -30,5 +30,5 @@ Ship a usable local observability setup fast, then decide if/when to migrate to 
 
 ### Step 5 - Hardening baseline
 - Ticket: `SP10-005`
-- Outcome: todo
+- Outcome: done
 

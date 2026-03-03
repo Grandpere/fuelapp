@@ -201,6 +201,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: define upload docs with `openapi: new Operation(...)` on the resource operation.
 - Prevention: when adding custom docs on metadata operations, align constructor args with installed API Platform version.
 
+## 2026-03-03 - Audit target_id length must be bounded on authentication failures
+- Symptom: overlong user-supplied email on login failure could trigger SQL error and return 500 instead of auth error.
+- Root cause: raw credential identifier was stored into `admin_audit_logs.target_id` (`VARCHAR(120)`) without truncation.
+- Fix: normalize (`trim` + lowercase), fallback to `anonymous`, and truncate to 120 chars before audit writes in API and UI login failure paths.
+- Prevention: for any audit field backed by fixed-length DB columns, normalize and bound untrusted input at the call site.
+
 ## 2026-02-21 - DBAL datetime parameter type must match immutable values
 - Symptom: analytics projection refresh crashed in integration tests with `Could not convert PHP value of type DateTimeImmutable to type DateTimeType`.
 - Root cause: DBAL statement parameter types were declared as `datetime` while values were `DateTimeImmutable`.

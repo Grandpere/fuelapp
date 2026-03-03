@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Security;
 
+use App\Admin\Infrastructure\Persistence\Doctrine\Entity\AdminAuditLogEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -94,6 +95,45 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         $content = (string) $receiptsResponse->getContent();
         self::assertStringContainsString('>Contact<', $content);
         self::assertStringContainsString('>Back-office<', $content);
+    }
+
+    public function testUiLoginFailureWithOverlongEmailDoesNotReturnServerError(): void
+    {
+        $loginPageResponse = $this->request('GET', '/ui/login');
+        self::assertSame(Response::HTTP_OK, $loginPageResponse->getStatusCode());
+
+        $sessionCookie = $this->extractSessionCookie($loginPageResponse);
+        self::assertNotEmpty($sessionCookie);
+
+        self::assertMatchesRegularExpression('/name="_csrf_token" value="([^"]+)"/', (string) $loginPageResponse->getContent());
+        preg_match('/name="_csrf_token" value="([^"]+)"/', (string) $loginPageResponse->getContent(), $matches);
+        $csrfToken = $matches[1] ?? null;
+        self::assertIsString($csrfToken);
+
+        $overlongEmail = str_repeat('ab', 70).'@example.com';
+
+        $loginResponse = $this->request(
+            'POST',
+            '/ui/login',
+            [
+                'email' => $overlongEmail,
+                'password' => 'wrong-password',
+                '_csrf_token' => $csrfToken,
+            ],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_FOUND, $loginResponse->getStatusCode());
+        self::assertSame('/ui/login', (string) $loginResponse->headers->get('Location'));
+
+        $entry = $this->em->getRepository(AdminAuditLogEntity::class)->findOneBy(
+            ['action' => 'security.login.failure'],
+            ['createdAt' => 'DESC'],
+        );
+        self::assertInstanceOf(AdminAuditLogEntity::class, $entry);
+        self::assertSame(120, mb_strlen($entry->getTargetId()));
+        self::assertSame(mb_substr(mb_strtolower(trim($overlongEmail)), 0, 120), $entry->getTargetId());
     }
 
     /**

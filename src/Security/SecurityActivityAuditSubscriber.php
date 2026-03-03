@@ -21,6 +21,8 @@ use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 
 final readonly class SecurityActivityAuditSubscriber implements EventSubscriberInterface
 {
+    private const int AUDIT_TARGET_ID_MAX_LENGTH = 120;
+
     public function __construct(private AdminAuditTrail $auditTrail)
     {
     }
@@ -77,7 +79,7 @@ final readonly class SecurityActivityAuditSubscriber implements EventSubscriberI
         $this->auditTrail->record(
             'security.login.failure',
             'credential',
-            mb_strtolower($attemptedEmail),
+            $this->normalizeAuditCredentialTargetId($attemptedEmail),
             [],
             [
                 'route' => $route,
@@ -89,5 +91,15 @@ final readonly class SecurityActivityAuditSubscriber implements EventSubscriberI
     private function isSupportedRoute(string $route): bool
     {
         return in_array($route, ['ui_login', 'ui_oidc_callback'], true);
+    }
+
+    private function normalizeAuditCredentialTargetId(string $targetId): string
+    {
+        $normalized = mb_strtolower(trim($targetId));
+        if ('' === $normalized) {
+            return 'anonymous';
+        }
+
+        return mb_substr($normalized, 0, self::AUDIT_TARGET_ID_MAX_LENGTH);
     }
 }

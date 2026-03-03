@@ -25,6 +25,8 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class ApiLoginController extends AbstractController
 {
+    private const int AUDIT_TARGET_ID_MAX_LENGTH = 120;
+
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly UserPasswordHasherInterface $passwordHasher,
@@ -87,9 +89,19 @@ final class ApiLoginController extends AbstractController
         $this->auditTrail->record(
             'security.login.failure',
             'credential',
-            mb_strtolower(trim($targetId)),
+            $this->normalizeAuditCredentialTargetId($targetId),
             [],
             ['channel' => 'api_password', 'reason' => $reason],
         );
+    }
+
+    private function normalizeAuditCredentialTargetId(string $targetId): string
+    {
+        $normalized = mb_strtolower(trim($targetId));
+        if ('' === $normalized) {
+            return 'anonymous';
+        }
+
+        return mb_substr($normalized, 0, self::AUDIT_TARGET_ID_MAX_LENGTH);
     }
 }

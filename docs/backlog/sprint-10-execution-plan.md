@@ -27,3 +27,8 @@ Ship a usable local observability setup fast, then decide if/when to migrate to 
 - `make phpunit-integration`
 - `make php-cs-fixer-check`
 - Ask user to run `make phpunit-functional` and share failures.
+
+### Step 5 - Hardening baseline
+- Ticket: `SP10-005`
+- Outcome: todo
+

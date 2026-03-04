@@ -116,6 +116,10 @@ final readonly class BulkImportUploadProcessor
                     continue;
                 }
 
+                if ($this->shouldIgnoreZipEntry($entryName)) {
+                    continue;
+                }
+
                 ++$entryCount;
                 $this->processZipEntry($ownerId, $zipArchive, $entryName, $uploadedFile->getClientOriginalName(), $result);
             }
@@ -280,5 +284,28 @@ final readonly class BulkImportUploadProcessor
         $filename = trim($uploadedFile->getClientOriginalName());
 
         return '' === $filename ? 'unknown-file' : $filename;
+    }
+
+    private function shouldIgnoreZipEntry(string $entryName): bool
+    {
+        $normalized = str_replace('\\', '/', trim($entryName));
+        if ('' === $normalized) {
+            return true;
+        }
+
+        if (str_starts_with($normalized, '__MACOSX/')) {
+            return true;
+        }
+
+        $basename = basename($normalized);
+        if ('' === $basename || '.' === $basename || '..' === $basename) {
+            return true;
+        }
+
+        if (str_starts_with($basename, '._')) {
+            return true;
+        }
+
+        return '.DS_Store' === $basename;
     }
 }

@@ -228,6 +228,8 @@ final class UploadImportControllerTest extends KernelTestCase
             'receipt-a.png' => $png,
             'receipt-b.png' => $png,
             'notes.txt' => 'ignored',
+            '__MACOSX/._receipt-a.png' => 'mac-fork',
+            '__MACOSX/.DS_Store' => 'mac-index',
         ]);
 
         $response = $this->request(
@@ -248,6 +250,7 @@ final class UploadImportControllerTest extends KernelTestCase
         $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame(2, $payload['acceptedCount']);
         self::assertSame(1, $payload['rejectedCount']);
+        self::assertSame('notes.txt', $payload['rejected'][0]['filename'] ?? null);
         self::assertCount(2, $this->asyncTransport->getSent());
     }
 

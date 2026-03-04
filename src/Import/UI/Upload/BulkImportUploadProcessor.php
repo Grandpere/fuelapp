@@ -56,6 +56,13 @@ final readonly class BulkImportUploadProcessor
         $result = new BulkImportUploadResult();
 
         foreach ($uploadedFiles as $uploadedFile) {
+            if (!$this->isUploadUsable($uploadedFile)) {
+                $filename = $this->safeClientFilename($uploadedFile);
+                $result->addRejected($filename, 'Uploaded file is invalid or temporary file is unavailable.', $filename);
+
+                continue;
+            }
+
             if ($this->isZipUpload($uploadedFile)) {
                 $this->processZipUpload($ownerId, $uploadedFile, $result);
 
@@ -83,10 +90,18 @@ final readonly class BulkImportUploadProcessor
             return;
         }
 
+        $pathname = $uploadedFile->getPathname();
+        if ('' === $pathname || !is_file($pathname) || !is_readable($pathname)) {
+            $filename = $this->safeClientFilename($uploadedFile);
+            $result->addRejected($filename, 'ZIP temporary file is not readable.', $filename);
+
+            return;
+        }
+
         $zipArchive = new ZipArchive();
-        $opened = $zipArchive->open($uploadedFile->getPathname());
+        $opened = $zipArchive->open($pathname);
         if (true !== $opened) {
-            $filename = $uploadedFile->getClientOriginalName();
+            $filename = $this->safeClientFilename($uploadedFile);
             $result->addRejected($filename, 'Unable to open ZIP archive.', $filename);
 
             return;
@@ -218,5 +233,23 @@ final readonly class BulkImportUploadProcessor
         $mimeType = strtolower((string) $uploadedFile->getClientMimeType());
 
         return in_array($mimeType, self::ZIP_MIME_TYPES, true);
+    }
+
+    private function isUploadUsable(UploadedFile $uploadedFile): bool
+    {
+        if (!$uploadedFile->isValid()) {
+            return false;
+        }
+
+        $pathname = $uploadedFile->getPathname();
+
+        return '' !== $pathname && is_file($pathname) && is_readable($pathname);
+    }
+
+    private function safeClientFilename(UploadedFile $uploadedFile): string
+    {
+        $filename = trim($uploadedFile->getClientOriginalName());
+
+        return '' === $filename ? 'unknown-file' : $filename;
     }
 }

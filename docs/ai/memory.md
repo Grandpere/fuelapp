@@ -258,6 +258,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 ## 2026-02-21 - Access control assertions need real routed endpoints
 - Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
 - Root cause: firewall access checks are not a substitute for route existence in functional assertions.
+
+## 2026-03-04 - ZIP upload must validate temporary path before `ZipArchive::open`
+- Symptom: ZIP import could crash with `ZipArchive::open(): Argument #1 ($filename) must not be empty`.
+- Root cause: bulk upload flow called `ZipArchive::open($uploadedFile->getPathname())` without guarding invalid uploads or missing temp files.
+- Fix: reject unusable uploads early (`isValid`, non-empty readable temp pathname) and return a controlled rejected item instead of throwing.
+- Prevention: for every `UploadedFile` processing path, validate upload validity + filesystem availability before any low-level file/zip operation.
 - Fix: add minimal routed admin probes (`/api/admin/ping`, `/ui/admin`) and assert role outcomes on those routes.
 - Prevention: when testing security boundaries, target concrete routes under the protected prefix.
 

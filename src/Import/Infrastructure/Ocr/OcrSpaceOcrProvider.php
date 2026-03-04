@@ -82,6 +82,10 @@ final class OcrSpaceOcrProvider implements OcrProvider
         if ($isErrored) {
             $message = $this->normalizeProviderErrorMessage($payload['ErrorMessage'] ?? null);
 
+            if ($this->isRetryableProviderError($message)) {
+                throw OcrProviderException::retryable(sprintf('OCR.Space processing error: %s', $message));
+            }
+
             throw OcrProviderException::permanent(sprintf('OCR.Space processing error: %s', $message));
         }
 
@@ -133,5 +137,32 @@ final class OcrSpaceOcrProvider implements OcrProvider
         }
 
         return 'unknown provider error';
+    }
+
+    private function isRetryableProviderError(string $message): bool
+    {
+        $normalized = mb_strtolower(trim($message));
+        if ('' === $normalized) {
+            return false;
+        }
+
+        $retryableHints = [
+            'system resource exhaustion',
+            'ocr binary failed',
+            'timeout',
+            'temporarily unavailable',
+            'try again later',
+            'server busy',
+            'rate limit',
+            'too many requests',
+        ];
+
+        foreach ($retryableHints as $hint) {
+            if (str_contains($normalized, $hint)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

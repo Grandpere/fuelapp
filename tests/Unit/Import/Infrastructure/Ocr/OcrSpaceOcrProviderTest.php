@@ -76,6 +76,25 @@ final class OcrSpaceOcrProviderTest extends TestCase
         }
     }
 
+    public function testItThrowsRetryableExceptionOnProviderCapacityErrorPayload(): void
+    {
+        $httpClient = new MockHttpClient([
+            new MockResponse('{"IsErroredOnProcessing":true,"ErrorMessage":["Error E500: System Resource Exhaustion (OCR Binary Failed)"]}', ['http_code' => 200]),
+        ], 'https://api.ocr.space/parse');
+
+        $provider = new OcrSpaceOcrProvider($httpClient, 'https://api.ocr.space/parse', 'test-key', 'eng', 2);
+
+        $this->expectException(OcrProviderException::class);
+
+        try {
+            $provider->extract($this->createTempFile('sample'), 'application/pdf');
+        } catch (OcrProviderException $e) {
+            self::assertTrue($e->isRetryable());
+
+            throw $e;
+        }
+    }
+
     public function testItThrowsRetryableExceptionOnTransportFailure(): void
     {
         $httpClient = new MockHttpClient(static function (): MockResponse {

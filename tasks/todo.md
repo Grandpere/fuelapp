@@ -212,3 +212,13 @@
 - [completed] Update unit/integration tests for queued-on-retryable and exhausted behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP11-005 OCR provider circuit breaker for outage bursts
+
+## Plan
+- [completed] Add OCR.Space circuit breaker state with cache-backed open/failure counters.
+- [completed] Fast-fail provider calls while breaker is open with retryable exception for Messenger.
+- [completed] Reset failure counter after successful OCR extraction.
+- [completed] Add/update unit tests for circuit-open behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.

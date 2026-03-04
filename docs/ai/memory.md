@@ -350,3 +350,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: OpenTelemetry PHP SDK does not accept `1/0` for boolean env vars like `OTEL_PHP_AUTOLOAD_ENABLED` and `OTEL_SDK_DISABLED`.
 - Fix: use explicit boolean strings (`true`/`false`) in env files.
 - Prevention: for all OTel boolean env vars, never use numeric booleans; enforce textual booleans in `.env*` and docs.
+
+## 2026-03-04 - OCR outage bursts require provider-level circuit breaker
+- Symptom: multiple imports queued during OCR.Space instability kept failing/retrying and amplified provider pressure.
+- Root cause: retry/backoff alone still sent every job to the provider, with no shared short-lived "pause" state.
+- Fix: add cache-backed circuit breaker in `OcrSpaceOcrProvider` (failure counter + open cooldown); when open, fail fast with retryable exception so Messenger retries later without external call.
+- Prevention: for external providers used by async workers, combine retry/backoff with a shared circuit breaker to avoid cascade failures.

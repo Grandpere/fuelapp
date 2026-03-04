@@ -25,11 +25,19 @@ use App\Import\Domain\Enum\ImportJobStatus;
 use JsonException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
+use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Throwable;
 
 #[AsMessageHandler]
 final readonly class ProcessImportJobMessageHandler
 {
+    private const MAX_RETRYABLE_PROVIDER_ATTEMPTS = 5;
+
+    /** @var list<int> */
+    private const RETRYABLE_PROVIDER_DELAYS_MS = [15000, 60000, 180000, 600000, 900000];
+
     public function __construct(
         private ImportJobRepository $repository,
         private ImportFileStorage $fileStorage,
@@ -40,7 +48,7 @@ final readonly class ProcessImportJobMessageHandler
     ) {
     }
 
-    public function __invoke(ProcessImportJobMessage $message): void
+    public function __invoke(ProcessImportJobMessage $message, ?Envelope $envelope = null): void
     {
         $this->logger->info('import.job.started', [
             'import_job_id' => $message->importJobId,
@@ -98,6 +106,35 @@ final readonly class ProcessImportJobMessageHandler
                 'parse_issues_count' => count($parsedDraft->issues),
             ]);
         } catch (OcrProviderException $ocrException) {
+            if ($ocrException->isRetryable()) {
+                $retryCount = $this->retryCount($envelope);
+                if ($retryCount < self::MAX_RETRYABLE_PROVIDER_ATTEMPTS) {
+                    $delayMs = $this->retryDelayForAttempt($retryCount);
+                    $job->markQueuedForRetry();
+                    $this->repository->save($job);
+
+                    $this->logger->warning('import.job.retry_scheduled', [
+                        'import_job_id' => $job->id()->toString(),
+                        'error' => $ocrException->getMessage(),
+                        'retry_count' => $retryCount,
+                        'next_delay_ms' => $delayMs,
+                    ]);
+
+                    throw new RecoverableMessageHandlingException(sprintf('OCR provider transient failure: %s', $ocrException->getMessage()), previous: $ocrException, retryDelay: $delayMs);
+                }
+
+                $job->markFailed(mb_substr(sprintf('ocr_provider_retryable_exhausted: %s', trim($ocrException->getMessage())), 0, 5000));
+                $this->repository->save($job);
+
+                $this->logger->error('import.job.failed_provider_retry_exhausted', [
+                    'import_job_id' => $job->id()->toString(),
+                    'error' => $ocrException->getMessage(),
+                    'retry_count' => $retryCount,
+                ]);
+
+                return;
+            }
+
             $job->markFailed($this->buildProviderFailureReason($ocrException));
             $this->repository->save($job);
 
@@ -106,10 +143,6 @@ final readonly class ProcessImportJobMessageHandler
                 'error' => $ocrException->getMessage(),
                 'retryable' => $ocrException->isRetryable(),
             ]);
-
-            if ($ocrException->isRetryable()) {
-                throw $ocrException;
-            }
         } catch (Throwable $throwable) {
             $job->markFailed($this->buildUnexpectedFailureReason($throwable));
             $this->repository->save($job);
@@ -179,5 +212,23 @@ final readonly class ProcessImportJobMessageHandler
         }
 
         return $encoded;
+    }
+
+    private function retryCount(?Envelope $envelope): int
+    {
+        if (null === $envelope) {
+            return 0;
+        }
+
+        return RedeliveryStamp::getRetryCountFromEnvelope($envelope);
+    }
+
+    private function retryDelayForAttempt(int $retryCount): int
+    {
+        if ($retryCount < 0) {
+            return self::RETRYABLE_PROVIDER_DELAYS_MS[0];
+        }
+
+        return self::RETRYABLE_PROVIDER_DELAYS_MS[$retryCount] ?? self::RETRYABLE_PROVIDER_DELAYS_MS[array_key_last(self::RETRYABLE_PROVIDER_DELAYS_MS)];
     }
 }

@@ -202,3 +202,13 @@
 - [completed] SP11-003: remove repetitive inline style fragments where shared utility classes can be used.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP11-004 OCR provider retry/backoff hardening
+
+## Plan
+- [completed] Reclassify OCR.Space capacity errors as retryable provider failures.
+- [completed] Add import-handler retry scheduling with explicit backoff delays for retryable OCR errors.
+- [completed] Add retry-attempt ceiling with deterministic exhausted-to-failed fallback.
+- [completed] Update unit/integration tests for queued-on-retryable and exhausted behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.

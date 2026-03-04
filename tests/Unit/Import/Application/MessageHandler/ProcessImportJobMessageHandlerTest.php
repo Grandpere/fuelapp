@@ -29,6 +29,9 @@ use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
+use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 
 final class ProcessImportJobMessageHandlerTest extends TestCase
 {
@@ -135,16 +138,48 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
             new NullLogger(),
         );
 
-        $this->expectException(OcrProviderException::class);
+        $this->expectException(RecoverableMessageHandlingException::class);
 
         try {
             $handler(new ProcessImportJobMessage($job->id()->toString()));
         } finally {
             $saved = $repository->getForSystem($job->id()->toString());
             self::assertNotNull($saved);
-            self::assertSame(ImportJobStatus::FAILED, $saved->status());
-            self::assertStringContainsString('ocr_provider_retryable', (string) $saved->errorPayload());
+            self::assertSame(ImportJobStatus::QUEUED, $saved->status());
+            self::assertNull($saved->errorPayload());
         }
+    }
+
+    public function testItMarksFailedWhenRetryableProviderErrorExceedsMaxAttempts(): void
+    {
+        $job = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/file.pdf',
+            'file.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('a', 64),
+        );
+
+        $repository = new InMemoryImportJobRepository([$job]);
+        $handler = new ProcessImportJobMessageHandler(
+            $repository,
+            new NullImportFileStorage(),
+            new FakeStoredFileLocator('/tmp/upload.pdf'),
+            new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
+            new FakeReceiptOcrParser(),
+            new NullLogger(),
+        );
+
+        $message = new ProcessImportJobMessage($job->id()->toString());
+        $envelope = new Envelope($message, [new RedeliveryStamp(5)]);
+        $handler($message, $envelope);
+
+        $saved = $repository->getForSystem($job->id()->toString());
+        self::assertNotNull($saved);
+        self::assertSame(ImportJobStatus::FAILED, $saved->status());
+        self::assertStringContainsString('ocr_provider_retryable_exhausted', (string) $saved->errorPayload());
     }
 
     public function testItMarksJobAsDuplicateWhenFingerprintAlreadyExists(): void

@@ -362,3 +362,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: exhausted retry path marked jobs as permanently failed without creating reviewable payload.
 - Fix: on retry exhaustion, mark job `needs_review` with explicit fallback payload/issue (`OCR provider unavailable after retries`) and keep manual finalize path available.
 - Prevention: for ingest pipelines, prefer degradable `needs_review` fallback over hard-fail when data can still be entered manually.
+
+## 2026-03-04 - Retry exhaustion threshold must match Messenger max retries
+- Symptom: OCR fallback to `needs_review` never appeared in UI/BO despite repeated transient failures.
+- Root cause: handler threshold used 5 attempts while Messenger transport `async.retry_strategy.max_retries` was 3, so fallback branch was unreachable in production flow.
+- Fix: align handler threshold to 3 and update tests to use `RedeliveryStamp(3)`.
+- Prevention: when implementing retry-based state transitions, always keep handler thresholds aligned with transport retry strategy.

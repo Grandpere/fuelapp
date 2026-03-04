@@ -209,7 +209,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         );
 
         $message = new ProcessImportJobMessage($job->id()->toString());
-        $handler($message, new Envelope($message, [new RedeliveryStamp(5)]));
+        $handler($message, new Envelope($message, [new RedeliveryStamp(3)]));
 
         $saved = $this->importJobRepository->getForSystem($job->id()->toString());
         self::assertNotNull($saved);

@@ -173,7 +173,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         );
 
         $message = new ProcessImportJobMessage($job->id()->toString());
-        $envelope = new Envelope($message, [new RedeliveryStamp(5)]);
+        $envelope = new Envelope($message, [new RedeliveryStamp(3)]);
         $handler($message, $envelope);
 
         $saved = $repository->getForSystem($job->id()->toString());

@@ -33,7 +33,8 @@ use Throwable;
 #[AsMessageHandler]
 final readonly class ProcessImportJobMessageHandler
 {
-    private const MAX_RETRYABLE_PROVIDER_ATTEMPTS = 5;
+    // Must stay aligned with messenger transport `async.retry_strategy.max_retries`.
+    private const MAX_RETRYABLE_PROVIDER_ATTEMPTS = 3;
 
     /** @var list<int> */
     private const RETRYABLE_PROVIDER_DELAYS_MS = [15000, 60000, 180000, 600000, 900000];

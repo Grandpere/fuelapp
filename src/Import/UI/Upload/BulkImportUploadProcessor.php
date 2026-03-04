@@ -56,9 +56,10 @@ final readonly class BulkImportUploadProcessor
         $result = new BulkImportUploadResult();
 
         foreach ($uploadedFiles as $uploadedFile) {
-            if (!$this->isUploadUsable($uploadedFile)) {
+            $uploadUnusableReason = $this->uploadUnusableReason($uploadedFile);
+            if (null !== $uploadUnusableReason) {
                 $filename = $this->safeClientFilename($uploadedFile);
-                $result->addRejected($filename, 'Uploaded file is invalid or temporary file is unavailable.', $filename);
+                $result->addRejected($filename, $uploadUnusableReason, $filename);
 
                 continue;
             }
@@ -235,15 +236,43 @@ final readonly class BulkImportUploadProcessor
         return in_array($mimeType, self::ZIP_MIME_TYPES, true);
     }
 
-    private function isUploadUsable(UploadedFile $uploadedFile): bool
+    private function uploadUnusableReason(UploadedFile $uploadedFile): ?string
     {
         if (!$uploadedFile->isValid()) {
-            return false;
+            if (\UPLOAD_ERR_OK === $uploadedFile->getError()) {
+                return 'Uploaded file is invalid or temporary file is unavailable.';
+            }
+
+            return $this->uploadErrorMessage($uploadedFile->getError());
         }
 
         $pathname = $uploadedFile->getPathname();
+        if ('' === $pathname) {
+            return 'Uploaded file is invalid or temporary file is unavailable.';
+        }
 
-        return '' !== $pathname && is_file($pathname) && is_readable($pathname);
+        if (!is_file($pathname) || !is_readable($pathname)) {
+            return 'Uploaded file is invalid or temporary file is unavailable.';
+        }
+
+        return null;
+    }
+
+    private function uploadErrorMessage(int $errorCode): string
+    {
+        return match ($errorCode) {
+            \UPLOAD_ERR_INI_SIZE => sprintf(
+                'Upload rejected by server: file exceeds PHP limit (%s).',
+                (string) ini_get('upload_max_filesize'),
+            ),
+            \UPLOAD_ERR_FORM_SIZE => 'Upload rejected: file exceeds HTML form limit.',
+            \UPLOAD_ERR_PARTIAL => 'Upload failed: file was only partially uploaded.',
+            \UPLOAD_ERR_NO_FILE => 'Upload failed: no file was uploaded.',
+            \UPLOAD_ERR_NO_TMP_DIR => 'Upload failed: missing temporary directory on server.',
+            \UPLOAD_ERR_CANT_WRITE => 'Upload failed: unable to write file to disk.',
+            \UPLOAD_ERR_EXTENSION => 'Upload blocked by a PHP extension.',
+            default => 'Uploaded file is invalid or temporary file is unavailable.',
+        };
     }
 
     private function safeClientFilename(UploadedFile $uploadedFile): string

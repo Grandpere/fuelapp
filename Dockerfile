@@ -31,6 +31,13 @@ RUN set -eux; \
       echo "xdebug.log_level=0"; \
     } > /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
+RUN set -eux; \
+    { \
+      echo "upload_max_filesize=12M"; \
+      echo "post_max_size=16M"; \
+      echo "max_file_uploads=30"; \
+    } > /usr/local/etc/php/conf.d/app-upload.ini
+
 COPY . /app
 
 RUN set -eux; \

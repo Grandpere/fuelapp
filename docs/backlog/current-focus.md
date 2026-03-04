@@ -13,13 +13,17 @@
 ## Next tickets (ordered)
 1. `SP11-002` - OCR parser hardening for noisy fuel tickets
 2. `SP11-003` - UX consistency polish for front/admin critical views
-3. `SP11-001` - Microsoft OIDC rollout (deferred)
-4. `SP12-001` to `SP12-004` - dedicated security hardening sprint (planned)
+3. `SP11-004` - OCR provider retry/backoff hardening
+4. `SP11-005` - OCR provider circuit breaker for outage bursts
+5. `SP11-006` - OCR fallback strategy
+6. `SP11-001` - Microsoft OIDC rollout (deferred)
+7. `SP12-001` to `SP12-004` - dedicated security hardening sprint (planned)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
 - Microsoft OIDC is explicitly deferred and will be resumed only if needed.
 - A dedicated security hardening sprint is planned as Sprint 12.
+- OCR provider resilience hardening has been added to Sprint 11 (`SP11-004` to `SP11-006`).
 - Sprint 01 target is local auth baseline + resource protection + ownership isolation.
 - Local auth baseline delivered: login page, authenticator, logout, user creation command.
 - API auth strategy for Sprint 1: JWT bearer on `/api` with dedicated login endpoint.

@@ -10,7 +10,13 @@
                     <h1 class="page-title">Import Review</h1>
                     <p class="muted" style="margin:.35rem 0 0;">Review extracted values, optionally correct fields, then finalize to create the receipt.</p>
                 </div>
-                <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
+                <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
+                    <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
+                        <button class="btn btn-danger" type="submit">Delete import</button>
+                    </form>
+                </div>
             </div>
 
             <dl style="display:grid; grid-template-columns: 180px 1fr; gap:.35rem .8rem; margin:0;">
@@ -103,13 +109,6 @@
                 <p class="muted" style="margin:0;">This import is no longer reviewable.</p>
             </section>
         {% endif %}
-
-        <section class="card" style="padding: 1rem;">
-            <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
-                <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
-                <button class="btn btn-danger" type="submit">Delete import</button>
-            </form>
-        </section>
 
         {% if payloadData is not null %}
             <section class="card" style="padding: 1rem;">

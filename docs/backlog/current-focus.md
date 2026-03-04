@@ -1,19 +1,23 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 10 - Local observability stack
+- Sprint 11 - Import OCR hardening and UX polish
 
 ## Current goal
-- Sprint 10 complete. Proceed with next product tickets.
+- Deliver OCR hardening on noisy tickets and finish UI consistency polish on critical screens.
 
 ## In progress
-- Sprint 10 completed (`SP10-001` to `SP10-005` done).
+- `SP11-002` - OCR parser hardening for noisy fuel tickets.
+- `SP11-003` - UX consistency polish for front/admin critical views.
 
 ## Next tickets (ordered)
-1. To be confirmed with user
+1. `SP11-002` - OCR parser hardening for noisy fuel tickets
+2. `SP11-003` - UX consistency polish for front/admin critical views
+3. `SP11-001` - Microsoft OIDC rollout (deferred)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
+- Microsoft OIDC is explicitly deferred and will be resumed only if needed.
 - Sprint 01 target is local auth baseline + resource protection + ownership isolation.
 - Local auth baseline delivered: login page, authenticator, logout, user creation command.
 - API auth strategy for Sprint 1: JWT bearer on `/api` with dedicated login endpoint.

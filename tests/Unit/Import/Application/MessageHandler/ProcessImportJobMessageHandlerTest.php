@@ -29,9 +29,7 @@ use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
-use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 
 final class ProcessImportJobMessageHandlerTest extends TestCase
 {
@@ -173,8 +171,16 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         );
 
         $message = new ProcessImportJobMessage($job->id()->toString());
-        $envelope = new Envelope($message, [new RedeliveryStamp(3)]);
-        $handler($message, $envelope);
+
+        for ($attempt = 1; $attempt <= 3; ++$attempt) {
+            try {
+                $handler($message);
+                self::fail('Expected retryable exception for attempt '.$attempt);
+            } catch (RecoverableMessageHandlingException) {
+            }
+        }
+
+        $handler($message);
 
         $saved = $repository->getForSystem($job->id()->toString());
         self::assertNotNull($saved);

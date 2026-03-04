@@ -25,19 +25,19 @@ use App\Import\Domain\Enum\ImportJobStatus;
 use JsonException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
-use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Throwable;
 
 #[AsMessageHandler]
-final readonly class ProcessImportJobMessageHandler
+final class ProcessImportJobMessageHandler
 {
     // Must stay aligned with messenger transport `async.retry_strategy.max_retries`.
     private const MAX_RETRYABLE_PROVIDER_ATTEMPTS = 3;
 
     /** @var list<int> */
     private const RETRYABLE_PROVIDER_DELAYS_MS = [15000, 60000, 180000, 600000, 900000];
+    /** @var array<string, int> */
+    private array $retryAttemptsByJobId = [];
 
     public function __construct(
         private ImportJobRepository $repository,
@@ -49,7 +49,7 @@ final readonly class ProcessImportJobMessageHandler
     ) {
     }
 
-    public function __invoke(ProcessImportJobMessage $message, ?Envelope $envelope = null): void
+    public function __invoke(ProcessImportJobMessage $message): void
     {
         $this->logger->info('import.job.started', [
             'import_job_id' => $message->importJobId,
@@ -64,6 +64,7 @@ final readonly class ProcessImportJobMessageHandler
         }
 
         if (in_array($job->status(), [ImportJobStatus::PROCESSED, ImportJobStatus::NEEDS_REVIEW, ImportJobStatus::DUPLICATE], true)) {
+            $this->clearRetryAttempts($job->id()->toString());
             $this->logger->info('import.job.skipped_already_terminal', [
                 'import_job_id' => $job->id()->toString(),
                 'status' => $job->status()->value,
@@ -78,6 +79,7 @@ final readonly class ProcessImportJobMessageHandler
             $job->markDuplicate($this->buildDuplicatePayload($job->id()->toString(), $duplicateOf->id()->toString(), $fingerprint));
             $this->repository->save($job);
             $this->fileStorage->delete($job->storage(), $job->filePath());
+            $this->clearRetryAttempts($job->id()->toString());
 
             $this->logger->info('import.job.marked_duplicate', [
                 'import_job_id' => $job->id()->toString(),
@@ -99,6 +101,7 @@ final readonly class ProcessImportJobMessageHandler
             $payload = $this->buildNeedsReviewPayload($job->id()->toString(), $extraction->provider, $extraction->text, $extraction->pages, $parsedDraft, $fingerprint);
             $job->markNeedsReview($payload);
             $this->repository->save($job);
+            $this->clearRetryAttempts($job->id()->toString());
 
             $this->logger->info('import.job.needs_review', [
                 'import_job_id' => $job->id()->toString(),
@@ -108,34 +111,36 @@ final readonly class ProcessImportJobMessageHandler
             ]);
         } catch (OcrProviderException $ocrException) {
             if ($ocrException->isRetryable()) {
-                $retryCount = $this->retryCount($envelope);
-                if ($retryCount < self::MAX_RETRYABLE_PROVIDER_ATTEMPTS) {
-                    $delayMs = $this->retryDelayForAttempt($retryCount);
+                $retryAttempt = $this->incrementRetryAttempts($job->id()->toString());
+                if ($retryAttempt <= self::MAX_RETRYABLE_PROVIDER_ATTEMPTS) {
+                    $delayMs = $this->retryDelayForAttempt($retryAttempt - 1);
                     $job->markQueuedForRetry();
                     $this->repository->save($job);
 
                     $this->logger->warning('import.job.retry_scheduled', [
                         'import_job_id' => $job->id()->toString(),
                         'error' => $ocrException->getMessage(),
-                        'retry_count' => $retryCount,
+                        'retry_count' => $retryAttempt,
                         'next_delay_ms' => $delayMs,
                     ]);
 
                     throw new RecoverableMessageHandlingException(sprintf('OCR provider transient failure: %s', $ocrException->getMessage()), previous: $ocrException, retryDelay: $delayMs);
                 }
 
+                $this->clearRetryAttempts($job->id()->toString());
                 $job->markNeedsReview($this->buildRetryableFallbackNeedsReviewPayload($job->id()->toString(), $fingerprint, $ocrException->getMessage()));
                 $this->repository->save($job);
 
                 $this->logger->warning('import.job.needs_review_provider_retry_exhausted', [
                     'import_job_id' => $job->id()->toString(),
                     'error' => $ocrException->getMessage(),
-                    'retry_count' => $retryCount,
+                    'retry_count' => $retryAttempt,
                 ]);
 
                 return;
             }
 
+            $this->clearRetryAttempts($job->id()->toString());
             $job->markFailed($this->buildProviderFailureReason($ocrException));
             $this->repository->save($job);
 
@@ -145,6 +150,7 @@ final readonly class ProcessImportJobMessageHandler
                 'retryable' => $ocrException->isRetryable(),
             ]);
         } catch (Throwable $throwable) {
+            $this->clearRetryAttempts($job->id()->toString());
             $job->markFailed($this->buildUnexpectedFailureReason($throwable));
             $this->repository->save($job);
             $this->logger->error('import.job.failed_unexpected', [
@@ -249,13 +255,18 @@ final readonly class ProcessImportJobMessageHandler
         return $encoded;
     }
 
-    private function retryCount(?Envelope $envelope): int
+    private function incrementRetryAttempts(string $jobId): int
     {
-        if (null === $envelope) {
-            return 0;
-        }
+        $current = $this->retryAttemptsByJobId[$jobId] ?? 0;
+        ++$current;
+        $this->retryAttemptsByJobId[$jobId] = $current;
 
-        return RedeliveryStamp::getRetryCountFromEnvelope($envelope);
+        return $current;
+    }
+
+    private function clearRetryAttempts(string $jobId): void
+    {
+        unset($this->retryAttemptsByJobId[$jobId]);
     }
 
     private function retryDelayForAttempt(int $retryCount): int

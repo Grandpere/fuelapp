@@ -32,9 +32,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
-use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Symfony\Component\Uid\Uuid;
 use Throwable;
 
@@ -209,7 +207,15 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         );
 
         $message = new ProcessImportJobMessage($job->id()->toString());
-        $handler($message, new Envelope($message, [new RedeliveryStamp(3)]));
+        for ($attempt = 1; $attempt <= 3; ++$attempt) {
+            try {
+                $handler($message);
+                self::fail('Expected retryable exception for attempt '.$attempt);
+            } catch (RecoverableMessageHandlingException) {
+            }
+        }
+
+        $handler($message);
 
         $saved = $this->importJobRepository->getForSystem($job->id()->toString());
         self::assertNotNull($saved);

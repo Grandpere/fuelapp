@@ -171,6 +171,11 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
                 continue;
             }
 
+            $merged = $this->mergeSplitStreetLineBeforePostalCity($lines, $index, $candidate);
+            if (null !== $merged) {
+                return mb_substr($merged, 0, 255);
+            }
+
             return mb_substr($candidate, 0, 255);
         }
 
@@ -466,6 +471,44 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
     private function isNonAddressLine(string $line): bool
     {
         return 1 === preg_match('/\b(tel|phone|carte|visa|debit|ticket|montant|auto|pompe|carburant|quantit[eé]?|prix|tva|vat)\b/ui', $line);
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function mergeSplitStreetLineBeforePostalCity(array $lines, int $postalCityIndex, string $streetTail): ?string
+    {
+        if ($postalCityIndex < 2) {
+            return null;
+        }
+
+        $streetHead = $lines[$postalCityIndex - 2];
+        if ($this->isNonAddressLine($streetHead) || $this->isNonAddressLine($streetTail)) {
+            return null;
+        }
+
+        if (preg_match('/\b\d{5}\b/u', $streetHead) || preg_match('/\b\d{5}\b/u', $streetTail)) {
+            return null;
+        }
+
+        if (preg_match('/\b\d{2}[\/\.-]\d{2}[\/\.-]\d{2,4}\b/u', $streetHead) || preg_match('/\b\d{2}[\/\.-]\d{2}[\/\.-]\d{2,4}\b/u', $streetTail)) {
+            return null;
+        }
+
+        if (!$this->looksLikeStreetHead($streetHead)) {
+            return null;
+        }
+
+        if (!preg_match('/[A-Za-zÀ-ÿ]/u', $streetTail)) {
+            return null;
+        }
+
+        return trim(sprintf('%s %s', $streetHead, $streetTail));
+    }
+
+    private function looksLikeStreetHead(string $line): bool
+    {
+        return 1 === preg_match('/\b(rue|route|avenue|av\.?|boulevard|bd\.?|chemin|all[ée]e|impasse|place|quai|voie|faubourg|lotissement|r[dn]\d*)\b/ui', $line);
     }
 
     private function extractVatAmountFromLine(string $line, int $rate): ?int

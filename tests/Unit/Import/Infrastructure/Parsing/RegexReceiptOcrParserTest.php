@@ -114,6 +114,37 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertIsArray($draft->toArray()['creationPayload']);
     }
 
+    public function testItReconstructsStreetWhenSplitAcrossTwoLinesBeforePostalCity(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                E Leclerc L
+                Petro - EST
+                Route de
+                Troyes
+                51120 SEZANNE
+                Le 06/04/24 a 11:44:33
+                MONTANT REEL
+                17,96 EUR
+                Carburant = SP95 -E10
+                Quantite = 9,56 L
+                Prix unit. = 1,879 EUR
+                TVA 20,00% = 2,99 EUR
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('Route de Troyes', $draft->stationStreetName);
+        self::assertSame('51120', $draft->stationPostalCode);
+        self::assertSame('SEZANNE', $draft->stationCity);
+        self::assertIsArray($draft->toArray()['creationPayload']);
+    }
+
     public function testItParsesLeclercTicketWithSplitUnitPrice(): void
     {
         $ocr = new OcrExtraction(

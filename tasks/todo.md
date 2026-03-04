@@ -184,3 +184,11 @@
 - [completed] Add/update functional coverage for API bulk and web multi-upload flows.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP3-011 OCR address line reconstruction
+
+## Plan
+- [completed] Add parser heuristic to merge split street line segments before postal/city line when confidence is acceptable.
+- [completed] Add unit coverage for split-address OCR sample (`Route de` + `Troyes`).
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.

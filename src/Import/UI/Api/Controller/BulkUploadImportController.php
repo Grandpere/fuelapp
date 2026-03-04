@@ -60,12 +60,10 @@ final class BulkUploadImportController extends AbstractController
     {
         $files = [];
 
-        $multiple = $request->files->all('files');
-        foreach ($multiple as $item) {
-            if ($item instanceof UploadedFile) {
-                $files[] = $item;
-            }
-        }
+        $this->collectUploadedFiles($request->files->all('files'), $files);
+        $this->collectUploadedFiles($request->files->get('files'), $files);
+        $this->collectUploadedFiles($request->files->all('files[]'), $files);
+        $this->collectUploadedFiles($request->files->get('files[]'), $files);
 
         $single = $request->files->get('file');
         if ($single instanceof UploadedFile) {
@@ -73,5 +71,23 @@ final class BulkUploadImportController extends AbstractController
         }
 
         return $files;
+    }
+
+    /** @param list<UploadedFile> $target */
+    private function collectUploadedFiles(mixed $value, array &$target): void
+    {
+        if ($value instanceof UploadedFile) {
+            $target[] = $value;
+
+            return;
+        }
+
+        if (!is_iterable($value)) {
+            return;
+        }
+
+        foreach ($value as $item) {
+            $this->collectUploadedFiles($item, $target);
+        }
     }
 }

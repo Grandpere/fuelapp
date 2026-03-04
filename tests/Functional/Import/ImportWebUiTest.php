@@ -121,6 +121,7 @@ final class ImportWebUiTest extends WebTestCase
         $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('import job(s) queued', $listContent);
         self::assertStringContainsString('ticket.png', $listContent);
         self::assertStringContainsString('Queued', $listContent);
         self::assertStringContainsString('data-controller="row-link"', $listContent);

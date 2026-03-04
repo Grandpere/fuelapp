@@ -288,6 +288,12 @@
                     color: #aaf4c8;
                 }
 
+                .flash.flash-error {
+                    border-color: rgba(255, 95, 86, 0.5);
+                    background: rgba(103, 33, 40, 0.4);
+                    color: #ffd6d4;
+                }
+
                 .flatpickr-calendar {
                     background: #0f2738;
                     border: 1px solid rgba(126, 164, 190, 0.35);
@@ -409,6 +415,15 @@
                 </div>
             </header>
         {% endif %}
+
+        {% for label, messages in app.flashes %}
+            <section class="app-shell" style="padding-bottom: 0;">
+                {% for message in messages %}
+                    <div class="flash {{ label == 'error' ? 'flash-error' : '' }}">{{ message }}</div>
+                {% endfor %}
+            </section>
+        {% endfor %}
+
         {% block body %}{% endblock %}
     </body>
 </html>

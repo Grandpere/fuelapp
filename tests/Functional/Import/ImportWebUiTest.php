@@ -380,6 +380,52 @@ final class ImportWebUiTest extends WebTestCase
         self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
     }
 
+    public function testUserCanDeleteOwnImportFromUiDetailWhenNotReviewable(): void
+    {
+        $email = 'import.web.detail.delete@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::FAILED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/20/to-delete-from-detail.jpg');
+        $job->setOriginalFilename('to-delete-from-detail.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('e', 64));
+        $job->setErrorPayload('{"error":"ocr failed"}');
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-20 10:46:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-20 10:46:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-20 10:46:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('/ui/imports/'.$jobId.'/delete', $detailContent);
+        $deleteToken = $this->extractDeleteCsrfToken($detailContent, $jobId);
+
+        $deleteResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$jobId.'/delete',
+            ['_token' => $deleteToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $deleteResponse->getStatusCode());
+        self::assertSame('/ui/imports', $deleteResponse->headers->get('Location'));
+
+        $this->em->clear();
+        self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, mixed>                      $files

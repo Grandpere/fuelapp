@@ -190,5 +190,15 @@
 ## Plan
 - [completed] Add parser heuristic to merge split street line segments before postal/city line when confidence is acceptable.
 - [completed] Add unit coverage for split-address OCR sample (`Route de` + `Troyes`).
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP11 batch A (SP11-002 + SP11-003)
+
+## Plan
+- [completed] SP11-002: harden OCR parser for noisy Volume/Prix ticket patterns with conservative heuristics.
+- [completed] SP11-002: add focused unit tests for new noisy OCR extraction cases.
+- [completed] SP11-003: standardize compact table action button styles across critical front/admin templates.
+- [completed] SP11-003: remove repetitive inline style fragments where shared utility classes can be used.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures.

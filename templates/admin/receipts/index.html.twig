@@ -35,13 +35,15 @@
                         <td style="text-align:right;">{{ receipt.lines|length }}</td>
                         <td style="text-align:right;">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</td>
                         <td style="text-align:right;">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</td>
-                        <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_show', {id: receipt.id.toString()}) }}">Detail</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_edit', {id: receipt.id.toString()}) }}">Edit</a>
-                            <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
-                                <input type="hidden" name="_token" value="{{ csrf_token('admin_receipt_delete_' ~ receipt.id.toString()) }}">
-                                <button class="btn btn-danger" type="submit">Delete</button>
-                            </form>
+                        <td>
+                            <div class="action-row">
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_show', {id: receipt.id.toString()}) }}">Detail</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_edit', {id: receipt.id.toString()}) }}">Edit</a>
+                                <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_receipt_delete_' ~ receipt.id.toString()) }}">
+                                    <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 {% else %}

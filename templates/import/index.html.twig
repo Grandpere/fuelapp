@@ -61,17 +61,17 @@
                                 <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
                                 <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
                                 <td style="white-space:nowrap;">
-                                    <div style="display:flex; gap:.45rem; align-items:center; flex-wrap:nowrap;">
+                                    <div class="action-row" style="white-space:normal;">
                                         {% if job.status.value == 'needs_review' %}
-                                            <a class="btn btn-primary" href="{{ path('ui_import_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Review</a>
+                                            <a class="btn btn-primary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Review</a>
                                         {% elseif row.canAutoFinalize %}
-                                            <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Detail</a>
+                                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Detail</a>
                                         {% else %}
-                                            <a class="btn btn-secondary" href="{{ path('ui_import_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Detail</a>
+                                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Detail</a>
                                         {% endif %}
                                         <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" style="display:inline-flex;" onsubmit="return confirm('Delete this import file?');">
                                             <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
-                                            <button class="btn btn-danger" type="submit">Delete</button>
+                                            <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                                         </form>
                                     </div>
                                 </td>

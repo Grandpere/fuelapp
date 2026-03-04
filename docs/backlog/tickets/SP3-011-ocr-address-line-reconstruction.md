@@ -21,4 +21,4 @@ Some receipt OCR outputs split the street over multiple lines (example: `Route d
 - SP3-005, SP3-007.
 
 ## Status
-- todo
+- done

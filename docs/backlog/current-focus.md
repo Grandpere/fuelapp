@@ -37,6 +37,7 @@
 - `SP3-008` delivered: import regression coverage for OCR/provider/parser failure paths and finalize API error-paths.
 - `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
 - `SP3-010` delivered: bulk import supports multi-file and ZIP uploads with per-file accepted/rejected summary (API + UI).
+- `SP3-011` delivered: OCR parser reconstructs split street lines before postal/city when confidence is sufficient.
 - `SP4-001` delivered: admin access model with role hierarchy and explicit `/api/admin` + `/ui/admin` policy gates.
 - `SP4-002` delivered: admin station CRUD APIs and vehicle management APIs (read/update/delete) with basic list filters/search in `/api/admin/*`.
 - `SP4-003` delivered: back-office UI shell/navigation with station and vehicle pages.

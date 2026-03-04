@@ -446,26 +446,61 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
     private function extractUnitPriceDeciCentsPerLiter(string $line, string $context): ?int
     {
         if (preg_match('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))\s*(€|eur)?\s*\/\s*l\b/ui', $line, $m)) {
-            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+            return $this->toPlausibleUnitPrice((string) $m['price']);
         }
 
         if (preg_match('/prix\s*unit\.?\s*(?:=|:)?\s*(?P<price>\d+(?:[\.,]\s?\d{2,3}))/ui', $context, $m)) {
-            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+            return $this->toPlausibleUnitPrice((string) $m['price']);
         }
 
         if (preg_match('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))\s*\/\s*[l8]\b/ui', $context, $m)) {
-            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+            return $this->toPlausibleUnitPrice((string) $m['price']);
         }
 
         if (preg_match('/(?P<major>\d)\s*[\.,]\s*(?P<minor>\d{3})\s*\/\s*[l8]/ui', $context, $m)) {
-            return $this->decimalToDeciCentsPerLiter(sprintf('%s.%s', $m['major'], $m['minor']));
+            return $this->toPlausibleUnitPrice(sprintf('%s.%s', $m['major'], $m['minor']));
         }
 
         if (preg_match('/prix\s*unit\.?\s*(?:=|:)?\s*(?P<major>\d)\s*(?P<minor>\d{3})\s*(?:eur|€)/ui', $context, $m)) {
-            return $this->decimalToDeciCentsPerLiter(sprintf('%s.%s', $m['major'], $m['minor']));
+            return $this->toPlausibleUnitPrice(sprintf('%s.%s', $m['major'], $m['minor']));
+        }
+
+        if (preg_match('/\bprix\b(?P<segment>.{0,64})/ui', $context, $m)) {
+            $segment = (string) $m['segment'];
+
+            if (preg_match('/(?P<major>\d)\s+(?P<minor>\d{3})\b/u', $segment, $splitDigits)) {
+                $candidate = $this->toPlausibleUnitPrice(sprintf('%s.%s', $splitDigits['major'], $splitDigits['minor']));
+                if (null !== $candidate) {
+                    return $candidate;
+                }
+            }
+
+            if (preg_match_all('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))/u', $segment, $matches)) {
+                foreach ($matches['price'] as $price) {
+                    $candidate = $this->toPlausibleUnitPrice((string) $price);
+                    if (null !== $candidate) {
+                        return $candidate;
+                    }
+                }
+            }
         }
 
         return null;
+    }
+
+    private function toPlausibleUnitPrice(string $value): ?int
+    {
+        $price = $this->decimalToDeciCentsPerLiter($value);
+        if (null === $price) {
+            return null;
+        }
+
+        // Fuel unit prices outside this range are usually OCR noise or totals.
+        if ($price < 500 || $price > 5000) {
+            return null;
+        }
+
+        return $price;
     }
 
     private function isNonAddressLine(string $line): bool

@@ -217,4 +217,35 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertSame(1769, $draft->lines[0]->unitPriceDeciCentsPerLiter);
         self::assertSame(20, $draft->lines[0]->vatRatePercent);
     }
+
+    public function testItParsesUnitPriceFromPrixLabelWithoutPerLiterSuffix(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                STATION TEST
+                12 Rue Exemple
+                75010 PARIS
+                Date 02/03/2026 14:30
+                Pompe 3
+                Volume
+                Gazole
+                40.40
+                Prix
+                1 769
+                TOTAL TTC 71.47
+                TVA 20.00 % 11.91
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertCount(1, $draft->lines);
+        self::assertSame('diesel', $draft->lines[0]->fuelType);
+        self::assertSame(40_400, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1769, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+    }
 }

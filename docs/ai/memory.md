@@ -356,3 +356,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: retry/backoff alone still sent every job to the provider, with no shared short-lived "pause" state.
 - Fix: add cache-backed circuit breaker in `OcrSpaceOcrProvider` (failure counter + open cooldown); when open, fail fast with retryable exception so Messenger retries later without external call.
 - Prevention: for external providers used by async workers, combine retry/backoff with a shared circuit breaker to avoid cascade failures.
+
+## 2026-03-04 - Retry exhaustion fallback should preserve manual import recovery
+- Symptom: after transient OCR outages, imports ended in `failed` and required admin-style retry loops instead of user recovery.
+- Root cause: exhausted retry path marked jobs as permanently failed without creating reviewable payload.
+- Fix: on retry exhaustion, mark job `needs_review` with explicit fallback payload/issue (`OCR provider unavailable after retries`) and keep manual finalize path available.
+- Prevention: for ingest pipelines, prefer degradable `needs_review` fallback over hard-fail when data can still be entered manually.

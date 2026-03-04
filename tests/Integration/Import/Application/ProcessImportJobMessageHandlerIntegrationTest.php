@@ -195,7 +195,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         }
     }
 
-    public function testHandlerMarksFailedWhenRetryableProviderErrorExceedsMaxAttempts(): void
+    public function testHandlerMarksNeedsReviewFallbackWhenRetryableProviderErrorExceedsMaxAttempts(): void
     {
         $job = $this->createQueuedJob('import.provider.retryable.exhausted@example.com', str_repeat('f', 64));
 
@@ -213,8 +213,9 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $saved = $this->importJobRepository->getForSystem($job->id()->toString());
         self::assertNotNull($saved);
-        self::assertSame(ImportJobStatus::FAILED, $saved->status());
+        self::assertSame(ImportJobStatus::NEEDS_REVIEW, $saved->status());
         self::assertStringContainsString('ocr_provider_retryable_exhausted', (string) $saved->errorPayload());
+        self::assertStringContainsString('OCR provider unavailable after retries', (string) $saved->errorPayload());
     }
 
     public function testHandlerMarksFailedAndRethrowsForUnexpectedParserFailure(): void

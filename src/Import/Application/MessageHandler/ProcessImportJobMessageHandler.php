@@ -123,10 +123,10 @@ final readonly class ProcessImportJobMessageHandler
                     throw new RecoverableMessageHandlingException(sprintf('OCR provider transient failure: %s', $ocrException->getMessage()), previous: $ocrException, retryDelay: $delayMs);
                 }
 
-                $job->markFailed(mb_substr(sprintf('ocr_provider_retryable_exhausted: %s', trim($ocrException->getMessage())), 0, 5000));
+                $job->markNeedsReview($this->buildRetryableFallbackNeedsReviewPayload($job->id()->toString(), $fingerprint, $ocrException->getMessage()));
                 $this->repository->save($job);
 
-                $this->logger->error('import.job.failed_provider_retry_exhausted', [
+                $this->logger->warning('import.job.needs_review_provider_retry_exhausted', [
                     'import_job_id' => $job->id()->toString(),
                     'error' => $ocrException->getMessage(),
                     'retry_count' => $retryCount,
@@ -188,6 +188,40 @@ final readonly class ProcessImportJobMessageHandler
     private function buildUnexpectedFailureReason(Throwable $throwable): string
     {
         return mb_substr(sprintf('ocr_unexpected: %s', trim($throwable->getMessage())), 0, 5000);
+    }
+
+    private function buildRetryableFallbackNeedsReviewPayload(string $jobId, string $fingerprint, string $providerMessage): string
+    {
+        $issue = sprintf('OCR provider unavailable after retries: %s', trim($providerMessage));
+        $payload = [
+            'jobId' => $jobId,
+            'fingerprint' => $fingerprint,
+            'provider' => 'ocr_unavailable_fallback',
+            'text' => '',
+            'pages' => [],
+            'parsedDraft' => [
+                'stationName' => null,
+                'stationStreetName' => null,
+                'stationPostalCode' => null,
+                'stationCity' => null,
+                'issuedAt' => null,
+                'totalCents' => null,
+                'vatAmountCents' => null,
+                'lines' => [],
+                'issues' => [$issue],
+                'creationPayload' => null,
+            ],
+            'status' => 'needs_review',
+            'fallbackReason' => 'ocr_provider_retryable_exhausted',
+        ];
+
+        try {
+            $encoded = json_encode($payload, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return 'ocr_retryable_fallback_payload_serialization_failed';
+        }
+
+        return $encoded;
     }
 
     private function buildFingerprintV1(string $checksumSha256): string

@@ -222,3 +222,12 @@
 - [completed] Add/update unit tests for circuit-open behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP11-006 OCR fallback strategy (manual review fallback)
+
+## Plan
+- [completed] Add fallback behavior after retry exhaustion: switch import job to `needs_review` instead of `failed`.
+- [completed] Persist explicit fallback payload with parse issues so user can manually finalize in UI.
+- [completed] Update unit/integration tests for exhausted-retry fallback semantics.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.

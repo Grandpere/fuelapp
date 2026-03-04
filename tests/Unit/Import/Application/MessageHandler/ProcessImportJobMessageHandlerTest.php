@@ -150,7 +150,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         }
     }
 
-    public function testItMarksFailedWhenRetryableProviderErrorExceedsMaxAttempts(): void
+    public function testItMarksNeedsReviewFallbackWhenRetryableProviderErrorExceedsMaxAttempts(): void
     {
         $job = ImportJob::createQueued(
             '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
@@ -178,8 +178,9 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
 
         $saved = $repository->getForSystem($job->id()->toString());
         self::assertNotNull($saved);
-        self::assertSame(ImportJobStatus::FAILED, $saved->status());
+        self::assertSame(ImportJobStatus::NEEDS_REVIEW, $saved->status());
         self::assertStringContainsString('ocr_provider_retryable_exhausted', (string) $saved->errorPayload());
+        self::assertStringContainsString('OCR provider unavailable after retries', (string) $saved->errorPayload());
     }
 
     public function testItMarksJobAsDuplicateWhenFingerprintAlreadyExists(): void

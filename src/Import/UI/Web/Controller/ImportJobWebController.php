@@ -108,15 +108,7 @@ final class ImportJobWebController extends AbstractController
     {
         $files = [];
 
-        $this->collectUploadedFiles($request->files->all('files'), $files);
-        $this->collectUploadedFiles($request->files->get('files'), $files);
-        $this->collectUploadedFiles($request->files->all('files[]'), $files);
-        $this->collectUploadedFiles($request->files->get('files[]'), $files);
-
-        $single = $request->files->get('file');
-        if ($single instanceof UploadedFile) {
-            $files[] = $single;
-        }
+        $this->collectUploadedFiles($request->files->all(), $files);
 
         return $files;
     }

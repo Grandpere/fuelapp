@@ -174,3 +174,13 @@
 - [completed] Update observability runbook with concrete first telemetry checks.
 - [completed] Fix observability runtime by adding ClickHouse backend and explicit SigNoZ DSN credentials.
 - [completed] Run syntax-only verification on touched PHP files (no tests executed).
+
+# TODO - SP3-010 Bulk import (multi-file and ZIP)
+
+## Plan
+- [completed] Add shared bulk upload service for direct files + ZIP extraction with per-file validation and result summary.
+- [completed] Add API bulk endpoint `POST /api/imports/bulk` with OpenAPI docs and deterministic accepted/rejected payload.
+- [completed] Extend `/ui/imports` upload form/controller to support multi-file submit and show summary flash feedback.
+- [completed] Add/update functional coverage for API bulk and web multi-upload flows.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).

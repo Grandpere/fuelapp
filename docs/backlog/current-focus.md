@@ -10,7 +10,7 @@
 - Sprint 10 completed (`SP10-001` to `SP10-005` done).
 
 ## Next tickets (ordered)
-1. `SP3-010` Bulk import multi-file/ZIP
+1. To be confirmed with user
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
@@ -36,6 +36,7 @@
 - `SP3-007` delivered: API review/finalization flow for `needs_review` imports with receipt creation and processed audit payload.
 - `SP3-008` delivered: import regression coverage for OCR/provider/parser failure paths and finalize API error-paths.
 - `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
+- `SP3-010` delivered: bulk import supports multi-file and ZIP uploads with per-file accepted/rejected summary (API + UI).
 - `SP4-001` delivered: admin access model with role hierarchy and explicit `/api/admin` + `/ui/admin` policy gates.
 - `SP4-002` delivered: admin station CRUD APIs and vehicle management APIs (read/update/delete) with basic list filters/search in `/api/admin/*`.
 - `SP4-003` delivered: back-office UI shell/navigation with station and vehicle pages.

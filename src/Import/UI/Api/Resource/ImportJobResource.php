@@ -22,6 +22,7 @@ use ApiPlatform\OpenApi\Model\MediaType;
 use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\RequestBody;
 use ApiPlatform\OpenApi\Model\Response;
+use App\Import\UI\Api\Controller\BulkUploadImportController;
 use App\Import\UI\Api\Controller\UploadImportController;
 use App\Import\UI\Api\Resource\Input\ImportFinalizeInput;
 use App\Import\UI\Api\Resource\Output\ImportJobOutput;
@@ -76,6 +77,43 @@ use ArrayObject;
                     ),
                     '401' => new Response(description: 'Authentication required.'),
                     '422' => new Response(description: 'Validation failed.'),
+                ],
+            ),
+        ),
+        new Post(
+            uriTemplate: '/imports/bulk',
+            controller: BulkUploadImportController::class,
+            deserialize: false,
+            read: false,
+            validate: false,
+            output: false,
+            status: 201,
+            openapi: new Operation(
+                summary: 'Upload multiple receipt files (or ZIP archive) for async import',
+                description: 'Accepts multiple files and ZIP archive, creates one queued import job per valid receipt file.',
+                requestBody: new RequestBody(
+                    description: 'Multipart bulk upload payload.',
+                    required: true,
+                    content: new ArrayObject([
+                        'multipart/form-data' => new MediaType(
+                            schema: new ArrayObject([
+                                'type' => 'object',
+                                'required' => ['files'],
+                                'properties' => [
+                                    'files' => [
+                                        'type' => 'array',
+                                        'items' => ['type' => 'string', 'format' => 'binary'],
+                                    ],
+                                    'file' => ['type' => 'string', 'format' => 'binary'],
+                                ],
+                            ]),
+                        ),
+                    ]),
+                ),
+                responses: [
+                    '201' => new Response(description: 'Bulk import processed with at least one accepted file.'),
+                    '401' => new Response(description: 'Authentication required.'),
+                    '422' => new Response(description: 'No valid file accepted.'),
                 ],
             ),
         ),

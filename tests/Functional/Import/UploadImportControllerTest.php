@@ -29,6 +29,7 @@ use Symfony\Component\HttpKernel\TerminableInterface;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Uid\Uuid;
+use ZipArchive;
 
 final class UploadImportControllerTest extends KernelTestCase
 {
@@ -160,9 +161,99 @@ final class UploadImportControllerTest extends KernelTestCase
         self::assertCount(1, $this->asyncTransport->getSent());
     }
 
+    public function testBulkUploadWithMultipleFilesReturnsAcceptedAndRejectedSummary(): void
+    {
+        $email = 'import.bulk.summary@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+
+        $valid = $this->createUploadedFile('valid.png', $png, 'image/png');
+        $invalid = $this->createUploadedFile('invalid.txt', 'hello', 'text/plain');
+
+        $response = $this->request(
+            'POST',
+            '/api/imports/bulk',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            ['files' => [$valid, $invalid]],
+        );
+
+        self::assertSame(Response::HTTP_CREATED, $response->getStatusCode());
+        /** @var array{
+         *   acceptedCount:int,
+         *   rejectedCount:int,
+         *   accepted:list<array{id:string,status:string,filename:string,source:string}>,
+         *   rejected:list<array{filename:string,reason:string,source:string}>
+         * } $payload
+         */
+        $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(1, $payload['acceptedCount']);
+        self::assertSame(1, $payload['rejectedCount']);
+        self::assertSame('valid.png', $payload['accepted'][0]['filename'] ?? null);
+        self::assertSame('invalid.txt', $payload['rejected'][0]['filename'] ?? null);
+        self::assertStringContainsString('Unsupported file type', $payload['rejected'][0]['reason']);
+
+        $saved = $this->em->getRepository(ImportJobEntity::class)->findBy(['owner' => $user]);
+        self::assertCount(1, $saved);
+        self::assertCount(1, $this->asyncTransport->getSent());
+    }
+
+    public function testBulkUploadWithZipCreatesOneJobPerSupportedEntry(): void
+    {
+        $email = 'import.bulk.zip@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+
+        $zip = $this->createUploadedZipFile('receipts.zip', [
+            'receipt-a.png' => $png,
+            'receipt-b.png' => $png,
+            'notes.txt' => 'ignored',
+        ]);
+
+        $response = $this->request(
+            'POST',
+            '/api/imports/bulk',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            ['files' => [$zip]],
+        );
+
+        self::assertSame(Response::HTTP_CREATED, $response->getStatusCode());
+        /** @var array{
+         *   acceptedCount:int,
+         *   rejectedCount:int,
+         *   accepted:list<array{id:string,status:string,filename:string,source:string}>,
+         *   rejected:list<array{filename:string,reason:string,source:string}>
+         * } $payload
+         */
+        $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(2, $payload['acceptedCount']);
+        self::assertSame(1, $payload['rejectedCount']);
+        self::assertCount(2, $this->asyncTransport->getSent());
+    }
+
     /**
-     * @param array<string, string>       $server
-     * @param array<string, UploadedFile> $files
+     * @param array<string, string> $server
+     * @param array<string, mixed>  $files
      */
     private function request(string $method, string $uri, array $server = [], array $files = [], ?string $content = null): Response
     {
@@ -210,6 +301,29 @@ final class UploadImportControllerTest extends KernelTestCase
         file_put_contents($path, $content);
 
         return new UploadedFile($path, $name, $mimeType, null, true);
+    }
+
+    /**
+     * @param array<string, string> $entries
+     */
+    private function createUploadedZipFile(string $name, array $entries): UploadedFile
+    {
+        if (!class_exists(ZipArchive::class)) {
+            throw new RuntimeException('ZipArchive extension is required for this test.');
+        }
+
+        $path = sys_get_temp_dir().'/fuelapp-import-upload-'.uniqid('', true).'.zip';
+        $zip = new ZipArchive();
+        if (true !== $zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
+            throw new RuntimeException('Unable to create zip fixture.');
+        }
+
+        foreach ($entries as $entryName => $content) {
+            $zip->addFromString($entryName, $content);
+        }
+        $zip->close();
+
+        return new UploadedFile($path, $name, 'application/zip', null, true);
     }
 
     private function resetDatabase(): void

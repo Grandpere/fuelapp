@@ -13,8 +13,8 @@
             <form method="post" enctype="multipart/form-data" data-turbo-frame="_top" style="display:grid; gap:.7rem; max-width: 560px;">
                 <input type="hidden" name="_token" value="{{ csrf_token('ui_import_upload') }}">
                 <label class="label">
-                    Receipt file (PDF/JPEG/PNG/WEBP, max 1MB)
-                    <input class="input" type="file" name="file" accept=".pdf,image/jpeg,image/png,image/webp" required>
+                    Receipt files (PDF/JPEG/PNG/WEBP) or ZIP archive
+                    <input class="input" type="file" name="files[]" accept=".pdf,.zip,image/jpeg,image/png,image/webp" multiple required>
                 </label>
                 <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
                     <button class="btn btn-primary" type="submit">Upload and process</button>

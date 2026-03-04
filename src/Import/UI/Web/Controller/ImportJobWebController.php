@@ -13,10 +13,9 @@ declare(strict_types=1);
 
 namespace App\Import\UI\Web\Controller;
 
-use App\Import\Application\Command\CreateImportJobCommand;
-use App\Import\Application\Command\CreateImportJobHandler;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\ImportJob;
+use App\Import\UI\Upload\BulkImportUploadProcessor;
 use App\Security\AuthenticatedUser;
 use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,26 +23,12 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ImportJobWebController extends AbstractController
 {
-    // OCR.Space free tier hard limit.
-    private const MAX_UPLOAD_SIZE = '1024K';
-
-    /** @var list<string> */
-    private const ALLOWED_MIME_TYPES = [
-        'application/pdf',
-        'image/jpeg',
-        'image/png',
-        'image/webp',
-    ];
-
     public function __construct(
-        private readonly CreateImportJobHandler $createImportJobHandler,
+        private readonly BulkImportUploadProcessor $bulkImportUploadProcessor,
         private readonly ImportJobRepository $importJobRepository,
-        private readonly ValidatorInterface $validator,
     ) {
     }
 
@@ -60,37 +45,32 @@ final class ImportJobWebController extends AbstractController
                 throw $this->createAccessDeniedException('Invalid CSRF token.');
             }
 
-            $uploadedFile = $request->files->get('file');
-            if (!$uploadedFile instanceof UploadedFile) {
-                $this->addFlash('error', 'File is required.');
+            $uploadedFiles = $this->readUploadedFiles($request);
+            if ([] === $uploadedFiles) {
+                $this->addFlash('error', 'At least one file is required.');
 
                 return $this->redirectToRoute('ui_import_index');
             }
 
-            $violations = $this->validator->validate($uploadedFile, [
-                new Assert\File(
-                    maxSize: self::MAX_UPLOAD_SIZE,
-                    mimeTypes: self::ALLOWED_MIME_TYPES,
-                    maxSizeMessage: 'File is too large. Current import limit is 1 MB.',
-                    mimeTypesMessage: 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.',
-                ),
-            ]);
+            $result = $this->bulkImportUploadProcessor->process($user->getId()->toRfc4122(), $uploadedFiles);
+            if ($result->acceptedCount() > 0) {
+                $this->addFlash('success', sprintf(
+                    '%d import job(s) queued%s.',
+                    $result->acceptedCount(),
+                    $result->rejectedCount() > 0 ? sprintf(' (%d rejected)', $result->rejectedCount()) : '',
+                ));
+            }
 
-            if (count($violations) > 0) {
-                foreach ($violations as $violation) {
-                    $this->addFlash('error', (string) $violation->getMessage());
+            foreach ($result->rejected() as $rejection) {
+                $filename = $rejection['filename'];
+                $reason = $rejection['reason'];
+                $source = $rejection['source'];
+                if ($source === $filename) {
+                    $this->addFlash('error', sprintf('%s: %s', $filename, $reason));
+                } else {
+                    $this->addFlash('error', sprintf('%s (%s): %s', $filename, $source, $reason));
                 }
-
-                return $this->redirectToRoute('ui_import_index');
             }
-
-            ($this->createImportJobHandler)(new CreateImportJobCommand(
-                $user->getId()->toRfc4122(),
-                $uploadedFile->getPathname(),
-                $uploadedFile->getClientOriginalName(),
-            ));
-
-            $this->addFlash('success', 'File uploaded. Import job queued.');
 
             return $this->redirectToRoute('ui_import_index');
         }
@@ -119,6 +99,28 @@ final class ImportJobWebController extends AbstractController
                 'duplicate' => 'Duplicate',
             ],
         ]);
+    }
+
+    /**
+     * @return list<UploadedFile>
+     */
+    private function readUploadedFiles(Request $request): array
+    {
+        $files = [];
+
+        $multiple = $request->files->all('files');
+        foreach ($multiple as $item) {
+            if ($item instanceof UploadedFile) {
+                $files[] = $item;
+            }
+        }
+
+        $single = $request->files->get('file');
+        if ($single instanceof UploadedFile) {
+            $files[] = $single;
+        }
+
+        return $files;
     }
 
     private function canAutoFinalize(ImportJob $job): bool

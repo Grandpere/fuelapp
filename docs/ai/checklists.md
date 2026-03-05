@@ -49,6 +49,7 @@ Reusable, update-friendly checklists for delivery quality.
 - [ ] Empty/loading/error states are visible and usable.
 - [ ] Filtering/sorting/export parity verified.
 - [ ] Forms have server-side validation and clear feedback.
+- [ ] In handover, default `make restart-app` to `Recommended` for Twig/UI changes (FrankenPHP hot reload can still miss some updates locally).
 
 ## 7) Importmap/assets checklist
 - [ ] New JS package added to `importmap.php`.

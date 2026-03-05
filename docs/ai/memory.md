@@ -392,3 +392,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: archive entry path checks and copy-time size guards were incomplete in bulk upload processing.
 - Fix: reject dangerous entry paths (`../`, absolute, control chars), cap ZIP entry count, enforce streamed per-entry size limit, and require mime/extension consistency.
 - Prevention: for archive-based uploads, validate path safety and resource limits before creating temp files/jobs.
+
+## 2026-03-05 - FrankenPHP hot reload is not fully reliable for all Twig/UI updates in local setup
+- Symptom: UI text/template change was not visible until manual `make restart-app`.
+- Root cause: despite `hot_reload` + worker watch, local refresh behavior can still miss some template updates depending on runtime/browser state.
+- Fix: keep `make restart-app` as `Recommended` in handover for Twig/UI changes.
+- Prevention: do not report `Not needed` by default for Twig/UI changes; prefer conservative restart guidance.

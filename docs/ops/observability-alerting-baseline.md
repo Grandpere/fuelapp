@@ -67,6 +67,7 @@ Provide a minimal, low-noise alert baseline that detects real incidents early:
 ## Runbook links
 - Local observability guide: `docs/ops/observability-local-signoz.md`
 - Stack decision log: `docs/ops/observability-stack-decision.md`
+- Security observability runbook: `docs/ops/security-observability-runbook.md`
 
 ## Production notes
 - Replace local thresholds with SLO-derived thresholds.

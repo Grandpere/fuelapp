@@ -259,3 +259,12 @@
 - [completed] Add functional regressions for mime-extension mismatch and hostile ZIP entries.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP12-004 Security observability and incident runbook hardening
+
+## Plan
+- [completed] Define security-focused alert baseline and concrete thresholds (auth abuse, upload abuse, admin-sensitive bursts).
+- [completed] Add security query starters and repeatable triage procedure for SigNoZ.
+- [completed] Add local verification checklist for end-to-end alert/runbook validation.
+- [completed] Link security runbook from observability alerting baseline docs.
+- [completed] Documentation-only ticket: no code quality/test commands executed.

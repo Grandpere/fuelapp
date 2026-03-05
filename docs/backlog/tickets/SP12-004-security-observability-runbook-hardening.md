@@ -19,4 +19,4 @@ Security events are logged, but detection and triage should be formalized.
 - Sprint 10 observability baseline.
 
 ## Status
-- todo
+- in_progress

@@ -404,3 +404,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: command returned before web endpoint became ready.
 - Fix: chain `wait-app` after `restart-app` and poll `/ui/login` from inside app container until ready (or timeout).
 - Prevention: keep restart commands blocking until service readiness is confirmed.
+
+## 2026-03-05 - Security hardening sprint needs dedicated observability runbook, not only generic alerts
+- Symptom: security events were logged but incident triage lacked a single operational checklist focused on auth/upload/admin abuse.
+- Root cause: observability docs existed, but security-specific thresholds and response flow were scattered.
+- Fix: add `docs/ops/security-observability-runbook.md` with alert matrix, query starters, triage steps, and local verification flow.
+- Prevention: for security sprint deliverables, always add a dedicated runbook artifact with explicit triggers and response actions.

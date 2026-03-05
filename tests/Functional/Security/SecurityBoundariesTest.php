@@ -128,6 +128,33 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertSame(mb_substr($overlongCorrelationId, 0, 80), $entry->getCorrelationId());
     }
 
+    public function testApiLoginRateLimitReturns429AfterTooManyAttempts(): void
+    {
+        $email = sprintf('rate-limit-%s@example.com', uniqid('', true));
+
+        for ($attempt = 1; $attempt <= 5; ++$attempt) {
+            $response = $this->request(
+                'POST',
+                '/api/login',
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode(['email' => $email, 'password' => 'wrong-password'], JSON_THROW_ON_ERROR),
+            );
+
+            self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+        }
+
+        $limitedResponse = $this->request(
+            'POST',
+            '/api/login',
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['email' => $email, 'password' => 'wrong-password'], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(Response::HTTP_TOO_MANY_REQUESTS, $limitedResponse->getStatusCode());
+        self::assertStringContainsString('Too many login attempts', (string) $limitedResponse->getContent());
+        self::assertNotNull($limitedResponse->headers->get('Retry-After'));
+    }
+
     public function testAnonymousUserGets401OnAdminApiPrefix(): void
     {
         $response = $this->request('GET', '/api/admin/ping');

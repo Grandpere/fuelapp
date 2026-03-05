@@ -17,21 +17,26 @@ use App\Admin\Application\Audit\AdminAuditTrail;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ApiLoginController extends AbstractController
 {
     private const int AUDIT_TARGET_ID_MAX_LENGTH = 120;
+    private const int RATE_LIMITER_KEY_MAX_LENGTH = 200;
 
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly JwtTokenManager $jwtTokenManager,
         private readonly AdminAuditTrail $auditTrail,
+        #[Autowire(service: 'limiter.api_login')]
+        private readonly RateLimiterFactory $apiLoginLimiter,
     ) {
     }
 
@@ -53,6 +58,12 @@ final class ApiLoginController extends AbstractController
             return $this->json(['message' => 'Email and password are required.'], Response::HTTP_BAD_REQUEST);
         }
         $normalizedEmail = mb_strtolower(trim($email));
+        $rateLimitedResponse = $this->consumeRateLimitOrBuildResponse($normalizedEmail, $request->getClientIp());
+        if (null !== $rateLimitedResponse) {
+            $this->recordLoginFailure($normalizedEmail, 'Too many login attempts.');
+
+            return $rateLimitedResponse;
+        }
 
         /** @var UserEntity|null $user */
         $user = $this->em->getRepository(UserEntity::class)->findOneBy(['email' => $normalizedEmail]);
@@ -103,5 +114,30 @@ final class ApiLoginController extends AbstractController
         }
 
         return mb_substr($normalized, 0, self::AUDIT_TARGET_ID_MAX_LENGTH);
+    }
+
+    private function consumeRateLimitOrBuildResponse(string $normalizedEmail, ?string $clientIp): ?JsonResponse
+    {
+        $limiter = $this->apiLoginLimiter->create($this->buildRateLimiterKey($normalizedEmail, $clientIp));
+        $limit = $limiter->consume(1);
+        if ($limit->isAccepted()) {
+            return null;
+        }
+
+        $retryAfter = $limit->getRetryAfter();
+        $retryAfterSeconds = max(1, $retryAfter->getTimestamp() - time());
+
+        $response = $this->json(['message' => 'Too many login attempts. Please try again later.'], Response::HTTP_TOO_MANY_REQUESTS);
+        $response->headers->set('Retry-After', (string) $retryAfterSeconds);
+
+        return $response;
+    }
+
+    private function buildRateLimiterKey(string $normalizedEmail, ?string $clientIp): string
+    {
+        $ip = is_string($clientIp) && '' !== trim($clientIp) ? trim($clientIp) : 'unknown-ip';
+        $rawKey = sprintf('api-login:%s|%s', $normalizedEmail, $ip);
+
+        return mb_substr($rawKey, 0, self::RATE_LIMITER_KEY_MAX_LENGTH);
     }
 }

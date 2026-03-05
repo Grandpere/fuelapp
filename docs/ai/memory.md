@@ -368,3 +368,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: handler threshold used 5 attempts while Messenger transport `async.retry_strategy.max_retries` was 3, so fallback branch was unreachable in production flow.
 - Fix: align handler threshold to 3 and update tests to use `RedeliveryStamp(3)`.
 - Prevention: when implementing retry-based state transitions, always keep handler thresholds aligned with transport retry strategy.
+
+## 2026-03-05 - Login hardening needs explicit rate limiting on both UI and API
+- Symptom: auth flows had no explicit brute-force limits, allowing repeated password attempts without backoff.
+- Root cause: login throttling was not configured on the main firewall and `/api/login` had no dedicated limiter.
+- Fix: enable `login_throttling` on `main` firewall and add `api_login` rate limiter with controlled `429` + `Retry-After` in `ApiLoginController`.
+- Prevention: for each authentication entry point (UI/API), enforce an explicit rate-limit policy and add functional coverage for throttling behavior.

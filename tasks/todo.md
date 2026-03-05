@@ -231,3 +231,12 @@
 - [completed] Update unit/integration tests for exhausted-retry fallback semantics.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP12-001 Auth and session hardening
+
+## Plan
+- [completed] Add UI login throttling policy on main firewall to reduce brute-force attempts.
+- [completed] Add API login limiter (`/api/login`) with controlled `429` response and `Retry-After` header.
+- [completed] Add functional regression for API login rate-limit behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.

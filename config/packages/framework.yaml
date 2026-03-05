@@ -6,6 +6,10 @@ framework:
             policy: 'fixed_window'
             limit: 1
             interval: '1 second'
+        api_login:
+            policy: 'fixed_window'
+            limit: 5
+            interval: '5 minutes'
 
     # Note that the session will be started ONLY if you read or write from it.
     session: true

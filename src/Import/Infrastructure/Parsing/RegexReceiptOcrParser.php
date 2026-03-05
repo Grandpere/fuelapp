@@ -171,6 +171,11 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
                 continue;
             }
 
+            $merged = $this->mergeSplitStreetLineBeforePostalCity($lines, $index, $candidate);
+            if (null !== $merged) {
+                return mb_substr($merged, 0, 255);
+            }
+
             return mb_substr($candidate, 0, 255);
         }
 
@@ -441,31 +446,104 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
     private function extractUnitPriceDeciCentsPerLiter(string $line, string $context): ?int
     {
         if (preg_match('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))\s*(€|eur)?\s*\/\s*l\b/ui', $line, $m)) {
-            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+            return $this->toPlausibleUnitPrice((string) $m['price']);
         }
 
         if (preg_match('/prix\s*unit\.?\s*(?:=|:)?\s*(?P<price>\d+(?:[\.,]\s?\d{2,3}))/ui', $context, $m)) {
-            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+            return $this->toPlausibleUnitPrice((string) $m['price']);
         }
 
         if (preg_match('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))\s*\/\s*[l8]\b/ui', $context, $m)) {
-            return $this->decimalToDeciCentsPerLiter((string) $m['price']);
+            return $this->toPlausibleUnitPrice((string) $m['price']);
         }
 
         if (preg_match('/(?P<major>\d)\s*[\.,]\s*(?P<minor>\d{3})\s*\/\s*[l8]/ui', $context, $m)) {
-            return $this->decimalToDeciCentsPerLiter(sprintf('%s.%s', $m['major'], $m['minor']));
+            return $this->toPlausibleUnitPrice(sprintf('%s.%s', $m['major'], $m['minor']));
         }
 
         if (preg_match('/prix\s*unit\.?\s*(?:=|:)?\s*(?P<major>\d)\s*(?P<minor>\d{3})\s*(?:eur|€)/ui', $context, $m)) {
-            return $this->decimalToDeciCentsPerLiter(sprintf('%s.%s', $m['major'], $m['minor']));
+            return $this->toPlausibleUnitPrice(sprintf('%s.%s', $m['major'], $m['minor']));
+        }
+
+        if (preg_match('/\bprix\b(?P<segment>.{0,64})/ui', $context, $m)) {
+            $segment = (string) $m['segment'];
+
+            if (preg_match('/(?P<major>\d)\s+(?P<minor>\d{3})\b/u', $segment, $splitDigits)) {
+                $candidate = $this->toPlausibleUnitPrice(sprintf('%s.%s', $splitDigits['major'], $splitDigits['minor']));
+                if (null !== $candidate) {
+                    return $candidate;
+                }
+            }
+
+            if (preg_match_all('/(?P<price>\d+(?:[\.,]\s?\d{2,3}))/u', $segment, $matches)) {
+                foreach ($matches['price'] as $price) {
+                    $candidate = $this->toPlausibleUnitPrice((string) $price);
+                    if (null !== $candidate) {
+                        return $candidate;
+                    }
+                }
+            }
         }
 
         return null;
     }
 
+    private function toPlausibleUnitPrice(string $value): ?int
+    {
+        $price = $this->decimalToDeciCentsPerLiter($value);
+        if (null === $price) {
+            return null;
+        }
+
+        // Fuel unit prices outside this range are usually OCR noise or totals.
+        if ($price < 500 || $price > 5000) {
+            return null;
+        }
+
+        return $price;
+    }
+
     private function isNonAddressLine(string $line): bool
     {
         return 1 === preg_match('/\b(tel|phone|carte|visa|debit|ticket|montant|auto|pompe|carburant|quantit[eé]?|prix|tva|vat)\b/ui', $line);
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function mergeSplitStreetLineBeforePostalCity(array $lines, int $postalCityIndex, string $streetTail): ?string
+    {
+        if ($postalCityIndex < 2) {
+            return null;
+        }
+
+        $streetHead = $lines[$postalCityIndex - 2];
+        if ($this->isNonAddressLine($streetHead) || $this->isNonAddressLine($streetTail)) {
+            return null;
+        }
+
+        if (preg_match('/\b\d{5}\b/u', $streetHead) || preg_match('/\b\d{5}\b/u', $streetTail)) {
+            return null;
+        }
+
+        if (preg_match('/\b\d{2}[\/\.-]\d{2}[\/\.-]\d{2,4}\b/u', $streetHead) || preg_match('/\b\d{2}[\/\.-]\d{2}[\/\.-]\d{2,4}\b/u', $streetTail)) {
+            return null;
+        }
+
+        if (!$this->looksLikeStreetHead($streetHead)) {
+            return null;
+        }
+
+        if (!preg_match('/[A-Za-zÀ-ÿ]/u', $streetTail)) {
+            return null;
+        }
+
+        return trim(sprintf('%s %s', $streetHead, $streetTail));
+    }
+
+    private function looksLikeStreetHead(string $line): bool
+    {
+        return 1 === preg_match('/\b(rue|route|avenue|av\.?|boulevard|bd\.?|chemin|all[ée]e|impasse|place|quai|voie|faubourg|lotissement|r[dn]\d*)\b/ui', $line);
     }
 
     private function extractVatAmountFromLine(string $line, int $rate): ?int

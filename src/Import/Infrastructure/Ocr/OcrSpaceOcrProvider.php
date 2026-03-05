@@ -16,18 +16,26 @@ namespace App\Import\Infrastructure\Ocr;
 use App\Import\Application\Ocr\OcrExtraction;
 use App\Import\Application\Ocr\OcrProvider;
 use App\Import\Application\Ocr\OcrProviderException;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Throwable;
 
 final class OcrSpaceOcrProvider implements OcrProvider
 {
+    private const CIRCUIT_OPEN_UNTIL_CACHE_KEY = 'import.ocr_space.circuit_open_until';
+    private const CIRCUIT_FAILURE_COUNT_CACHE_KEY = 'import.ocr_space.circuit_failure_count';
+
     public function __construct(
         private HttpClientInterface $httpClient,
+        private CacheItemPoolInterface $cachePool,
         private string $baseUri,
         private string $apiKey,
         private string $language,
         private int $engine,
+        private int $circuitBreakerFailureThreshold = 3,
+        private int $circuitBreakerFailureWindowSeconds = 60,
+        private int $circuitBreakerOpenSeconds = 180,
     ) {
     }
 
@@ -35,6 +43,10 @@ final class OcrSpaceOcrProvider implements OcrProvider
     {
         if ('' === trim($this->apiKey)) {
             throw OcrProviderException::permanent('OCR provider API key is missing.');
+        }
+
+        if ($this->isCircuitOpen()) {
+            throw OcrProviderException::retryable('OCR.Space circuit breaker is open. Provider temporarily paused.');
         }
 
         $fileHandle = fopen($filePath, 'rb');
@@ -59,6 +71,7 @@ final class OcrSpaceOcrProvider implements OcrProvider
 
             $statusCode = $response->getStatusCode();
             if (429 === $statusCode || $statusCode >= 500) {
+                $this->recordRetryableFailure();
                 throw OcrProviderException::retryable(sprintf('OCR.Space transient error with status code %d.', $statusCode));
             }
 
@@ -70,9 +83,11 @@ final class OcrSpaceOcrProvider implements OcrProvider
                 /** @var array<string, mixed> $payload */
                 $payload = $response->toArray(false);
             } catch (Throwable $throwable) {
+                $this->recordRetryableFailure();
                 throw OcrProviderException::retryable(sprintf('OCR.Space malformed response: %s', $throwable->getMessage()), $throwable);
             }
         } catch (TransportExceptionInterface $transportException) {
+            $this->recordRetryableFailure();
             throw OcrProviderException::retryable(sprintf('OCR.Space transport failure: %s', $transportException->getMessage()), $transportException);
         } finally {
             fclose($fileHandle);
@@ -82,8 +97,15 @@ final class OcrSpaceOcrProvider implements OcrProvider
         if ($isErrored) {
             $message = $this->normalizeProviderErrorMessage($payload['ErrorMessage'] ?? null);
 
+            if ($this->isRetryableProviderError($message)) {
+                $this->recordRetryableFailure();
+                throw OcrProviderException::retryable(sprintf('OCR.Space processing error: %s', $message));
+            }
+
             throw OcrProviderException::permanent(sprintf('OCR.Space processing error: %s', $message));
         }
+
+        $this->resetRetryableFailureState();
 
         $pages = [];
         $parsedResults = $payload['ParsedResults'] ?? null;
@@ -133,5 +155,90 @@ final class OcrSpaceOcrProvider implements OcrProvider
         }
 
         return 'unknown provider error';
+    }
+
+    private function isRetryableProviderError(string $message): bool
+    {
+        $normalized = mb_strtolower(trim($message));
+        if ('' === $normalized) {
+            return false;
+        }
+
+        $retryableHints = [
+            'system resource exhaustion',
+            'ocr binary failed',
+            'timeout',
+            'temporarily unavailable',
+            'try again later',
+            'server busy',
+            'rate limit',
+            'too many requests',
+        ];
+
+        foreach ($retryableHints as $hint) {
+            if (str_contains($normalized, $hint)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isCircuitOpen(): bool
+    {
+        $openUntilItem = $this->cachePool->getItem(self::CIRCUIT_OPEN_UNTIL_CACHE_KEY);
+        if (!$openUntilItem->isHit()) {
+            return false;
+        }
+
+        $openUntil = $openUntilItem->get();
+        if (!is_int($openUntil)) {
+            $this->cachePool->deleteItem(self::CIRCUIT_OPEN_UNTIL_CACHE_KEY);
+
+            return false;
+        }
+
+        if ($openUntil <= time()) {
+            $this->cachePool->deleteItem(self::CIRCUIT_OPEN_UNTIL_CACHE_KEY);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function recordRetryableFailure(): void
+    {
+        $failureThreshold = max(1, $this->circuitBreakerFailureThreshold);
+        $failureWindowSeconds = max(5, $this->circuitBreakerFailureWindowSeconds);
+        $openSeconds = max(5, $this->circuitBreakerOpenSeconds);
+
+        $failureCountItem = $this->cachePool->getItem(self::CIRCUIT_FAILURE_COUNT_CACHE_KEY);
+        $failureCount = 0;
+        if ($failureCountItem->isHit() && is_int($failureCountItem->get())) {
+            $failureCount = (int) $failureCountItem->get();
+        }
+
+        ++$failureCount;
+        $failureCountItem->set($failureCount);
+        $failureCountItem->expiresAfter($failureWindowSeconds);
+        $this->cachePool->save($failureCountItem);
+
+        if ($failureCount < $failureThreshold) {
+            return;
+        }
+
+        $openUntil = time() + $openSeconds;
+        $openUntilItem = $this->cachePool->getItem(self::CIRCUIT_OPEN_UNTIL_CACHE_KEY);
+        $openUntilItem->set($openUntil);
+        $openUntilItem->expiresAfter($openSeconds + 30);
+        $this->cachePool->save($openUntilItem);
+
+        $this->cachePool->deleteItem(self::CIRCUIT_FAILURE_COUNT_CACHE_KEY);
+    }
+
+    private function resetRetryableFailureState(): void
+    {
+        $this->cachePool->deleteItem(self::CIRCUIT_FAILURE_COUNT_CACHE_KEY);
     }
 }

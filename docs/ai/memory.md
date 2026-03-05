@@ -258,6 +258,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 ## 2026-02-21 - Access control assertions need real routed endpoints
 - Symptom: security tests against non-existing URLs returned 404 before access checks, hiding role policy behavior.
 - Root cause: firewall access checks are not a substitute for route existence in functional assertions.
+
+## 2026-03-04 - ZIP upload must validate temporary path before `ZipArchive::open`
+- Symptom: ZIP import could crash with `ZipArchive::open(): Argument #1 ($filename) must not be empty`.
+- Root cause: bulk upload flow called `ZipArchive::open($uploadedFile->getPathname())` without guarding invalid uploads or missing temp files.
+- Fix: reject unusable uploads early (`isValid`, non-empty readable temp pathname) and return a controlled rejected item instead of throwing.
+- Prevention: for every `UploadedFile` processing path, validate upload validity + filesystem availability before any low-level file/zip operation.
 - Fix: add minimal routed admin probes (`/api/admin/ping`, `/ui/admin`) and assert role outcomes on those routes.
 - Prevention: when testing security boundaries, target concrete routes under the protected prefix.
 
@@ -344,3 +350,63 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: OpenTelemetry PHP SDK does not accept `1/0` for boolean env vars like `OTEL_PHP_AUTOLOAD_ENABLED` and `OTEL_SDK_DISABLED`.
 - Fix: use explicit boolean strings (`true`/`false`) in env files.
 - Prevention: for all OTel boolean env vars, never use numeric booleans; enforce textual booleans in `.env*` and docs.
+
+## 2026-03-04 - OCR outage bursts require provider-level circuit breaker
+- Symptom: multiple imports queued during OCR.Space instability kept failing/retrying and amplified provider pressure.
+- Root cause: retry/backoff alone still sent every job to the provider, with no shared short-lived "pause" state.
+- Fix: add cache-backed circuit breaker in `OcrSpaceOcrProvider` (failure counter + open cooldown); when open, fail fast with retryable exception so Messenger retries later without external call.
+- Prevention: for external providers used by async workers, combine retry/backoff with a shared circuit breaker to avoid cascade failures.
+
+## 2026-03-04 - Retry exhaustion fallback should preserve manual import recovery
+- Symptom: after transient OCR outages, imports ended in `failed` and required admin-style retry loops instead of user recovery.
+- Root cause: exhausted retry path marked jobs as permanently failed without creating reviewable payload.
+- Fix: on retry exhaustion, mark job `needs_review` with explicit fallback payload/issue (`OCR provider unavailable after retries`) and keep manual finalize path available.
+- Prevention: for ingest pipelines, prefer degradable `needs_review` fallback over hard-fail when data can still be entered manually.
+
+## 2026-03-04 - Retry exhaustion threshold must match Messenger max retries
+- Symptom: OCR fallback to `needs_review` never appeared in UI/BO despite repeated transient failures.
+- Root cause: handler threshold used 5 attempts while Messenger transport `async.retry_strategy.max_retries` was 3, so fallback branch was unreachable in production flow.
+- Fix: align handler threshold to 3 and update tests to use `RedeliveryStamp(3)`.
+- Prevention: when implementing retry-based state transitions, always keep handler thresholds aligned with transport retry strategy.
+
+## 2026-03-05 - Login hardening needs explicit rate limiting on both UI and API
+- Symptom: auth flows had no explicit brute-force limits, allowing repeated password attempts without backoff.
+- Root cause: login throttling was not configured on the main firewall and `/api/login` had no dedicated limiter.
+- Fix: enable `login_throttling` on `main` firewall and add `api_login` rate limiter with controlled `429` + `Retry-After` in `ApiLoginController`.
+- Prevention: for each authentication entry point (UI/API), enforce an explicit rate-limit policy and add functional coverage for throttling behavior.
+
+## 2026-03-05 - FrankenPHP `hot_reload` requires local Mercure hub in same server config
+- Symptom: Caddy/FrankenPHP config validation failed with `unable to enable hot reloading: no Mercure hub configured`.
+- Root cause: `hot_reload` depends on a Mercure hub being configured on the same FrankenPHP server.
+- Fix: add `mercure { ... }` block to app Caddyfile and validate with `frankenphp validate --adapter caddyfile`.
+- Prevention: when enabling `hot_reload`, always configure Mercure in the same Caddy server block.
+
+## 2026-03-05 - Abuse hardening should return explicit 4xx on oversized and high-frequency API auth/upload inputs
+- Symptom: sensitive endpoints could rely only on infrastructure limits, making abuse controls less explicit at application level.
+- Root cause: no explicit payload-size check on `/api/login` and no dedicated limiter on API upload endpoints.
+- Fix: add login JSON size guard (`413`) and dedicated rate-limiters for `/api/imports` + `/api/imports/bulk` with `429` and `Retry-After`.
+- Prevention: for critical ingress endpoints, define both size and frequency constraints in app logic and cover with functional tests.
+
+## 2026-03-05 - ZIP import hardening must validate entry paths and stream size before OCR handoff
+- Symptom: ZIP imports could accept suspicious entry paths or spend resources copying oversized entries before business validation.
+- Root cause: archive entry path checks and copy-time size guards were incomplete in bulk upload processing.
+- Fix: reject dangerous entry paths (`../`, absolute, control chars), cap ZIP entry count, enforce streamed per-entry size limit, and require mime/extension consistency.
+- Prevention: for archive-based uploads, validate path safety and resource limits before creating temp files/jobs.
+
+## 2026-03-05 - FrankenPHP hot reload is not fully reliable for all Twig/UI updates in local setup
+- Symptom: UI text/template change was not visible until manual `make restart-app`.
+- Root cause: despite `hot_reload` + worker watch, local refresh behavior can still miss some template updates depending on runtime/browser state.
+- Fix: keep `make restart-app` as `Recommended` in handover for Twig/UI changes.
+- Prevention: do not report `Not needed` by default for Twig/UI changes; prefer conservative restart guidance.
+
+## 2026-03-05 - `restart-app` should include readiness wait to avoid transient "site inaccessible"
+- Symptom: right after restart, browser can show temporary connection errors for a few seconds.
+- Root cause: command returned before web endpoint became ready.
+- Fix: chain `wait-app` after `restart-app` and poll `/ui/login` from inside app container until ready (or timeout).
+- Prevention: keep restart commands blocking until service readiness is confirmed.
+
+## 2026-03-05 - Security hardening sprint needs dedicated observability runbook, not only generic alerts
+- Symptom: security events were logged but incident triage lacked a single operational checklist focused on auth/upload/admin abuse.
+- Root cause: observability docs existed, but security-specific thresholds and response flow were scattered.
+- Fix: add `docs/ops/security-observability-runbook.md` with alert matrix, query starters, triage steps, and local verification flow.
+- Prevention: for security sprint deliverables, always add a dedicated runbook artifact with explicit triggers and response actions.

@@ -32,6 +32,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Uid\Uuid;
 use Throwable;
 
@@ -181,15 +182,46 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
             new NullLogger(),
         );
 
-        $this->expectException(OcrProviderException::class);
+        $this->expectException(RecoverableMessageHandlingException::class);
         try {
             $handler(new ProcessImportJobMessage($job->id()->toString()));
         } finally {
             $saved = $this->importJobRepository->getForSystem($job->id()->toString());
             self::assertNotNull($saved);
-            self::assertSame(ImportJobStatus::FAILED, $saved->status());
-            self::assertStringContainsString('ocr_provider_retryable', (string) $saved->errorPayload());
+            self::assertSame(ImportJobStatus::QUEUED, $saved->status());
+            self::assertNull($saved->errorPayload());
         }
+    }
+
+    public function testHandlerMarksNeedsReviewFallbackWhenRetryableProviderErrorExceedsMaxAttempts(): void
+    {
+        $job = $this->createQueuedJob('import.provider.retryable.exhausted@example.com', str_repeat('f', 64));
+
+        $handler = new ProcessImportJobMessageHandler(
+            $this->importJobRepository,
+            new StaticImportFileStorage(),
+            new StaticFileLocator('/tmp/fake.pdf'),
+            new ThrowingOcrProvider(OcrProviderException::retryable('provider timeout')),
+            new StaticReceiptParser(),
+            new NullLogger(),
+        );
+
+        $message = new ProcessImportJobMessage($job->id()->toString());
+        for ($attempt = 1; $attempt <= 3; ++$attempt) {
+            try {
+                $handler($message);
+                self::fail('Expected retryable exception for attempt '.$attempt);
+            } catch (RecoverableMessageHandlingException) {
+            }
+        }
+
+        $handler($message);
+
+        $saved = $this->importJobRepository->getForSystem($job->id()->toString());
+        self::assertNotNull($saved);
+        self::assertSame(ImportJobStatus::NEEDS_REVIEW, $saved->status());
+        self::assertStringContainsString('ocr_provider_retryable_exhausted', (string) $saved->errorPayload());
+        self::assertStringContainsString('OCR provider unavailable after retries', (string) $saved->errorPayload());
     }
 
     public function testHandlerMarksFailedAndRethrowsForUnexpectedParserFailure(): void

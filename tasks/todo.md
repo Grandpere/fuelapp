@@ -174,3 +174,97 @@
 - [completed] Update observability runbook with concrete first telemetry checks.
 - [completed] Fix observability runtime by adding ClickHouse backend and explicit SigNoZ DSN credentials.
 - [completed] Run syntax-only verification on touched PHP files (no tests executed).
+
+# TODO - SP3-010 Bulk import (multi-file and ZIP)
+
+## Plan
+- [completed] Add shared bulk upload service for direct files + ZIP extraction with per-file validation and result summary.
+- [completed] Add API bulk endpoint `POST /api/imports/bulk` with OpenAPI docs and deterministic accepted/rejected payload.
+- [completed] Extend `/ui/imports` upload form/controller to support multi-file submit and show summary flash feedback.
+- [completed] Add/update functional coverage for API bulk and web multi-upload flows.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP3-011 OCR address line reconstruction
+
+## Plan
+- [completed] Add parser heuristic to merge split street line segments before postal/city line when confidence is acceptable.
+- [completed] Add unit coverage for split-address OCR sample (`Route de` + `Troyes`).
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP11 batch A (SP11-002 + SP11-003)
+
+## Plan
+- [completed] SP11-002: harden OCR parser for noisy Volume/Prix ticket patterns with conservative heuristics.
+- [completed] SP11-002: add focused unit tests for new noisy OCR extraction cases.
+- [completed] SP11-003: standardize compact table action button styles across critical front/admin templates.
+- [completed] SP11-003: remove repetitive inline style fragments where shared utility classes can be used.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP11-004 OCR provider retry/backoff hardening
+
+## Plan
+- [completed] Reclassify OCR.Space capacity errors as retryable provider failures.
+- [completed] Add import-handler retry scheduling with explicit backoff delays for retryable OCR errors.
+- [completed] Add retry-attempt ceiling with deterministic exhausted-to-failed fallback.
+- [completed] Update unit/integration tests for queued-on-retryable and exhausted behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP11-005 OCR provider circuit breaker for outage bursts
+
+## Plan
+- [completed] Add OCR.Space circuit breaker state with cache-backed open/failure counters.
+- [completed] Fast-fail provider calls while breaker is open with retryable exception for Messenger.
+- [completed] Reset failure counter after successful OCR extraction.
+- [completed] Add/update unit tests for circuit-open behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP11-006 OCR fallback strategy (manual review fallback)
+
+## Plan
+- [completed] Add fallback behavior after retry exhaustion: switch import job to `needs_review` instead of `failed`.
+- [completed] Persist explicit fallback payload with parse issues so user can manually finalize in UI.
+- [completed] Update unit/integration tests for exhausted-retry fallback semantics.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP12-001 Auth and session hardening
+
+## Plan
+- [completed] Add UI login throttling policy on main firewall to reduce brute-force attempts.
+- [completed] Add API login limiter (`/api/login`) with controlled `429` response and `Retry-After` header.
+- [completed] Add functional regression for API login rate-limit behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP12-002 API abuse protection and input hardening
+
+## Plan
+- [completed] Add explicit payload size guard on `/api/login` with controlled `413` response.
+- [completed] Add rate limiting for `/api/imports` and `/api/imports/bulk` with controlled `429` + `Retry-After`.
+- [completed] Add functional security regressions for oversized login payload and upload/bulk rate limiting.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP12-003 Import/upload security hardening
+
+## Plan
+- [completed] Enforce mime/extension consistency checks for direct and bulk import files.
+- [completed] Harden ZIP entry handling against dangerous paths (`../`, absolute path, control chars).
+- [completed] Add defensive ZIP processing limits (max entries and streamed per-entry size cap).
+- [completed] Add functional regressions for mime-extension mismatch and hostile ZIP entries.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP12-004 Security observability and incident runbook hardening
+
+## Plan
+- [completed] Define security-focused alert baseline and concrete thresholds (auth abuse, upload abuse, admin-sensitive bursts).
+- [completed] Add security query starters and repeatable triage procedure for SigNoZ.
+- [completed] Add local verification checklist for end-to-end alert/runbook validation.
+- [completed] Link security runbook from observability alerting baseline docs.
+- [completed] Documentation-only ticket: no code quality/test commands executed.

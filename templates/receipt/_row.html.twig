@@ -37,12 +37,12 @@
     {% if 'total_cents' in visibleColumns %}<td style="text-align:right; font-weight:700;">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} €</td>{% endif %}
     {% if 'vat_amount_cents' in visibleColumns %}<td style="text-align:right;">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>{% endif %}
     <td style="text-align:right;">
-        <div style="display:inline-flex; gap:0.4rem; align-items:center;" onclick="event.stopPropagation();">
-            <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id}) }}" style="padding:0.35rem 0.7rem; font-size:0.8rem;">View</a>
+        <div class="action-row" onclick="event.stopPropagation();">
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id}) }}">View</a>
             <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id}) }}" onsubmit="return confirm('Delete this receipt?');" style="display:inline;">
                 <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id) }}">
                 <input type="hidden" name="_redirect" value="{{ redirect }}">
-                <button class="btn btn-danger" type="submit" style="padding:0.35rem 0.7rem; font-size:0.8rem;">Delete</button>
+                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
             </form>
         </div>
     </td>

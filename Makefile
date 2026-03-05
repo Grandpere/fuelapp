@@ -79,6 +79,20 @@ ps: ## List containers
 .PHONY: restart-app
 restart-app: ## Restart app container only
 	$(DC) restart app
+	$(MAKE) wait-app
+
+.PHONY: wait-app
+wait-app: ## Wait until app HTTP endpoint responds
+	@echo "Waiting for app readiness (in-container /ui/login check) ..."; \
+	for i in $$(seq 1 45); do \
+		if $(DC_EXEC) php -r 'exit(@file_get_contents("http://127.0.0.1/ui/login") === false ? 1 : 0);' >/dev/null 2>&1; then \
+			echo "App is ready."; \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "App did not become ready within 45s."; \
+	exit 1
 
 
 .PHONY: observability-logs

@@ -30,4 +30,4 @@ Users should be able to import many receipts in one action instead of uploading 
 - SP3-002, SP3-003, SP3-006, SP3-009.
 
 ## Status
-- todo
+- done

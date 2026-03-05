@@ -1,0 +1,28 @@
+{
+	auto_https off
+}
+
+{$SERVER_NAME:localhost} {
+	root * /app/public
+	encode zstd br gzip
+
+	mercure {
+		anonymous
+		publisher_jwt {$MERCURE_JWT_SECRET}
+		subscriber_jwt {$MERCURE_JWT_SECRET}
+	}
+
+	# Dev ergonomics: reload browser + restart worker on source/template/config changes.
+	php_server {
+		hot_reload
+		worker {
+			file /app/public/index.php
+			watch /app/**/*.php
+			watch /app/**/*.twig
+			watch /app/**/*.yaml
+			watch /app/**/*.yml
+			watch /app/.env
+			watch /app/.env.local
+		}
+	}
+}

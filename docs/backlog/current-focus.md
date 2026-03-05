@@ -1,19 +1,29 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 10 - Local observability stack
+- Sprint 11 - Import OCR hardening and UX polish
 
 ## Current goal
-- Sprint 10 complete. Proceed with next product tickets.
+- Deliver OCR hardening on noisy tickets and finish UI consistency polish on critical screens.
 
 ## In progress
-- Sprint 10 completed (`SP10-001` to `SP10-005` done).
+- `SP11-002` - OCR parser hardening for noisy fuel tickets.
+- `SP11-003` - UX consistency polish for front/admin critical views.
 
 ## Next tickets (ordered)
-1. `SP3-010` Bulk import multi-file/ZIP
+1. `SP11-002` - OCR parser hardening for noisy fuel tickets
+2. `SP11-003` - UX consistency polish for front/admin critical views
+3. `SP11-004` - OCR provider retry/backoff hardening
+4. `SP11-005` - OCR provider circuit breaker for outage bursts
+5. `SP11-006` - OCR fallback strategy
+6. `SP11-001` - Microsoft OIDC rollout (deferred)
+7. `SP12-001` to `SP12-004` - dedicated security hardening sprint (planned)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).
+- Microsoft OIDC is explicitly deferred and will be resumed only if needed.
+- A dedicated security hardening sprint is planned as Sprint 12.
+- OCR provider resilience hardening has been added to Sprint 11 (`SP11-004` to `SP11-006`).
 - Sprint 01 target is local auth baseline + resource protection + ownership isolation.
 - Local auth baseline delivered: login page, authenticator, logout, user creation command.
 - API auth strategy for Sprint 1: JWT bearer on `/api` with dedicated login endpoint.
@@ -36,6 +46,8 @@
 - `SP3-007` delivered: API review/finalization flow for `needs_review` imports with receipt creation and processed audit payload.
 - `SP3-008` delivered: import regression coverage for OCR/provider/parser failure paths and finalize API error-paths.
 - `SP3-009` delivered: upload endpoint migrated to native API Platform operation with multipart OpenAPI docs (no custom decorator).
+- `SP3-010` delivered: bulk import supports multi-file and ZIP uploads with per-file accepted/rejected summary (API + UI).
+- `SP3-011` delivered: OCR parser reconstructs split street lines before postal/city when confidence is sufficient.
 - `SP4-001` delivered: admin access model with role hierarchy and explicit `/api/admin` + `/ui/admin` policy gates.
 - `SP4-002` delivered: admin station CRUD APIs and vehicle management APIs (read/update/delete) with basic list filters/search in `/api/admin/*`.
 - `SP4-003` delivered: back-office UI shell/navigation with station and vehicle pages.

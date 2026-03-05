@@ -30,6 +30,9 @@ security:
             lazy: true
             provider: app_user_provider
             user_checker: App\Security\UserStatusChecker
+            login_throttling:
+                max_attempts: 5
+                interval: '5 minutes'
             custom_authenticators:
                 - App\Security\LoginFormAuthenticator
             entry_point: App\Security\LoginFormAuthenticator

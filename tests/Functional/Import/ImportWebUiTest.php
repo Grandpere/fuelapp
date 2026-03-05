@@ -121,12 +121,64 @@ final class ImportWebUiTest extends WebTestCase
         $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('import job(s) queued', $listContent);
         self::assertStringContainsString('ticket.png', $listContent);
         self::assertStringContainsString('Queued', $listContent);
         self::assertStringContainsString('data-controller="row-link"', $listContent);
 
         $saved = $this->em->getRepository(ImportJobEntity::class)->findOneBy(['originalFilename' => 'ticket.png']);
         self::assertInstanceOf(ImportJobEntity::class, $saved);
+    }
+
+    public function testUserCanUploadMultipleFilesFromUiInSingleSubmit(): void
+    {
+        $email = 'import.web.multi@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $pageResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $pageResponse->getStatusCode());
+        $pageContent = (string) $pageResponse->getContent();
+
+        preg_match('/name="_token" value="([^"]+)"/', $pageContent, $matches);
+        $csrfToken = $matches[1] ?? null;
+        self::assertIsString($csrfToken);
+
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+
+        $uploadResponse = $this->request(
+            'POST',
+            '/ui/imports',
+            ['_token' => $csrfToken],
+            [
+                'files' => [
+                    $this->createUploadedFile('ticket-a.png', $png, 'image/png'),
+                    $this->createUploadedFile('ticket-b.png', $png, 'image/png'),
+                ],
+            ],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_FOUND, $uploadResponse->getStatusCode());
+
+        $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('ticket-a.png', $listContent);
+        self::assertStringContainsString('ticket-b.png', $listContent);
+
+        $savedA = $this->em->getRepository(ImportJobEntity::class)->findOneBy(['originalFilename' => 'ticket-a.png']);
+        $savedB = $this->em->getRepository(ImportJobEntity::class)->findOneBy(['originalFilename' => 'ticket-b.png']);
+        self::assertInstanceOf(ImportJobEntity::class, $savedA);
+        self::assertInstanceOf(ImportJobEntity::class, $savedB);
     }
 
     public function testUserCanFinalizeNeedsReviewImportFromUi(): void
@@ -328,9 +380,55 @@ final class ImportWebUiTest extends WebTestCase
         self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
     }
 
+    public function testUserCanDeleteOwnImportFromUiDetailWhenNotReviewable(): void
+    {
+        $email = 'import.web.detail.delete@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::FAILED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/20/to-delete-from-detail.jpg');
+        $job->setOriginalFilename('to-delete-from-detail.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('e', 64));
+        $job->setErrorPayload('{"error":"ocr failed"}');
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-20 10:46:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-20 10:46:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-20 10:46:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('/ui/imports/'.$jobId.'/delete', $detailContent);
+        $deleteToken = $this->extractDeleteCsrfToken($detailContent, $jobId);
+
+        $deleteResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$jobId.'/delete',
+            ['_token' => $deleteToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $deleteResponse->getStatusCode());
+        self::assertSame('/ui/imports', $deleteResponse->headers->get('Location'));
+
+        $this->em->clear();
+        self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
-     * @param array<string, UploadedFile>               $files
+     * @param array<string, mixed>                      $files
      * @param array<string, string>                     $cookies
      */
     private function request(string $method, string $uri, array $parameters = [], array $files = [], array $cookies = []): Response

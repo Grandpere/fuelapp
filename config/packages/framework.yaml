@@ -6,6 +6,18 @@ framework:
             policy: 'fixed_window'
             limit: 1
             interval: '1 second'
+        api_login:
+            policy: 'fixed_window'
+            limit: 5
+            interval: '5 minutes'
+        api_import_upload:
+            policy: 'fixed_window'
+            limit: 20
+            interval: '5 minutes'
+        api_import_bulk:
+            policy: 'fixed_window'
+            limit: 10
+            interval: '5 minutes'
 
     # Note that the session will be started ONLY if you read or write from it.
     session: true

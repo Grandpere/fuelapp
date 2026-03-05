@@ -13,3 +13,5 @@ Import receipts from image/PDF without blocking user requests.
 - [SP3-007 - Manual review flow for ambiguous imports](tickets/SP3-007-manual-review-flow.md) - P1 - done
 - [SP3-008 - Import tests and error-path coverage](tickets/SP3-008-import-tests-error-paths.md) - P0 - done
 - [SP3-009 - Optional API Platform native upload operation refactor](tickets/SP3-009-api-platform-native-upload-operation.md) - P2 - done
+- [SP3-010 - Bulk import (multi-file and ZIP)](tickets/SP3-010-bulk-import-multi-file-zip.md) - P1 - done
+- [SP3-011 - OCR address line reconstruction (multi-line street)](tickets/SP3-011-ocr-address-line-reconstruction.md) - P1 - done

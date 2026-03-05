@@ -29,6 +29,7 @@ services:
       - mercure
     volumes:
       - ../..:/app
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
 
 ###> doctrine/doctrine-bundle ###
   database:

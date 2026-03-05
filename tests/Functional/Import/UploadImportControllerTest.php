@@ -161,6 +161,34 @@ final class UploadImportControllerTest extends KernelTestCase
         self::assertCount(1, $this->asyncTransport->getSent());
     }
 
+    public function testUploadRejectsMimeExtensionMismatch(): void
+    {
+        $email = 'import.mime.extension.mismatch@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+        $mismatched = $this->createUploadedFile('ticket.pdf', $png, 'image/png');
+
+        $response = $this->request(
+            'POST',
+            '/api/imports',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            ['file' => $mismatched],
+        );
+
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        self::assertStringContainsString('does not match detected content type', (string) $response->getContent());
+    }
+
     public function testBulkUploadWithMultipleFilesReturnsAcceptedAndRejectedSummary(): void
     {
         $email = 'import.bulk.summary@example.com';
@@ -252,6 +280,73 @@ final class UploadImportControllerTest extends KernelTestCase
         self::assertSame(1, $payload['rejectedCount']);
         self::assertSame('notes.txt', $payload['rejected'][0]['filename'] ?? null);
         self::assertCount(2, $this->asyncTransport->getSent());
+    }
+
+    public function testBulkZipRejectsPathTraversalEntries(): void
+    {
+        $email = 'import.bulk.zip.path.traversal@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+
+        $zip = $this->createUploadedZipFile('dangerous.zip', [
+            '../escape.png' => $png,
+            'ok.png' => $png,
+        ]);
+
+        $response = $this->request(
+            'POST',
+            '/api/imports/bulk',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            ['files' => [$zip]],
+        );
+
+        self::assertSame(Response::HTTP_CREATED, $response->getStatusCode());
+        /** @var array{
+         *   acceptedCount:int,
+         *   rejectedCount:int,
+         *   accepted:list<array{id:string,status:string,filename:string,source:string}>,
+         *   rejected:list<array{filename:string,reason:string,source:string}>
+         * } $payload
+         */
+        $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(1, $payload['acceptedCount']);
+        self::assertSame(1, $payload['rejectedCount']);
+        self::assertStringContainsString('ZIP entry path is not allowed', $payload['rejected'][0]['reason'] ?? '');
+    }
+
+    public function testBulkZipRejectsOversizedEntryBeforeProcessing(): void
+    {
+        $email = 'import.bulk.zip.oversized@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $oversizedPng = str_repeat('A', 1_050_000);
+        $zip = $this->createUploadedZipFile('oversized.zip', [
+            'too-big.png' => $oversizedPng,
+        ]);
+
+        $response = $this->request(
+            'POST',
+            '/api/imports/bulk',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            ['files' => [$zip]],
+        );
+
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        self::assertStringContainsString('File is too large. Current import limit is 1 MB.', (string) $response->getContent());
+        self::assertCount(0, $this->asyncTransport->getSent());
     }
 
     public function testUploadEndpointRateLimitReturns429AfterTooManyAttempts(): void

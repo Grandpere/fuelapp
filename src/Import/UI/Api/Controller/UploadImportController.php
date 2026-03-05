@@ -30,6 +30,7 @@ final class UploadImportController extends AbstractController
 {
     // OCR.Space free tier hard limit.
     private const MAX_UPLOAD_SIZE = '1024K';
+    private const MAX_UPLOAD_BYTES = 1_048_576;
     private const int RATE_LIMITER_KEY_MAX_LENGTH = 200;
 
     /** @var list<string> */
@@ -38,6 +39,13 @@ final class UploadImportController extends AbstractController
         'image/jpeg',
         'image/png',
         'image/webp',
+    ];
+    /** @var array<string, list<string>> */
+    private const EXTENSIONS_BY_MIME = [
+        'application/pdf' => ['pdf'],
+        'image/jpeg' => ['jpg', 'jpeg'],
+        'image/png' => ['png'],
+        'image/webp' => ['webp'],
     ];
 
     public function __construct(
@@ -89,6 +97,17 @@ final class UploadImportController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        $mimeExtensionError = $this->mimeExtensionMismatchReason(
+            $uploadedFile->getPathname(),
+            $uploadedFile->getClientOriginalName(),
+        );
+        if (null !== $mimeExtensionError) {
+            return $this->json([
+                'message' => 'Validation failed.',
+                'errors' => [['field' => 'file', 'message' => $mimeExtensionError]],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         $job = ($this->handler)(new CreateImportJobCommand(
             $user->getId()->toRfc4122(),
             $uploadedFile->getPathname(),
@@ -127,5 +146,34 @@ final class UploadImportController extends AbstractController
         $rawKey = sprintf('api-import-upload:%s|%s', $userId, $ip);
 
         return mb_substr($rawKey, 0, self::RATE_LIMITER_KEY_MAX_LENGTH);
+    }
+
+    private function mimeExtensionMismatchReason(string $sourcePath, string $originalFilename): ?string
+    {
+        $extension = strtolower((string) pathinfo($originalFilename, PATHINFO_EXTENSION));
+        if ('' === $extension) {
+            return 'File extension is required (pdf, jpg, jpeg, png, webp).';
+        }
+
+        $detectedMime = @mime_content_type($sourcePath);
+        if (!is_string($detectedMime) || '' === trim($detectedMime)) {
+            return 'Unable to determine uploaded file type.';
+        }
+
+        $normalizedMime = strtolower(trim($detectedMime));
+        $allowedExtensions = self::EXTENSIONS_BY_MIME[$normalizedMime] ?? null;
+        if (null === $allowedExtensions) {
+            return 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.';
+        }
+
+        if (filesize($sourcePath) > self::MAX_UPLOAD_BYTES) {
+            return 'File is too large. Current import limit is 1 MB.';
+        }
+
+        if (!in_array($extension, $allowedExtensions, true)) {
+            return sprintf('File extension ".%s" does not match detected content type "%s".', $extension, $normalizedMime);
+        }
+
+        return null;
     }
 }

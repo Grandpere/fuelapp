@@ -386,3 +386,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: no explicit payload-size check on `/api/login` and no dedicated limiter on API upload endpoints.
 - Fix: add login JSON size guard (`413`) and dedicated rate-limiters for `/api/imports` + `/api/imports/bulk` with `429` and `Retry-After`.
 - Prevention: for critical ingress endpoints, define both size and frequency constraints in app logic and cover with functional tests.
+
+## 2026-03-05 - ZIP import hardening must validate entry paths and stream size before OCR handoff
+- Symptom: ZIP imports could accept suspicious entry paths or spend resources copying oversized entries before business validation.
+- Root cause: archive entry path checks and copy-time size guards were incomplete in bulk upload processing.
+- Fix: reject dangerous entry paths (`../`, absolute, control chars), cap ZIP entry count, enforce streamed per-entry size limit, and require mime/extension consistency.
+- Prevention: for archive-based uploads, validate path safety and resource limits before creating temp files/jobs.

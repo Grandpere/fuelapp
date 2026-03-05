@@ -249,3 +249,13 @@
 - [completed] Add functional security regressions for oversized login payload and upload/bulk rate limiting.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP12-003 Import/upload security hardening
+
+## Plan
+- [completed] Enforce mime/extension consistency checks for direct and bulk import files.
+- [completed] Harden ZIP entry handling against dangerous paths (`../`, absolute path, control chars).
+- [completed] Add defensive ZIP processing limits (max entries and streamed per-entry size cap).
+- [completed] Add functional regressions for mime-extension mismatch and hostile ZIP entries.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.

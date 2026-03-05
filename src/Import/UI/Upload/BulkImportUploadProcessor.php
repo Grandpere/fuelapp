@@ -26,6 +26,8 @@ final readonly class BulkImportUploadProcessor
 {
     // OCR.Space free tier hard limit.
     private const MAX_RECEIPT_UPLOAD_SIZE = '1024K';
+    private const MAX_RECEIPT_UPLOAD_BYTES = 1_048_576;
+    private const MAX_ZIP_ENTRIES = 50;
 
     /** @var list<string> */
     private const ALLOWED_RECEIPT_MIME_TYPES = [
@@ -40,6 +42,13 @@ final readonly class BulkImportUploadProcessor
         'application/zip',
         'application/x-zip-compressed',
         'multipart/x-zip',
+    ];
+    /** @var array<string, list<string>> */
+    private const EXTENSIONS_BY_MIME = [
+        'application/pdf' => ['pdf'],
+        'image/jpeg' => ['jpg', 'jpeg'],
+        'image/png' => ['png'],
+        'image/webp' => ['webp'],
     ];
 
     public function __construct(
@@ -111,6 +120,13 @@ final readonly class BulkImportUploadProcessor
         try {
             $entryCount = 0;
             for ($index = 0; $index < $zipArchive->numFiles; ++$index) {
+                if ($entryCount >= self::MAX_ZIP_ENTRIES) {
+                    $filename = $uploadedFile->getClientOriginalName();
+                    $result->addRejected($filename, sprintf('ZIP archive contains too many files. Limit is %d entries.', self::MAX_ZIP_ENTRIES), $filename);
+
+                    break;
+                }
+
                 $entryName = (string) $zipArchive->getNameIndex($index);
                 if ('' === $entryName || str_ends_with($entryName, '/')) {
                     continue;
@@ -141,6 +157,12 @@ final readonly class BulkImportUploadProcessor
         BulkImportUploadResult $result,
     ): void {
         $source = sprintf('%s:%s', $archiveFilename, $entryName);
+        if ($this->isDangerousZipEntryPath($entryName)) {
+            $result->addRejected($entryName, 'ZIP entry path is not allowed.', $source);
+
+            return;
+        }
+
         $filename = basename($entryName);
         if ('' === $filename || '.' === $filename || '..' === $filename) {
             $result->addRejected($entryName, 'Invalid file entry in ZIP archive.', $source);
@@ -172,8 +194,29 @@ final readonly class BulkImportUploadProcessor
             return;
         }
 
+        $copiedBytes = 0;
         try {
-            stream_copy_to_stream($stream, $tmpHandle);
+            while (!feof($stream)) {
+                $chunk = fread($stream, 8192);
+                if (false === $chunk) {
+                    $result->addRejected($filename, 'Unable to read file entry from ZIP archive.', $source);
+
+                    return;
+                }
+
+                if ('' === $chunk) {
+                    continue;
+                }
+
+                $copiedBytes += strlen($chunk);
+                if ($copiedBytes > self::MAX_RECEIPT_UPLOAD_BYTES) {
+                    $result->addRejected($filename, 'File is too large. Current import limit is 1 MB.', $source);
+
+                    return;
+                }
+
+                fwrite($tmpHandle, $chunk);
+            }
         } finally {
             fclose($tmpHandle);
             fclose($stream);
@@ -209,6 +252,13 @@ final readonly class BulkImportUploadProcessor
                 break;
             }
             $result->addRejected($originalFilename, $message, $source);
+
+            return;
+        }
+
+        $mimeExtensionError = $this->mimeExtensionMismatchReason($sourcePath, $originalFilename);
+        if (null !== $mimeExtensionError) {
+            $result->addRejected($originalFilename, $mimeExtensionError, $source);
 
             return;
         }
@@ -307,5 +357,48 @@ final readonly class BulkImportUploadProcessor
         }
 
         return '.DS_Store' === $basename;
+    }
+
+    private function isDangerousZipEntryPath(string $entryName): bool
+    {
+        $normalized = str_replace('\\', '/', trim($entryName));
+        if ('' === $normalized) {
+            return true;
+        }
+
+        if (str_starts_with($normalized, '/')) {
+            return true;
+        }
+
+        if (1 === preg_match('/(^|\/)\.\.(\/|$)/', $normalized)) {
+            return true;
+        }
+
+        return 1 === preg_match('/[\x00-\x1F\x7F]/', $normalized);
+    }
+
+    private function mimeExtensionMismatchReason(string $sourcePath, string $originalFilename): ?string
+    {
+        $extension = strtolower((string) pathinfo($originalFilename, PATHINFO_EXTENSION));
+        if ('' === $extension) {
+            return 'File extension is required (pdf, jpg, jpeg, png, webp).';
+        }
+
+        $detectedMime = @mime_content_type($sourcePath);
+        if (!is_string($detectedMime) || '' === trim($detectedMime)) {
+            return 'Unable to determine uploaded file type.';
+        }
+
+        $normalizedMime = strtolower(trim($detectedMime));
+        $allowedExtensions = self::EXTENSIONS_BY_MIME[$normalizedMime] ?? null;
+        if (null === $allowedExtensions) {
+            return 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.';
+        }
+
+        if (!in_array($extension, $allowedExtensions, true)) {
+            return sprintf('File extension ".%s" does not match detected content type "%s".', $extension, $normalizedMime);
+        }
+
+        return null;
     }
 }

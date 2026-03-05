@@ -398,3 +398,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: despite `hot_reload` + worker watch, local refresh behavior can still miss some template updates depending on runtime/browser state.
 - Fix: keep `make restart-app` as `Recommended` in handover for Twig/UI changes.
 - Prevention: do not report `Not needed` by default for Twig/UI changes; prefer conservative restart guidance.
+
+## 2026-03-05 - `restart-app` should include readiness wait to avoid transient "site inaccessible"
+- Symptom: right after restart, browser can show temporary connection errors for a few seconds.
+- Root cause: command returned before web endpoint became ready.
+- Fix: chain `wait-app` after `restart-app` and poll `/ui/login` from inside app container until ready (or timeout).
+- Prevention: keep restart commands blocking until service readiness is confirmed.

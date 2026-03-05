@@ -374,3 +374,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: login throttling was not configured on the main firewall and `/api/login` had no dedicated limiter.
 - Fix: enable `login_throttling` on `main` firewall and add `api_login` rate limiter with controlled `429` + `Retry-After` in `ApiLoginController`.
 - Prevention: for each authentication entry point (UI/API), enforce an explicit rate-limit policy and add functional coverage for throttling behavior.
+
+## 2026-03-05 - FrankenPHP `hot_reload` requires local Mercure hub in same server config
+- Symptom: Caddy/FrankenPHP config validation failed with `unable to enable hot reloading: no Mercure hub configured`.
+- Root cause: `hot_reload` depends on a Mercure hub being configured on the same FrankenPHP server.
+- Fix: add `mercure { ... }` block to app Caddyfile and validate with `frankenphp validate --adapter caddyfile`.
+- Prevention: when enabling `hot_reload`, always configure Mercure in the same Caddy server block.

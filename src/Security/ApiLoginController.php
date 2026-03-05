@@ -29,6 +29,7 @@ final class ApiLoginController extends AbstractController
 {
     private const int AUDIT_TARGET_ID_MAX_LENGTH = 120;
     private const int RATE_LIMITER_KEY_MAX_LENGTH = 200;
+    private const int MAX_LOGIN_JSON_BODY_BYTES = 4096;
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -43,7 +44,14 @@ final class ApiLoginController extends AbstractController
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
     public function __invoke(Request $request): JsonResponse
     {
-        $payload = json_decode($request->getContent(), true);
+        $rawContent = $request->getContent();
+        if (strlen($rawContent) > self::MAX_LOGIN_JSON_BODY_BYTES) {
+            $this->recordLoginFailure('payload_too_large', 'Login payload too large.');
+
+            return $this->json(['message' => 'Request payload too large.'], Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+        }
+
+        $payload = json_decode($rawContent, true);
         if (!is_array($payload)) {
             $this->recordLoginFailure('invalid_payload', 'Invalid JSON payload.');
 

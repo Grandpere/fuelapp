@@ -155,6 +155,24 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertNotNull($limitedResponse->headers->get('Retry-After'));
     }
 
+    public function testApiLoginOversizedPayloadReturns413(): void
+    {
+        $oversizedPayload = json_encode([
+            'email' => str_repeat('a', 5000).'@example.com',
+            'password' => 'x',
+        ], JSON_THROW_ON_ERROR);
+
+        $response = $this->request(
+            'POST',
+            '/api/login',
+            ['CONTENT_TYPE' => 'application/json'],
+            $oversizedPayload,
+        );
+
+        self::assertSame(Response::HTTP_REQUEST_ENTITY_TOO_LARGE, $response->getStatusCode());
+        self::assertStringContainsString('Request payload too large.', (string) $response->getContent());
+    }
+
     public function testAnonymousUserGets401OnAdminApiPrefix(): void
     {
         $response = $this->request('GET', '/api/admin/ping');

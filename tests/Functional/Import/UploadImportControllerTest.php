@@ -254,6 +254,62 @@ final class UploadImportControllerTest extends KernelTestCase
         self::assertCount(2, $this->asyncTransport->getSent());
     }
 
+    public function testUploadEndpointRateLimitReturns429AfterTooManyAttempts(): void
+    {
+        $email = sprintf('import.upload.rate.%s@example.com', uniqid('', true));
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        for ($attempt = 1; $attempt <= 20; ++$attempt) {
+            $response = $this->request(
+                'POST',
+                '/api/imports',
+                ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            );
+            self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        }
+
+        $limited = $this->request(
+            'POST',
+            '/api/imports',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+
+        self::assertSame(Response::HTTP_TOO_MANY_REQUESTS, $limited->getStatusCode());
+        self::assertStringContainsString('Too many upload attempts', (string) $limited->getContent());
+        self::assertNotNull($limited->headers->get('Retry-After'));
+    }
+
+    public function testBulkUploadEndpointRateLimitReturns429AfterTooManyAttempts(): void
+    {
+        $email = sprintf('import.bulk.rate.%s@example.com', uniqid('', true));
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        for ($attempt = 1; $attempt <= 10; ++$attempt) {
+            $response = $this->request(
+                'POST',
+                '/api/imports/bulk',
+                ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            );
+            self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        }
+
+        $limited = $this->request(
+            'POST',
+            '/api/imports/bulk',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+
+        self::assertSame(Response::HTTP_TOO_MANY_REQUESTS, $limited->getStatusCode());
+        self::assertStringContainsString('Too many bulk upload attempts', (string) $limited->getContent());
+        self::assertNotNull($limited->headers->get('Retry-After'));
+    }
+
     /**
      * @param array<string, string> $server
      * @param array<string, mixed>  $files

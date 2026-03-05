@@ -240,3 +240,12 @@
 - [completed] Add functional regression for API login rate-limit behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures.
+
+# TODO - SP12-002 API abuse protection and input hardening
+
+## Plan
+- [completed] Add explicit payload size guard on `/api/login` with controlled `413` response.
+- [completed] Add rate limiting for `/api/imports` and `/api/imports/bulk` with controlled `429` + `Retry-After`.
+- [completed] Add functional security regressions for oversized login payload and upload/bulk rate limiting.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures.

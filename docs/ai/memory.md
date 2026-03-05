@@ -380,3 +380,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: `hot_reload` depends on a Mercure hub being configured on the same FrankenPHP server.
 - Fix: add `mercure { ... }` block to app Caddyfile and validate with `frankenphp validate --adapter caddyfile`.
 - Prevention: when enabling `hot_reload`, always configure Mercure in the same Caddy server block.
+
+## 2026-03-05 - Abuse hardening should return explicit 4xx on oversized and high-frequency API auth/upload inputs
+- Symptom: sensitive endpoints could rely only on infrastructure limits, making abuse controls less explicit at application level.
+- Root cause: no explicit payload-size check on `/api/login` and no dedicated limiter on API upload endpoints.
+- Fix: add login JSON size guard (`413`) and dedicated rate-limiters for `/api/imports` + `/api/imports/bulk` with `429` and `Retry-After`.
+- Prevention: for critical ingress endpoints, define both size and frequency constraints in app logic and cover with functional tests.

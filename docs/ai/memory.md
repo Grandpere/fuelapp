@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-13 - OCR.Space 1MB limit should be handled before provider call
+- Symptom: imports could fail with provider-side validation when image uploads exceeded OCR.Space size limit.
+- Root cause: OCR adapter sent original stored files directly without pre-upload size normalization.
+- Fix: add local image optimization (resize + JPEG quality loop) for oversized JPEG/PNG/WEBP, upload temporary optimized copy only, keep original file unchanged.
+- Prevention: for external OCR/AI providers with strict payload limits, enforce adapter-level normalization and explicit target-size thresholds before HTTP calls.
+
 ## 2026-03-03 - Analytics export links must propagate active dashboard filters
 - Symptom: `/ui/analytics` with `vehicle_id` filter could export receipts from other vehicles.
 - Root cause: analytics dashboard export params omitted `vehicle_id`, and export-side filtering did not apply vehicle constraint.
@@ -410,3 +416,21 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: observability docs existed, but security-specific thresholds and response flow were scattered.
 - Fix: add `docs/ops/security-observability-runbook.md` with alert matrix, query starters, triage steps, and local verification flow.
 - Prevention: for security sprint deliverables, always add a dedicated runbook artifact with explicit triggers and response actions.
+
+## 2026-03-13 - Import upload limits should be split by file family for OCR workflows
+- Symptom: valid receipt images >1MB were rejected at upload stage before OCR auto-compression could run.
+- Root cause: a single global 1MB upload limit was enforced for all file types in API and bulk upload validators.
+- Fix: set upload limits to 8MB for images (JPEG/PNG/WEBP) and keep 1MB for PDF, with explicit user-facing messaging.
+- Prevention: when provider constraints differ by media type, enforce differentiated limits in upload validation instead of one global cap.
+
+## 2026-03-13 - GD pre-processing must respect PHP memory budget in worker context
+- Symptom: async worker crashed with `Allowed memory size exhausted` during OCR image optimization.
+- Root cause: oversized image resampling (`imagecreatetruecolor`) was attempted without checking available runtime memory budget.
+- Fix: add pre-allocation guards based on `memory_limit`, current memory usage, pixel estimation, and safety margins; skip risky GD processing and fail with deterministic business error instead of fatal crash.
+- Prevention: any image transformation in workers must include memory-budget checks before creating GD resources.
+
+## 2026-03-13 - OCR parser must be validated against real noisy payloads, not only idealized fixtures
+- Symptom: imports from user-provided receipts had frequent missing fields despite data being present in OCR text.
+- Root cause: parser heuristics were tuned on clean fixtures and failed on compact/single-line payloads (city over-capture, station/street mis-detection, fuel patterns like `Excellium 98`).
+- Fix: harden parser with real-sample-driven rules (postal pattern `L-xxxx`, city sanitation, stricter street candidate logic, noisy quantity/unit-price extraction) and add dedicated regression tests.
+- Prevention: for OCR parsing changes, always include at least one regression fixture copied from production-like payloads.

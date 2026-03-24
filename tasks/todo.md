@@ -201,7 +201,7 @@
 - [completed] SP11-003: standardize compact table action button styles across critical front/admin templates.
 - [completed] SP11-003: remove repetitive inline style fragments where shared utility classes can be used.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP11-004 OCR provider retry/backoff hardening
 
@@ -218,10 +218,19 @@
 ## Plan
 - [completed] Add OCR.Space circuit breaker state with cache-backed open/failure counters.
 - [completed] Fast-fail provider calls while breaker is open with retryable exception for Messenger.
+
+# TODO - SP11-013 OCR image auto-resize over provider 1MB limit
+
+## Plan
+- [completed] Add OCR provider pre-upload image optimization for oversized JPEG/PNG/WEBP files.
+- [completed] Keep original stored file untouched; send only optimized temporary copy to OCR.
+- [completed] Add unit coverage for oversized image optimization path.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 - [completed] Reset failure counter after successful OCR extraction.
 - [completed] Add/update unit tests for circuit-open behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP11-006 OCR fallback strategy (manual review fallback)
 
@@ -230,7 +239,7 @@
 - [completed] Persist explicit fallback payload with parse issues so user can manually finalize in UI.
 - [completed] Update unit/integration tests for exhausted-retry fallback semantics.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP12-001 Auth and session hardening
 
@@ -268,3 +277,24 @@
 - [completed] Add local verification checklist for end-to-end alert/runbook validation.
 - [completed] Link security runbook from observability alerting baseline docs.
 - [completed] Documentation-only ticket: no code quality/test commands executed.
+
+# TODO - SP11-014 OCR parser hardening on real uploaded samples
+
+## Plan
+- [completed] Analyze current OCR payloads/parsed drafts from real uploaded samples in DB (`import_jobs`).
+- [completed] Improve station/postal/city extraction for compact/noisy OCR formats (including `L-5751` postal pattern).
+- [completed] Tighten street fallback to avoid technical tokens (`a000...`) and select more plausible address candidates.
+- [completed] Improve fuel line parsing for noisy patterns (`Excellium 98`, parenthesized quantity, split unit price forms).
+- [completed] Add unit regressions reproducing real sample patterns.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP11-013 follow-up upload thresholds by file type
+
+## Plan
+- [completed] Keep OCR-side image auto-compression flow and raise upload intake for images to 8 MB.
+- [completed] Keep PDF upload limit at 1 MB to match OCR provider constraint and fail fast with explicit message.
+- [completed] Align API bulk/UI messages with split limits (8 MB images, 1 MB PDF).
+- [completed] Update focused functional coverage on oversized ZIP entry behavior and message.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.

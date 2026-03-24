@@ -161,6 +161,17 @@ messenger-failed-show: ## Show failed messenger messages stats
 messenger-failed-retry-all: ## Retry all failed messenger messages
 	$(DC_EXEC) php bin/console messenger:failed:retry --force --all
 
+.PHONY: import-debug-parse
+import-debug-parse: ## Debug-parse an import OCR payload (JOB_ID=... or FILENAME=...)
+	@if [ -n "$(JOB_ID)" ]; then \
+		$(DC_EXEC) php bin/console app:import:debug-parse "$(JOB_ID)" --pretty; \
+	elif [ -n "$(FILENAME)" ]; then \
+		$(DC_EXEC) php bin/console app:import:debug-parse --filename "$(FILENAME)" --pretty; \
+	else \
+		echo "Usage: make import-debug-parse JOB_ID=<uuid> OR make import-debug-parse FILENAME=<file>"; \
+		exit 1; \
+	fi
+
 ##
 ## Database
 ##---------------------------------------------------------------------------

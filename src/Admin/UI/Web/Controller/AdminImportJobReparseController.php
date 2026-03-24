@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of a FuelApp project.
+ *
+ * (c) Lorenzo Marozzo <lorenzo.marozzo@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Admin\UI\Web\Controller;
+
+use App\Admin\Application\Audit\AdminAuditTrail;
+use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Application\Review\ImportJobPayloadReparser;
+use InvalidArgumentException;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Uid\Uuid;
+
+final class AdminImportJobReparseController extends AbstractController
+{
+    public function __construct(
+        private readonly ImportJobRepository $importJobRepository,
+        private readonly ImportJobPayloadReparser $importJobPayloadReparser,
+        private readonly AdminAuditTrail $auditTrail,
+    ) {
+    }
+
+    #[Route('/ui/admin/imports/{id}/reparse', name: 'ui_admin_import_job_reparse', requirements: ['id' => self::UUID_ROUTE_REQUIREMENT], methods: ['POST'])]
+    public function __invoke(string $id, Request $request): RedirectResponse
+    {
+        if (!Uuid::isValid($id)) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$this->isCsrfTokenValid('admin_import_reparse_'.$id, (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+
+            return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
+        }
+
+        $job = $this->importJobRepository->getForSystem($id);
+        if (null === $job) {
+            throw $this->createNotFoundException();
+        }
+
+        try {
+            $this->importJobPayloadReparser->reparse($job);
+            $this->importJobRepository->save($job);
+            $this->auditTrail->record(
+                'admin.import.reparse.ui',
+                'import_job',
+                $id,
+                ['after' => ['status' => $job->status()->value]],
+            );
+            $this->addFlash('success', 'Import payload reparsed with current parser rules.');
+        } catch (InvalidArgumentException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
+    }
+
+    private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';
+}

@@ -380,6 +380,120 @@ final class ImportWebUiTest extends WebTestCase
         self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
     }
 
+    public function testUserCanReparseNeedsReviewImportFromUi(): void
+    {
+        $email = 'import.web.reparse@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/21/reparse.jpg');
+        $job->setOriginalFilename('reparse.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('f', 64));
+        $job->setErrorPayload(json_encode([
+            'jobId' => 'job-reparse',
+            'provider' => 'ocr_space',
+            'text' => "PETRO EST\nLECLERC BELLE IDEE 10100 ROMILLY SUR SEINE\nle 14/12/24 a 15:07:08\nMONTANT REEL 40,32 EUR\nCarburant = GAZOLE\n= 25,25 L\nPrix unit. = 1,597 EUR\nTVA 20,00% = 6,72 EUR",
+            'pages' => [],
+            'parsedDraft' => [
+                'stationStreetName' => null,
+                'creationPayload' => null,
+            ],
+            'status' => 'needs_review',
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-21 10:46:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-21 10:46:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-21 10:46:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('/ui/imports/'.$jobId.'/reparse', $detailContent);
+        $reparseToken = $this->extractReparseCsrfToken($detailContent, $jobId, false);
+
+        $reparseResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$jobId.'/reparse',
+            ['_token' => $reparseToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $reparseResponse->getStatusCode());
+
+        $this->em->clear();
+        $updated = $this->em->find(ImportJobEntity::class, $jobId);
+        self::assertInstanceOf(ImportJobEntity::class, $updated);
+        $payload = json_decode((string) $updated->getErrorPayload(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+        self::assertArrayHasKey('parsedDraft', $payload);
+        self::assertIsArray($payload['parsedDraft']);
+        self::assertSame('LECLERC BELLE IDEE', $payload['parsedDraft']['stationStreetName'] ?? null);
+        self::assertArrayHasKey('creationPayload', $payload['parsedDraft']);
+        self::assertIsArray($payload['parsedDraft']['creationPayload']);
+        self::assertSame('LECLERC BELLE IDEE', $payload['parsedDraft']['creationPayload']['stationStreetName'] ?? null);
+    }
+
+    public function testReviewHighlightsMissingIssuedAtWhenOcrDidNotDetectDate(): void
+    {
+        $email = 'import.web.missing-date@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/24/missing-date.jpg');
+        $job->setOriginalFilename('missing-date.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('b', 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'stationName' => 'TOTAL',
+                'stationStreetName' => '40 Rue Robert Schuman',
+                'stationPostalCode' => 'L-5751',
+                'stationCity' => 'FRISANGE',
+                'issuedAt' => null,
+                'lines' => [[
+                    'fuelType' => 'sp98',
+                    'quantityMilliLiters' => 51240,
+                    'unitPriceDeciCentsPerLiter' => 1068,
+                    'vatRatePercent' => 5,
+                ]],
+                'issues' => ['issued_at_missing'],
+                'creationPayload' => null,
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-24 11:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-24 11:00:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-24 11:00:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $reviewResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $reviewResponse->getStatusCode());
+        $reviewContent = (string) $reviewResponse->getContent();
+        self::assertStringContainsString('Date required before finalization', $reviewContent);
+        self::assertStringContainsString('Required for this import: OCR did not detect the receipt date.', $reviewContent);
+        self::assertStringContainsString('name="issuedAt"', $reviewContent);
+    }
+
     public function testUserCanDeleteOwnImportFromUiDetailWhenNotReviewable(): void
     {
         $email = 'import.web.detail.delete@example.com';
@@ -499,6 +613,19 @@ final class ImportWebUiTest extends WebTestCase
     private function extractDeleteCsrfToken(string $content, string $jobId): string
     {
         $pattern = '#/ui/imports/'.preg_quote($jobId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractReparseCsrfToken(string $content, string $jobId, bool $admin): string
+    {
+        $prefix = $admin ? '/ui/admin/imports/' : '/ui/imports/';
+        $pattern = '#'.preg_quote($prefix.$jobId.'/reparse', '#').'.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

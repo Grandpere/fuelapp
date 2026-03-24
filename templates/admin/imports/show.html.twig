@@ -5,14 +5,17 @@
 {% set admin_section = 'imports' %}
 
 {% block admin_content %}
+    {% set parsedDraft = payloadData is not null and payloadData.parsedDraft is defined and payloadData.parsedDraft is iterable ? payloadData.parsedDraft : null %}
     {% set creationPayload = payloadData is not null and payloadData.creationPayload is defined and payloadData.creationPayload is iterable ? payloadData.creationPayload : null %}
-    {% set firstLine = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable and creationPayload.lines|length > 0 ? creationPayload.lines|first : null %}
+    {% set firstLine = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable and creationPayload.lines|length > 0 ? creationPayload.lines|first : (parsedDraft is not null and parsedDraft.lines is defined and parsedDraft.lines is iterable and parsedDraft.lines|length > 0 ? parsedDraft.lines|first : null) %}
+    {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
+    {% set issuedAtMissing = 'issued_at_missing' in issueList %}
 
     <section class="card admin-panel">
         <h2 class="page-title">Import Job Detail</h2>
         <p class="muted">Detailed payload and processing metadata for troubleshooting.</p>
 
-        <dl class="admin-dl" style="margin-top: 1rem;">
+        <dl class="admin-dl admin-table-top">
             <dt class="admin-dt">ID</dt>
             <dd class="admin-dd">{{ job.id.toString }}</dd>
             <dt class="admin-dt">Status</dt>
@@ -44,33 +47,66 @@
         </dl>
 
         {% if payloadData is not null %}
-            <div class="card-subtle" style="margin-top: 1rem; padding: .9rem;">
-                <p style="margin: 0 0 .5rem; font-weight: 700;">Decoded payload</p>
-                <pre style="margin: 0; overflow:auto; white-space: pre-wrap; font-size: .82rem;">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <p class="text-block-title">Decoded payload</p>
+                <pre class="preformatted-block">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
             </div>
         {% elseif payload %}
-            <div class="card-subtle" style="margin-top: 1rem; padding: .9rem;">
-                <p style="margin: 0 0 .5rem; font-weight: 700;">Raw payload</p>
-                <pre style="margin: 0; overflow:auto; white-space: pre-wrap; font-size: .82rem;">{{ payload }}</pre>
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <p class="text-block-title">Raw payload</p>
+                <pre class="preformatted-block">{{ payload }}</pre>
             </div>
         {% else %}
-            <p class="muted" style="margin-top: 1rem;">No payload available.</p>
+            <p class="muted admin-table-top">No payload available.</p>
         {% endif %}
 
-        <div style="margin-top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+        <div class="actions-wrap admin-table-top">
             <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}" data-turbo-frame="_top">Back to list</a>
             <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}" data-turbo-frame="_top">Open user API resource</a>
             <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry" data-turbo-frame="_top">Open admin retry endpoint</a>
-            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');" style="display: inline-flex;">
+            {% if job.status.value == 'needs_review' %}
+                <form method="post" action="{{ path('ui_admin_import_job_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_import_reparse_' ~ job.id.toString) }}">
+                    <button class="btn btn-secondary" type="submit">Reparse</button>
+                </form>
+            {% endif %}
+            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
                 <button class="btn btn-danger" type="submit">Delete</button>
             </form>
         </div>
     </section>
 
+    {% if payloadData is not null and payloadData.fallbackReason is defined %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">OCR fallback</h3>
+            <p class="muted">
+                {{ payloadData.fallbackNotice is defined ? payloadData.fallbackNotice : 'Automatic OCR is temporarily unavailable. Manual review remains available with the original uploaded file.' }}
+            </p>
+            <div class="actions-wrap">
+                <span class="pill status-pill status-needs_review">{{ payloadData.fallbackStrategy is defined ? payloadData.fallbackStrategy|replace({'_': ' '}) : 'manual review' }}</span>
+                <span class="muted compact-note">{{ payloadData.fallbackReason }}</span>
+            </div>
+        </section>
+    {% endif %}
+
+    {% if issueList|length > 0 %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Detected issues</h3>
+            <p class="muted">{{ issueList|join(', ') }}</p>
+        </section>
+    {% endif %}
+
+    {% if issuedAtMissing %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Date required before finalization</h3>
+            <p class="muted">OCR could not read the receipt date. Enter the receipt date and time below before finalizing this import.</p>
+        </section>
+    {% endif %}
+
     {% if job.status.value == 'failed' %}
-        <section class="card admin-panel" style="margin-top: 1rem;">
-            <h3 style="margin-top: 0;">Retry Failed Job</h3>
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Retry Failed Job</h3>
             <p class="muted">Queue this failed import job for async reprocessing.</p>
             <form method="post" action="{{ path('ui_admin_import_job_retry', {id: job.id.toString}) }}" data-turbo-frame="_top">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_retry_' ~ job.id.toString) }}">
@@ -80,33 +116,34 @@
     {% endif %}
 
     {% if job.status.value == 'needs_review' %}
-        <section class="card admin-panel" style="margin-top: 1rem;">
-            <h3 style="margin-top: 0;">Fix And Finalize</h3>
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Fix And Finalize</h3>
             <p class="muted">Optional corrections can be provided before finalization. Leave fields empty to use payload values.</p>
 
-            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" style="display: grid; gap: .8rem;">
+            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="section-card" style="padding: 0;">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_finalize_' ~ job.id.toString) }}">
 
                 <div class="form-grid-2">
                     <label class="label">
                         Issued at
-                        <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\\\TH:i') : '' }}">
+                        <span class="muted compact-note">{{ issuedAtMissing ? 'Required for this import: OCR did not detect the receipt date.' : 'Use the receipt date/time. Leave empty only when OCR already filled it.' }}</span>
+                        <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\\\TH:i') : (parsedDraft is not null and parsedDraft.issuedAt is defined and parsedDraft.issuedAt is not null ? parsedDraft.issuedAt|date('Y-m-d\\\\TH:i') : '') }}">
                     </label>
                     <label class="label">
                         Station name
-                        <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : '' }}">
+                        <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : (parsedDraft is not null and parsedDraft.stationName is defined ? parsedDraft.stationName : '') }}">
                     </label>
                     <label class="label">
                         Station street
-                        <input class="input" type="text" name="stationStreetName" value="{{ creationPayload is not null and creationPayload.stationStreetName is defined ? creationPayload.stationStreetName : '' }}">
+                        <input class="input" type="text" name="stationStreetName" value="{{ creationPayload is not null and creationPayload.stationStreetName is defined ? creationPayload.stationStreetName : (parsedDraft is not null and parsedDraft.stationStreetName is defined ? parsedDraft.stationStreetName : '') }}">
                     </label>
                     <label class="label">
                         Station postal code
-                        <input class="input" type="text" name="stationPostalCode" value="{{ creationPayload is not null and creationPayload.stationPostalCode is defined ? creationPayload.stationPostalCode : '' }}">
+                        <input class="input" type="text" name="stationPostalCode" value="{{ creationPayload is not null and creationPayload.stationPostalCode is defined ? creationPayload.stationPostalCode : (parsedDraft is not null and parsedDraft.stationPostalCode is defined ? parsedDraft.stationPostalCode : '') }}">
                     </label>
                     <label class="label">
                         Station city
-                        <input class="input" type="text" name="stationCity" value="{{ creationPayload is not null and creationPayload.stationCity is defined ? creationPayload.stationCity : '' }}">
+                        <input class="input" type="text" name="stationCity" value="{{ creationPayload is not null and creationPayload.stationCity is defined ? creationPayload.stationCity : (parsedDraft is not null and parsedDraft.stationCity is defined ? parsedDraft.stationCity : '') }}">
                     </label>
                     <label class="label">
                         Latitude (micro degrees)
@@ -118,7 +155,7 @@
                     </label>
                     <label class="label">
                         Odometer (km)
-                        <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : '' }}" min="0" step="1">
+                        <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : (parsedDraft is not null and parsedDraft.odometerKilometers is defined ? parsedDraft.odometerKilometers : '') }}" min="0" step="1">
                     </label>
                     <label class="label">
                         Line fuel type
@@ -138,7 +175,7 @@
                     </label>
                 </div>
 
-                <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+                <div class="actions-wrap">
                     <button class="btn btn-primary" type="submit">Finalize job</button>
                     <a class="btn btn-secondary" href="/api/docs">Finalize from API docs</a>
                 </div>

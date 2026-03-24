@@ -28,9 +28,10 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class UploadImportController extends AbstractController
 {
-    // OCR.Space free tier hard limit.
-    private const MAX_UPLOAD_SIZE = '1024K';
-    private const MAX_UPLOAD_BYTES = 1_048_576;
+    private const MAX_IMAGE_UPLOAD_SIZE = '8M';
+    private const MAX_IMAGE_UPLOAD_BYTES = 8_388_608;
+    private const MAX_PDF_UPLOAD_BYTES = 1_048_576;
+    private const SIZE_LIMIT_MESSAGE = 'File is too large. Current import limits: 8 MB for images, 1 MB for PDF.';
     private const int RATE_LIMITER_KEY_MAX_LENGTH = 200;
 
     /** @var list<string> */
@@ -78,9 +79,9 @@ final class UploadImportController extends AbstractController
 
         $violations = $this->validator->validate($uploadedFile, [
             new Assert\File(
-                maxSize: self::MAX_UPLOAD_SIZE,
+                maxSize: self::MAX_IMAGE_UPLOAD_SIZE,
                 mimeTypes: self::ALLOWED_MIME_TYPES,
-                maxSizeMessage: 'File is too large. Current import limit is 1 MB.',
+                maxSizeMessage: self::SIZE_LIMIT_MESSAGE,
                 mimeTypesMessage: 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.',
             ),
         ]);
@@ -166,8 +167,10 @@ final class UploadImportController extends AbstractController
             return 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.';
         }
 
-        if (filesize($sourcePath) > self::MAX_UPLOAD_BYTES) {
-            return 'File is too large. Current import limit is 1 MB.';
+        $maxBytes = 'application/pdf' === $normalizedMime ? self::MAX_PDF_UPLOAD_BYTES : self::MAX_IMAGE_UPLOAD_BYTES;
+        $fileSize = filesize($sourcePath);
+        if (is_int($fileSize) && $fileSize > $maxBytes) {
+            return self::SIZE_LIMIT_MESSAGE;
         }
 
         if (!in_array($extension, $allowedExtensions, true)) {

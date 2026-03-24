@@ -222,6 +222,8 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         self::assertSame(ImportJobStatus::NEEDS_REVIEW, $saved->status());
         self::assertStringContainsString('ocr_provider_retryable_exhausted', (string) $saved->errorPayload());
         self::assertStringContainsString('OCR provider unavailable after retries', (string) $saved->errorPayload());
+        self::assertStringContainsString('manual_review', (string) $saved->errorPayload());
+        self::assertStringContainsString('Manual review remains available', (string) $saved->errorPayload());
     }
 
     public function testHandlerMarksFailedAndRethrowsForUnexpectedParserFailure(): void

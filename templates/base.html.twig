@@ -196,6 +196,117 @@
                     flex-wrap: wrap;
                 }
 
+                .page-stack {
+                    display: grid;
+                    gap: 1rem;
+                }
+
+                .page-header {
+                    display: grid;
+                    gap: 0.35rem;
+                }
+
+                .section-card {
+                    padding: 1rem;
+                    display: grid;
+                    gap: 0.8rem;
+                }
+
+                .section-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    gap: 0.6rem;
+                    flex-wrap: wrap;
+                }
+
+                .section-title {
+                    margin: 0;
+                    font-size: 1.05rem;
+                    font-family: "Space Grotesk", sans-serif;
+                }
+
+                .section-lead {
+                    margin: 0;
+                }
+
+                .actions-wrap {
+                    display: flex;
+                    gap: 0.6rem;
+                    flex-wrap: wrap;
+                }
+
+                .kv-grid {
+                    display: grid;
+                    grid-template-columns: 180px 1fr;
+                    gap: 0.35rem 0.8rem;
+                    margin: 0;
+                }
+
+                .kv-grid dd {
+                    margin: 0;
+                }
+
+                .text-right {
+                    text-align: right;
+                }
+
+                .action-cell {
+                    white-space: nowrap;
+                }
+
+                .action-cell .action-row {
+                    white-space: normal;
+                }
+
+                .row-link {
+                    cursor: pointer;
+                }
+
+                .status-pill {
+                    background: rgba(142, 175, 199, 0.18);
+                    border: 1px solid rgba(142, 175, 199, 0.3);
+                    color: #1d1405;
+                }
+
+                .status-pill.status-queued,
+                .status-pill.status-processing,
+                .status-pill.status-processed {
+                    background: #b5f05c;
+                    border-color: rgba(109, 171, 24, 0.55);
+                }
+
+                .status-pill.status-needs_review {
+                    background: #ffd27a;
+                    border-color: rgba(224, 157, 24, 0.55);
+                }
+
+                .status-pill.status-failed {
+                    background: #ff7373;
+                    border-color: rgba(203, 67, 53, 0.55);
+                }
+
+                .status-pill.status-duplicate {
+                    background: #9fdefe;
+                    border-color: rgba(54, 180, 252, 0.55);
+                }
+
+                .text-block-title {
+                    margin: 0 0 0.5rem;
+                    font-weight: 700;
+                }
+
+                .preformatted-block {
+                    margin: 0;
+                    overflow: auto;
+                    white-space: pre-wrap;
+                    font-size: 0.82rem;
+                }
+
+                .compact-note {
+                    font-size: 0.78rem;
+                }
+
                 .input,
                 .select {
                     width: 100%;
@@ -292,6 +403,21 @@
                     border-color: rgba(255, 95, 86, 0.5);
                     background: rgba(103, 33, 40, 0.4);
                     color: #ffd6d4;
+                }
+
+                .card-subtle-block {
+                    padding: 0.9rem;
+                }
+
+                .icon-btn {
+                    padding: 0.35rem 0.7rem;
+                    font-size: 0.8rem;
+                }
+
+                @media (max-width: 700px) {
+                    .kv-grid {
+                        grid-template-columns: 1fr;
+                    }
                 }
 
                 .flatpickr-calendar {

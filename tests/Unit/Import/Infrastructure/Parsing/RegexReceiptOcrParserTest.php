@@ -218,6 +218,38 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertSame(20, $draft->lines[0]->vatRatePercent);
     }
 
+    public function testItInfersFuelMetricsWhenNoisyLabelsAreShiftedAcrossLines(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                E Leclerc L
+                Petro- EST
+                Leclerc Centre Auto
+                Route de Troyes
+                51120 SEZANNE
+                Le 20/02/26 a 13:55:36
+                MONTANT REEL
+                44, 42 EUR
+                No pompe GAZOLE 1
+                Carburant 28,64
+                Quantite 551 EUR
+                Prix unit. 7,40 EUR 1
+                TVA 20,00%
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertCount(1, $draft->lines);
+        self::assertSame('diesel', $draft->lines[0]->fuelType);
+        self::assertSame(28_640, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1551, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+    }
+
     public function testItParsesUnitPriceFromPrixLabelWithoutPerLiterSuffix(): void
     {
         $ocr = new OcrExtraction(
@@ -247,5 +279,209 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertSame('diesel', $draft->lines[0]->fuelType);
         self::assertSame(40_400, $draft->lines[0]->quantityMilliLiters);
         self::assertSame(1769, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+    }
+
+    public function testItParsesLuxembourgPostalFormatAndExcellium98Line(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                TOTAL
+                TOTAL FRISANGE 40
+                40 Rue Robert Schuman
+                L-5751 FRISANGE
+                TICKET CLIENT
+                *Excellium 98 5 € 54.72
+                (COL. 7; 51.24 l * € 1.068/l)
+                TOTAL 54.72
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('TOTAL', $draft->stationName);
+        self::assertSame('40 Rue Robert Schuman', $draft->stationStreetName);
+        self::assertSame('L-5751', $draft->stationPostalCode);
+        self::assertSame('FRISANGE', $draft->stationCity);
+        self::assertSame(5472, $draft->totalCents);
+        self::assertCount(1, $draft->lines);
+        self::assertSame('sp98', $draft->lines[0]->fuelType);
+        self::assertSame(51_240, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1068, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+    }
+
+    public function testItSkipsTechnicalTokenAsStreetCandidate(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                INTERMARCHE
+                a0000000421010
+                41300 NOYERS SUR CHER CARTE BANCAIRE
+                MONTANT REEL 34.11 EUR
+                Carburant = E10
+                Prix unit. 1,619 EUR
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('INTERMARCHE', $draft->stationName);
+        self::assertNull($draft->stationStreetName);
+        self::assertSame('41300', $draft->stationPostalCode);
+        self::assertSame('NOYERS SUR CHER', $draft->stationCity);
+        self::assertSame(3411, $draft->totalCents);
+    }
+
+    public function testItExtractsInlineLocationAliasBeforePostalCityWhenNoStreetLineExists(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                E Leclerc PETRO EST 0352780130 LECLERC BELLE IDEE 10100 ROMILLY SUR SEINE
+                le 14/12/24 a 15:07:08
+                MONTANT REEL 40,32 EUR
+                Carburant = GAZOLE
+                Quantite = 25,25 L
+                Prix unit. = 1,597 EUR
+                TVA 20,00% = 6,72 EUR
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('LECLERC BELLE IDEE', $draft->stationStreetName);
+        self::assertSame('10100', $draft->stationPostalCode);
+        self::assertSame('ROMILLY SUR SEINE', $draft->stationCity);
+        self::assertIsArray($draft->toArray()['creationPayload']);
+    }
+
+    public function testItParsesMontantReelWhenAmountAppearsBeforeLabelInCompactOcrLine(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            '... € 59.56 11.91 20.00 € 71.47 : 1.769/1 Gazole ... DEBIT EUR 71.47 MONTANT REEL ... 51120 SEZANNE PETRO EST LECLERC ...',
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame(7147, $draft->totalCents);
+        self::assertSame('PETRO EST', $draft->stationName);
+        self::assertSame('51120', $draft->stationPostalCode);
+        self::assertSame('SEZANNE', $draft->stationCity);
+        self::assertSame(1191, $draft->vatAmountCents);
+        self::assertCount(1, $draft->lines);
+        self::assertSame(1769, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+        self::assertSame(40400, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(20, $draft->lines[0]->vatRatePercent);
+        self::assertNotContains('fuel_line_quantity_missing', $draft->issues);
+        self::assertNotContains('fuel_line_vat_rate_missing', $draft->issues);
+    }
+
+    public function testItFlagsMissingUnitPriceAndQuantityOnIncompleteFuelLine(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                STATION TEST
+                12 Rue Exemple
+                75010 PARIS
+                Date 02/03/2026 14:30
+                Gazole 71.47
+                TOTAL TTC 71.47
+                TVA 20.00 % 11.91
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertContains('fuel_line_quantity_missing', $draft->issues);
+        self::assertContains('fuel_line_unit_price_missing', $draft->issues);
+        self::assertContains('fuel_lines_incomplete', $draft->issues);
+        self::assertNull($draft->toArray()['creationPayload']);
+    }
+
+    public function testItParsesSplitPostalStreetAndInfersFuelMetricsFromBarePriceCandidate(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                TOTAL
+                RELAIS BAYONNE STE CROIX
+                STATION
+                20.
+                AVENUE MARECHAL JUIN
+                64100
+                BAYONNE
+                06/10/2019 09:41:22
+                Diesel
+                420 EUR Iltre
+                Total 85,27
+                TVA incluse
+                20.00% 85.27 14.21
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('20 AVENUE MARECHAL JUIN', $draft->stationStreetName);
+        self::assertSame('64100', $draft->stationPostalCode);
+        self::assertSame('BAYONNE', $draft->stationCity);
+        self::assertCount(1, $draft->lines);
+        self::assertSame('diesel', $draft->lines[0]->fuelType);
+        self::assertSame(60_050, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1420, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+        self::assertSame(20, $draft->lines[0]->vatRatePercent);
+        self::assertNotContains('fuel_lines_missing', $draft->issues);
+        self::assertNotContains('station_postal_city_missing', $draft->issues);
+    }
+
+    public function testItRejectsDiscountSentenceAsStreetAndKeepsStandaloneCity(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                INTERMARCHE
+                STATION DAC LE 05-11-22 A 17-04-32
+                NOYERS SUR CHER
+                No AUTO: 456580 MONTANT REEL
+                DEBIT 34.11 EUR
+                Carburant = E10
+                Quantite = 21,07 L
+                Prix unit. 1,619 EUR
+                TVA 20,00% = 5,69 EUR
+                vous beneficiez d'une remise 30 centimes d'euro TTC
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('STATION DAC', $draft->stationStreetName);
+        self::assertNull($draft->stationPostalCode);
+        self::assertSame('NOYERS SUR CHER', $draft->stationCity);
+        self::assertCount(1, $draft->lines);
+        self::assertSame(21_070, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1619, $draft->lines[0]->unitPriceDeciCentsPerLiter);
     }
 }

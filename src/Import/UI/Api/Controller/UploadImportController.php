@@ -77,6 +77,14 @@ final class UploadImportController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        $uploadUnusableReason = $this->uploadUnusableReason($uploadedFile);
+        if (null !== $uploadUnusableReason) {
+            return $this->json([
+                'message' => 'Validation failed.',
+                'errors' => [['field' => 'file', 'message' => $uploadUnusableReason]],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         $violations = $this->validator->validate($uploadedFile, [
             new Assert\File(
                 maxSize: self::MAX_IMAGE_UPLOAD_SIZE,
@@ -147,6 +155,45 @@ final class UploadImportController extends AbstractController
         $rawKey = sprintf('api-import-upload:%s|%s', $userId, $ip);
 
         return mb_substr($rawKey, 0, self::RATE_LIMITER_KEY_MAX_LENGTH);
+    }
+
+    private function uploadUnusableReason(UploadedFile $uploadedFile): ?string
+    {
+        if (!$uploadedFile->isValid()) {
+            if (\UPLOAD_ERR_OK === $uploadedFile->getError()) {
+                return 'Uploaded file is invalid or temporary file is unavailable.';
+            }
+
+            return $this->uploadErrorMessage($uploadedFile->getError());
+        }
+
+        $pathname = $uploadedFile->getPathname();
+        if ('' === $pathname) {
+            return 'Uploaded file is invalid or temporary file is unavailable.';
+        }
+
+        if (!is_file($pathname) || !is_readable($pathname)) {
+            return 'Uploaded file is invalid or temporary file is unavailable.';
+        }
+
+        return null;
+    }
+
+    private function uploadErrorMessage(int $errorCode): string
+    {
+        return match ($errorCode) {
+            \UPLOAD_ERR_INI_SIZE => sprintf(
+                'Upload rejected by server: file exceeds PHP limit (%s).',
+                (string) ini_get('upload_max_filesize'),
+            ),
+            \UPLOAD_ERR_FORM_SIZE => 'Upload rejected: file exceeds HTML form limit.',
+            \UPLOAD_ERR_PARTIAL => 'Upload failed: file was only partially uploaded.',
+            \UPLOAD_ERR_NO_FILE => 'Upload failed: no file was uploaded.',
+            \UPLOAD_ERR_NO_TMP_DIR => 'Upload failed: missing temporary directory on server.',
+            \UPLOAD_ERR_CANT_WRITE => 'Upload failed: unable to write file to disk.',
+            \UPLOAD_ERR_EXTENSION => 'Upload blocked by a PHP extension.',
+            default => 'Uploaded file is invalid or temporary file is unavailable.',
+        };
     }
 
     private function mimeExtensionMismatchReason(string $sourcePath, string $originalFilename): ?string

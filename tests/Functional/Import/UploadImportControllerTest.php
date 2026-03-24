@@ -121,6 +121,38 @@ final class UploadImportControllerTest extends KernelTestCase
         self::assertSame('file', $payload['errors'][0]['field']);
     }
 
+    public function testUploadWithPhpLevelUploadErrorReturnsControlledValidationResponse(): void
+    {
+        $email = 'import.invalid.upload@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'fuelapp-upload-invalid-');
+        if (false === $temporaryPath) {
+            throw new RuntimeException('Unable to create temporary upload fixture.');
+        }
+        file_put_contents($temporaryPath, 'broken');
+        $upload = new UploadedFile($temporaryPath, 'broken.png', 'image/png', \UPLOAD_ERR_PARTIAL, true);
+
+        $response = $this->request(
+            'POST',
+            '/api/imports',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            ['file' => $upload],
+        );
+
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        /** @var array{message: string, errors: list<array{field: string, message: string}>} $payload */
+        $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('Validation failed.', $payload['message']);
+        self::assertSame('file', $payload['errors'][0]['field']);
+        self::assertSame('Upload failed: file was only partially uploaded.', $payload['errors'][0]['message']);
+
+        @unlink($temporaryPath);
+    }
+
     public function testValidUploadCreatesQueuedImportJob(): void
     {
         $email = 'import.success@example.com';

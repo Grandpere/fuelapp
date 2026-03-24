@@ -415,4 +415,73 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertContains('fuel_lines_incomplete', $draft->issues);
         self::assertNull($draft->toArray()['creationPayload']);
     }
+
+    public function testItParsesSplitPostalStreetAndInfersFuelMetricsFromBarePriceCandidate(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                TOTAL
+                RELAIS BAYONNE STE CROIX
+                STATION
+                20.
+                AVENUE MARECHAL JUIN
+                64100
+                BAYONNE
+                06/10/2019 09:41:22
+                Diesel
+                420 EUR Iltre
+                Total 85,27
+                TVA incluse
+                20.00% 85.27 14.21
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('20 AVENUE MARECHAL JUIN', $draft->stationStreetName);
+        self::assertSame('64100', $draft->stationPostalCode);
+        self::assertSame('BAYONNE', $draft->stationCity);
+        self::assertCount(1, $draft->lines);
+        self::assertSame('diesel', $draft->lines[0]->fuelType);
+        self::assertSame(60_050, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1420, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+        self::assertSame(20, $draft->lines[0]->vatRatePercent);
+        self::assertNotContains('fuel_lines_missing', $draft->issues);
+        self::assertNotContains('station_postal_city_missing', $draft->issues);
+    }
+
+    public function testItRejectsDiscountSentenceAsStreetAndKeepsStandaloneCity(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                INTERMARCHE
+                STATION DAC LE 05-11-22 A 17-04-32
+                NOYERS SUR CHER
+                No AUTO: 456580 MONTANT REEL
+                DEBIT 34.11 EUR
+                Carburant = E10
+                Quantite = 21,07 L
+                Prix unit. 1,619 EUR
+                TVA 20,00% = 5,69 EUR
+                vous beneficiez d'une remise 30 centimes d'euro TTC
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('STATION DAC', $draft->stationStreetName);
+        self::assertNull($draft->stationPostalCode);
+        self::assertSame('NOYERS SUR CHER', $draft->stationCity);
+        self::assertCount(1, $draft->lines);
+        self::assertSame(21_070, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1619, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+    }
 }

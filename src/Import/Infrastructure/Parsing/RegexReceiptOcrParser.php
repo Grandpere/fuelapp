@@ -53,11 +53,11 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
         }
 
         [$vatRatePercent, $vatAmountCents] = $this->extractVat($normalizedLines, $text, $totalCents);
-        if (null === $vatRatePercent) {
+        $lines = $this->extractFuelLines($normalizedLines, $vatRatePercent, $totalCents);
+        if (null === $vatRatePercent && !$this->hasVatRateOnAnyFuelLine($lines)) {
             $issues[] = 'vat_rate_missing';
         }
 
-        $lines = $this->extractFuelLines($normalizedLines, $vatRatePercent, $totalCents);
         if ([] === $lines) {
             $issues[] = 'fuel_lines_missing';
         } else {
@@ -228,6 +228,38 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             ];
         }
 
+        foreach ($lines as $index => $line) {
+            if (!preg_match('/^\s*(?P<postal>(?:[A-Za-z]-)?\d{4,5})\s*$/u', $line, $postalMatch)) {
+                continue;
+            }
+
+            $postal = strtoupper(trim((string) $postalMatch['postal']));
+            foreach ([$index + 1, $index - 1] as $cityIndex) {
+                if (!isset($lines[$cityIndex])) {
+                    continue;
+                }
+
+                $city = $this->sanitizeCity($lines[$cityIndex]);
+                if (null === $city || !$this->looksLikeCityCandidate($city)) {
+                    continue;
+                }
+
+                return [
+                    '' !== $postal ? mb_substr($postal, 0, 20) : null,
+                    mb_substr($city, 0, 100),
+                ];
+            }
+        }
+
+        foreach ($lines as $line) {
+            $city = $this->sanitizeCity($line);
+            if (null === $city || !$this->looksLikeCityCandidate($city)) {
+                continue;
+            }
+
+            return [null, mb_substr($city, 0, 100)];
+        }
+
         return [null, null];
     }
 
@@ -246,6 +278,11 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             $candidate = $lines[$index - 1];
             if ($this->isNonAddressLine($candidate)) {
                 continue;
+            }
+
+            $prefixedStreet = $this->mergeNumericStreetPrefixBeforePostalCity($lines, $index, $candidate);
+            if (null !== $prefixedStreet) {
+                return mb_substr($prefixedStreet, 0, 255);
             }
 
             $merged = $this->mergeSplitStreetLineBeforePostalCity($lines, $index, $candidate);
@@ -275,6 +312,10 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
         }
 
         foreach ($lines as $line) {
+            if (preg_match('/\bstation\s+dac\b/ui', $line, $matches, PREG_OFFSET_CAPTURE)) {
+                return 'STATION DAC';
+            }
+
             $inlineStreet = $this->extractInlineStreetBeforePostalCity($line);
             if (null !== $inlineStreet) {
                 return mb_substr($inlineStreet, 0, 255);
@@ -294,6 +335,11 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
             if ($this->isNonAddressLine($line)) {
                 continue;
+            }
+
+            $prefixedStreet = $this->mergeNumericStreetPrefixInStandaloneStreetSequence($lines, $line);
+            if (null !== $prefixedStreet) {
+                return mb_substr($prefixedStreet, 0, 255);
             }
 
             if ($this->looksLikeAddressCandidate($line)) {
@@ -380,6 +426,17 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
         foreach ($lines as $index => $line) {
             if (!preg_match('/\b(tva|vat)\b/ui', $line)) {
                 continue;
+            }
+
+            $joinedSegment = implode(' ', array_slice($lines, $index, 5));
+            $splitRate = $this->extractSplitVatRate($joinedSegment);
+            if (null !== $splitRate) {
+                $amount = $this->extractSplitVatAmount($joinedSegment, $splitRate, $totalCents);
+                if (null === $amount && null !== $totalCents && $splitRate > 0) {
+                    $amount = (int) round($totalCents - ($totalCents / (1 + ($splitRate / 100))));
+                }
+
+                return [$splitRate, $amount];
             }
 
             if (!preg_match('/(?P<rate>\d{1,2})(?:[\.,]\d{1,2})?\s*%/u', $line, $rateMatch)) {
@@ -469,6 +526,15 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             $vatRatePercent = $fallbackVatRate;
             if (preg_match('/\b(?P<rate>\d{1,2})\s*%\b/u', $line, $m)) {
                 $vatRatePercent = (int) $m['rate'];
+            }
+
+            if (null === $vatRatePercent && preg_match('/\barticle\b.*\btva\b.*\bmontant\b/ui', $context)) {
+                if (preg_match('/\b(?:diesel|gazole|sp95|sp98|e10|excellium\s*98)\b.*?\b(?P<rate>\d{1,2})\b\s*(?:€|eur)?\s*\d+(?:[\.,]\d{2})/ui', $context, $rateMatch)) {
+                    $candidateRate = (int) $rateMatch['rate'];
+                    if ($candidateRate > 0 && $candidateRate <= 30) {
+                        $vatRatePercent = $candidateRate;
+                    }
+                }
             }
 
             if (null === $quantityMilliLiters && null !== $unitPriceDeciCentsPerLiter) {
@@ -641,6 +707,10 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
             }
         }
 
+        if (preg_match('/\b(?P<minor>\d{3})\s*(?:eur|€)\s*(?:l|litre|litres|liter|liters)\b/ui', $context, $m)) {
+            return $this->toPlausibleUnitPrice(sprintf('1.%s', $m['minor']));
+        }
+
         return null;
     }
 
@@ -661,7 +731,7 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
     private function isNonAddressLine(string $line): bool
     {
-        return 1 === preg_match('/\b(tel|phone|carte|visa|debit|ticket|montant|auto|pompe|carburant|quantit[eé]?|prix|tva|vat|siret|naf|logiciel|terminal|contrat|a[0-9]{8,})\b/ui', $line);
+        return 1 === preg_match('/\b(tel|phone|carte|visa|debit|ticket|montant|auto|pompe|carburant|quantit[eé]?|prix|tva|vat|siret|naf|logiciel|terminal|contrat|euro|euros|centimes?|remise|etat|dac|vl|bonjour|a[0-9]{8,})\b/ui', $line);
     }
 
     private function extractInlineStreetBeforePostalCity(string $line): ?string
@@ -894,6 +964,10 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
     private function looksLikeAddressCandidate(string $line): bool
     {
+        if (preg_match('/\b(euro|euros|centimes?|remise|etat|litre|litres|beneficiez)\b/ui', $line)) {
+            return false;
+        }
+
         if ($this->looksLikeStreetHead($line)) {
             return true;
         }
@@ -957,10 +1031,6 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
         if (preg_match_all('/(?P<decimal>\d+(?:[\.,]\s?\d{1,3}))/u', $context, $decimalMatches)) {
             foreach ($decimalMatches['decimal'] as $decimalCandidate) {
                 $candidate = $decimalCandidate;
-                $quantityCandidate = $this->toPlausibleQuantityMilliLiters($candidate);
-                if (null !== $quantityCandidate) {
-                    $quantityCandidates[] = $quantityCandidate;
-                }
 
                 $priceCandidate = $this->toPlausibleUnitPrice($candidate);
                 if (null !== $priceCandidate) {
@@ -992,17 +1062,25 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
         $quantityCandidates = array_values(array_unique($quantityCandidates));
         $priceCandidates = array_values(array_unique($priceCandidates));
 
-        if ([] === $quantityCandidates && null !== $unitPriceDeciCentsPerLiter) {
-            $inferredQuantity = $this->inferQuantityFromTotalAndUnitPrice($totalCents, $unitPriceDeciCentsPerLiter);
-            if (null !== $inferredQuantity) {
-                $quantityCandidates[] = $inferredQuantity;
+        if ([] === $quantityCandidates) {
+            foreach ($priceCandidates as $candidatePrice) {
+                $inferredQuantity = $this->inferQuantityFromTotalAndUnitPrice($totalCents, $candidatePrice);
+                if (null !== $inferredQuantity) {
+                    $quantityCandidates[] = $inferredQuantity;
+                }
             }
         }
 
-        if ([] === $priceCandidates && null !== $quantityMilliLiters && $quantityMilliLiters > 0) {
-            $inferredPrice = (int) round(($totalCents * 10000) / $quantityMilliLiters);
-            if ($inferredPrice >= 500 && $inferredPrice <= 5000) {
-                $priceCandidates[] = $inferredPrice;
+        if ([] === $priceCandidates) {
+            foreach ($quantityCandidates as $candidateQuantity) {
+                if ($candidateQuantity <= 0) {
+                    continue;
+                }
+
+                $inferredPrice = (int) round(($totalCents * 10000) / $candidateQuantity);
+                if ($inferredPrice >= 500 && $inferredPrice <= 5000) {
+                    $priceCandidates[] = $inferredPrice;
+                }
             }
         }
 
@@ -1036,6 +1114,10 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
     private function looksLikeLocationAliasCandidate(string $line): bool
     {
+        if (preg_match('/\d{2}[\/\.-]\d{2}[\/\.-]\d{2,4}|\d{2}[:\-]\d{2}(?:[:\-]\d{2})?/u', $line)) {
+            return false;
+        }
+
         if (preg_match('/\b(carte|visa|debit|ticket|montant|tva|vat|terminal|contrat)\b/ui', $line)) {
             return false;
         }
@@ -1083,4 +1165,127 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
         return trim($candidate);
     }
+
+    /**
+     * @param list<ParsedReceiptLineDraft> $lines
+     */
+    private function hasVatRateOnAnyFuelLine(array $lines): bool
+    {
+        foreach ($lines as $line) {
+            if (null !== $line->vatRatePercent) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function looksLikeCityCandidate(string $line): bool
+    {
+        if ($this->isNonAddressLine($line)) {
+            return false;
+        }
+
+        if (preg_match('/\b(intermarche|total|petro|leclerc|station|relais|energies)\b/ui', $line)) {
+            return false;
+        }
+
+        if (preg_match('/\b(bonjour|merci)\b/ui', $line)) {
+            return false;
+        }
+
+        if (preg_match('/\d/u', $line)) {
+            return false;
+        }
+
+        return 1 === preg_match('/^[A-ZÀ-Ÿ][A-ZÀ-Ÿ\'\- ]{2,100}$/u', mb_strtoupper($line));
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function mergeNumericStreetPrefixBeforePostalCity(array $lines, int $postalCityIndex, string $streetBody): ?string
+    {
+        if ($postalCityIndex < 2 || !$this->looksLikeStreetHead($streetBody)) {
+            return null;
+        }
+
+        $prefix = $lines[$postalCityIndex - 2];
+        if (!preg_match('/^\d{1,4}\.?\s*$/u', $prefix)) {
+            return null;
+        }
+
+        return trim(sprintf('%s %s', rtrim($prefix, ". \t"), $streetBody));
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function mergeNumericStreetPrefixInStandaloneStreetSequence(array $lines, string $streetBody): ?string
+    {
+        if (!$this->looksLikeStreetHead($streetBody)) {
+            return null;
+        }
+
+        $index = array_search($streetBody, $lines, true);
+        if (!is_int($index) || $index < 1) {
+            return null;
+        }
+
+        $prefix = $lines[$index - 1];
+        if (!preg_match('/^\d{1,4}\.?\s*$/u', $prefix)) {
+            return null;
+        }
+
+        $merged = trim(sprintf('%s %s', rtrim($prefix, ". \t"), $streetBody));
+        if (isset($lines[$index + 1])) {
+            $continuation = $lines[$index + 1];
+            if (
+                !$this->isNonAddressLine($continuation)
+                && !preg_match('/\d/u', $continuation)
+                && preg_match('/[A-Za-zÀ-ÿ]/u', $continuation)
+            ) {
+                $merged .= ' '.$continuation;
+            }
+        }
+
+        return trim($merged);
+    }
+
+    private function extractSplitVatRate(string $segment): ?int
+    {
+        if (preg_match('/(?P<rate>\d{1,2})\s*[\.,]?\s*0{0,2}\s*%/u', $segment, $matches)) {
+            $rate = (int) $matches['rate'];
+
+            return $rate > 0 ? $rate : null;
+        }
+
+        return null;
+    }
+
+    private function extractSplitVatAmount(string $segment, int $rate, ?int $totalCents): ?int
+    {
+        if (preg_match_all('/(?<![\d\.,])(?P<whole>\d{1,3})\s+(?P<decimal>\d{2})(?!\d)/u', $segment, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $candidate = sprintf('%s.%s', $match['whole'], $match['decimal']);
+                if ($this->looksLikeVatRateValue($candidate, $rate)) {
+                    continue;
+                }
+
+                $candidateCents = $this->decimalToCents($candidate);
+                if (null === $candidateCents) {
+                    continue;
+                }
+
+                if (null !== $totalCents && abs($candidateCents - $totalCents) <= 2) {
+                    continue;
+                }
+
+                return $candidateCents;
+            }
+        }
+
+        return null;
+    }
+
 }

@@ -264,21 +264,31 @@
                 }
 
                 .status-pill {
+                    background: rgba(142, 175, 199, 0.18);
+                    border: 1px solid rgba(142, 175, 199, 0.3);
                     color: #1d1405;
                 }
 
                 .status-pill.status-queued,
                 .status-pill.status-processing,
-                .status-pill.status-completed {
+                .status-pill.status-processed {
                     background: #b5f05c;
+                    border-color: rgba(109, 171, 24, 0.55);
                 }
 
                 .status-pill.status-needs_review {
                     background: #ffd27a;
+                    border-color: rgba(224, 157, 24, 0.55);
                 }
 
                 .status-pill.status-failed {
                     background: #ff7373;
+                    border-color: rgba(203, 67, 53, 0.55);
+                }
+
+                .status-pill.status-duplicate {
+                    background: #9fdefe;
+                    border-color: rgba(54, 180, 252, 0.55);
                 }
 
                 .text-block-title {

@@ -139,7 +139,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $this->expectException(RecoverableMessageHandlingException::class);
 
         try {
-            $handler(new ProcessImportJobMessage($job->id()->toString()));
+            $handler(new ProcessImportJobMessage($job->id()->toString()), 0);
         } finally {
             $saved = $repository->getForSystem($job->id()->toString());
             self::assertNotNull($saved);
@@ -172,15 +172,15 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
 
         $message = new ProcessImportJobMessage($job->id()->toString());
 
-        for ($attempt = 1; $attempt <= 3; ++$attempt) {
+        for ($attempt = 0; $attempt < 3; ++$attempt) {
             try {
-                $handler($message);
-                self::fail('Expected retryable exception for attempt '.$attempt);
+                $handler($message, $attempt);
+                self::fail('Expected retryable exception for attempt '.($attempt + 1));
             } catch (RecoverableMessageHandlingException) {
             }
         }
 
-        $handler($message);
+        $handler($message, 3);
 
         $saved = $repository->getForSystem($job->id()->toString());
         self::assertNotNull($saved);
@@ -189,6 +189,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         self::assertStringContainsString('OCR provider unavailable after retries', (string) $saved->errorPayload());
         self::assertStringContainsString('manual_review', (string) $saved->errorPayload());
         self::assertStringContainsString('Manual review remains available', (string) $saved->errorPayload());
+        self::assertStringContainsString('"retryCount":3', (string) $saved->errorPayload());
     }
 
     public function testItMarksJobAsDuplicateWhenFingerprintAlreadyExists(): void

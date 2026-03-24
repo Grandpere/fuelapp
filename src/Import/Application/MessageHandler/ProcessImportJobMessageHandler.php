@@ -37,8 +37,6 @@ final class ProcessImportJobMessageHandler
 
     /** @var list<int> */
     private const RETRYABLE_PROVIDER_DELAYS_MS = [15000, 60000, 180000, 600000, 900000];
-    /** @var array<string, int> */
-    private array $retryAttemptsByJobId = [];
 
     public function __construct(
         private ImportJobRepository $repository,
@@ -51,11 +49,12 @@ final class ProcessImportJobMessageHandler
     ) {
     }
 
-    public function __invoke(ProcessImportJobMessage $message): void
+    public function __invoke(ProcessImportJobMessage $message, int $retryCount = 0): void
     {
         $this->logger->info('import.job.started', [
             'import_job_id' => $message->importJobId,
             'message' => ProcessImportJobMessage::class,
+            'retry_count' => $retryCount,
         ]);
 
         $job = $this->repository->getForSystem($message->importJobId);
@@ -66,7 +65,6 @@ final class ProcessImportJobMessageHandler
         }
 
         if (in_array($job->status(), [ImportJobStatus::PROCESSED, ImportJobStatus::NEEDS_REVIEW, ImportJobStatus::DUPLICATE], true)) {
-            $this->clearRetryAttempts($job->id()->toString());
             $this->logger->info('import.job.skipped_already_terminal', [
                 'import_job_id' => $job->id()->toString(),
                 'status' => $job->status()->value,
@@ -81,7 +79,6 @@ final class ProcessImportJobMessageHandler
             $job->markDuplicate($this->buildDuplicatePayload($job->id()->toString(), $duplicateOf->id()->toString(), $fingerprint));
             $this->repository->save($job);
             $this->fileStorage->delete($job->storage(), $job->filePath());
-            $this->clearRetryAttempts($job->id()->toString());
 
             $this->logger->info('import.job.marked_duplicate', [
                 'import_job_id' => $job->id()->toString(),
@@ -103,7 +100,6 @@ final class ProcessImportJobMessageHandler
             $payload = $this->buildNeedsReviewPayload($job->id()->toString(), $extraction->provider, $extraction->text, $extraction->pages, $parsedDraft, $fingerprint);
             $job->markNeedsReview($payload);
             $this->repository->save($job);
-            $this->clearRetryAttempts($job->id()->toString());
 
             $this->logger->info('import.job.needs_review', [
                 'import_job_id' => $job->id()->toString(),
@@ -113,37 +109,41 @@ final class ProcessImportJobMessageHandler
             ]);
         } catch (OcrProviderException $ocrException) {
             if ($ocrException->isRetryable()) {
-                $retryAttempt = $this->incrementRetryAttempts($job->id()->toString());
-                if ($retryAttempt <= self::MAX_RETRYABLE_PROVIDER_ATTEMPTS) {
-                    $delayMs = $this->retryDelayForAttempt($retryAttempt - 1);
+                if ($retryCount < self::MAX_RETRYABLE_PROVIDER_ATTEMPTS) {
+                    $nextRetryCount = $retryCount + 1;
+                    $delayMs = $this->retryDelayForAttempt($retryCount);
                     $job->markQueuedForRetry();
                     $this->repository->save($job);
 
                     $this->logger->warning('import.job.retry_scheduled', [
                         'import_job_id' => $job->id()->toString(),
                         'error' => $ocrException->getMessage(),
-                        'retry_count' => $retryAttempt,
+                        'retry_count' => $nextRetryCount,
                         'next_delay_ms' => $delayMs,
                     ]);
 
                     throw new RecoverableMessageHandlingException(sprintf('OCR provider transient failure: %s', $ocrException->getMessage()), previous: $ocrException, retryDelay: $delayMs);
                 }
 
-                $this->clearRetryAttempts($job->id()->toString());
-                $job->markNeedsReview($this->buildRetryableFallbackNeedsReviewPayload($job->id()->toString(), $fingerprint, $ocrException->getMessage(), $this->fallbackStrategy));
+                $job->markNeedsReview($this->buildRetryableFallbackNeedsReviewPayload(
+                    $job->id()->toString(),
+                    $fingerprint,
+                    $ocrException->getMessage(),
+                    $this->fallbackStrategy,
+                    $retryCount,
+                ));
                 $this->repository->save($job);
 
                 $this->logger->warning('import.job.needs_review_provider_retry_exhausted', [
                     'import_job_id' => $job->id()->toString(),
                     'error' => $ocrException->getMessage(),
-                    'retry_count' => $retryAttempt,
+                    'retry_count' => $retryCount,
                     'fallback_strategy' => $this->fallbackStrategy,
                 ]);
 
                 return;
             }
 
-            $this->clearRetryAttempts($job->id()->toString());
             $job->markFailed($this->buildProviderFailureReason($ocrException));
             $this->repository->save($job);
 
@@ -151,15 +151,16 @@ final class ProcessImportJobMessageHandler
                 'import_job_id' => $job->id()->toString(),
                 'error' => $ocrException->getMessage(),
                 'retryable' => $ocrException->isRetryable(),
+                'retry_count' => $retryCount,
             ]);
         } catch (Throwable $throwable) {
-            $this->clearRetryAttempts($job->id()->toString());
             $job->markFailed($this->buildUnexpectedFailureReason($throwable));
             $this->repository->save($job);
             $this->logger->error('import.job.failed_unexpected', [
                 'import_job_id' => $job->id()->toString(),
                 'error' => $throwable->getMessage(),
                 'exception_class' => $throwable::class,
+                'retry_count' => $retryCount,
             ]);
 
             throw $throwable;
@@ -200,7 +201,7 @@ final class ProcessImportJobMessageHandler
         return mb_substr(sprintf('ocr_unexpected: %s', trim($throwable->getMessage())), 0, 5000);
     }
 
-    private function buildRetryableFallbackNeedsReviewPayload(string $jobId, string $fingerprint, string $providerMessage, string $fallbackStrategy): string
+    private function buildRetryableFallbackNeedsReviewPayload(string $jobId, string $fingerprint, string $providerMessage, string $fallbackStrategy, int $retryCount): string
     {
         $normalizedFallbackStrategy = $this->normalizeFallbackStrategy($fallbackStrategy);
         $issue = sprintf('OCR provider unavailable after retries: %s', trim($providerMessage));
@@ -230,6 +231,7 @@ final class ProcessImportJobMessageHandler
             'fallbackReason' => 'ocr_provider_retryable_exhausted',
             'fallbackStrategy' => $normalizedFallbackStrategy,
             'fallbackNotice' => $fallbackNotice,
+            'retryCount' => $retryCount,
         ];
 
         try {
@@ -263,20 +265,6 @@ final class ProcessImportJobMessageHandler
         }
 
         return $encoded;
-    }
-
-    private function incrementRetryAttempts(string $jobId): int
-    {
-        $current = $this->retryAttemptsByJobId[$jobId] ?? 0;
-        ++$current;
-        $this->retryAttemptsByJobId[$jobId] = $current;
-
-        return $current;
-    }
-
-    private function clearRetryAttempts(string $jobId): void
-    {
-        unset($this->retryAttemptsByJobId[$jobId]);
     }
 
     private function retryDelayForAttempt(int $retryCount): int

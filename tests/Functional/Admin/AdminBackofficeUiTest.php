@@ -577,6 +577,75 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
     }
 
+    public function testAdminCanReparseNeedsReviewImportFromBackofficeUi(): void
+    {
+        $adminEmail = 'ui.admin.import.reparse@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.import.reparse.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/24/admin-reparse.jpg');
+        $job->setOriginalFilename('admin-reparse.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('a', 64));
+        $job->setErrorPayload(json_encode([
+            'jobId' => 'admin-job-reparse',
+            'provider' => 'ocr_space',
+            'text' => "PETRO EST\nLECLERC BELLE IDEE 10100 ROMILLY SUR SEINE\nle 14/12/24 a 15:07:08\nMONTANT REEL 40,32 EUR\nCarburant = GAZOLE\n= 25,25 L\nPrix unit. = 1,597 EUR\nTVA 20,00% = 6,72 EUR",
+            'pages' => [],
+            'parsedDraft' => [
+                'stationStreetName' => null,
+                'creationPayload' => null,
+            ],
+            'status' => 'needs_review',
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-24 10:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-24 10:00:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-24 10:00:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('/ui/admin/imports/'.$jobId.'/reparse', $detailContent);
+        $reparseToken = $this->extractReparseCsrfForImport((string) $detailResponse->getContent(), $jobId);
+
+        $reparseResponse = $this->request(
+            'POST',
+            '/ui/admin/imports/'.$jobId.'/reparse',
+            ['_token' => $reparseToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $reparseResponse->getStatusCode());
+
+        $this->em->clear();
+        $updated = $this->em->find(ImportJobEntity::class, $jobId);
+        self::assertInstanceOf(ImportJobEntity::class, $updated);
+        $payload = json_decode((string) $updated->getErrorPayload(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+        self::assertArrayHasKey('parsedDraft', $payload);
+        self::assertIsArray($payload['parsedDraft']);
+        self::assertSame('LECLERC BELLE IDEE', $payload['parsedDraft']['stationStreetName'] ?? null);
+        self::assertArrayHasKey('creationPayload', $payload['parsedDraft']);
+        self::assertIsArray($payload['parsedDraft']['creationPayload']);
+        self::assertSame('LECLERC BELLE IDEE', $payload['parsedDraft']['creationPayload']['stationStreetName'] ?? null);
+
+        $audit = $this->em->getRepository(AdminAuditLogEntity::class)->findOneBy(['action' => 'admin.import.reparse.ui']);
+        self::assertInstanceOf(AdminAuditLogEntity::class, $audit);
+        self::assertSame($jobId, $audit->getTargetId());
+    }
+
     public function testAdminCanEditAndDeleteStationAndMaintenanceEventFromBackofficeUi(): void
     {
         $adminEmail = 'ui.admin.station.event.write@example.com';
@@ -868,6 +937,18 @@ final class AdminBackofficeUiTest extends WebTestCase
     private function extractDeleteCsrfForImport(string $content, string $importId): string
     {
         $pattern = '#/ui/admin/imports/'.preg_quote($importId, '#').'/delete.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractReparseCsrfForImport(string $content, string $importId): string
+    {
+        $pattern = '#/ui/admin/imports/'.preg_quote($importId, '#').'/reparse.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

@@ -12,6 +12,12 @@
                 </div>
                 <div class="actions-wrap">
                     <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
+                    {% if job.status.value == 'needs_review' %}
+                        <form method="post" action="{{ path('ui_import_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
+                            <input type="hidden" name="_token" value="{{ csrf_token('ui_import_reparse_' ~ job.id.toString) }}">
+                            <button class="btn btn-secondary" type="submit">Reparse</button>
+                        </form>
+                    {% endif %}
                     <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
                         <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
                         <button class="btn btn-danger" type="submit">Delete import</button>

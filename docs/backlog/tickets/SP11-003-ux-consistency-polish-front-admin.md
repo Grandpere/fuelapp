@@ -24,4 +24,4 @@ Core views are functional but still have small visual inconsistencies in actions
 - Existing base layout and list templates.
 
 ## Status
-- in_progress
+- done

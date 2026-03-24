@@ -9,7 +9,7 @@
         <h2 class="page-title">Import Jobs</h2>
         <p class="muted">Operational dashboard for OCR/import pipeline triage.</p>
 
-        <div class="admin-metric-grid" style="margin-top: 1rem;">
+        <div class="admin-metric-grid admin-table-top">
             <article class="card-subtle admin-metric-card">
                 <p class="admin-metric-label">Needs review</p>
                 <p class="admin-metric-value">{{ metrics['needs_review']|default(0) }}</p>
@@ -25,9 +25,9 @@
         </div>
     </section>
 
-    <section class="card admin-panel" style="margin-top: 1rem;">
-        <h3 style="margin: 0;">Filters</h3>
-        <form method="get" style="margin-top: .9rem; display: grid; gap: .75rem;">
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Filters</h3>
+        <form method="get" class="admin-filters-form">
             <div class="form-grid-2">
                 <label class="label">
                     Status
@@ -59,14 +59,14 @@
                     <input class="input" type="text" name="createdTo" value="{{ filters.createdTo ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
             </div>
-            <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+            <div class="actions-wrap">
                 <button class="btn btn-primary" type="submit">Apply filters</button>
                 <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}">Reset</a>
             </div>
         </form>
     </section>
 
-    <section class="card admin-panel" style="margin-top: 1rem;">
+    <section class="card admin-panel admin-section-spaced">
         <div class="table-wrap">
             <table class="app-table" style="min-width: 1180px;">
                 <thead>
@@ -84,22 +84,21 @@
                 <tbody>
                 {% for job in jobs %}
                     <tr
-                        class="table-row"
-                        style="cursor:pointer;"
+                        class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
                         data-row-link-url-value="{{ path('ui_admin_import_job_show', {id: job.id.toString}) }}"
                     >
                         <td>{{ job.id.toString }}</td>
                         <td>
-                            <span class="pill pill-energy" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color: #1d1405;">
+                            <span class="pill status-pill status-{{ job.status.value }}">
                                 {{ job.status.value }}
                             </span>
                         </td>
                         <td>{{ job.ownerId }}</td>
                         <td>
                             <div>{{ job.originalFilename }}</div>
-                            <div class="muted" style="font-size: .78rem;">{{ job.mimeType }} · {{ job.fileSizeBytes }} bytes</div>
+                            <div class="muted compact-note">{{ job.mimeType }} · {{ job.fileSizeBytes }} bytes</div>
                         </td>
                         <td>{{ job.storage }}</td>
                         <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>

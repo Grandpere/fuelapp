@@ -3,14 +3,14 @@
 {% block title %}Import Review{% endblock %}
 
 {% block body %}
-    <main class="app-shell" style="display:grid; gap: 1rem;">
-        <section class="card" style="padding: 1rem; display:grid; gap:.8rem;">
-            <div style="display:flex; gap:.6rem; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;">
+    <main class="app-shell page-stack">
+        <section class="card section-card">
+            <div class="section-header">
                 <div>
                     <h1 class="page-title">Import Review</h1>
-                    <p class="muted" style="margin:.35rem 0 0;">Review extracted values, optionally correct fields, then finalize to create the receipt.</p>
+                    <p class="muted section-lead">Review extracted values, optionally correct fields, then finalize to create the receipt.</p>
                 </div>
-                <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                <div class="actions-wrap">
                     <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
                     <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
                         <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
@@ -19,32 +19,32 @@
                 </div>
             </div>
 
-            <dl style="display:grid; grid-template-columns: 180px 1fr; gap:.35rem .8rem; margin:0;">
+            <dl class="kv-grid">
                 <dt class="muted">Import ID</dt>
-                <dd style="margin:0;">{{ job.id.toString }}</dd>
+                <dd>{{ job.id.toString }}</dd>
                 <dt class="muted">Status</dt>
-                <dd style="margin:0;">
-                    <span class="pill pill-energy" style="background: {{ job.status.value in ['failed'] ? '#ff7373' : (job.status.value in ['needs_review'] ? '#ffd27a' : '#b5f05c') }}; color:#1d1405;">
+                <dd>
+                    <span class="pill status-pill status-{{ job.status.value }}">
                         {{ job.status.value }}
                     </span>
                 </dd>
                 <dt class="muted">Filename</dt>
-                <dd style="margin:0;">{{ job.originalFilename }}</dd>
+                <dd>{{ job.originalFilename }}</dd>
             </dl>
         </section>
 
         {% if parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable and parsedDraft.issues|length > 0 %}
-            <section class="card" style="padding: 1rem;">
-                <p style="margin:0 0 .35rem; font-weight:700;">Detected issues</p>
-                <p class="muted" style="margin:0;">{{ parsedDraft.issues|join(', ') }}</p>
+            <section class="card section-card">
+                <p class="text-block-title">Detected issues</p>
+                <p class="muted section-lead">{{ parsedDraft.issues|join(', ') }}</p>
             </section>
         {% endif %}
 
         {% if job.status.value == 'needs_review' %}
-            <section class="card" style="padding: 1rem;">
-                <h2 style="margin:0 0 .35rem; font-size:1.05rem;">Fix And Finalize</h2>
-                <p class="muted" style="margin:0 0 .8rem;">Leave empty to use extracted values when available.</p>
-                <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" style="display:grid; gap:.8rem;">
+            <section class="card section-card">
+                <h2 class="section-title">Fix And Finalize</h2>
+                <p class="muted section-lead">Leave empty to use extracted values when available.</p>
+                <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="section-card" style="padding: 0;">
                     <input type="hidden" name="_token" value="{{ csrf_token('ui_import_finalize_' ~ job.id.toString) }}">
 
                     <div class="form-grid-2">
@@ -98,29 +98,29 @@
                         </label>
                     </div>
 
-                    <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                    <div class="actions-wrap">
                         <button class="btn btn-primary" type="submit">Finalize import</button>
                         <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Cancel</a>
                     </div>
                 </form>
             </section>
         {% else %}
-            <section class="card" style="padding: 1rem;">
-                <p class="muted" style="margin:0;">This import is no longer reviewable.</p>
+            <section class="card section-card">
+                <p class="muted section-lead">This import is no longer reviewable.</p>
             </section>
         {% endif %}
 
         {% if payloadData is not null %}
             {% if text is not null %}
-                <section class="card" style="padding: 1rem;">
-                    <p style="margin:0 0 .5rem; font-weight:700;">text</p>
-                    <pre style="margin:0; overflow:auto; white-space: pre-wrap; font-size:.82rem;">{{ text }}</pre>
+                <section class="card section-card">
+                    <p class="text-block-title">text</p>
+                    <pre class="preformatted-block">{{ text }}</pre>
                 </section>
             {% endif %}
 
-            <section class="card" style="padding: 1rem;">
-                <p style="margin:0 0 .5rem; font-weight:700;">Raw payload (debug)</p>
-                <pre style="margin:0; overflow:auto; white-space: pre-wrap; font-size:.82rem;">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+            <section class="card section-card">
+                <p class="text-block-title">Raw payload (debug)</p>
+                <pre class="preformatted-block">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
             </section>
         {% endif %}
     </main>

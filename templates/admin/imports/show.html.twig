@@ -12,7 +12,7 @@
         <h2 class="page-title">Import Job Detail</h2>
         <p class="muted">Detailed payload and processing metadata for troubleshooting.</p>
 
-        <dl class="admin-dl" style="margin-top: 1rem;">
+        <dl class="admin-dl admin-table-top">
             <dt class="admin-dt">ID</dt>
             <dd class="admin-dd">{{ job.id.toString }}</dd>
             <dt class="admin-dt">Status</dt>
@@ -44,24 +44,24 @@
         </dl>
 
         {% if payloadData is not null %}
-            <div class="card-subtle" style="margin-top: 1rem; padding: .9rem;">
-                <p style="margin: 0 0 .5rem; font-weight: 700;">Decoded payload</p>
-                <pre style="margin: 0; overflow:auto; white-space: pre-wrap; font-size: .82rem;">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <p class="text-block-title">Decoded payload</p>
+                <pre class="preformatted-block">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
             </div>
         {% elseif payload %}
-            <div class="card-subtle" style="margin-top: 1rem; padding: .9rem;">
-                <p style="margin: 0 0 .5rem; font-weight: 700;">Raw payload</p>
-                <pre style="margin: 0; overflow:auto; white-space: pre-wrap; font-size: .82rem;">{{ payload }}</pre>
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <p class="text-block-title">Raw payload</p>
+                <pre class="preformatted-block">{{ payload }}</pre>
             </div>
         {% else %}
-            <p class="muted" style="margin-top: 1rem;">No payload available.</p>
+            <p class="muted admin-table-top">No payload available.</p>
         {% endif %}
 
-        <div style="margin-top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+        <div class="actions-wrap admin-table-top">
             <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}" data-turbo-frame="_top">Back to list</a>
             <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}" data-turbo-frame="_top">Open user API resource</a>
             <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry" data-turbo-frame="_top">Open admin retry endpoint</a>
-            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');" style="display: inline-flex;">
+            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
                 <button class="btn btn-danger" type="submit">Delete</button>
             </form>
@@ -69,8 +69,8 @@
     </section>
 
     {% if job.status.value == 'failed' %}
-        <section class="card admin-panel" style="margin-top: 1rem;">
-            <h3 style="margin-top: 0;">Retry Failed Job</h3>
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Retry Failed Job</h3>
             <p class="muted">Queue this failed import job for async reprocessing.</p>
             <form method="post" action="{{ path('ui_admin_import_job_retry', {id: job.id.toString}) }}" data-turbo-frame="_top">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_retry_' ~ job.id.toString) }}">
@@ -80,11 +80,11 @@
     {% endif %}
 
     {% if job.status.value == 'needs_review' %}
-        <section class="card admin-panel" style="margin-top: 1rem;">
-            <h3 style="margin-top: 0;">Fix And Finalize</h3>
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Fix And Finalize</h3>
             <p class="muted">Optional corrections can be provided before finalization. Leave fields empty to use payload values.</p>
 
-            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" style="display: grid; gap: .8rem;">
+            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="section-card" style="padding: 0;">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_finalize_' ~ job.id.toString) }}">
 
                 <div class="form-grid-2">
@@ -138,7 +138,7 @@
                     </label>
                 </div>
 
-                <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+                <div class="actions-wrap">
                     <button class="btn btn-primary" type="submit">Finalize job</button>
                     <a class="btn btn-secondary" href="/api/docs">Finalize from API docs</a>
                 </div>

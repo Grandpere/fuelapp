@@ -48,6 +48,15 @@
             font-size: 0.95rem;
         }
 
+        .show-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.7rem;
+            flex-wrap: wrap;
+        }
+
         @media (max-width: 900px) {
             .show-grid {
                 grid-template-columns: 1fr;
@@ -67,11 +76,11 @@
         <header class="show-header">
             <div>
                 <h1 class="page-title">Receipt detail</h1>
-                <p class="muted" style="margin: 0.35rem 0 0;">Traceable fuel purchase snapshot.</p>
+                <p class="muted section-lead">Traceable fuel purchase snapshot.</p>
             </div>
             <div class="show-actions">
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString()}) }}">Edit lines</a>
-                <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');" style="display:inline;">
+                <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">
                     <input type="hidden" name="_redirect" value="{{ path('ui_receipt_index') }}">
                     <button class="btn btn-danger" type="submit">Delete</button>
@@ -93,13 +102,12 @@
             </article>
 
             <article class="card show-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:0.6rem; margin-bottom:0.7rem; flex-wrap:wrap;">
-                    <h2 style="margin:0;">Station</h2>
+                <div class="show-card-head">
+                    <h2 class="section-title">Station</h2>
                     {% if station %}
                         <a
-                            class="btn btn-secondary"
+                            class="btn btn-secondary icon-btn"
                             href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_receipt_show', {id: receipt.id.toString()})}) }}"
-                            style="padding:0.35rem 0.7rem; font-size:0.8rem;"
                             aria-label="Edit station"
                             title="Edit station"
                         >
@@ -114,18 +122,17 @@
                         <div>{{ station.postalCode }} {{ station.city }}</div>
                     </div>
                 {% else %}
-                    <p class="muted" style="margin: 0;">No station associated.</p>
+                    <p class="muted section-lead">No station associated.</p>
                 {% endif %}
             </article>
         </section>
 
         <section class="card show-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.6rem; margin-bottom:0.7rem; flex-wrap:wrap;">
-                <h2 style="margin:0;">Lines</h2>
+            <div class="show-card-head">
+                <h2 class="section-title">Lines</h2>
                 <a
-                    class="btn btn-secondary"
+                    class="btn btn-secondary icon-btn"
                     href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString()}) }}"
-                    style="padding:0.35rem 0.7rem; font-size:0.8rem;"
                     aria-label="Edit lines"
                     title="Edit lines"
                 >
@@ -137,22 +144,22 @@
                     <thead>
                         <tr>
                             <th>Fuel</th>
-                            <th style="text-align:right;">Quantity</th>
-                            <th style="text-align:right;">Unit price</th>
-                            <th style="text-align:right;">VAT %</th>
-                            <th style="text-align:right;">VAT</th>
-                            <th style="text-align:right;">Line total</th>
+                            <th class="text-right">Quantity</th>
+                            <th class="text-right">Unit price</th>
+                            <th class="text-right">VAT %</th>
+                            <th class="text-right">VAT</th>
+                            <th class="text-right">Line total</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for line in receipt.lines %}
                             <tr class="table-row">
                                 <td><span class="pill pill-energy">{{ line.fuelType.value|upper }}</span></td>
-                                <td style="text-align:right;">{{ (line.quantityMilliLiters / 1000)|number_format(3, ',', ' ') }} L</td>
-                                <td style="text-align:right;">{{ (line.unitPriceDeciCentsPerLiter / 1000)|number_format(3, ',', ' ') }} EUR/L</td>
-                                <td style="text-align:right;">{{ line.vatRatePercent }}%</td>
-                                <td style="text-align:right;">{{ (line.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</td>
-                                <td style="text-align:right; font-weight:700;">{{ (line.lineTotalCents / 100)|number_format(2, ',', ' ') }} EUR</td>
+                                <td class="text-right">{{ (line.quantityMilliLiters / 1000)|number_format(3, ',', ' ') }} L</td>
+                                <td class="text-right">{{ (line.unitPriceDeciCentsPerLiter / 1000)|number_format(3, ',', ' ') }} EUR/L</td>
+                                <td class="text-right">{{ line.vatRatePercent }}%</td>
+                                <td class="text-right">{{ (line.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</td>
+                                <td class="text-right"><strong>{{ (line.lineTotalCents / 100)|number_format(2, ',', ' ') }} EUR</strong></td>
                             </tr>
                         {% endfor %}
                     </tbody>

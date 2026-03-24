@@ -422,6 +422,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         );
         self::assertSame(Response::HTTP_SEE_OTHER, $resendResponse->getStatusCode());
 
+        $afterRejectedResend = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $afterRejectedResend->getStatusCode());
+        self::assertStringContainsString('User email is already verified.', (string) $afterRejectedResend->getContent());
+
         $resetToken = $this->extractResetPasswordCsrf((string) $afterVerify->getContent(), $managedId);
         $resetResponse = $this->request(
             'POST',

@@ -177,10 +177,8 @@ final class AdminApiManagementTest extends KernelTestCase
             ],
             json_encode(new stdClass(), JSON_THROW_ON_ERROR),
         );
-        self::assertSame(Response::HTTP_CREATED, $resendVerificationResponse->getStatusCode());
-        $resendPayload = json_decode((string) $resendVerificationResponse->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        self::assertIsArray($resendPayload);
-        self::assertSame('queued_locally_without_mailer', $resendPayload['status'] ?? null);
+        self::assertSame(Response::HTTP_CONFLICT, $resendVerificationResponse->getStatusCode());
+        self::assertStringContainsString('already verified', (string) $resendVerificationResponse->getContent());
 
         $resetPasswordResponse = $this->request(
             'POST',

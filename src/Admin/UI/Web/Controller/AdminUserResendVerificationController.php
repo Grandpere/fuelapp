@@ -15,7 +15,7 @@ namespace App\Admin\UI\Web\Controller;
 
 use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Admin\Application\User\AdminUserManager;
-use App\Admin\Application\User\AdminUserRecord;
+use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,14 +41,21 @@ final class AdminUserResendVerificationController extends AbstractController
             throw new NotFoundHttpException();
         }
 
-        $user = $this->userManager->getUser($id);
-        if (!$user instanceof AdminUserRecord) {
-            throw new NotFoundHttpException();
-        }
-
         $token = $request->request->get('_token');
         if (!is_scalar($token) || !$this->isCsrfTokenValid('admin_user_resend_verification_'.$id, (string) $token)) {
             throw new NotFoundHttpException();
+        }
+
+        try {
+            $user = $this->userManager->requestVerificationResend($id);
+        } catch (LogicException $e) {
+            if ('User not found.' === $e->getMessage()) {
+                throw new NotFoundHttpException();
+            }
+
+            $this->addFlash('error', $e->getMessage());
+
+            return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
         }
 
         $this->auditTrail->record(

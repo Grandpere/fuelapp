@@ -275,6 +275,11 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
         }
 
         foreach ($lines as $line) {
+            $inlineStreet = $this->extractInlineStreetBeforePostalCity($line);
+            if (null !== $inlineStreet) {
+                return mb_substr($inlineStreet, 0, 255);
+            }
+
             if (!preg_match('/[A-Za-zÀ-ÿ]/u', $line)) {
                 continue;
             }
@@ -473,6 +478,13 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
                 }
             }
 
+            [$quantityMilliLiters, $unitPriceDeciCentsPerLiter] = $this->inferFuelMetricsFromContext(
+                $context,
+                $lineTotalCents ?? $receiptTotalCents,
+                $quantityMilliLiters,
+                $unitPriceDeciCentsPerLiter,
+            );
+
             if (null === $quantityMilliLiters && null === $unitPriceDeciCentsPerLiter && null === $lineTotalCents) {
                 continue;
             }
@@ -650,6 +662,63 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
     private function isNonAddressLine(string $line): bool
     {
         return 1 === preg_match('/\b(tel|phone|carte|visa|debit|ticket|montant|auto|pompe|carburant|quantit[eé]?|prix|tva|vat|siret|naf|logiciel|terminal|contrat|a[0-9]{8,})\b/ui', $line);
+    }
+
+    private function extractInlineStreetBeforePostalCity(string $line): ?string
+    {
+        if (!preg_match('/(?P<prefix>.+?)\s+(?P<postal>(?:[A-Za-z]-)?\d{4,5})\s+(?P<city>[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\'\- ]{1,100})\b/u', $line, $matches)) {
+            return null;
+        }
+
+        $prefix = trim((string) $matches['prefix']);
+        if ('' === $prefix) {
+            return null;
+        }
+
+        $prefix = preg_replace('/\b(?:tel|phone|carte|visa|debit|ticket|montant|tva|vat|comptant|auto|pompe|carburant|quantit[eé]?|prix)\b.*$/ui', '', $prefix);
+        if (!is_string($prefix)) {
+            return null;
+        }
+
+        $prefix = preg_replace('/\b\d{6,}\b/u', ' ', $prefix);
+        if (!is_string($prefix)) {
+            return null;
+        }
+
+        $prefix = preg_replace('/\s+/u', ' ', trim($prefix));
+        if (!is_string($prefix) || '' === $prefix) {
+            return null;
+        }
+
+        if (!preg_match('/(?P<candidate>[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\'\- ]{3,80})$/u', $prefix, $candidateMatch)) {
+            return null;
+        }
+
+        $candidate = trim((string) $candidateMatch['candidate']);
+        $words = preg_split('/\s+/u', $candidate) ?: [];
+        if (count($words) > 3) {
+            for ($tailSize = 3; $tailSize <= min(5, count($words)); ++$tailSize) {
+                $tailCandidate = implode(' ', array_slice($words, -$tailSize));
+                if ($tailCandidate === $candidate) {
+                    continue;
+                }
+
+                if ($this->looksLikeAddressCandidate($tailCandidate) || $this->looksLikeLocationAliasCandidate($tailCandidate)) {
+                    $candidate = $tailCandidate;
+                    break;
+                }
+            }
+        }
+
+        if ($this->isNonAddressLine($candidate)) {
+            return null;
+        }
+
+        if (!$this->looksLikeAddressCandidate($candidate) && !$this->looksLikeLocationAliasCandidate($candidate)) {
+            return null;
+        }
+
+        return $candidate;
     }
 
     /**
@@ -865,17 +934,118 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
         return $quantityMilliLiters;
     }
 
-    private function looksLikeLocationAliasCandidate(string $line): bool
+    /**
+     * @return array{0: ?int, 1: ?int}
+     */
+    private function inferFuelMetricsFromContext(string $context, ?int $totalCents, ?int $quantityMilliLiters, ?int $unitPriceDeciCentsPerLiter): array
     {
-        if (!preg_match('/\b(hyper|centre|auto|station|relais)\b/ui', $line)) {
-            return false;
+        if (null === $totalCents || $totalCents <= 0) {
+            return [$quantityMilliLiters, $unitPriceDeciCentsPerLiter];
         }
 
+        $quantityCandidates = [];
+        $priceCandidates = [];
+
+        if (null !== $quantityMilliLiters) {
+            $quantityCandidates[] = $quantityMilliLiters;
+        }
+
+        if (null !== $unitPriceDeciCentsPerLiter) {
+            $priceCandidates[] = $unitPriceDeciCentsPerLiter;
+        }
+
+        if (preg_match_all('/(?P<decimal>\d+(?:[\.,]\s?\d{1,3}))/u', $context, $decimalMatches)) {
+            foreach ($decimalMatches['decimal'] as $decimalCandidate) {
+                $candidate = $decimalCandidate;
+                $quantityCandidate = $this->toPlausibleQuantityMilliLiters($candidate);
+                if (null !== $quantityCandidate) {
+                    $quantityCandidates[] = $quantityCandidate;
+                }
+
+                $priceCandidate = $this->toPlausibleUnitPrice($candidate);
+                if (null !== $priceCandidate) {
+                    $priceCandidates[] = $priceCandidate;
+                }
+            }
+        }
+
+        if (preg_match_all('/\b(?:prix(?:\s*unit\.?)?|quantit[eé]?|carburant)\b(?P<segment>.{0,18})/ui', $context, $labelSegments)) {
+            foreach ($labelSegments['segment'] as $segment) {
+                if (preg_match('/(?P<minor>\d{3})\s*(?:eur|€)?/ui', $segment, $splitPrice)) {
+                    $priceCandidate = $this->toPlausibleUnitPrice(sprintf('1.%s', $splitPrice['minor']));
+                    if (null !== $priceCandidate) {
+                        $priceCandidates[] = $priceCandidate;
+                    }
+                }
+            }
+        }
+
+        if (preg_match_all('/\b(?P<minor>\d{3})\s*(?:eur|€)\b/ui', $context, $splitPriceMatches)) {
+            foreach ($splitPriceMatches['minor'] as $minorCandidate) {
+                $priceCandidate = $this->toPlausibleUnitPrice(sprintf('1.%s', (string) $minorCandidate));
+                if (null !== $priceCandidate) {
+                    $priceCandidates[] = $priceCandidate;
+                }
+            }
+        }
+
+        $quantityCandidates = array_values(array_unique($quantityCandidates));
+        $priceCandidates = array_values(array_unique($priceCandidates));
+
+        if ([] === $quantityCandidates && null !== $unitPriceDeciCentsPerLiter) {
+            $inferredQuantity = $this->inferQuantityFromTotalAndUnitPrice($totalCents, $unitPriceDeciCentsPerLiter);
+            if (null !== $inferredQuantity) {
+                $quantityCandidates[] = $inferredQuantity;
+            }
+        }
+
+        if ([] === $priceCandidates && null !== $quantityMilliLiters && $quantityMilliLiters > 0) {
+            $inferredPrice = (int) round(($totalCents * 10000) / $quantityMilliLiters);
+            if ($inferredPrice >= 500 && $inferredPrice <= 5000) {
+                $priceCandidates[] = $inferredPrice;
+            }
+        }
+
+        if ([] === $quantityCandidates || [] === $priceCandidates) {
+            return [$quantityMilliLiters, $unitPriceDeciCentsPerLiter];
+        }
+
+        $bestPair = null;
+        $bestDiff = PHP_INT_MAX;
+
+        foreach ($quantityCandidates as $candidateQuantity) {
+            foreach ($priceCandidates as $candidatePrice) {
+                $estimatedTotalCents = (int) round(($candidateQuantity * $candidatePrice) / 10000);
+                $diff = abs($estimatedTotalCents - $totalCents);
+                if ($diff < $bestDiff) {
+                    $bestDiff = $diff;
+                    $bestPair = [$candidateQuantity, $candidatePrice];
+                }
+            }
+        }
+
+        if (null === $bestPair || $bestDiff > 150) {
+            return [$quantityMilliLiters, $unitPriceDeciCentsPerLiter];
+        }
+
+        return [
+            $quantityMilliLiters ?? $bestPair[0],
+            $unitPriceDeciCentsPerLiter ?? $bestPair[1],
+        ];
+    }
+
+    private function looksLikeLocationAliasCandidate(string $line): bool
+    {
         if (preg_match('/\b(carte|visa|debit|ticket|montant|tva|vat|terminal|contrat)\b/ui', $line)) {
             return false;
         }
 
-        return 1 === preg_match('/[A-Za-zÀ-ÿ].*[A-Za-zÀ-ÿ]/u', $line);
+        if (preg_match('/\b(hyper|centre|auto|station|relais)\b/ui', $line)) {
+            return 1 === preg_match('/[A-Za-zÀ-ÿ].*[A-Za-zÀ-ÿ]/u', $line);
+        }
+
+        return 1 === preg_match('/\b(leclerc|petro|intermarche|total|energies)\b/ui', $line)
+            && 1 === preg_match('/(?:\b[A-Za-zÀ-ÿ\'\-]+\b.*){3,}/u', $line);
     }
 
     private function scoreStationCandidate(string $candidate): int

@@ -218,6 +218,38 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertSame(20, $draft->lines[0]->vatRatePercent);
     }
 
+    public function testItInfersFuelMetricsWhenNoisyLabelsAreShiftedAcrossLines(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                E Leclerc L
+                Petro- EST
+                Leclerc Centre Auto
+                Route de Troyes
+                51120 SEZANNE
+                Le 20/02/26 a 13:55:36
+                MONTANT REEL
+                44, 42 EUR
+                No pompe GAZOLE 1
+                Carburant 28,64
+                Quantite 551 EUR
+                Prix unit. 7,40 EUR 1
+                TVA 20,00%
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertCount(1, $draft->lines);
+        self::assertSame('diesel', $draft->lines[0]->fuelType);
+        self::assertSame(28_640, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1551, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+    }
+
     public function testItParsesUnitPriceFromPrixLabelWithoutPerLiterSuffix(): void
     {
         $ocr = new OcrExtraction(
@@ -305,6 +337,32 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertSame('41300', $draft->stationPostalCode);
         self::assertSame('NOYERS SUR CHER', $draft->stationCity);
         self::assertSame(3411, $draft->totalCents);
+    }
+
+    public function testItExtractsInlineLocationAliasBeforePostalCityWhenNoStreetLineExists(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                E Leclerc PETRO EST 0352780130 LECLERC BELLE IDEE 10100 ROMILLY SUR SEINE
+                le 14/12/24 a 15:07:08
+                MONTANT REEL 40,32 EUR
+                Carburant = GAZOLE
+                Quantite = 25,25 L
+                Prix unit. = 1,597 EUR
+                TVA 20,00% = 6,72 EUR
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('LECLERC BELLE IDEE', $draft->stationStreetName);
+        self::assertSame('10100', $draft->stationPostalCode);
+        self::assertSame('ROMILLY SUR SEINE', $draft->stationCity);
+        self::assertIsArray($draft->toArray()['creationPayload']);
     }
 
     public function testItParsesMontantReelWhenAmountAppearsBeforeLabelInCompactOcrLine(): void

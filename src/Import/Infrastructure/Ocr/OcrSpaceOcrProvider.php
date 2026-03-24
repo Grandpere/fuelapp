@@ -371,6 +371,10 @@ final class OcrSpaceOcrProvider implements OcrProvider
 
                 $optimizedSize = filesize($tempPath);
                 if (is_int($optimizedSize) && $optimizedSize <= self::OCR_SPACE_TARGET_FILE_SIZE_BYTES) {
+                    if (is_string($bestCandidatePath) && is_file($bestCandidatePath)) {
+                        unlink($bestCandidatePath);
+                    }
+
                     imagedestroy($targetImage);
                     imagedestroy($sourceImage);
 

@@ -238,17 +238,17 @@
 - [completed] Add fallback behavior after retry exhaustion: switch import job to `needs_review` instead of `failed`.
 - [completed] Persist explicit fallback payload with parse issues so user can manually finalize in UI.
 - [completed] Update unit/integration tests for exhausted-retry fallback semantics.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP12-001 Auth and session hardening
 
 ## Plan
+- [completed] Make session fixation/logout invalidation guarantees explicit in security/framework config.
+- [completed] Add targeted functional coverage for session rotation, logout invalidation, and cookie attributes on UI auth flow.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 - [completed] Add UI login throttling policy on main firewall to reduce brute-force attempts.
 - [completed] Add API login limiter (`/api/login`) with controlled `429` response and `Retry-After` header.
 - [completed] Add functional regression for API login rate-limit behavior.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures.
 
 # TODO - SP12-002 API abuse protection and input hardening
 

@@ -1,6 +1,7 @@
 security:
     role_hierarchy:
         ROLE_ADMIN: [ROLE_USER]
+    session_fixation_strategy: migrate
 
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
@@ -40,6 +41,7 @@ security:
                 path: ui_logout
                 target: ui_login
                 enable_csrf: true
+                invalidate_session: true
 
             # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall

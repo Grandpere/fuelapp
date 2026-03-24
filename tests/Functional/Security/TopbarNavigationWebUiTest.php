@@ -220,6 +220,27 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         self::assertStringStartsWith('/ui/login', (string) $postLogoutResponse->headers->get('Location'));
     }
 
+    public function testUiSessionIsRevokedWhenUserGetsDeactivated(): void
+    {
+        $email = 'topbar.deactivated@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $beforeDeactivation = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $beforeDeactivation->getStatusCode());
+
+        $user->setIsActive(false);
+        $this->em->flush();
+        $this->em->clear();
+
+        $afterDeactivation = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_FOUND, $afterDeactivation->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $afterDeactivation->headers->get('Location'));
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server

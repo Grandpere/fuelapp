@@ -19,6 +19,7 @@ use App\Import\Application\Ocr\OcrProviderException;
 use GdImage;
 use Imagick;
 use Psr\Cache\CacheItemPoolInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Throwable;
@@ -45,6 +46,7 @@ final class OcrSpaceOcrProvider implements OcrProvider
         private int $circuitBreakerFailureThreshold = 3,
         private int $circuitBreakerFailureWindowSeconds = 60,
         private int $circuitBreakerOpenSeconds = 180,
+        private ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -55,6 +57,11 @@ final class OcrSpaceOcrProvider implements OcrProvider
         }
 
         if ($this->isCircuitOpen()) {
+            $this->logger?->warning('import.ocr_space.circuit_open_fast_fail', [
+                'provider' => 'ocr_space',
+                'open_seconds' => max(5, $this->circuitBreakerOpenSeconds),
+            ]);
+
             throw OcrProviderException::retryable('OCR.Space circuit breaker is open. Provider temporarily paused.');
         }
 
@@ -230,6 +237,9 @@ final class OcrSpaceOcrProvider implements OcrProvider
 
         if ($openUntil <= time()) {
             $this->cachePool->deleteItem(self::CIRCUIT_OPEN_UNTIL_CACHE_KEY);
+            $this->logger?->info('import.ocr_space.circuit_closed', [
+                'provider' => 'ocr_space',
+            ]);
 
             return false;
         }
@@ -254,6 +264,13 @@ final class OcrSpaceOcrProvider implements OcrProvider
         $failureCountItem->expiresAfter($failureWindowSeconds);
         $this->cachePool->save($failureCountItem);
 
+        $this->logger?->warning('import.ocr_space.retryable_failure_recorded', [
+            'provider' => 'ocr_space',
+            'failure_count' => $failureCount,
+            'failure_threshold' => $failureThreshold,
+            'failure_window_seconds' => $failureWindowSeconds,
+        ]);
+
         if ($failureCount < $failureThreshold) {
             return;
         }
@@ -265,11 +282,26 @@ final class OcrSpaceOcrProvider implements OcrProvider
         $this->cachePool->save($openUntilItem);
 
         $this->cachePool->deleteItem(self::CIRCUIT_FAILURE_COUNT_CACHE_KEY);
+        $this->logger?->warning('import.ocr_space.circuit_opened', [
+            'provider' => 'ocr_space',
+            'failure_threshold' => $failureThreshold,
+            'failure_window_seconds' => $failureWindowSeconds,
+            'open_seconds' => $openSeconds,
+            'open_until_epoch' => $openUntil,
+        ]);
     }
 
     private function resetRetryableFailureState(): void
     {
+        $failureCountItem = $this->cachePool->getItem(self::CIRCUIT_FAILURE_COUNT_CACHE_KEY);
+        $hadFailureState = $failureCountItem->isHit() && is_int($failureCountItem->get()) && (int) $failureCountItem->get() > 0;
         $this->cachePool->deleteItem(self::CIRCUIT_FAILURE_COUNT_CACHE_KEY);
+
+        if ($hadFailureState) {
+            $this->logger?->info('import.ocr_space.circuit_failure_state_reset', [
+                'provider' => 'ocr_space',
+            ]);
+        }
     }
 
     /**

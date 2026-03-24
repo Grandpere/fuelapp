@@ -214,6 +214,28 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
     }
 
+    public function testDisabledUserCannotReusePreviouslyIssuedApiToken(): void
+    {
+        $email = 'disabled.token@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $user->setIsActive(false);
+        $this->em->flush();
+        $this->em->clear();
+
+        $response = $this->request(
+            'GET',
+            '/api/receipts',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+        );
+
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+        self::assertStringContainsString('Account disabled.', (string) $response->getContent());
+    }
+
     public function testAnonymousUserIsRedirectedOnAdminUiPrefix(): void
     {
         $response = $this->request('GET', '/ui/admin');

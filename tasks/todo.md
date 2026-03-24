@@ -226,11 +226,11 @@
 - [completed] Keep original stored file untouched; send only optimized temporary copy to OCR.
 - [completed] Add unit coverage for oversized image optimization path.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 - [completed] Reset failure counter after successful OCR extraction.
 - [completed] Add/update unit tests for circuit-open behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP11-006 OCR fallback strategy (manual review fallback)
 
@@ -239,7 +239,7 @@
 - [completed] Persist explicit fallback payload with parse issues so user can manually finalize in UI.
 - [completed] Update unit/integration tests for exhausted-retry fallback semantics.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP12-001 Auth and session hardening
 

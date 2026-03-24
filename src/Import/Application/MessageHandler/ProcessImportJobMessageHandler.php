@@ -31,6 +31,7 @@ use Throwable;
 #[AsMessageHandler]
 final class ProcessImportJobMessageHandler
 {
+    private const FALLBACK_STRATEGY_MANUAL_REVIEW = 'manual_review';
     // Must stay aligned with messenger transport `async.retry_strategy.max_retries`.
     private const MAX_RETRYABLE_PROVIDER_ATTEMPTS = 3;
 
@@ -46,6 +47,7 @@ final class ProcessImportJobMessageHandler
         private OcrProvider $ocrProvider,
         private ReceiptOcrParser $receiptParser,
         private LoggerInterface $logger,
+        private string $fallbackStrategy = self::FALLBACK_STRATEGY_MANUAL_REVIEW,
     ) {
     }
 
@@ -128,13 +130,14 @@ final class ProcessImportJobMessageHandler
                 }
 
                 $this->clearRetryAttempts($job->id()->toString());
-                $job->markNeedsReview($this->buildRetryableFallbackNeedsReviewPayload($job->id()->toString(), $fingerprint, $ocrException->getMessage()));
+                $job->markNeedsReview($this->buildRetryableFallbackNeedsReviewPayload($job->id()->toString(), $fingerprint, $ocrException->getMessage(), $this->fallbackStrategy));
                 $this->repository->save($job);
 
                 $this->logger->warning('import.job.needs_review_provider_retry_exhausted', [
                     'import_job_id' => $job->id()->toString(),
                     'error' => $ocrException->getMessage(),
                     'retry_count' => $retryAttempt,
+                    'fallback_strategy' => $this->fallbackStrategy,
                 ]);
 
                 return;
@@ -197,9 +200,14 @@ final class ProcessImportJobMessageHandler
         return mb_substr(sprintf('ocr_unexpected: %s', trim($throwable->getMessage())), 0, 5000);
     }
 
-    private function buildRetryableFallbackNeedsReviewPayload(string $jobId, string $fingerprint, string $providerMessage): string
+    private function buildRetryableFallbackNeedsReviewPayload(string $jobId, string $fingerprint, string $providerMessage, string $fallbackStrategy): string
     {
+        $normalizedFallbackStrategy = $this->normalizeFallbackStrategy($fallbackStrategy);
         $issue = sprintf('OCR provider unavailable after retries: %s', trim($providerMessage));
+        $fallbackNotice = match ($normalizedFallbackStrategy) {
+            self::FALLBACK_STRATEGY_MANUAL_REVIEW => 'OCR text could not be extracted automatically. Manual review remains available with the original uploaded file.',
+            default => 'OCR fallback strategy triggered. Manual review remains available with the original uploaded file.',
+        };
         $payload = [
             'jobId' => $jobId,
             'fingerprint' => $fingerprint,
@@ -215,11 +223,13 @@ final class ProcessImportJobMessageHandler
                 'totalCents' => null,
                 'vatAmountCents' => null,
                 'lines' => [],
-                'issues' => [$issue],
+                'issues' => [$issue, $fallbackNotice],
                 'creationPayload' => null,
             ],
             'status' => 'needs_review',
             'fallbackReason' => 'ocr_provider_retryable_exhausted',
+            'fallbackStrategy' => $normalizedFallbackStrategy,
+            'fallbackNotice' => $fallbackNotice,
         ];
 
         try {
@@ -276,5 +286,15 @@ final class ProcessImportJobMessageHandler
         }
 
         return self::RETRYABLE_PROVIDER_DELAYS_MS[$retryCount] ?? self::RETRYABLE_PROVIDER_DELAYS_MS[array_key_last(self::RETRYABLE_PROVIDER_DELAYS_MS)];
+    }
+
+    private function normalizeFallbackStrategy(string $fallbackStrategy): string
+    {
+        $normalized = mb_strtolower(trim($fallbackStrategy));
+
+        return match ($normalized) {
+            self::FALLBACK_STRATEGY_MANUAL_REVIEW => self::FALLBACK_STRATEGY_MANUAL_REVIEW,
+            default => self::FALLBACK_STRATEGY_MANUAL_REVIEW,
+        };
     }
 }

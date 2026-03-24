@@ -13,9 +13,8 @@
 1. `SP11-002` - OCR parser hardening for noisy fuel tickets
 2. `SP11-004` - OCR provider retry/backoff hardening
 3. `SP11-005` - OCR provider circuit breaker for outage bursts
-4. `SP11-006` - OCR fallback strategy
-5. `SP11-001` - Microsoft OIDC rollout (deferred)
-6. `SP12-001` to `SP12-004` - dedicated security hardening sprint (planned)
+4. `SP11-001` - Microsoft OIDC rollout (deferred)
+5. `SP12-001` to `SP12-004` - dedicated security hardening sprint (planned)
 
 ## Notes
 - Social login / external IdP is planned after local auth baseline via generic OIDC layer (Auth0 first, then Google/Microsoft).

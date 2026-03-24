@@ -18,6 +18,7 @@ parameters:
     app.import.ocr_space_cb_failure_threshold: '%env(int:OCR_SPACE_CB_FAILURE_THRESHOLD)%'
     app.import.ocr_space_cb_failure_window_seconds: '%env(int:OCR_SPACE_CB_FAILURE_WINDOW_SECONDS)%'
     app.import.ocr_space_cb_open_seconds: '%env(int:OCR_SPACE_CB_OPEN_SECONDS)%'
+    app.import.ocr_fallback_strategy: '%env(default:manual_review:IMPORT_OCR_FALLBACK_STRATEGY)%'
     app.geocoding.nominatim_base_uri: '%env(string:NOMINATIM_BASE_URI)%'
     app.geocoding.nominatim_user_agent: '%env(string:NOMINATIM_USER_AGENT)%'
     app.geocoding.nominatim_email: '%env(default::NOMINATIM_EMAIL)%'
@@ -113,6 +114,9 @@ services:
             $circuitBreakerFailureThreshold: '%app.import.ocr_space_cb_failure_threshold%'
             $circuitBreakerFailureWindowSeconds: '%app.import.ocr_space_cb_failure_window_seconds%'
             $circuitBreakerOpenSeconds: '%app.import.ocr_space_cb_open_seconds%'
+    App\Import\Application\MessageHandler\ProcessImportJobMessageHandler:
+        arguments:
+            $fallbackStrategy: '%app.import.ocr_fallback_strategy%'
     App\Receipt\Application\Repository\ReceiptRepository: '@App\Receipt\Infrastructure\Persistence\Doctrine\Repository\DoctrineReceiptRepository'
     App\Import\Application\Repository\ImportJobRepository: '@App\Import\Infrastructure\Persistence\Doctrine\Repository\DoctrineImportJobRepository'
     App\Maintenance\Application\Repository\MaintenanceEventRepository: '@App\Maintenance\Infrastructure\Persistence\Doctrine\Repository\DoctrineMaintenanceEventRepository'

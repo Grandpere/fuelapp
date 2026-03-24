@@ -40,6 +40,19 @@
             </section>
         {% endif %}
 
+        {% if payloadData is not null and payloadData.fallbackReason is defined %}
+            <section class="card section-card">
+                <p class="text-block-title">OCR fallback</p>
+                <p class="muted section-lead">
+                    {{ payloadData.fallbackNotice is defined ? payloadData.fallbackNotice : 'Automatic OCR is temporarily unavailable. Manual review remains available with the original uploaded file.' }}
+                </p>
+                <div class="actions-wrap">
+                    <span class="pill status-pill status-needs_review">{{ payloadData.fallbackStrategy is defined ? payloadData.fallbackStrategy|replace({'_': ' '}) : 'manual review' }}</span>
+                    <span class="muted compact-note">{{ payloadData.fallbackReason }}</span>
+                </div>
+            </section>
+        {% endif %}
+
         {% if job.status.value == 'needs_review' %}
             <section class="card section-card">
                 <h2 class="section-title">Fix And Finalize</h2>

@@ -19,4 +19,4 @@ Import/upload is business-critical and exposed to untrusted files.
 - SP3 upload/import pipeline.
 
 ## Status
-- in_progress
+- done

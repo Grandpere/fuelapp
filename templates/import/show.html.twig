@@ -111,6 +111,13 @@
         {% endif %}
 
         {% if payloadData is not null %}
+            {% if text is not null %}
+                <section class="card" style="padding: 1rem;">
+                    <p style="margin:0 0 .5rem; font-weight:700;">text</p>
+                    <pre style="margin:0; overflow:auto; white-space: pre-wrap; font-size:.82rem;">{{ text }}</pre>
+                </section>
+            {% endif %}
+
             <section class="card" style="padding: 1rem;">
                 <p style="margin:0 0 .5rem; font-weight:700;">Raw payload (debug)</p>
                 <pre style="margin:0; overflow:auto; white-space: pre-wrap; font-size:.82rem;">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>

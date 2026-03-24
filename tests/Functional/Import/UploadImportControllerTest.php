@@ -332,7 +332,7 @@ final class UploadImportControllerTest extends KernelTestCase
         $this->em->flush();
 
         $token = $this->apiLogin($email, $password);
-        $oversizedPng = str_repeat('A', 1_050_000);
+        $oversizedPng = str_repeat('A', 8_600_000);
         $zip = $this->createUploadedZipFile('oversized.zip', [
             'too-big.png' => $oversizedPng,
         ]);
@@ -345,7 +345,7 @@ final class UploadImportControllerTest extends KernelTestCase
         );
 
         self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
-        self::assertStringContainsString('File is too large. Current import limit is 1 MB.', (string) $response->getContent());
+        self::assertStringContainsString('File is too large. Current import limits: 8 MB for images, 1 MB for PDF.', (string) $response->getContent());
         self::assertCount(0, $this->asyncTransport->getSent());
     }
 

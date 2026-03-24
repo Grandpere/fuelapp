@@ -45,6 +45,7 @@ final class ImportJobShowWebController extends AbstractController
         return $this->render('import/show.html.twig', [
             'job' => $job,
             'payloadData' => $payloadData,
+            'text' => $this->readPayloadText($payloadData),
             'creationPayload' => $creationPayload,
             'parsedDraft' => $parsedDraft,
             'firstLine' => $this->readFirstLine($creationPayload, $parsedDraft),
@@ -117,6 +118,23 @@ final class ImportJobShowWebController extends AbstractController
 
         /** @var array<string, mixed> $parsedDraft */
         return $parsedDraft;
+    }
+
+    /** @param array<string, mixed>|null $payloadData */
+    private function readPayloadText(?array $payloadData): ?string
+    {
+        if (null === $payloadData) {
+            return null;
+        }
+
+        $text = $payloadData['text'] ?? null;
+        if (!is_string($text)) {
+            return null;
+        }
+
+        $text = trim($text);
+
+        return '' === $text ? null : $text;
     }
 
     /**

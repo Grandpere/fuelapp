@@ -16,6 +16,8 @@ namespace App\Import\Infrastructure\Ocr;
 use App\Import\Application\Ocr\OcrExtraction;
 use App\Import\Application\Ocr\OcrProvider;
 use App\Import\Application\Ocr\OcrProviderException;
+use GdImage;
+use Imagick;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -25,6 +27,13 @@ final class OcrSpaceOcrProvider implements OcrProvider
 {
     private const CIRCUIT_OPEN_UNTIL_CACHE_KEY = 'import.ocr_space.circuit_open_until';
     private const CIRCUIT_FAILURE_COUNT_CACHE_KEY = 'import.ocr_space.circuit_failure_count';
+    private const OCR_SPACE_MAX_FILE_SIZE_BYTES = 1_000_000;
+    private const OCR_SPACE_TARGET_FILE_SIZE_BYTES = 995_000;
+    private const OCR_SPACE_SIZE_LIMIT_MESSAGE = 'OCR provider limit exceeded after local optimization (max 1 MB).';
+    private const IMAGICK_READ_DPI = 200;
+    private const GD_ESTIMATED_BYTES_PER_PIXEL = 8;
+    private const GD_PROCESSING_OVERHEAD_BYTES = 8_388_608;
+    private const PHP_MEMORY_SAFETY_MARGIN_BYTES = 16_777_216;
 
     public function __construct(
         private HttpClientInterface $httpClient,
@@ -49,9 +58,33 @@ final class OcrSpaceOcrProvider implements OcrProvider
             throw OcrProviderException::retryable('OCR.Space circuit breaker is open. Provider temporarily paused.');
         }
 
-        $fileHandle = fopen($filePath, 'rb');
+        [$preparedFilePath, $deletePreparedFile] = $this->prepareFileForUpload($filePath, $mimeType);
+        $preparedFileSize = filesize($preparedFilePath);
+        if (!is_int($preparedFileSize) || $preparedFileSize > self::OCR_SPACE_MAX_FILE_SIZE_BYTES) {
+            if ($deletePreparedFile && is_file($preparedFilePath)) {
+                unlink($preparedFilePath);
+            }
+
+            throw OcrProviderException::permanent(self::OCR_SPACE_SIZE_LIMIT_MESSAGE);
+        }
+
+        $fileHandle = fopen($preparedFilePath, 'rb');
         if (false === $fileHandle) {
             throw OcrProviderException::permanent('Unable to open stored import file for OCR.');
+        }
+
+        $fileType = $this->resolveOcrSpaceFileType($preparedFilePath, $mimeType);
+        $requestBody = [
+            'apikey' => $this->apiKey,
+            'language' => $this->language,
+            'OCREngine' => (string) $this->engine,
+            'isTable' => 'true',
+            'scale' => 'true',
+            'isOverlayRequired' => 'false',
+            'file' => $fileHandle,
+        ];
+        if (null !== $fileType) {
+            $requestBody['filetype'] = $fileType;
         }
 
         try {
@@ -59,13 +92,7 @@ final class OcrSpaceOcrProvider implements OcrProvider
                 'headers' => [
                     'Accept' => 'application/json',
                 ],
-                'body' => [
-                    'apikey' => $this->apiKey,
-                    'language' => $this->language,
-                    'OCREngine' => (string) $this->engine,
-                    'isOverlayRequired' => 'false',
-                    'file' => $fileHandle,
-                ],
+                'body' => $requestBody,
                 'timeout' => 30,
             ]);
 
@@ -91,6 +118,9 @@ final class OcrSpaceOcrProvider implements OcrProvider
             throw OcrProviderException::retryable(sprintf('OCR.Space transport failure: %s', $transportException->getMessage()), $transportException);
         } finally {
             fclose($fileHandle);
+            if ($deletePreparedFile && is_file($preparedFilePath)) {
+                unlink($preparedFilePath);
+            }
         }
 
         $isErrored = true === ($payload['IsErroredOnProcessing'] ?? false);
@@ -240,5 +270,322 @@ final class OcrSpaceOcrProvider implements OcrProvider
     private function resetRetryableFailureState(): void
     {
         $this->cachePool->deleteItem(self::CIRCUIT_FAILURE_COUNT_CACHE_KEY);
+    }
+
+    /**
+     * @return array{0: string, 1: bool}
+     */
+    private function prepareFileForUpload(string $filePath, string $mimeType): array
+    {
+        $fileSize = filesize($filePath);
+        if (!is_int($fileSize) || $fileSize <= self::OCR_SPACE_MAX_FILE_SIZE_BYTES) {
+            return [$filePath, false];
+        }
+
+        if (in_array($mimeType, ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'], true)) {
+            [$imagickPreparedPath, $imagickDeletePreparedPath] = $this->prepareFileForUploadWithImagick($filePath, $mimeType);
+            if ($imagickDeletePreparedPath) {
+                return [$imagickPreparedPath, true];
+            }
+        }
+
+        if (!in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+            return [$filePath, false];
+        }
+
+        if (!function_exists('imagecreatetruecolor') || !function_exists('imagecopyresampled') || !function_exists('imagejpeg')) {
+            return [$filePath, false];
+        }
+
+        $imageSize = @getimagesize($filePath);
+        if (!is_array($imageSize)) {
+            return [$filePath, false];
+        }
+
+        $sourceWidth = (int) $imageSize[0];
+        $sourceHeight = (int) $imageSize[1];
+        if ($sourceWidth <= 0 || $sourceHeight <= 0) {
+            return [$filePath, false];
+        }
+
+        if (!$this->canAllocateGdPixels($sourceWidth * $sourceHeight)) {
+            return [$filePath, false];
+        }
+
+        $sourceImage = $this->createImageResource($filePath, $mimeType);
+        if (!$sourceImage instanceof GdImage) {
+            return [$filePath, false];
+        }
+
+        $scaleFactors = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
+        $qualityLevels = [82, 74, 66, 58, 50, 42, 34, 28, 22];
+        $bestCandidatePath = null;
+        $bestCandidateSize = PHP_INT_MAX;
+
+        foreach ($scaleFactors as $scaleFactor) {
+            $targetWidth = max(1, (int) floor($sourceWidth * $scaleFactor));
+            $targetHeight = max(1, (int) floor($sourceHeight * $scaleFactor));
+
+            if (!$this->canAllocateGdPixels(($sourceWidth * $sourceHeight) + ($targetWidth * $targetHeight))) {
+                continue;
+            }
+
+            $targetImage = imagecreatetruecolor($targetWidth, $targetHeight);
+            if (!$targetImage instanceof GdImage) {
+                continue;
+            }
+
+            $backgroundColor = imagecolorallocate($targetImage, 255, 255, 255);
+            if (false === $backgroundColor) {
+                imagedestroy($targetImage);
+
+                continue;
+            }
+
+            imagefill($targetImage, 0, 0, $backgroundColor);
+            imagecopyresampled(
+                $targetImage,
+                $sourceImage,
+                0,
+                0,
+                0,
+                0,
+                $targetWidth,
+                $targetHeight,
+                $sourceWidth,
+                $sourceHeight,
+            );
+
+            foreach ($qualityLevels as $quality) {
+                $tempPath = tempnam(sys_get_temp_dir(), 'fuelapp-ocr-');
+                if (false === $tempPath) {
+                    continue;
+                }
+
+                $encoded = imagejpeg($targetImage, $tempPath, $quality);
+                if (false === $encoded) {
+                    unlink($tempPath);
+
+                    continue;
+                }
+
+                $optimizedSize = filesize($tempPath);
+                if (is_int($optimizedSize) && $optimizedSize <= self::OCR_SPACE_TARGET_FILE_SIZE_BYTES) {
+                    imagedestroy($targetImage);
+                    imagedestroy($sourceImage);
+
+                    return [$tempPath, true];
+                }
+
+                if (is_int($optimizedSize) && $optimizedSize < $bestCandidateSize) {
+                    if (is_string($bestCandidatePath) && is_file($bestCandidatePath)) {
+                        unlink($bestCandidatePath);
+                    }
+                    $bestCandidatePath = $tempPath;
+                    $bestCandidateSize = $optimizedSize;
+
+                    continue;
+                }
+
+                unlink($tempPath);
+            }
+
+            imagedestroy($targetImage);
+        }
+
+        imagedestroy($sourceImage);
+
+        if (is_string($bestCandidatePath) && is_file($bestCandidatePath)) {
+            if ($bestCandidateSize <= self::OCR_SPACE_MAX_FILE_SIZE_BYTES) {
+                return [$bestCandidatePath, true];
+            }
+
+            unlink($bestCandidatePath);
+        }
+
+        return [$filePath, false];
+    }
+
+    /**
+     * @return array{0: string, 1: bool}
+     */
+    private function prepareFileForUploadWithImagick(string $filePath, string $mimeType): array
+    {
+        if (!class_exists(Imagick::class)) {
+            return [$filePath, false];
+        }
+
+        $scaleFactors = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
+        $qualityLevels = [82, 74, 66, 58, 50, 42, 34, 28, 22];
+        $bestCandidatePath = null;
+        $bestCandidateSize = PHP_INT_MAX;
+
+        foreach ($scaleFactors as $scaleFactor) {
+            foreach ($qualityLevels as $quality) {
+                $tempPath = $this->renderImagickCandidate($filePath, $mimeType, $scaleFactor, $quality);
+                if (null === $tempPath) {
+                    continue;
+                }
+
+                $candidateSize = filesize($tempPath);
+                if (is_int($candidateSize) && $candidateSize <= self::OCR_SPACE_TARGET_FILE_SIZE_BYTES) {
+                    if (is_string($bestCandidatePath) && is_file($bestCandidatePath)) {
+                        unlink($bestCandidatePath);
+                    }
+
+                    return [$tempPath, true];
+                }
+
+                if (is_int($candidateSize) && $candidateSize < $bestCandidateSize) {
+                    if (is_string($bestCandidatePath) && is_file($bestCandidatePath)) {
+                        unlink($bestCandidatePath);
+                    }
+                    $bestCandidatePath = $tempPath;
+                    $bestCandidateSize = $candidateSize;
+
+                    continue;
+                }
+
+                unlink($tempPath);
+            }
+        }
+
+        if (is_string($bestCandidatePath) && is_file($bestCandidatePath)) {
+            if ($bestCandidateSize <= self::OCR_SPACE_MAX_FILE_SIZE_BYTES) {
+                return [$bestCandidatePath, true];
+            }
+
+            unlink($bestCandidatePath);
+        }
+
+        return [$filePath, false];
+    }
+
+    private function renderImagickCandidate(string $filePath, string $mimeType, float $scaleFactor, int $quality): ?string
+    {
+        try {
+            $imagick = new Imagick();
+            if ('application/pdf' === $mimeType) {
+                $imagick->setResolution(self::IMAGICK_READ_DPI, self::IMAGICK_READ_DPI);
+                $imagick->readImage($filePath.'[0]');
+            } else {
+                $imagick->readImage($filePath);
+            }
+
+            $imagick->setIteratorIndex(0);
+            $imagick->stripImage();
+
+            $width = $imagick->getImageWidth();
+            $height = $imagick->getImageHeight();
+            if ($width <= 0 || $height <= 0) {
+                $imagick->clear();
+                $imagick->destroy();
+
+                return null;
+            }
+
+            $targetWidth = max(1, (int) floor($width * $scaleFactor));
+            $targetHeight = max(1, (int) floor($height * $scaleFactor));
+            if ($targetWidth !== $width || $targetHeight !== $height) {
+                $imagick->resizeImage($targetWidth, $targetHeight, Imagick::FILTER_LANCZOS, 1.0, true);
+            }
+
+            $imagick->setImageColorspace(Imagick::COLORSPACE_GRAY);
+            $imagick->setImageFormat('jpeg');
+            $imagick->setImageCompression(Imagick::COMPRESSION_JPEG);
+            $imagick->setImageCompressionQuality($quality);
+
+            $tempPath = tempnam(sys_get_temp_dir(), 'fuelapp-ocr-imagick-');
+            if (false === $tempPath) {
+                $imagick->clear();
+                $imagick->destroy();
+
+                return null;
+            }
+
+            $written = $imagick->writeImage($tempPath);
+            $imagick->clear();
+            $imagick->destroy();
+
+            if (false === $written) {
+                unlink($tempPath);
+
+                return null;
+            }
+
+            return $tempPath;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function createImageResource(string $filePath, string $mimeType): ?GdImage
+    {
+        $image = match ($mimeType) {
+            'image/jpeg' => function_exists('imagecreatefromjpeg') ? @imagecreatefromjpeg($filePath) : null,
+            'image/png' => function_exists('imagecreatefrompng') ? @imagecreatefrompng($filePath) : null,
+            'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($filePath) : null,
+            default => null,
+        };
+
+        return $image instanceof GdImage ? $image : null;
+    }
+
+    private function canAllocateGdPixels(int $pixels): bool
+    {
+        if ($pixels <= 0) {
+            return false;
+        }
+
+        $memoryLimitBytes = $this->memoryLimitBytes();
+        if (null === $memoryLimitBytes) {
+            return true;
+        }
+
+        $availableBytes = $memoryLimitBytes - memory_get_usage(true) - self::PHP_MEMORY_SAFETY_MARGIN_BYTES;
+        if ($availableBytes <= 0) {
+            return false;
+        }
+
+        $requiredBytes = ($pixels * self::GD_ESTIMATED_BYTES_PER_PIXEL) + self::GD_PROCESSING_OVERHEAD_BYTES;
+
+        return $requiredBytes <= $availableBytes;
+    }
+
+    private function memoryLimitBytes(): ?int
+    {
+        $raw = trim((string) ini_get('memory_limit'));
+        if ('' === $raw || '-1' === $raw) {
+            return null;
+        }
+
+        $lastChar = strtolower(substr($raw, -1));
+        $value = (int) $raw;
+        if ($value <= 0) {
+            return null;
+        }
+
+        return match ($lastChar) {
+            'g' => $value * 1024 * 1024 * 1024,
+            'm' => $value * 1024 * 1024,
+            'k' => $value * 1024,
+            default => $value,
+        };
+    }
+
+    private function resolveOcrSpaceFileType(string $preparedFilePath, string $originalMimeType): ?string
+    {
+        $detectedMime = @mime_content_type($preparedFilePath);
+        $normalizedMime = is_string($detectedMime) && '' !== trim($detectedMime)
+            ? strtolower(trim($detectedMime))
+            : strtolower(trim($originalMimeType));
+
+        return match ($normalizedMime) {
+            'application/pdf' => 'PDF',
+            'image/jpeg' => 'JPG',
+            'image/png' => 'PNG',
+            'image/webp' => 'WEBP',
+            default => null,
+        };
     }
 }

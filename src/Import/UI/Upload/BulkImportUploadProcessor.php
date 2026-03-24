@@ -24,9 +24,10 @@ use ZipArchive;
 
 final readonly class BulkImportUploadProcessor
 {
-    // OCR.Space free tier hard limit.
-    private const MAX_RECEIPT_UPLOAD_SIZE = '1024K';
-    private const MAX_RECEIPT_UPLOAD_BYTES = 1_048_576;
+    private const MAX_IMAGE_UPLOAD_SIZE = '8M';
+    private const MAX_IMAGE_UPLOAD_BYTES = 8_388_608;
+    private const MAX_PDF_UPLOAD_BYTES = 1_048_576;
+    private const SIZE_LIMIT_MESSAGE = 'File is too large. Current import limits: 8 MB for images, 1 MB for PDF.';
     private const MAX_ZIP_ENTRIES = 50;
 
     /** @var list<string> */
@@ -209,8 +210,8 @@ final readonly class BulkImportUploadProcessor
                 }
 
                 $copiedBytes += strlen($chunk);
-                if ($copiedBytes > self::MAX_RECEIPT_UPLOAD_BYTES) {
-                    $result->addRejected($filename, 'File is too large. Current import limit is 1 MB.', $source);
+                if ($copiedBytes > self::MAX_IMAGE_UPLOAD_BYTES) {
+                    $result->addRejected($filename, self::SIZE_LIMIT_MESSAGE, $source);
 
                     return;
                 }
@@ -238,9 +239,9 @@ final readonly class BulkImportUploadProcessor
     ): void {
         $violations = $this->validator->validate(new File($sourcePath), [
             new Assert\File(
-                maxSize: self::MAX_RECEIPT_UPLOAD_SIZE,
+                maxSize: self::MAX_IMAGE_UPLOAD_SIZE,
                 mimeTypes: self::ALLOWED_RECEIPT_MIME_TYPES,
-                maxSizeMessage: 'File is too large. Current import limit is 1 MB.',
+                maxSizeMessage: self::SIZE_LIMIT_MESSAGE,
                 mimeTypesMessage: 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.',
             ),
         ]);
@@ -393,6 +394,12 @@ final readonly class BulkImportUploadProcessor
         $allowedExtensions = self::EXTENSIONS_BY_MIME[$normalizedMime] ?? null;
         if (null === $allowedExtensions) {
             return 'Unsupported file type. Allowed: PDF, JPEG, PNG, WEBP.';
+        }
+
+        $maxBytes = 'application/pdf' === $normalizedMime ? self::MAX_PDF_UPLOAD_BYTES : self::MAX_IMAGE_UPLOAD_BYTES;
+        $fileSize = filesize($sourcePath);
+        if (is_int($fileSize) && $fileSize > $maxBytes) {
+            return self::SIZE_LIMIT_MESSAGE;
         }
 
         if (!in_array($extension, $allowedExtensions, true)) {

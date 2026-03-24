@@ -248,4 +248,113 @@ final class RegexReceiptOcrParserTest extends TestCase
         self::assertSame(40_400, $draft->lines[0]->quantityMilliLiters);
         self::assertSame(1769, $draft->lines[0]->unitPriceDeciCentsPerLiter);
     }
+
+    public function testItParsesLuxembourgPostalFormatAndExcellium98Line(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                TOTAL
+                TOTAL FRISANGE 40
+                40 Rue Robert Schuman
+                L-5751 FRISANGE
+                TICKET CLIENT
+                *Excellium 98 5 € 54.72
+                (COL. 7; 51.24 l * € 1.068/l)
+                TOTAL 54.72
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('TOTAL', $draft->stationName);
+        self::assertSame('40 Rue Robert Schuman', $draft->stationStreetName);
+        self::assertSame('L-5751', $draft->stationPostalCode);
+        self::assertSame('FRISANGE', $draft->stationCity);
+        self::assertSame(5472, $draft->totalCents);
+        self::assertCount(1, $draft->lines);
+        self::assertSame('sp98', $draft->lines[0]->fuelType);
+        self::assertSame(51_240, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(1068, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+    }
+
+    public function testItSkipsTechnicalTokenAsStreetCandidate(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                INTERMARCHE
+                a0000000421010
+                41300 NOYERS SUR CHER CARTE BANCAIRE
+                MONTANT REEL 34.11 EUR
+                Carburant = E10
+                Prix unit. 1,619 EUR
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame('INTERMARCHE', $draft->stationName);
+        self::assertNull($draft->stationStreetName);
+        self::assertSame('41300', $draft->stationPostalCode);
+        self::assertSame('NOYERS SUR CHER', $draft->stationCity);
+        self::assertSame(3411, $draft->totalCents);
+    }
+
+    public function testItParsesMontantReelWhenAmountAppearsBeforeLabelInCompactOcrLine(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            '... € 59.56 11.91 20.00 € 71.47 : 1.769/1 Gazole ... DEBIT EUR 71.47 MONTANT REEL ... 51120 SEZANNE PETRO EST LECLERC ...',
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertSame(7147, $draft->totalCents);
+        self::assertSame('PETRO EST', $draft->stationName);
+        self::assertSame('51120', $draft->stationPostalCode);
+        self::assertSame('SEZANNE', $draft->stationCity);
+        self::assertSame(1191, $draft->vatAmountCents);
+        self::assertCount(1, $draft->lines);
+        self::assertSame(1769, $draft->lines[0]->unitPriceDeciCentsPerLiter);
+        self::assertSame(40400, $draft->lines[0]->quantityMilliLiters);
+        self::assertSame(20, $draft->lines[0]->vatRatePercent);
+        self::assertNotContains('fuel_line_quantity_missing', $draft->issues);
+        self::assertNotContains('fuel_line_vat_rate_missing', $draft->issues);
+    }
+
+    public function testItFlagsMissingUnitPriceAndQuantityOnIncompleteFuelLine(): void
+    {
+        $ocr = new OcrExtraction(
+            'ocr_space',
+            <<<TXT
+                STATION TEST
+                12 Rue Exemple
+                75010 PARIS
+                Date 02/03/2026 14:30
+                Gazole 71.47
+                TOTAL TTC 71.47
+                TVA 20.00 % 11.91
+                TXT,
+            [],
+            [],
+        );
+
+        $parser = new RegexReceiptOcrParser();
+        $draft = $parser->parse($ocr);
+
+        self::assertContains('fuel_line_quantity_missing', $draft->issues);
+        self::assertContains('fuel_line_unit_price_missing', $draft->issues);
+        self::assertContains('fuel_lines_incomplete', $draft->issues);
+        self::assertNull($draft->toArray()['creationPayload']);
+    }
 }

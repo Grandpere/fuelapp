@@ -17,7 +17,7 @@ RUN pecl install opentelemetry \
 
 # PHP extensions (dev)
 RUN set -eux; \
-    install-php-extensions pdo_pgsql pgsql redis amqp xdebug zip gd
+    install-php-extensions pdo_pgsql pgsql redis amqp xdebug zip gd imagick
 
 # Composer binary (keeps PHP version aligned with runtime image)
 COPY --from=composer /usr/bin/composer /usr/bin/composer

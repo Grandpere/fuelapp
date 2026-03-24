@@ -257,7 +257,7 @@
 - [completed] Add rate limiting for `/api/imports` and `/api/imports/bulk` with controlled `429` + `Retry-After`.
 - [completed] Add functional security regressions for oversized login payload and upload/bulk rate limiting.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP12-003 Import/upload security hardening
 
@@ -267,7 +267,7 @@
 - [completed] Add defensive ZIP processing limits (max entries and streamed per-entry size cap).
 - [completed] Add functional regressions for mime-extension mismatch and hostile ZIP entries.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP12-004 Security observability and incident runbook hardening
 

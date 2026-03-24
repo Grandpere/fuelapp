@@ -646,6 +646,57 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame($jobId, $audit->getTargetId());
     }
 
+    public function testAdminReviewHighlightsMissingIssuedAtWhenOcrDidNotDetectDate(): void
+    {
+        $adminEmail = 'ui.admin.import.missing-date@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.import.missing-date.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/24/admin-missing-date.jpg');
+        $job->setOriginalFilename('admin-missing-date.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('c', 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'stationName' => 'TOTAL',
+                'stationStreetName' => '40 Rue Robert Schuman',
+                'stationPostalCode' => 'L-5751',
+                'stationCity' => 'FRISANGE',
+                'issuedAt' => null,
+                'lines' => [[
+                    'fuelType' => 'sp98',
+                    'quantityMilliLiters' => 51240,
+                    'unitPriceDeciCentsPerLiter' => 1068,
+                    'vatRatePercent' => 5,
+                ]],
+                'issues' => ['issued_at_missing'],
+                'creationPayload' => null,
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-24 11:20:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-24 11:20:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-24 11:20:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $jobId = $job->getId()->toRfc4122();
+
+        $reviewResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $reviewResponse->getStatusCode());
+        $reviewContent = (string) $reviewResponse->getContent();
+        self::assertStringContainsString('Date required before finalization', $reviewContent);
+        self::assertStringContainsString('Required for this import: OCR did not detect the receipt date.', $reviewContent);
+        self::assertStringContainsString('name="issuedAt"', $reviewContent);
+    }
+
     public function testAdminCanEditAndDeleteStationAndMaintenanceEventFromBackofficeUi(): void
     {
         $adminEmail = 'ui.admin.station.event.write@example.com';

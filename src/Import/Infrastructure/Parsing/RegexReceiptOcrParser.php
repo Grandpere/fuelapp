@@ -1287,5 +1287,4 @@ final class RegexReceiptOcrParser implements ReceiptOcrParser
 
         return null;
     }
-
 }

@@ -5,8 +5,11 @@
 {% set admin_section = 'imports' %}
 
 {% block admin_content %}
+    {% set parsedDraft = payloadData is not null and payloadData.parsedDraft is defined and payloadData.parsedDraft is iterable ? payloadData.parsedDraft : null %}
     {% set creationPayload = payloadData is not null and payloadData.creationPayload is defined and payloadData.creationPayload is iterable ? payloadData.creationPayload : null %}
-    {% set firstLine = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable and creationPayload.lines|length > 0 ? creationPayload.lines|first : null %}
+    {% set firstLine = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable and creationPayload.lines|length > 0 ? creationPayload.lines|first : (parsedDraft is not null and parsedDraft.lines is defined and parsedDraft.lines is iterable and parsedDraft.lines|length > 0 ? parsedDraft.lines|first : null) %}
+    {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
+    {% set issuedAtMissing = 'issued_at_missing' in issueList %}
 
     <section class="card admin-panel">
         <h2 class="page-title">Import Job Detail</h2>
@@ -87,6 +90,20 @@
         </section>
     {% endif %}
 
+    {% if issueList|length > 0 %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Detected issues</h3>
+            <p class="muted">{{ issueList|join(', ') }}</p>
+        </section>
+    {% endif %}
+
+    {% if issuedAtMissing %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Date required before finalization</h3>
+            <p class="muted">OCR could not read the receipt date. Enter the receipt date and time below before finalizing this import.</p>
+        </section>
+    {% endif %}
+
     {% if job.status.value == 'failed' %}
         <section class="card admin-panel admin-section-spaced">
             <h3 class="section-title">Retry Failed Job</h3>
@@ -109,23 +126,24 @@
                 <div class="form-grid-2">
                     <label class="label">
                         Issued at
-                        <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\\\TH:i') : '' }}">
+                        <span class="muted compact-note">{{ issuedAtMissing ? 'Required for this import: OCR did not detect the receipt date.' : 'Use the receipt date/time. Leave empty only when OCR already filled it.' }}</span>
+                        <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\\\TH:i') : (parsedDraft is not null and parsedDraft.issuedAt is defined and parsedDraft.issuedAt is not null ? parsedDraft.issuedAt|date('Y-m-d\\\\TH:i') : '') }}">
                     </label>
                     <label class="label">
                         Station name
-                        <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : '' }}">
+                        <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : (parsedDraft is not null and parsedDraft.stationName is defined ? parsedDraft.stationName : '') }}">
                     </label>
                     <label class="label">
                         Station street
-                        <input class="input" type="text" name="stationStreetName" value="{{ creationPayload is not null and creationPayload.stationStreetName is defined ? creationPayload.stationStreetName : '' }}">
+                        <input class="input" type="text" name="stationStreetName" value="{{ creationPayload is not null and creationPayload.stationStreetName is defined ? creationPayload.stationStreetName : (parsedDraft is not null and parsedDraft.stationStreetName is defined ? parsedDraft.stationStreetName : '') }}">
                     </label>
                     <label class="label">
                         Station postal code
-                        <input class="input" type="text" name="stationPostalCode" value="{{ creationPayload is not null and creationPayload.stationPostalCode is defined ? creationPayload.stationPostalCode : '' }}">
+                        <input class="input" type="text" name="stationPostalCode" value="{{ creationPayload is not null and creationPayload.stationPostalCode is defined ? creationPayload.stationPostalCode : (parsedDraft is not null and parsedDraft.stationPostalCode is defined ? parsedDraft.stationPostalCode : '') }}">
                     </label>
                     <label class="label">
                         Station city
-                        <input class="input" type="text" name="stationCity" value="{{ creationPayload is not null and creationPayload.stationCity is defined ? creationPayload.stationCity : '' }}">
+                        <input class="input" type="text" name="stationCity" value="{{ creationPayload is not null and creationPayload.stationCity is defined ? creationPayload.stationCity : (parsedDraft is not null and parsedDraft.stationCity is defined ? parsedDraft.stationCity : '') }}">
                     </label>
                     <label class="label">
                         Latitude (micro degrees)
@@ -137,7 +155,7 @@
                     </label>
                     <label class="label">
                         Odometer (km)
-                        <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : '' }}" min="0" step="1">
+                        <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : (parsedDraft is not null and parsedDraft.odometerKilometers is defined ? parsedDraft.odometerKilometers : '') }}" min="0" step="1">
                     </label>
                     <label class="label">
                         Line fuel type

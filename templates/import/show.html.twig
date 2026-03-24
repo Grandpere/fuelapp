@@ -3,6 +3,8 @@
 {% block title %}Import Review{% endblock %}
 
 {% block body %}
+    {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
+    {% set issuedAtMissing = 'issued_at_missing' in issueList %}
     <main class="app-shell page-stack">
         <section class="card section-card">
             <div class="section-header">
@@ -39,10 +41,17 @@
             </dl>
         </section>
 
-        {% if parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable and parsedDraft.issues|length > 0 %}
+        {% if issueList|length > 0 %}
             <section class="card section-card">
                 <p class="text-block-title">Detected issues</p>
-                <p class="muted section-lead">{{ parsedDraft.issues|join(', ') }}</p>
+                <p class="muted section-lead">{{ issueList|join(', ') }}</p>
+            </section>
+        {% endif %}
+
+        {% if issuedAtMissing %}
+            <section class="card section-card">
+                <p class="text-block-title">Date required before finalization</p>
+                <p class="muted section-lead">OCR could not read the receipt date. Enter the receipt date and time below before finalizing this import.</p>
             </section>
         {% endif %}
 
@@ -69,6 +78,7 @@
                     <div class="form-grid-2">
                         <label class="label">
                             Issued at
+                            <span class="muted compact-note">{{ issuedAtMissing ? 'Required for this import: OCR did not detect the receipt date.' : 'Use the receipt date/time. Leave empty only when OCR already filled it.' }}</span>
                             <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\TH:i') : (parsedDraft is not null and parsedDraft.issuedAt is defined and parsedDraft.issuedAt is not null ? parsedDraft.issuedAt|date('Y-m-d\\TH:i') : '') }}">
                         </label>
                         <label class="label">

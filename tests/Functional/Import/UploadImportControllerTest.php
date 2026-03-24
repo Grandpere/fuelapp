@@ -381,6 +381,51 @@ final class UploadImportControllerTest extends KernelTestCase
         self::assertCount(0, $this->asyncTransport->getSent());
     }
 
+    public function testBulkZipRejectsArchivesWithTooManyEntries(): void
+    {
+        $email = 'import.bulk.zip.too-many@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $token = $this->apiLogin($email, $password);
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+
+        $entries = [];
+        for ($index = 1; $index <= 51; ++$index) {
+            $entries[sprintf('receipt-%02d.png', $index)] = $png;
+        }
+        $zip = $this->createUploadedZipFile('too-many.zip', $entries);
+
+        $response = $this->request(
+            'POST',
+            '/api/imports/bulk',
+            ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
+            ['files' => [$zip]],
+        );
+
+        self::assertSame(Response::HTTP_CREATED, $response->getStatusCode());
+        /** @var array{
+         *   acceptedCount:int,
+         *   rejectedCount:int,
+         *   accepted:list<array{id:string,status:string,filename:string,source:string}>,
+         *   rejected:list<array{filename:string,reason:string,source:string}>
+         * } $payload
+         */
+        $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(50, $payload['acceptedCount']);
+        self::assertSame(1, $payload['rejectedCount']);
+        self::assertSame('too-many.zip', $payload['rejected'][0]['filename']);
+        self::assertStringContainsString('ZIP archive contains too many files. Limit is 50 entries.', $payload['rejected'][0]['reason']);
+        self::assertCount(50, $this->asyncTransport->getSent());
+    }
+
     public function testUploadEndpointRateLimitReturns429AfterTooManyAttempts(): void
     {
         $email = sprintf('import.upload.rate.%s@example.com', uniqid('', true));

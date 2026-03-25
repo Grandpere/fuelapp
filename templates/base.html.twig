@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-theme-storage-key="fuelapp-theme" data-theme-ready="0">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,17 +22,17 @@
                     : (prefersDark ? 'dark' : 'light');
 
                 root.dataset.theme = theme;
+                root.dataset.themeReady = '1';
                 root.style.colorScheme = theme;
             })();
         </script>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
         {% block stylesheets %}
             <style>
                 :root {
+                    --font-body: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                    --font-display: "Arial Narrow", "Avenir Next Condensed", "Segoe UI Semibold", sans-serif;
                     --bg: #07151f;
                     --bg-muted: #0f2332;
                     --panel: #102b3e;
@@ -203,7 +203,7 @@
                 }
 
                 body {
-                    font-family: "Manrope", sans-serif;
+                    font-family: var(--font-body);
                     background:
                         radial-gradient(circle at 16% -2%, var(--page-accent-one), transparent 32%),
                         radial-gradient(circle at 92% 0%, var(--page-accent-two), transparent 24%),
@@ -234,7 +234,7 @@
                 }
 
                 .topbar-brand {
-                    font-family: "Space Grotesk", sans-serif;
+                    font-family: var(--font-display);
                     font-size: 1rem;
                     letter-spacing: 0.03em;
                     color: var(--brand-text);
@@ -286,7 +286,7 @@
 
                 .page-title {
                     margin: 0;
-                    font-family: "Space Grotesk", sans-serif;
+                    font-family: var(--font-display);
                     font-size: clamp(1.45rem, 2.8vw, 2.2rem);
                     letter-spacing: 0.01em;
                 }
@@ -409,7 +409,7 @@
                 .section-title {
                     margin: 0;
                     font-size: 1.05rem;
-                    font-family: "Space Grotesk", sans-serif;
+                    font-family: var(--font-display);
                 }
 
                 .section-lead {
@@ -946,6 +946,7 @@
 
                 function paintTheme(theme) {
                     root.dataset.theme = theme;
+                    root.dataset.themeReady = '1';
                     root.style.colorScheme = theme;
 
                     buttons.forEach(function (button) {
@@ -1005,6 +1006,10 @@
                         prefersDarkMedia.addListener(updateFromSystem);
                     }
                 }
+
+                document.addEventListener('turbo:render', function () {
+                    paintTheme(activeTheme);
+                });
             })();
         </script>
     </body>

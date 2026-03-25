@@ -172,6 +172,9 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('data-view="bars"', $content);
         self::assertStringContainsString('data-view="line"', $content);
         self::assertStringContainsString('trend-chart-shell', $content);
+        self::assertStringContainsString('data-chart-runtime-state="idle"', $content);
+        self::assertStringContainsString('data-chart-view="bars"', $content);
+        self::assertStringContainsString('analytics.chartView.cost', $content);
     }
 
     /**

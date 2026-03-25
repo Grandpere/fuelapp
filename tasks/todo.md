@@ -259,6 +259,15 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] User-run functional suite validated (`make phpunit-functional`).
 
+# TODO - SP13-003 Theme toggle and light mode
+
+## Plan
+- [in_progress] Introduce shared light/dark theme tokens in the base layout and keep current look as dark mode.
+- [pending] Add a persistent theme toggle in the UI shell with system-preference fallback.
+- [pending] Adjust the most visible screens/components so light mode stays readable without page-specific regressions.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and validate the visual result.
+
 # TODO - SP12-003 Import/upload security hardening
 
 ## Plan

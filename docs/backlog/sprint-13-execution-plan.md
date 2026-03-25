@@ -13,6 +13,11 @@ Finish the horizontal UX polish that makes the app feel like a single product in
 - Remove remaining high-visibility inline styles from front/admin views.
 - Align filter blocks, table wrappers, action rows, and cross-links between related sections.
 
+## Step 3 - Theme flexibility
+- Add shared light/dark semantic tokens at layout level.
+- Provide a persistent UI toggle with system-preference fallback.
+- Validate high-visibility screens in both modes, especially analytics and maintenance dashboards.
+
 ## Validation
 - Non-functional quality gates on every ticket.
 - User-run `make phpunit-functional` after visible web changes.

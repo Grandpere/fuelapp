@@ -113,12 +113,12 @@
             gap: 0.6rem;
             flex-wrap: wrap;
             font-size: 0.8rem;
-            color: #bcd0de;
+            color: var(--text-soft);
         }
 
         .empty-state {
             padding: 0.8rem;
-            border: 1px dashed rgba(147, 178, 198, 0.35);
+            border: 1px dashed var(--table-wrap-border);
             border-radius: 10px;
             color: var(--text-soft);
         }
@@ -126,6 +126,16 @@
         .planner-section {
             display: grid;
             gap: 0.8rem;
+        }
+
+        .pill-reminder-date {
+            background: var(--pill-date-bg);
+            color: var(--pill-date-text);
+        }
+
+        .pill-reminder-odometer {
+            background: var(--pill-odometer-bg);
+            color: var(--pill-odometer-text);
         }
 
         @media (max-width: 1100px) {
@@ -272,8 +282,8 @@
                                     <div class="item-meta">
                                         {% if reminder.dueAtDate is not null %}<span>Due date: {{ reminder.dueAtDate|date('d/m/Y') }}</span>{% endif %}
                                         {% if reminder.dueAtOdometerKilometers is not null %}<span>Due odometer: {{ reminder.dueAtOdometerKilometers }} km</span>{% endif %}
-                                        {% if reminder.dueByDate %}<span class="pill" style="background: rgba(247,181,0,0.2); color: #ffd27a;">Date due</span>{% endif %}
-                                        {% if reminder.dueByOdometer %}<span class="pill" style="background: rgba(54,180,252,0.2); color: #9fdefe;">Odometer due</span>{% endif %}
+                                        {% if reminder.dueByDate %}<span class="pill pill-reminder-date">Date due</span>{% endif %}
+                                        {% if reminder.dueByOdometer %}<span class="pill pill-reminder-odometer">Odometer due</span>{% endif %}
                                     </div>
                                 </div>
                             {% endfor %}

@@ -6,3 +6,4 @@ Improve perceived product quality by harmonizing navigation, page headers, table
 ## Tickets
 - [SP13-001 - Analytics demo dataset and chart dashboard polish](tickets/SP13-001-analytics-demo-dataset-and-chart-dashboard.md) - P1 - done
 - [SP13-002 - Navigation and layout cohesion pass](tickets/SP13-002-navigation-layout-cohesion.md) - P1 - in_progress
+- [SP13-003 - Light/Dark theme toggle](tickets/SP13-003-light-dark-theme-toggle.md) - P1 - in_progress

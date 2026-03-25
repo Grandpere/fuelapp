@@ -849,15 +849,25 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script id="leaflet-script" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
         const initAnalyticsStationMap = () => {
             const mapContainer = document.getElementById('analytics-station-map');
             const dataContainer = document.getElementById('analytics-station-map-data');
-            if (!mapContainer || !dataContainer || typeof L === 'undefined') {
+            if (!mapContainer || !dataContainer) {
                 return;
             }
             if (mapContainer.dataset.mapInitialized === '1') {
+                return;
+            }
+
+            if (typeof L === 'undefined') {
+                const leafletScript = document.getElementById('leaflet-script');
+                if (leafletScript && leafletScript.dataset.analyticsMapBound !== '1') {
+                    leafletScript.addEventListener('load', initAnalyticsStationMap, { once: true });
+                    leafletScript.dataset.analyticsMapBound = '1';
+                }
+
                 return;
             }
 

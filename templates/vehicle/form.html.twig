@@ -13,11 +13,10 @@
         }
 
         .vehicle-form-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: start;
             gap: 0.8rem;
-            flex-wrap: wrap;
         }
 
         .vehicle-form-card {
@@ -29,14 +28,17 @@
 {% block body %}
     <main class="app-shell vehicle-form-page">
         <header class="vehicle-form-header">
-            <h1 class="page-title">{% if isEdit %}Edit vehicle{% else %}Add vehicle{% endif %}</h1>
+            <div class="page-header">
+                <h1 class="page-title">{% if isEdit %}Edit vehicle{% else %}Add vehicle{% endif %}</h1>
+                <p class="muted section-lead">{% if isEdit %}Update the vehicle profile used to group receipts and maintenance costs.{% else %}Create a vehicle to group receipts, maintenance costs and reminders in one place.{% endif %}</p>
+            </div>
             <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}" data-turbo-frame="_top">Back</a>
         </header>
 
         <section class="card vehicle-form-card">
             {% if errors is not empty %}
-                <div class="flash" style="border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
-                    <ul style="margin: 0; padding-left: 1.15rem;">
+                <div class="flash flash-error">
+                    <ul class="flash-list">
                         {% for error in errors %}
                             <li>{{ error }}</li>
                         {% endfor %}
@@ -44,7 +46,7 @@
                 </div>
             {% endif %}
 
-            <form method="post" action="" data-turbo-frame="_top" style="display:grid; gap:0.9rem;">
+            <form method="post" action="" data-turbo-frame="_top" class="form-stack">
                 <input type="hidden" name="_token" value="{{ csrfToken }}">
                 <label class="label">
                     Name
@@ -55,7 +57,7 @@
                     <input class="input" type="text" name="plateNumber" maxlength="40" value="{{ formData.plateNumber }}" required>
                 </label>
 
-                <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <div class="actions-wrap">
                     <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create vehicle{% endif %}</button>
                     <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}" data-turbo-frame="_top">Cancel</a>
                 </div>

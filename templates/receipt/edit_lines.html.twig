@@ -3,18 +3,18 @@
 {% block title %}Edit Receipt Lines{% endblock %}
 
 {% block body %}
-    <main class="app-shell" style="display:grid; gap:1rem; max-width:1080px;">
-        <header style="display:grid; gap:.35rem;">
-            <div style="display:grid; gap:.35rem;">
+    <main class="app-shell page-stack page-medium shell-compact">
+        <header class="page-header">
+            <div class="page-header">
                 <h1 class="page-title">Edit receipt lines</h1>
-                <p class="muted" style="margin:0;">Receipt {{ receipt.id.toString() }} - update fuel lines and totals recalculation.</p>
+                <p class="muted section-lead">Receipt {{ receipt.id.toString() }} - update fuel lines and totals recalculation.</p>
             </div>
         </header>
 
-        <section class="card" style="padding:1rem;">
+        <section class="card section-card">
             {% if errors is not empty %}
-                <div class="flash" style="margin-bottom:1rem; border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
-                    <ul style="margin:0; padding-left:1.1rem;">
+                <div class="flash flash-error">
+                    <ul class="flash-list">
                         {% for error in errors %}
                             <li>{{ error }}</li>
                         {% endfor %}
@@ -22,7 +22,7 @@
                 </div>
             {% endif %}
 
-            <form method="post" style="display:grid; gap:.8rem;">
+            <form method="post" class="form-stack">
                 <input type="hidden" name="_token" value="{{ csrfToken }}">
                 <div class="table-wrap">
                     <table class="app-table" style="min-width:780px;">
@@ -53,7 +53,7 @@
                     </table>
                 </div>
 
-                <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                <div class="actions-wrap">
                     <button class="btn btn-primary" type="submit">Save lines</button>
                     <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString()}) }}">Cancel</a>
                 </div>

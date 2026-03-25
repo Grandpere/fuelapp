@@ -6,10 +6,22 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Station Detail</h2>
-        <p class="muted">Back-office detail view with direct mutation actions.</p>
+        <div class="admin-page-head">
+            <div class="admin-page-header">
+                <h2 class="page-title">Station Detail</h2>
+                <p class="muted">Back-office detail view with direct mutation actions.</p>
+            </div>
+            <div class="admin-page-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_admin_station_edit', {id: station.id.toString}) }}">Edit station</a>
+                <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
+                    <button class="btn btn-danger" type="submit">Delete</button>
+                </form>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Back to list</a>
+            </div>
+        </div>
 
-        <dl class="admin-dl" style="margin-top: 1rem;">
+        <dl class="admin-dl admin-detail-stack">
             <dt class="admin-dt">ID</dt>
             <dd class="admin-dd">{{ station.id.toString }}</dd>
             <dt class="admin-dt">Name</dt>
@@ -34,13 +46,7 @@
             <dd class="admin-dd">{{ station.geocodingLastError ?? 'n/a' }}</dd>
         </dl>
 
-        <div style="margin-top: 1rem;">
-            <a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Back to list</a>
-            <a class="btn btn-secondary" href="{{ path('ui_admin_station_edit', {id: station.id.toString}) }}">Edit station</a>
-            <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');" style="display:inline-flex;">
-                <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
-                <button class="btn btn-danger" type="submit">Delete</button>
-            </form>
+        <div class="admin-page-actions admin-detail-stack">
             <a class="btn btn-secondary" href="/api/admin/stations/{{ station.id.toString }}">Open API resource</a>
         </div>
     </section>

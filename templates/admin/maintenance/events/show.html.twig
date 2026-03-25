@@ -6,10 +6,22 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Maintenance Event Detail</h2>
-        <p class="muted">Back-office detail view with direct mutation actions.</p>
+        <div class="admin-page-head">
+            <div class="admin-page-header">
+                <h2 class="page-title">Maintenance Event Detail</h2>
+                <p class="muted">Back-office detail view with direct mutation actions.</p>
+            </div>
+            <div class="admin-page-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString}) }}">Edit event</a>
+                <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" onsubmit="return confirm('Delete this maintenance event?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.id.toString) }}">
+                    <button class="btn btn-danger" type="submit">Delete</button>
+                </form>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Back to list</a>
+            </div>
+        </div>
 
-        <dl class="admin-dl" style="margin-top: 1rem;">
+        <dl class="admin-dl admin-detail-stack">
             <dt class="admin-dt">ID</dt>
             <dd class="admin-dd">{{ event.id.toString }}</dd>
             <dt class="admin-dt">Owner ID</dt>
@@ -38,13 +50,7 @@
             <dd class="admin-dd">{{ event.updatedAt|date('Y-m-d H:i:s') }}</dd>
         </dl>
 
-        <div style="margin-top: 1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Back to list</a>
-            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString}) }}">Edit event</a>
-            <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" onsubmit="return confirm('Delete this maintenance event?');" style="display:inline-flex;">
-                <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.id.toString) }}">
-                <button class="btn btn-danger" type="submit">Delete</button>
-            </form>
+        <div class="admin-page-actions admin-detail-stack">
             <a class="btn btn-secondary" href="/api/admin/maintenance/events/{{ event.id.toString }}">Open API resource</a>
         </div>
     </section>

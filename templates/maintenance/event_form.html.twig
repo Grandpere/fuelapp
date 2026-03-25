@@ -29,14 +29,17 @@
 {% block body %}
     <main class="app-shell maintenance-form-page">
         <header class="maintenance-form-header">
-            <h1 class="page-title">{% if isEdit %}Edit maintenance event{% else %}Add maintenance event{% endif %}</h1>
+            <div class="page-header">
+                <h1 class="page-title">{% if isEdit %}Edit maintenance event{% else %}Add maintenance event{% endif %}</h1>
+                <p class="muted section-lead">Record a maintenance operation with vehicle, timing, odometer and cost context.</p>
+            </div>
             <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}" data-turbo-frame="_top">Back</a>
         </header>
 
         <section class="card maintenance-form-card">
             {% if errors is not empty %}
-                <div class="flash" style="border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
-                    <ul style="margin: 0; padding-left: 1.15rem;">
+                <div class="flash flash-error">
+                    <ul class="flash-list">
                         {% for error in errors %}
                             <li>{{ error }}</li>
                         {% endfor %}
@@ -44,7 +47,7 @@
                 </div>
             {% endif %}
 
-            <form method="post" action="" data-turbo-frame="_top" style="display: grid; gap: 0.9rem;">
+            <form method="post" action="" data-turbo-frame="_top" class="form-stack">
                 <input type="hidden" name="_token" value="{{ csrfToken }}">
 
                 <div class="form-grid-2">
@@ -88,7 +91,7 @@
                     <textarea class="input" name="description" rows="4" maxlength="2000">{{ formData.description }}</textarea>
                 </label>
 
-                <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                <div class="actions-wrap">
                     <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create event{% endif %}</button>
                     <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}" data-turbo-frame="_top">Cancel</a>
                 </div>

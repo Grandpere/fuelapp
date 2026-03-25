@@ -6,11 +6,13 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Stations</h2>
-        <p class="muted">Global station registry used for receipt matching and geocoding.</p>
+        <div class="admin-page-header">
+            <h2 class="page-title">Stations</h2>
+            <p class="muted">Global station registry used for receipt matching and geocoding.</p>
+        </div>
 
-        <div class="table-wrap" style="margin-top: 1rem;">
-            <table class="app-table" style="min-width: 820px;">
+        <div class="table-wrap admin-table-top table-min-820">
+            <table class="app-table table-min-820">
                 <thead>
                 <tr>
                     <th>Name</th>
@@ -23,8 +25,7 @@
                 <tbody>
                 {% for station in stations %}
                     <tr
-                        class="table-row"
-                        style="cursor:pointer;"
+                        class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
                         data-row-link-url-value="{{ path('ui_admin_station_show', {id: station.id.toString}) }}"
@@ -39,7 +40,7 @@
                                 <span class="muted">n/a</span>
                             {% endif %}
                         </td>
-                        <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                        <td class="action-cell-flex">
                             <a class="btn btn-secondary" href="{{ path('ui_admin_station_show', {id: station.id.toString}) }}">Detail</a>
                             <a class="btn btn-secondary" href="{{ path('ui_admin_station_edit', {id: station.id.toString}) }}">Edit</a>
                             <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">

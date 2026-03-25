@@ -6,12 +6,14 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Edit vehicle</h2>
-        <p class="muted">Admin mutation flow for owner vehicle management.</p>
+        <div class="admin-page-header">
+            <h2 class="page-title">Edit vehicle</h2>
+            <p class="muted">Admin mutation flow for owner vehicle management.</p>
+        </div>
 
         {% if errors is not empty %}
-            <div class="flash" style="margin-top: 1rem; border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
-                <ul style="margin: 0; padding-left: 1.15rem;">
+            <div class="flash flash-error admin-detail-stack">
+                <ul class="flash-list">
                     {% for error in errors %}
                         <li>{{ error }}</li>
                     {% endfor %}
@@ -19,7 +21,7 @@
             </div>
         {% endif %}
 
-        <form method="post" action="" data-turbo-frame="_top" style="display:grid; gap:0.8rem; margin-top:1rem; max-width:720px;">
+        <form method="post" action="" data-turbo-frame="_top" class="form-stack content-narrow admin-detail-stack">
             <input type="hidden" name="_token" value="{{ csrfToken }}">
             <label class="label">
                 Owner ID
@@ -34,7 +36,7 @@
                 <input class="input" type="text" name="plateNumber" value="{{ formData.plateNumber }}" required>
             </label>
 
-            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <div class="actions-wrap">
                 <button class="btn btn-primary" type="submit">Save changes</button>
                 <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}" data-turbo-frame="_top">Back to list</a>
             </div>

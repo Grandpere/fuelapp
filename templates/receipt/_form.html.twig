@@ -1,7 +1,7 @@
 <turbo-frame id="receipt_form_frame">
     {% if errors is not empty %}
-        <div class="flash" style="border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
-            <ul style="margin: 0; padding-left: 1.15rem;">
+        <div class="flash flash-error">
+            <ul class="flash-list">
                 {% for error in errors %}
                     <li>{{ error }}</li>
                 {% endfor %}
@@ -9,7 +9,7 @@
         </div>
     {% endif %}
 
-    <form method="post" action="{{ path('ui_receipt_new') }}" data-turbo-frame="_top" style="display:grid; gap:0.9rem;">
+    <form method="post" action="{{ path('ui_receipt_new') }}" data-turbo-frame="_top" class="form-stack">
         <input type="hidden" name="_token" value="{{ csrfToken }}">
 
         <label class="label">
@@ -21,7 +21,7 @@
             <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
         </label>
 
-        <fieldset class="card-subtle" style="padding: 0.9rem; border: 1px solid rgba(147,178,198,0.3);">
+        <fieldset class="card-subtle form-block">
             <legend class="muted">Fuel line</legend>
             <div class="form-grid-2">
                 <label class="label">
@@ -48,7 +48,7 @@
             </div>
         </fieldset>
 
-        <fieldset class="card-subtle" style="padding: 0.9rem; border: 1px solid rgba(147,178,198,0.3);">
+        <fieldset class="card-subtle form-block">
             <legend class="muted">Station</legend>
             <div class="form-grid-2">
                 <label class="label">
@@ -78,7 +78,7 @@
             </div>
         </fieldset>
 
-        <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+        <div class="actions-wrap">
             <button class="btn btn-primary" type="submit">Save receipt</button>
             <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Cancel</a>
         </div>

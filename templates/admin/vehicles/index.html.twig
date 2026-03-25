@@ -6,11 +6,13 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Vehicles</h2>
-        <p class="muted">Global vehicle list used to attach receipts to an owner fleet. Creation stays in user flow.</p>
+        <div class="admin-page-header">
+            <h2 class="page-title">Vehicles</h2>
+            <p class="muted">Global vehicle list used to attach receipts to an owner fleet. Creation stays in user flow.</p>
+        </div>
 
-        <div class="table-wrap" style="margin-top: 1rem;">
-            <table class="app-table" style="min-width: 780px;">
+        <div class="table-wrap admin-table-top table-min-780">
+            <table class="app-table table-min-780">
                 <thead>
                 <tr>
                     <th>Name</th>
@@ -23,8 +25,7 @@
                 <tbody>
                 {% for vehicle in vehicles %}
                     <tr
-                        class="table-row"
-                        style="cursor:pointer;"
+                        class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
                         data-row-link-url-value="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString}) }}"
@@ -33,7 +34,7 @@
                         <td>{{ vehicle.plateNumber }}</td>
                         <td>{{ vehicle.ownerId ?? 'n/a' }}</td>
                         <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
-                        <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                        <td class="action-cell-flex">
                             <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString}) }}" data-turbo-frame="_top">Detail</a>
                             <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString}) }}" data-turbo-frame="_top">Edit</a>
                             <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this vehicle?');">

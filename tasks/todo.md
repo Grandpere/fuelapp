@@ -273,9 +273,19 @@
 
 ## Plan
 - [completed] Clarify Sprint 15 backlog tracking after SP15-001 delivery.
-- [in_progress] Replace generic bulk-upload flash floods with a structured post-upload summary on `/ui/imports`.
-- [pending] Keep accepted/rejected filename context readable for ZIP-originated entries.
-- [pending] Add/update web functional coverage for the new summary behavior.
+- [completed] Replace generic bulk-upload flash floods with a structured post-upload summary on `/ui/imports`.
+- [completed] Keep accepted/rejected filename context readable for ZIP-originated entries.
+- [completed] Add/update web functional coverage for the new summary behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP15-003 Front/admin product friction cleanup
+
+## Plan
+- [completed] Clarify Sprint 15 tracking after SP15-002 delivery.
+- [in_progress] Add clearer next-step actions on import detail pages for processed/duplicate jobs.
+- [pending] Keep front/admin import detail shortcuts aligned.
+- [pending] Add/update functional coverage for the new terminal-state shortcuts.
 - [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures if any.
 

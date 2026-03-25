@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Receipt\Infrastructure\Persistence\Doctrine\Repository;
 
+use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateCandidate;
+use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateLookup;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\Domain\Receipt;
@@ -35,7 +37,7 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use Symfony\Component\Uid\Uuid;
 use UnexpectedValueException;
 
-final readonly class DoctrineReceiptRepository implements ReceiptRepository
+final readonly class DoctrineReceiptRepository implements ReceiptRepository, ReceiptDuplicateLookup
 {
     public function __construct(
         private EntityManagerInterface $em,
@@ -249,6 +251,84 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $this->applyOwnerFilter($qb);
 
         return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function findMatchingReceiptIdForOwner(string $ownerId, ReceiptDuplicateCandidate $candidate): ?string
+    {
+        if (!Uuid::isValid($ownerId)) {
+            return null;
+        }
+
+        $entities = $this->em->getRepository(ReceiptEntity::class)
+            ->createQueryBuilder('r')
+            ->leftJoin('r.station', 's')
+            ->addSelect('s')
+            ->leftJoin('r.lines', 'rl')
+            ->addSelect('rl')
+            ->andWhere('IDENTITY(r.owner) = :ownerId')
+            ->andWhere('r.issuedAt = :issuedAt')
+            ->andWhere('r.totalCents = :totalCents')
+            ->andWhere('r.vatAmountCents = :vatAmountCents')
+            ->setParameter('ownerId', $ownerId)
+            ->setParameter('issuedAt', $candidate->issuedAt)
+            ->setParameter('totalCents', $candidate->totalCents)
+            ->setParameter('vatAmountCents', $candidate->vatAmountCents)
+            ->orderBy('r.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        if (!is_iterable($entities)) {
+            return null;
+        }
+
+        $expectedStation = [
+            $this->normalizeDuplicateString($candidate->stationName),
+            $this->normalizeDuplicateString($candidate->stationStreetName),
+            $this->normalizeDuplicateString($candidate->stationPostalCode),
+            $this->normalizeDuplicateString($candidate->stationCity),
+        ];
+        $expectedLines = $this->normalizeDuplicateLines($candidate->lines);
+
+        foreach ($entities as $entity) {
+            if (!$entity instanceof ReceiptEntity) {
+                continue;
+            }
+
+            $station = $entity->getStation();
+            if (!$station instanceof StationEntity) {
+                continue;
+            }
+
+            $stationSignature = [
+                $this->normalizeDuplicateString($station->getName()),
+                $this->normalizeDuplicateString($station->getStreetName()),
+                $this->normalizeDuplicateString($station->getPostalCode()),
+                $this->normalizeDuplicateString($station->getCity()),
+            ];
+
+            if ($stationSignature !== $expectedStation) {
+                continue;
+            }
+
+            $entityLines = [];
+            foreach ($entity->getLines() as $line) {
+                $entityLines[] = [
+                    $this->normalizeDuplicateString($line->getFuelType()),
+                    $line->getQuantityMilliLiters(),
+                    $line->getUnitPriceDeciCentsPerLiter(),
+                    $line->getVatRatePercent(),
+                ];
+            }
+
+            sort($entityLines);
+            if ($entityLines !== $expectedLines) {
+                continue;
+            }
+
+            return $entity->getId()->toRfc4122();
+        }
+
+        return null;
     }
 
     public function paginateFiltered(
@@ -752,5 +832,32 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
             ->getOneOrNullResult();
 
         return $entity instanceof ReceiptEntity ? $entity : null;
+    }
+
+    private function normalizeDuplicateString(string $value): string
+    {
+        return mb_strtoupper(trim(preg_replace('/\s+/', ' ', $value) ?? $value));
+    }
+
+    /**
+     * @param list<\App\Receipt\Application\DuplicateDetection\ReceiptDuplicateCandidateLine> $lines
+     *
+     * @return list<array{0: string, 1: int, 2: int, 3: int}>
+     */
+    private function normalizeDuplicateLines(array $lines): array
+    {
+        $normalized = [];
+        foreach ($lines as $line) {
+            $normalized[] = [
+                $this->normalizeDuplicateString($line->fuelType),
+                $line->quantityMilliLiters,
+                $line->unitPriceDeciCentsPerLiter,
+                $line->vatRatePercent,
+            ];
+        }
+
+        sort($normalized);
+
+        return $normalized;
     }
 }

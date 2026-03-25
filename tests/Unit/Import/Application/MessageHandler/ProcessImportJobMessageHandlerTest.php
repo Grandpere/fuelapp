@@ -27,6 +27,9 @@ use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Application\Storage\StoredImportFile;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
+use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateCandidate;
+use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateLookup;
+use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -40,6 +43,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullReceiptDuplicateLookup(),
             new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new FakeOcrProvider(new OcrExtraction('fake', 'text', ['text'], [])),
@@ -67,6 +71,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullReceiptDuplicateLookup(),
             new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new FakeOcrProvider(new OcrExtraction('ocr_space', 'Total\n80.00', ['Total', '80.00'], ['raw' => true])),
@@ -100,6 +105,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullReceiptDuplicateLookup(),
             new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new ThrowingOcrProvider(OcrProviderException::permanent('invalid file')),
@@ -131,6 +137,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullReceiptDuplicateLookup(),
             new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
@@ -166,6 +173,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullReceiptDuplicateLookup(),
             new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
@@ -222,6 +230,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         $repository = new InMemoryImportJobRepository([$existing, $job]);
         $handler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullReceiptDuplicateLookup(),
             new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new FakeOcrProvider(new OcrExtraction('ocr_space', 'ignored', ['ignored'], [])),
@@ -254,6 +263,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
 
         $unexpectedFailureHandler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullReceiptDuplicateLookup(),
             new NullImportFileStorage(),
             new ThrowingStoredFileLocator(new RuntimeException('temporary locator failure')),
             new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
@@ -274,6 +284,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
 
         $retryableOcrHandler = new ProcessImportJobMessageHandler(
             $repository,
+            new NullReceiptDuplicateLookup(),
             new NullImportFileStorage(),
             new FakeStoredFileLocator('/tmp/upload.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
@@ -291,6 +302,40 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
             self::assertSame(ImportJobStatus::QUEUED, $queued->status());
             self::assertSame(1, $queued->ocrRetryCount());
         }
+    }
+
+    public function testItMarksJobAsDuplicateWhenParsedReceiptAlreadyExists(): void
+    {
+        $job = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/new.jpg',
+            'new.jpg',
+            'image/jpeg',
+            1024,
+            str_repeat('c', 64),
+        );
+
+        $repository = new InMemoryImportJobRepository([$job]);
+        $duplicateLookup = new FixedReceiptDuplicateLookup('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b99');
+        $handler = new ProcessImportJobMessageHandler(
+            $repository,
+            $duplicateLookup,
+            new NullImportFileStorage(),
+            new FakeStoredFileLocator('/tmp/upload.jpg'),
+            new FakeOcrProvider(new OcrExtraction('ocr_space', 'ignored', ['ignored'], [])),
+            new CompleteReceiptOcrParser(),
+            new NullLogger(),
+        );
+
+        $handler(new ProcessImportJobMessage($job->id()->toString()));
+
+        $saved = $repository->getForSystem($job->id()->toString());
+        self::assertNotNull($saved);
+        self::assertSame(ImportJobStatus::DUPLICATE, $saved->status());
+        self::assertStringContainsString('same_receipt_payload', (string) $saved->errorPayload());
+        self::assertStringContainsString('duplicateOfReceiptId', (string) $saved->errorPayload());
+        self::assertNotNull($duplicateLookup->lastCandidate);
     }
 }
 
@@ -382,6 +427,30 @@ final class NullImportFileStorage implements ImportFileStorage
     }
 }
 
+final class NullReceiptDuplicateLookup implements ReceiptDuplicateLookup
+{
+    public function findMatchingReceiptIdForOwner(string $ownerId, ReceiptDuplicateCandidate $candidate): ?string
+    {
+        return null;
+    }
+}
+
+final class FixedReceiptDuplicateLookup implements ReceiptDuplicateLookup
+{
+    public ?ReceiptDuplicateCandidate $lastCandidate = null;
+
+    public function __construct(private readonly ?string $receiptId)
+    {
+    }
+
+    public function findMatchingReceiptIdForOwner(string $ownerId, ReceiptDuplicateCandidate $candidate): ?string
+    {
+        $this->lastCandidate = $candidate;
+
+        return $this->receiptId;
+    }
+}
+
 final class FakeStoredFileLocator implements ImportStoredFileLocator
 {
     public function __construct(private readonly string $path)
@@ -443,6 +512,24 @@ final class FakeReceiptOcrParser implements ReceiptOcrParser
             8000,
             1333,
             [new ParsedReceiptLineDraft('diesel', 10000, 1800, 1800, 20)],
+            [],
+        );
+    }
+}
+
+final class CompleteReceiptOcrParser implements ReceiptOcrParser
+{
+    public function parse(OcrExtraction $extraction): ParsedReceiptDraft
+    {
+        return new ParsedReceiptDraft(
+            'PETRO EST',
+            'LECLERC SEZANNE HYPER',
+            '51120',
+            'SEZANNE',
+            new DateTimeImmutable('2024-02-06 11:55:00'),
+            7147,
+            1191,
+            [new ParsedReceiptLineDraft('diesel', 40400, 1769, null, 20)],
             [],
         );
     }

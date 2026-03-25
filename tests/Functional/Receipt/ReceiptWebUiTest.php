@@ -124,6 +124,48 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame(1750, $updatedLine->getUnitPriceDeciCentsPerLiter());
     }
 
+    public function testReceiptIndexRowsUseSharedRowLinkNavigation(): void
+    {
+        $email = 'receipt.ui.list@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('List Station');
+        $station->setStreetName('9 View Street');
+        $station->setPostalCode('75012');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-04 09:30:00'));
+        $receipt->setTotalCents(2200);
+        $receipt->setVatAmountCents(367);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(12000);
+        $line->setUnitPriceDeciCentsPerLiter(1833);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/receipts');
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('data-controller="row-link"', $content);
+        self::assertStringContainsString('data-row-link-url-value="/ui/receipts/'.$receipt->getId()->toRfc4122().'"', $content);
+    }
+
     /**
      * @param array<string, string|int|float|bool|array<int, array<string, string>>|null> $parameters
      * @param array<string, string>                                                       $server

@@ -6,6 +6,9 @@
     {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
     {% set issuedAtMissing = 'issued_at_missing' in issueList %}
     {% set reviewLines = reviewLines is defined and reviewLines is iterable ? reviewLines : [] %}
+    {% set finalizedReceiptId = payloadData is not null and payloadData.finalizedReceiptId is defined and payloadData.finalizedReceiptId is not null ? payloadData.finalizedReceiptId : null %}
+    {% set duplicateOfImportJobId = payloadData is not null and payloadData.duplicateOfImportJobId is defined and payloadData.duplicateOfImportJobId is not null ? payloadData.duplicateOfImportJobId : null %}
+    {% set duplicateOfReceiptId = payloadData is not null and payloadData.duplicateOfReceiptId is defined and payloadData.duplicateOfReceiptId is not null ? payloadData.duplicateOfReceiptId : null %}
     <main class="app-shell page-stack">
         <section class="card section-card">
             <div class="section-header">
@@ -65,6 +68,32 @@
                 <div class="actions-wrap">
                     <span class="pill status-pill status-needs_review">{{ payloadData.fallbackStrategy is defined ? payloadData.fallbackStrategy|replace({'_': ' '}) : 'manual review' }}</span>
                     <span class="muted compact-note">{{ payloadData.fallbackReason }}</span>
+                </div>
+            </section>
+        {% endif %}
+
+        {% if job.status.value == 'processed' %}
+            <section class="card section-card">
+                <p class="text-block-title">Import completed</p>
+                <p class="muted section-lead">This import already created a receipt. You can open it directly instead of going back through the list.</p>
+                <div class="actions-wrap">
+                    {% if finalizedReceiptId is not null %}
+                        <a class="btn btn-primary" href="{{ path('ui_receipt_show', {id: finalizedReceiptId}) }}" data-turbo-frame="_top">Open created receipt</a>
+                    {% endif %}
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Back to receipts</a>
+                </div>
+            </section>
+        {% elseif job.status.value == 'duplicate' %}
+            <section class="card section-card">
+                <p class="text-block-title">Duplicate import</p>
+                <p class="muted section-lead">This file matches an existing receipt or previously uploaded import. You can open the existing record directly from here.</p>
+                <div class="actions-wrap">
+                    {% if duplicateOfReceiptId is not null %}
+                        <a class="btn btn-primary" href="{{ path('ui_receipt_show', {id: duplicateOfReceiptId}) }}" data-turbo-frame="_top">Open existing receipt</a>
+                    {% elseif duplicateOfImportJobId is not null %}
+                        <a class="btn btn-primary" href="{{ path('ui_import_show', {id: duplicateOfImportJobId}) }}" data-turbo-frame="_top">Open original import</a>
+                    {% endif %}
+                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
                 </div>
             </section>
         {% endif %}

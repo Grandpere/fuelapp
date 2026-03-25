@@ -16,6 +16,7 @@ namespace App\Tests\Functional\Import;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Infrastructure\Persistence\Doctrine\Entity\ImportJobEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
+use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -525,6 +526,161 @@ final class ImportWebUiTest extends WebTestCase
 
         $this->em->clear();
         self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
+    }
+
+    public function testProcessedImportDetailShowsShortcutToCreatedReceipt(): void
+    {
+        $email = 'import.web.processed.shortcut@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($user);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-26 08:00:00'));
+        $receipt->setTotalCents(4200);
+        $receipt->setVatAmountCents(700);
+        $this->em->persist($receipt);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::PROCESSED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/processed-shortcut.jpg');
+        $job->setOriginalFilename('processed-shortcut.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('p', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'processed',
+            'finalizedReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 08:01:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 08:01:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 08:01:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 08:01:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+        $receiptId = $receipt->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Import completed', $detailContent);
+        self::assertStringContainsString('/ui/receipts/'.$receiptId, $detailContent);
+        self::assertStringContainsString('Open created receipt', $detailContent);
+    }
+
+    public function testDuplicateImportDetailShowsShortcutToOriginalImport(): void
+    {
+        $email = 'import.web.duplicate.shortcut@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $originalJob = new ImportJobEntity();
+        $originalJob->setId(Uuid::v7());
+        $originalJob->setOwner($user);
+        $originalJob->setStatus(ImportJobStatus::PROCESSED);
+        $originalJob->setStorage('local');
+        $originalJob->setFilePath('2026/03/26/original.jpg');
+        $originalJob->setOriginalFilename('original.jpg');
+        $originalJob->setMimeType('image/jpeg');
+        $originalJob->setFileSizeBytes(64000);
+        $originalJob->setFileChecksumSha256(str_repeat('o', 64));
+        $originalJob->setErrorPayload('{"status":"processed"}');
+        $originalJob->setCreatedAt(new DateTimeImmutable('2026-03-26 09:00:00'));
+        $originalJob->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:00:00'));
+        $originalJob->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:00:00'));
+        $this->em->persist($originalJob);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/duplicate.jpg');
+        $job->setOriginalFilename('duplicate.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('d', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfImportJobId' => $originalJob->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:05:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+        $originalJobId = $originalJob->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('/ui/imports/'.$originalJobId, $detailContent);
+        self::assertStringContainsString('Open original import', $detailContent);
+    }
+
+    public function testDuplicateImportDetailCanShortcutToExistingReceipt(): void
+    {
+        $email = 'import.web.duplicate.receipt@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('PETRO EST');
+        $station->setStreetName('LECLERC SEZANNE HYPER');
+        $station->setPostalCode('51120');
+        $station->setCity('SEZANNE');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($user);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-26 09:00:00'));
+        $receipt->setTotalCents(7147);
+        $receipt->setVatAmountCents(1191);
+        $this->em->persist($receipt);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/duplicate-receipt.jpg');
+        $job->setOriginalFilename('duplicate-receipt.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('x', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:05:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
+        self::assertStringContainsString('Open existing receipt', $detailContent);
     }
 
     public function testUserCanReparseNeedsReviewImportFromUi(): void

@@ -452,3 +452,15 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: parser heuristics were tuned on clean fixtures and failed on compact/single-line payloads (city over-capture, station/street mis-detection, fuel patterns like `Excellium 98`).
 - Fix: harden parser with real-sample-driven rules (postal pattern `L-xxxx`, city sanitation, stricter street candidate logic, noisy quantity/unit-price extraction) and add dedicated regression tests.
 - Prevention: for OCR parsing changes, always include at least one regression fixture copied from production-like payloads.
+
+## 2026-03-25 - Import duplicates need semantic matching beyond raw file checksum
+- Symptom: re-uploading the same receipt after re-encoding or re-exporting the image could bypass duplicate detection, land in `needs_review`, and confuse the user because the original receipt already existed.
+- Root cause: duplicate detection in async import processing only compared the stored file SHA-256, which changes as soon as the same ticket is re-saved with different bytes.
+- Fix: keep checksum-based duplicate detection for exact file matches, then add a second duplicate pass after OCR that compares a normalized receipt candidate (issuedAt, station identity, totals, lines) against existing owner receipts and marks the import as `duplicate` when the business payload is identical.
+- Prevention: for document imports, treat binary fingerprinting and business-payload fingerprinting as complementary layers, not interchangeable ones.
+
+## 2026-03-25 - Shared clickable table rows should use the row-link controller, not inline onclick handlers
+- Symptom: receipt list rows stopped opening their detail page while other admin/import lists kept working.
+- Root cause: receipts still used inline `onclick` navigation, while the rest of the UI had been standardized on the shared `row-link` Stimulus controller.
+- Fix: migrate receipt rows to `data-controller="row-link"` / `click->row-link#navigate` and mark action cells with `data-row-link-ignore`.
+- Prevention: when harmonizing list UIs, align every clickable row on the same controller instead of mixing inline JS and Stimulus patterns.

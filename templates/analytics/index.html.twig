@@ -77,6 +77,7 @@
             padding: 1rem;
             display: grid;
             gap: 0.8rem;
+            align-content: start;
         }
 
         .map-card h2 {
@@ -119,11 +120,60 @@
             padding: 1rem;
             display: grid;
             gap: 0.8rem;
+            align-content: start;
         }
 
         .trend-card h2 {
             margin: 0;
             font-size: 1.05rem;
+        }
+
+        .trend-card-header {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: start;
+            gap: 0.8rem;
+        }
+
+        .trend-card-header h2 {
+            margin: 0;
+            min-width: 0;
+        }
+
+        .trend-view-switch {
+            display: inline-flex;
+            gap: 0.35rem;
+            padding: 0.22rem;
+            border: 1px solid rgba(92, 133, 159, 0.28);
+            border-radius: 999px;
+            background: rgba(8, 26, 38, 0.42);
+        }
+
+        .trend-view-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 68px;
+            padding: 0.4rem 0.7rem;
+            border-radius: 999px;
+            border: 0;
+            background: transparent;
+            color: var(--text-soft);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+        }
+
+        .trend-view-link:hover {
+            color: #f4fbff;
+            transform: translateY(-1px);
+        }
+
+        .trend-view-link.is-active {
+            background: linear-gradient(135deg, rgba(247, 181, 0, 0.92), rgba(240, 138, 0, 0.96));
+            color: #08141c;
         }
 
         .trend-list {
@@ -216,6 +266,202 @@
             white-space: nowrap;
         }
 
+        .trend-line-chart {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .trend-chart-shell {
+            position: relative;
+            height: 236px;
+            padding: 0.75rem 0.85rem 0.55rem;
+            border-radius: 14px;
+            border: 1px solid rgba(92, 133, 159, 0.26);
+            background: linear-gradient(180deg, rgba(13, 39, 55, 0.92), rgba(8, 25, 37, 0.76));
+        }
+
+        .trend-chart-shell.compared {
+            height: 252px;
+        }
+
+        .trend-chart-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .trend-line-shell {
+            position: relative;
+            height: 236px;
+            padding: 0.85rem 0.7rem 1rem 2.9rem;
+            border-radius: 14px;
+            border: 1px solid rgba(92, 133, 159, 0.26);
+            background:
+                linear-gradient(to top, rgba(147, 178, 198, 0.06) 1px, transparent 1px) 0 0 / 100% 25%,
+                linear-gradient(180deg, rgba(13, 39, 55, 0.92), rgba(8, 25, 37, 0.76));
+        }
+
+        .trend-line-shell.compared {
+            height: 252px;
+        }
+
+        .trend-line-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .trend-line-path {
+            fill: none;
+            stroke-width: 1.45;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .trend-line-area {
+            stroke: none;
+            opacity: 0.1;
+        }
+
+        .trend-line-point {
+            stroke-width: 1;
+            fill: #08141c;
+        }
+
+        .trend-line-point.is-subtle {
+            opacity: 0.75;
+        }
+
+        .trend-line-axis {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .trend-line-axis-line {
+            stroke: rgba(147, 178, 198, 0.42);
+            stroke-width: 0.7;
+        }
+
+        .trend-line-grid-line {
+            stroke: rgba(147, 178, 198, 0.18);
+            stroke-width: 0.5;
+            stroke-dasharray: 1.8 2.4;
+        }
+
+        .trend-line-y-axis {
+            position: absolute;
+            inset: 0.8rem auto 1rem 0.5rem;
+            width: 2rem;
+            color: rgba(214, 229, 239, 0.78);
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        .trend-line-y-axis-unit {
+            position: absolute;
+            top: -0.1rem;
+            left: 0;
+            color: rgba(230, 240, 246, 0.92);
+            font-size: 0.64rem;
+            text-transform: uppercase;
+        }
+
+        .trend-line-y-axis-label {
+            position: absolute;
+            left: 0;
+            transform: translateY(50%);
+            white-space: nowrap;
+        }
+
+        .trend-line-y-axis-label.is-top {
+            top: 0;
+            transform: none;
+        }
+
+        .trend-line-y-axis-label.is-mid {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .trend-line-y-axis-label.is-bottom {
+            bottom: 0;
+            transform: none;
+        }
+
+        .trend-line-x-axis {
+            display: grid;
+            gap: 0.35rem;
+            padding: 0 0.35rem 0 2.9rem;
+            align-items: start;
+        }
+
+        .trend-line-x-axis-label {
+            text-align: center;
+            color: rgba(214, 229, 239, 0.72);
+            font-size: 0.68rem;
+            line-height: 1.15;
+            font-weight: 600;
+        }
+
+        .trend-line-x-axis-label span {
+            display: block;
+            color: rgba(147, 178, 198, 0.86);
+            font-size: 0.62rem;
+            font-weight: 500;
+        }
+
+        .trend-line-axis-caption {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.7rem;
+            padding: 0 0.35rem 0 2.9rem;
+            color: rgba(147, 178, 198, 0.9);
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .trend-line-price {
+            stroke: #9bff76;
+        }
+
+        .trend-line-price-fill {
+            fill: #9bff76;
+        }
+
+        .trend-line-cost {
+            stroke: #f7b500;
+        }
+
+        .trend-line-cost-fill {
+            fill: #f7b500;
+        }
+
+        .trend-line-consumption {
+            stroke: #61ddff;
+        }
+
+        .trend-line-consumption-fill {
+            fill: #61ddff;
+        }
+
+        .trend-line-maintenance {
+            stroke: #ff8faa;
+        }
+
+        .trend-line-maintenance-fill {
+            fill: #ff8faa;
+        }
+
+        .trend-line-total {
+            stroke: #4ccf4e;
+        }
+
+        .trend-line-total-fill {
+            fill: #4ccf4e;
+        }
+
         .empty-state {
             padding: 0.8rem;
             border: 1px dashed rgba(147, 178, 198, 0.35);
@@ -223,10 +469,23 @@
             color: var(--text-soft);
         }
 
+        .trend-mode {
+            display: none;
+        }
+
+        .trend-card[data-chart-view="bars"] .trend-mode-bars,
+        .trend-card[data-chart-view="line"] .trend-mode-line {
+            display: grid;
+        }
+
         @media (max-width: 980px) {
             .analytics-filters-form,
             .kpi-grid,
             .trend-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .trend-card-header {
                 grid-template-columns: 1fr;
             }
         }
@@ -335,12 +594,45 @@
         </section>
 
         <section class="trend-grid">
-            <article class="card trend-card">
-                <h2>Cost trend by month</h2>
+            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="cost" data-default-view="bars">
+                <div class="trend-card-header">
+                    <h2>Cost trend by month</h2>
+                    <div class="trend-view-switch">
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">Bars</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">Lines</button>
+                    </div>
+                </div>
                 {% if costTrend is empty %}
                     <div class="empty-state">No cost data for current filters.</div>
                 {% else %}
-                    <div class="trend-list">
+                    {% set costChartLabels = [] %}
+                    {% set costChartValues = [] %}
+                    {% for item in costTrend %}
+                        {% set costChartLabels = costChartLabels|merge([item.month]) %}
+                        {% set costChartValues = costChartValues|merge([(item.value / 100)|round(2)]) %}
+                    {% endfor %}
+                    <script type="application/json" data-analytics-chart-target="config">{{ {
+                        key: 'cost',
+                        defaultView: 'bars',
+                        yAxisLabel: 'EUR',
+                        valueFormat: 'currency',
+                        labels: costChartLabels,
+                        datasets: [
+                            {
+                                label: 'Cost',
+                                data: costChartValues,
+                                borderColor: '#f7b500',
+                                fillColor: 'rgba(247, 181, 0, 0.16)',
+                                barColor: 'rgba(247, 181, 0, 0.88)'
+                            }
+                        ]
+                    }|json_encode|raw }}</script>
+                    <div class="trend-mode trend-mode-line trend-line-chart">
+                        <div class="trend-chart-shell">
+                            <canvas class="trend-chart-canvas" data-analytics-chart-target="canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="trend-mode trend-mode-bars trend-list">
                         {% for item in costTrend %}
                             <div class="trend-row">
                                 <span class="trend-month">{{ item.month }}</span>
@@ -354,12 +646,45 @@
                 {% endif %}
             </article>
 
-            <article class="card trend-card">
-                <h2>Consumption trend by month</h2>
+            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="consumption" data-default-view="bars">
+                <div class="trend-card-header">
+                    <h2>Consumption trend by month</h2>
+                    <div class="trend-view-switch">
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">Bars</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">Lines</button>
+                    </div>
+                </div>
                 {% if consumptionTrend is empty %}
                     <div class="empty-state">No consumption data for current filters.</div>
                 {% else %}
-                    <div class="trend-list">
+                    {% set consumptionChartLabels = [] %}
+                    {% set consumptionChartValues = [] %}
+                    {% for item in consumptionTrend %}
+                        {% set consumptionChartLabels = consumptionChartLabels|merge([item.month]) %}
+                        {% set consumptionChartValues = consumptionChartValues|merge([(item.value / 1000)|round(2)]) %}
+                    {% endfor %}
+                    <script type="application/json" data-analytics-chart-target="config">{{ {
+                        key: 'consumption',
+                        defaultView: 'bars',
+                        yAxisLabel: 'L',
+                        valueFormat: 'liters',
+                        labels: consumptionChartLabels,
+                        datasets: [
+                            {
+                                label: 'Consumption',
+                                data: consumptionChartValues,
+                                borderColor: '#61ddff',
+                                fillColor: 'rgba(97, 221, 255, 0.16)',
+                                barColor: 'rgba(97, 221, 255, 0.88)'
+                            }
+                        ]
+                    }|json_encode|raw }}</script>
+                    <div class="trend-mode trend-mode-line trend-line-chart">
+                        <div class="trend-chart-shell">
+                            <canvas class="trend-chart-canvas" data-analytics-chart-target="canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="trend-mode trend-mode-bars trend-list">
                         {% for item in consumptionTrend %}
                             <div class="trend-row">
                                 <span class="trend-month">{{ item.month }}</span>
@@ -373,12 +698,46 @@
                 {% endif %}
             </article>
 
-            <article class="card trend-card">
-                <h2>Fuel price trend by month</h2>
+            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="fuel-price" data-default-view="line">
+                <div class="trend-card-header">
+                    <h2>Fuel price trend by month</h2>
+                    <div class="trend-view-switch">
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">Bars</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">Lines</button>
+                    </div>
+                </div>
                 {% if fuelPriceTrend is empty %}
                     <div class="empty-state">No fuel price data for current filters.</div>
                 {% else %}
-                    <div class="trend-list">
+                    {% set fuelPriceChartLabels = [] %}
+                    {% set fuelPriceChartValues = [] %}
+                    {% for item in fuelPriceTrend %}
+                        {% set fuelPriceChartLabels = fuelPriceChartLabels|merge([[item.month, item.fuelType]]) %}
+                        {% set fuelPriceChartValues = fuelPriceChartValues|merge([((item.averagePriceDeciCentsPerLiter ?? 0) / 1000)|round(3)]) %}
+                    {% endfor %}
+                    <script type="application/json" data-analytics-chart-target="config">{{ {
+                        key: 'fuel-price',
+                        defaultView: 'line',
+                        yAxisLabel: 'EUR/L',
+                        valueFormat: 'fuel_price',
+                        labels: fuelPriceChartLabels,
+                        datasets: [
+                            {
+                                label: 'Fuel price',
+                                data: fuelPriceChartValues,
+                                borderColor: '#9bff76',
+                                fillColor: 'rgba(155, 255, 118, 0.12)',
+                                barColor: 'rgba(155, 255, 118, 0.86)',
+                                subtlePoints: true
+                            }
+                        ]
+                    }|json_encode|raw }}</script>
+                    <div class="trend-mode trend-mode-line trend-line-chart">
+                        <div class="trend-chart-shell">
+                            <canvas class="trend-chart-canvas" data-analytics-chart-target="canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="trend-mode trend-mode-bars trend-list">
                         {% for item in fuelPriceTrend %}
                             <div class="trend-row">
                                 <span class="trend-month">{{ item.month }} · {{ item.fuelType }}</span>
@@ -398,12 +757,69 @@
                 {% endif %}
             </article>
 
-            <article class="card trend-card">
-                <h2>Compared cost trend (fuel vs maintenance vs total)</h2>
+            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="compared-cost" data-default-view="bars">
+                <div class="trend-card-header">
+                    <h2>Compared cost trend (fuel vs maintenance vs total)</h2>
+                    <div class="trend-view-switch">
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">Bars</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">Lines</button>
+                    </div>
+                </div>
                 {% if comparedCostTrend is empty %}
                     <div class="empty-state">No compared cost data for current filters.</div>
                 {% else %}
-                    <div class="compared-trend-grid">
+                    {% set comparedLabels = [] %}
+                    {% set comparedFuelValues = [] %}
+                    {% set comparedMaintenanceValues = [] %}
+                    {% set comparedTotalValues = [] %}
+                    {% for item in comparedCostTrend %}
+                        {% set comparedLabels = comparedLabels|merge([item.month]) %}
+                        {% set comparedFuelValues = comparedFuelValues|merge([(item.fuelCostCents / 100)|round(2)]) %}
+                        {% set comparedMaintenanceValues = comparedMaintenanceValues|merge([(item.maintenanceCostCents / 100)|round(2)]) %}
+                        {% set comparedTotalValues = comparedTotalValues|merge([(item.totalCostCents / 100)|round(2)]) %}
+                    {% endfor %}
+                    <script type="application/json" data-analytics-chart-target="config">{{ {
+                        key: 'compared-cost',
+                        defaultView: 'bars',
+                        yAxisLabel: 'EUR',
+                        valueFormat: 'currency',
+                        labels: comparedLabels,
+                        datasets: [
+                            {
+                                label: 'Fuel',
+                                data: comparedFuelValues,
+                                borderColor: '#f7b500',
+                                fillColor: 'rgba(247, 181, 0, 0.1)',
+                                barColor: 'rgba(247, 181, 0, 0.88)',
+                                fill: false,
+                                subtlePoints: true
+                            },
+                            {
+                                label: 'Maintenance',
+                                data: comparedMaintenanceValues,
+                                borderColor: '#ff8faa',
+                                fillColor: 'rgba(255, 143, 170, 0.1)',
+                                barColor: 'rgba(255, 143, 170, 0.88)',
+                                fill: false,
+                                subtlePoints: true
+                            },
+                            {
+                                label: 'Total',
+                                data: comparedTotalValues,
+                                borderColor: '#4ccf4e',
+                                fillColor: 'rgba(76, 207, 78, 0.1)',
+                                barColor: 'rgba(76, 207, 78, 0.88)',
+                                fill: false,
+                                subtlePoints: true
+                            }
+                        ]
+                    }|json_encode|raw }}</script>
+                    <div class="trend-mode trend-mode-line trend-line-chart">
+                        <div class="trend-chart-shell compared">
+                            <canvas class="trend-chart-canvas" data-analytics-chart-target="canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="trend-mode trend-mode-bars compared-trend-grid">
                         {% for item in comparedCostTrend %}
                             <div class="compared-trend-row">
                                 <div class="compared-trend-label">{{ item.month }}</div>

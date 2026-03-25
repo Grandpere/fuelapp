@@ -153,6 +153,10 @@ analytics-receipts-refresh: ## Refresh receipt analytics projection synchronousl
 analytics-receipts-dispatch: ## Dispatch receipt analytics refresh message
 	$(DC_EXEC) php bin/console app:analytics:receipts:refresh --async
 
+.PHONY: analytics-demo-seed
+analytics-demo-seed: ## Seed demo analytics account data (EMAIL=... PASSWORD=... optional)
+	$(DC_EXEC) php bin/console app:analytics:demo-seed $(if $(EMAIL),--email "$(EMAIL)") $(if $(PASSWORD),--password "$(PASSWORD)")
+
 .PHONY: messenger-failed-show
 messenger-failed-show: ## Show failed messenger messages stats
 	$(DC_EXEC) php bin/console messenger:failed:show --stats

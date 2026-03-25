@@ -123,6 +123,56 @@ final class ImportJobFinalizeWebController extends AbstractController
     /** @return list<CreateReceiptLineCommand>|null */
     private function toNullableLines(Request $request): ?array
     {
+        $rawLines = $request->request->all('lines');
+        if ([] !== $rawLines) {
+            return $this->mapSubmittedLines($rawLines);
+        }
+
+        return $this->mapLegacyLineFields($request);
+    }
+
+    /**
+     * @param array<int|string, mixed> $rawLines
+     *
+     * @return list<CreateReceiptLineCommand>|null
+     */
+    private function mapSubmittedLines(array $rawLines): ?array
+    {
+        $lines = [];
+        $lineNumber = 0;
+
+        foreach ($rawLines as $rawLine) {
+            ++$lineNumber;
+            if (!is_array($rawLine)) {
+                continue;
+            }
+
+            $fuelType = $this->toNullableString($rawLine['fuelType'] ?? null);
+            $quantity = $this->toNullableInt($rawLine['quantityMilliLiters'] ?? null);
+            $unitPrice = $this->toNullableInt($rawLine['unitPriceDeciCentsPerLiter'] ?? null);
+            $vatRate = $this->toNullableInt($rawLine['vatRatePercent'] ?? null);
+
+            if (null === $fuelType && null === $quantity && null === $unitPrice && null === $vatRate) {
+                continue;
+            }
+
+            if (null === $fuelType || null === $quantity || null === $unitPrice || null === $vatRate) {
+                throw new InvalidArgumentException(sprintf('Line %d is incomplete. Fuel type, quantity, unit price, and VAT rate are all required.', $lineNumber));
+            }
+
+            try {
+                $lines[] = new CreateReceiptLineCommand(FuelType::from($fuelType), $quantity, $unitPrice, $vatRate);
+            } catch (ValueError) {
+                throw new InvalidArgumentException(sprintf('Line %d has an invalid fuel type.', $lineNumber));
+            }
+        }
+
+        return [] === $lines ? null : $lines;
+    }
+
+    /** @return list<CreateReceiptLineCommand>|null */
+    private function mapLegacyLineFields(Request $request): ?array
+    {
         $fuelType = $this->toNullableString($request->request->get('lineFuelType'));
         $quantity = $this->toNullableInt($request->request->get('lineQuantityMilliLiters'));
         $unitPrice = $this->toNullableInt($request->request->get('lineUnitPriceDeciCentsPerLiter'));

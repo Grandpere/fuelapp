@@ -701,6 +701,104 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('name="issuedAt"', $reviewContent);
     }
 
+    public function testAdminCanFinalizeNeedsReviewImportWithMultipleLinesFromBackofficeUi(): void
+    {
+        $adminEmail = 'ui.admin.import.multiline@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.import.multiline.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/25/admin-multiline.jpg');
+        $job->setOriginalFilename('admin-multiline.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('d', 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'issuedAt' => '2026-03-25T12:20:00+00:00',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 28000,
+                        'unitPriceDeciCentsPerLiter' => 1810,
+                        'vatRatePercent' => 20,
+                    ],
+                    [
+                        'fuelType' => 'sp95',
+                        'quantityMilliLiters' => 12000,
+                        'unitPriceDeciCentsPerLiter' => 1760,
+                        'vatRatePercent' => 20,
+                    ],
+                ],
+                'creationPayload' => null,
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-25 12:21:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-25 12:21:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-25 12:21:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $reviewResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $reviewResponse->getStatusCode());
+        $reviewContent = (string) $reviewResponse->getContent();
+        self::assertStringContainsString('Receipt lines', $reviewContent);
+        self::assertStringContainsString('name="lines[0][fuelType]"', $reviewContent);
+        self::assertStringContainsString('name="lines[1][fuelType]"', $reviewContent);
+        $csrfToken = $this->extractFinalizeCsrfForImport((string) $reviewResponse->getContent(), $jobId);
+
+        $finalizeResponse = $this->request(
+            'POST',
+            '/ui/admin/imports/'.$jobId.'/finalize',
+            [
+                '_token' => $csrfToken,
+                'issuedAt' => '2026-03-25T12:20',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => '28000',
+                        'unitPriceDeciCentsPerLiter' => '1810',
+                        'vatRatePercent' => '20',
+                    ],
+                    [
+                        'fuelType' => 'sp95',
+                        'quantityMilliLiters' => '12000',
+                        'unitPriceDeciCentsPerLiter' => '1760',
+                        'vatRatePercent' => '20',
+                    ],
+                ],
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $finalizeResponse->getStatusCode());
+
+        $this->em->clear();
+        $updated = $this->em->find(ImportJobEntity::class, $jobId);
+        self::assertInstanceOf(ImportJobEntity::class, $updated);
+        self::assertSame(ImportJobStatus::PROCESSED, $updated->getStatus());
+
+        $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
+        self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
+        self::assertCount(2, $savedReceipt->getLines());
+    }
+
     public function testAdminCanEditAndDeleteStationAndMaintenanceEventFromBackofficeUi(): void
     {
         $adminEmail = 'ui.admin.station.event.write@example.com';
@@ -1004,6 +1102,18 @@ final class AdminBackofficeUiTest extends WebTestCase
     private function extractReparseCsrfForImport(string $content, string $importId): string
     {
         $pattern = '#/ui/admin/imports/'.preg_quote($importId, '#').'/reparse.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractFinalizeCsrfForImport(string $content, string $importId): string
+    {
+        $pattern = '#/ui/admin/imports/'.preg_quote($importId, '#').'/finalize.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

@@ -259,6 +259,16 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] User-run functional suite validated (`make phpunit-functional`).
 
+# TODO - SP15-001 Import review multi-line finalization
+
+## Plan
+- [completed] Align Sprint 15 backlog/todo tracking around import review product gaps.
+- [completed] Expose every parsed/import line in user and admin review pages instead of only the first line.
+- [completed] Accept multi-line review form payloads in front/admin finalize controllers while keeping validation explicit.
+- [completed] Add/update front/admin tests for multi-line review/finalization.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP13-003 Theme toggle and light mode
 
 ## Plan

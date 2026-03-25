@@ -1,21 +1,22 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 14 - Frontend hardening and delivery baseline
+- Sprint 15 - Product flow refinement
 
 ## Current goal
-- Harden the new frontend/runtime surface added by Sprint 13 so theming, charts, and shared UI delivery stay secure and maintainable.
+- Remove the most visible remaining product frictions now that the UI/runtime baseline is in place.
 
 ## In progress
-- Re-prioritization needed for the next sprint
+- SP15-001 - import review/finalize must expose all parsed lines, not only the first one
 
 ## Next tickets (ordered)
-1. Re-prioritize once asset delivery is locally controlled
+1. SP15-002 - bulk import feedback and recovery polish
+2. SP15-003 - front/admin product friction cleanup
 
 ## Notes
 - Sprint 13 UX work is delivered and merged.
-- Sprint 14 is intentionally technical: it targets the browser/runtime surface we just expanded.
-- Sprint 14 is now fully delivered across headers, asset-sovereignty baseline, and runtime hardening coverage.
+- Sprint 14 is fully delivered across headers, asset-sovereignty baseline, and runtime hardening coverage.
+- Sprint 15 intentionally shifts back to product flow quality on top of that technical baseline.
 - Sprint 11 is closed from a backlog perspective.
 - Sprint 12 is closed from a backlog perspective.
 - Microsoft OIDC remains deferred unless product priority changes.

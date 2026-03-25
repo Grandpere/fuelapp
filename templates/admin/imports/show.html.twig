@@ -7,7 +7,7 @@
 {% block admin_content %}
     {% set parsedDraft = payloadData is not null and payloadData.parsedDraft is defined and payloadData.parsedDraft is iterable ? payloadData.parsedDraft : null %}
     {% set creationPayload = payloadData is not null and payloadData.creationPayload is defined and payloadData.creationPayload is iterable ? payloadData.creationPayload : null %}
-    {% set firstLine = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable and creationPayload.lines|length > 0 ? creationPayload.lines|first : (parsedDraft is not null and parsedDraft.lines is defined and parsedDraft.lines is iterable and parsedDraft.lines|length > 0 ? parsedDraft.lines|first : null) %}
+    {% set reviewLines = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable ? creationPayload.lines : (parsedDraft is not null and parsedDraft.lines is defined and parsedDraft.lines is iterable ? parsedDraft.lines : []) %}
     {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
     {% set issuedAtMissing = 'issued_at_missing' in issueList %}
 
@@ -161,22 +161,57 @@
                         Odometer (km)
                         <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : (parsedDraft is not null and parsedDraft.odometerKilometers is defined ? parsedDraft.odometerKilometers : '') }}" min="0" step="1">
                     </label>
-                    <label class="label">
-                        Line fuel type
-                        <input class="input" type="text" name="lineFuelType" value="{{ firstLine is not null and firstLine.fuelType is defined ? firstLine.fuelType : '' }}" placeholder="diesel">
-                    </label>
-                    <label class="label">
-                        Line quantity (mL)
-                        <input class="input" type="number" name="lineQuantityMilliLiters" value="{{ firstLine is not null and firstLine.quantityMilliLiters is defined ? firstLine.quantityMilliLiters : '' }}" min="1" step="1">
-                    </label>
-                    <label class="label">
-                        Line unit price (deci-cents/L)
-                        <input class="input" type="number" name="lineUnitPriceDeciCentsPerLiter" value="{{ firstLine is not null and firstLine.unitPriceDeciCentsPerLiter is defined ? firstLine.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
-                    </label>
-                    <label class="label">
-                        Line VAT rate (%)
-                        <input class="input" type="number" name="lineVatRatePercent" value="{{ firstLine is not null and firstLine.vatRatePercent is defined ? firstLine.vatRatePercent : '' }}" min="0" max="100" step="1">
-                    </label>
+                </div>
+
+                <div class="form-stack">
+                    <p class="text-block-title">Receipt lines</p>
+                    {% if reviewLines|length > 0 %}
+                        {% for line in reviewLines %}
+                            <section class="card-subtle card-subtle-block">
+                                <p class="compact-note muted">Line {{ loop.index }}</p>
+                                <div class="form-grid-2">
+                                    <label class="label">
+                                        Fuel type
+                                        <input class="input" type="text" name="lines[{{ loop.index0 }}][fuelType]" value="{{ line.fuelType is defined ? line.fuelType : '' }}" placeholder="diesel">
+                                    </label>
+                                    <label class="label">
+                                        Quantity (mL)
+                                        <input class="input" type="number" name="lines[{{ loop.index0 }}][quantityMilliLiters]" value="{{ line.quantityMilliLiters is defined and line.quantityMilliLiters is not null ? line.quantityMilliLiters : '' }}" min="1" step="1">
+                                    </label>
+                                    <label class="label">
+                                        Unit price (deci-cents/L)
+                                        <input class="input" type="number" name="lines[{{ loop.index0 }}][unitPriceDeciCentsPerLiter]" value="{{ line.unitPriceDeciCentsPerLiter is defined and line.unitPriceDeciCentsPerLiter is not null ? line.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
+                                    </label>
+                                    <label class="label">
+                                        VAT rate (%)
+                                        <input class="input" type="number" name="lines[{{ loop.index0 }}][vatRatePercent]" value="{{ line.vatRatePercent is defined and line.vatRatePercent is not null ? line.vatRatePercent : '' }}" min="0" max="100" step="1">
+                                    </label>
+                                </div>
+                            </section>
+                        {% endfor %}
+                    {% else %}
+                        <section class="card-subtle card-subtle-block">
+                            <p class="muted">No fuel lines were parsed. Add one manually below if you want to finalize this import.</p>
+                            <div class="form-grid-2">
+                                <label class="label">
+                                    Fuel type
+                                    <input class="input" type="text" name="lines[0][fuelType]" value="" placeholder="diesel">
+                                </label>
+                                <label class="label">
+                                    Quantity (mL)
+                                    <input class="input" type="number" name="lines[0][quantityMilliLiters]" value="" min="1" step="1">
+                                </label>
+                                <label class="label">
+                                    Unit price (deci-cents/L)
+                                    <input class="input" type="number" name="lines[0][unitPriceDeciCentsPerLiter]" value="" min="0" step="1">
+                                </label>
+                                <label class="label">
+                                    VAT rate (%)
+                                    <input class="input" type="number" name="lines[0][vatRatePercent]" value="" min="0" max="100" step="1">
+                                </label>
+                            </div>
+                        </section>
+                    {% endif %}
                 </div>
 
                 <div class="actions-wrap">

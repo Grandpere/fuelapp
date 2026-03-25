@@ -333,6 +333,103 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame(152320, $savedReceipt->getOdometerKilometers());
     }
 
+    public function testUserCanFinalizeNeedsReviewImportWithMultipleLinesFromUi(): void
+    {
+        $email = 'import.web.multiline.finalize@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/25/manual-multiline.jpg');
+        $job->setOriginalFilename('manual-multiline.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('m', 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'issuedAt' => '2026-03-25T11:20:00+00:00',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 30000,
+                        'unitPriceDeciCentsPerLiter' => 1820,
+                        'vatRatePercent' => 20,
+                    ],
+                    [
+                        'fuelType' => 'sp98',
+                        'quantityMilliLiters' => 10000,
+                        'unitPriceDeciCentsPerLiter' => 1940,
+                        'vatRatePercent' => 20,
+                    ],
+                ],
+                'creationPayload' => null,
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-25 11:21:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-25 11:21:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-25 11:21:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $reviewPage = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $reviewPage->getStatusCode());
+        $reviewContent = (string) $reviewPage->getContent();
+        self::assertStringContainsString('Receipt lines', $reviewContent);
+        self::assertStringContainsString('name="lines[0][fuelType]"', $reviewContent);
+        self::assertStringContainsString('name="lines[1][fuelType]"', $reviewContent);
+        $csrfToken = $this->extractFinalizeCsrfToken($reviewContent, $jobId);
+
+        $finalizeResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$jobId.'/finalize',
+            [
+                '_token' => $csrfToken,
+                'issuedAt' => '2026-03-25T11:20',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => '30000',
+                        'unitPriceDeciCentsPerLiter' => '1820',
+                        'vatRatePercent' => '20',
+                    ],
+                    [
+                        'fuelType' => 'sp98',
+                        'quantityMilliLiters' => '10000',
+                        'unitPriceDeciCentsPerLiter' => '1940',
+                        'vatRatePercent' => '20',
+                    ],
+                ],
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $finalizeResponse->getStatusCode());
+
+        $this->em->clear();
+        $updated = $this->em->find(ImportJobEntity::class, $jobId);
+        self::assertInstanceOf(ImportJobEntity::class, $updated);
+        self::assertSame(ImportJobStatus::PROCESSED, $updated->getStatus());
+
+        $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
+        self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
+        self::assertCount(2, $savedReceipt->getLines());
+    }
+
     public function testUserCanDeleteOwnImportFromUiList(): void
     {
         $email = 'import.web.delete@example.com';
@@ -541,9 +638,9 @@ final class ImportWebUiTest extends WebTestCase
     }
 
     /**
-     * @param array<string, string|int|float|bool|null> $parameters
-     * @param array<string, mixed>                      $files
-     * @param array<string, string>                     $cookies
+     * @param array<string, string|int|float|bool|array<int, array<string, string>>|null> $parameters
+     * @param array<string, mixed>                                                        $files
+     * @param array<string, string>                                                       $cookies
      */
     private function request(string $method, string $uri, array $parameters = [], array $files = [], array $cookies = []): Response
     {

@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-25 - Import review UI must mirror finalize handler line capabilities
+- Symptom: import review pages showed only one fuel line even when OCR payloads contained several, making multi-line receipts look incomplete in front/admin.
+- Root cause: web controllers/templates read only `firstLine` while `FinalizeImportJobHandler` already accepted multiple `CreateReceiptLineCommand`s.
+- Fix: expose `reviewLines`, post `lines[...]` arrays from both review forms, and keep legacy single-line fallback only for transition safety.
+- Prevention: when a handler supports collections (`lines`, items, rows), verify the paired UI/controller path renders and submits the full collection instead of only the first element.
+
 ## 2026-03-25 - Importmap removals can break cached frontend runtime
 - Symptom: row-click navigation and Turbo frame actions stopped working after frontend asset cleanup, even though templates still had the right `data-controller` / `data-turbo-frame` wiring.
 - Root cause: browsers could keep an older cached `app.js` that still imported removed importmap modules, which broke JS bootstrap early and disabled Turbo/Stimulus behavior across the page.

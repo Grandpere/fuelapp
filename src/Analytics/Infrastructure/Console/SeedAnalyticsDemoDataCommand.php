@@ -92,7 +92,7 @@ final class SeedAnalyticsDemoDataCommand extends Command
             ['diesel', 31_500, 1530, 20],
         ]);
         $this->createReceipt($user, $cityCar, $stationLyon, new DateTimeImmutable('first day of -4 months 18:20'), 18_400, [
-            ['unleaded95', 24_100, 1680, 20],
+            ['sp95', 24_100, 1680, 20],
         ]);
         $this->createReceipt($user, $familyCar, $stationParis, new DateTimeImmutable('first day of -3 months 07:45'), 53_600, [
             ['diesel', 34_200, 1595, 20],
@@ -104,7 +104,7 @@ final class SeedAnalyticsDemoDataCommand extends Command
             ['diesel', 35_400, 1650, 20],
         ]);
         $this->createReceipt($user, $cityCar, $stationParis, new DateTimeImmutable('first day of -1 month 18:10'), 20_050, [
-            ['unleaded95', 23_600, 1755, 20],
+            ['sp95', 23_600, 1755, 20],
         ]);
         $this->createReceipt($user, $familyCar, $stationBordeaux, new DateTimeImmutable('first day of this month 07:55'), 63_400, [
             ['diesel', 36_100, 1715, 20],

@@ -10,4 +10,4 @@ Provide operational management for core entities and import jobs.
 - [SP4-004 - Import jobs dashboard and filtering](tickets/SP4-004-import-jobs-dashboard-filtering.md) - P0 - done
 - [SP4-005 - Retry/fix/reprocess actions for failed imports](tickets/SP4-005-retry-fix-reprocess-imports.md) - P0 - done
 - [SP4-006 - Audit trail for admin actions](tickets/SP4-006-audit-trail-admin-actions.md) - P1 - done
-- [SP4-007 - Back-office test suite](tickets/SP4-007-backoffice-test-suite.md) - P0 - todo
+- [SP4-007 - Back-office test suite](tickets/SP4-007-backoffice-test-suite.md) - P0 - done

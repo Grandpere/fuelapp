@@ -20,4 +20,4 @@ OCR.Space can return transient capacity errors (`System Resource Exhaustion`) ca
 - SP3-003, SP3-004, SP4-005.
 
 ## Status
-- todo
+- done

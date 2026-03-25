@@ -193,6 +193,15 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP16-003 Search/filter persistence across key lists
+
+## Plan
+- [completed] Keep front receipt/import list context when opening details and coming back.
+- [completed] Extend the same return-context behavior to the highest-friction admin lists and delete flows.
+- [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 
 ## Plan

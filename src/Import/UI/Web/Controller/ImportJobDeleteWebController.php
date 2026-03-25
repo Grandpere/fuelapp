@@ -16,6 +16,7 @@ namespace App\Import\UI\Web\Controller;
 use App\Import\Application\Command\DeleteImportJobCommand;
 use App\Import\Application\Command\DeleteImportJobHandler;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -28,6 +29,7 @@ final class ImportJobDeleteWebController extends AbstractController
     public function __construct(
         private readonly ImportJobRepository $importJobRepository,
         private readonly DeleteImportJobHandler $deleteImportJobHandler,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -55,7 +57,12 @@ final class ImportJobDeleteWebController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        return $this->redirectToRoute('ui_import_index');
+        return new RedirectResponse(
+            $this->safeReturnPathResolver->resolve(
+                $request->request->get('_redirect'),
+                $this->generateUrl('ui_import_index'),
+            ),
+        );
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

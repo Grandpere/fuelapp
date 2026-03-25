@@ -5,6 +5,8 @@
 {% set admin_section = 'imports' %}
 
 {% block admin_content %}
+    {% set requestedReturnTo = app.request.query.get('return_to') %}
+    {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_import_job_list') %}
     {% set parsedDraft = payloadData is not null and payloadData.parsedDraft is defined and payloadData.parsedDraft is iterable ? payloadData.parsedDraft : null %}
     {% set creationPayload = payloadData is not null and payloadData.creationPayload is defined and payloadData.creationPayload is iterable ? payloadData.creationPayload : null %}
     {% set reviewLines = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable ? creationPayload.lines : (parsedDraft is not null and parsedDraft.lines is defined and parsedDraft.lines is iterable ? parsedDraft.lines : []) %}
@@ -68,7 +70,7 @@
         {% endif %}
 
         <div class="actions-wrap admin-table-top">
-            <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}" data-turbo-frame="_top">Back to list</a>
+            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to list</a>
             <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}" data-turbo-frame="_top">Open user API resource</a>
             <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry" data-turbo-frame="_top">Open admin retry endpoint</a>
             {% if job.status.value == 'needs_review' %}
@@ -79,6 +81,7 @@
             {% endif %}
             <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
+                <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
                 <button class="btn btn-danger" type="submit">Delete</button>
             </form>
         </div>

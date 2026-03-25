@@ -211,7 +211,52 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
         self::assertStringContainsString('data-controller="row-link"', $content);
-        self::assertStringContainsString('data-row-link-url-value="/ui/receipts/'.$receipt->getId()->toRfc4122().'"', $content);
+        self::assertStringContainsString('data-row-link-url-value="/ui/receipts/'.$receipt->getId()->toRfc4122().'?', $content);
+        self::assertMatchesRegularExpression('/data-row-link-url-value="\\/ui\\/receipts\\/'.$receipt->getId()->toRfc4122().'\\?[^"]*return_to=/', $content);
+    }
+
+    public function testReceiptDetailKeepsReturnToContextFromFilteredList(): void
+    {
+        $email = 'receipt.ui.context@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Context Station');
+        $station->setStreetName('12 Filter Street');
+        $station->setPostalCode('75013');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-12 08:00:00'));
+        $receipt->setTotalCents(2150);
+        $receipt->setVatAmountCents(358);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(11000);
+        $line->setUnitPriceDeciCentsPerLiter(1955);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $returnTo = '/ui/receipts?issued_from=2026-03-01&issued_to=2026-03-31&sort_by=total&sort_direction=asc';
+        $showResponse = $this->request('GET', '/ui/receipts/'.$receipt->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo));
+        self::assertSame(Response::HTTP_OK, $showResponse->getStatusCode());
+        $content = (string) $showResponse->getContent();
+        $escapedReturnTo = htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        self::assertStringContainsString('href="'.$escapedReturnTo.'"', $content);
+        self::assertStringContainsString('name="_redirect" value="'.$escapedReturnTo.'"', $content);
     }
 
     /**

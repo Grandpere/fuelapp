@@ -15,6 +15,7 @@ namespace App\Admin\UI\Web\Controller;
 
 use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,6 +29,7 @@ final class AdminReceiptDeleteController extends AbstractController
     public function __construct(
         private readonly ReceiptRepository $receiptRepository,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -58,6 +60,11 @@ final class AdminReceiptDeleteController extends AbstractController
         );
         $this->addFlash('success', 'Receipt deleted.');
 
-        return $this->redirectToRoute('ui_admin_receipt_list');
+        return new RedirectResponse(
+            $this->safeReturnPathResolver->resolve(
+                $request->request->get('_redirect'),
+                $this->generateUrl('ui_admin_receipt_list'),
+            ),
+        );
     }
 }

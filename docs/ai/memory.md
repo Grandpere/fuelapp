@@ -470,3 +470,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the UI mirrored storage-oriented field names and units instead of translating them into user-facing amounts.
 - Fix: switch front-office maintenance event/plan forms to EUR strings (`189.90`, `245,00`), parse them in the controllers, and keep integer cent persistence internally.
 - Prevention: when a domain stores money as integers, keep that rule inside controllers/forms and never expose storage units directly in the front-office UX.
+
+## 2026-03-26 - Clickable list rows on critical flows should keep an HTML fallback, not only Stimulus wiring
+- Symptom: several receipt/import/admin list rows stopped opening their detail pages at once even though the shared `row-link` controller code itself had not changed.
+- Root cause: list navigation depended entirely on Stimulus attachment for `<tr>` click handling, so one frontend/runtime hiccup could degrade every clickable row simultaneously.
+- Fix: keep the shared `row-link` controller, but add a small inline fallback on critical `<tr>` rows and explicitly mark action cells with `data-row-link-ignore`; at the same time, propagate a safe `return_to` list URL through detail/delete flows.
+- Prevention: for high-frequency list navigation, provide a graceful HTML fallback and avoid tests that hard-code unescaped query strings in rendered attributes.

@@ -19,7 +19,8 @@
     class="table-row row-link"
     data-controller="row-link"
     data-action="click->row-link#navigate"
-    data-row-link-url-value="{{ path('ui_receipt_show', {id: receipt.id}) }}"
+    data-row-link-url-value="{{ path('ui_receipt_show', {id: receipt.id, return_to: redirect}) }}"
+    onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
 >
     {% if 'id' in visibleColumns %}<td>{{ receipt.id }}</td>{% endif %}
     {% if 'issued_at' in visibleColumns %}<td>{{ receipt.issuedAt|date('d/m/Y H:i') }}</td>{% endif %}
@@ -44,7 +45,7 @@
     {% if 'vat_amount_cents' in visibleColumns %}<td class="text-right">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>{% endif %}
     <td class="text-right">
         <div class="action-row" data-row-link-ignore>
-            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id}) }}">View</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id, return_to: redirect}) }}">View</a>
             <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id}) }}" onsubmit="return confirm('Delete this receipt?');">
                 <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id) }}">
                 <input type="hidden" name="_redirect" value="{{ redirect }}">

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -26,8 +27,10 @@ final class AdminVehicleDeleteController extends AbstractController
 {
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F\\-]{36}';
 
-    public function __construct(private readonly VehicleRepository $vehicleRepository)
-    {
+    public function __construct(
+        private readonly VehicleRepository $vehicleRepository,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
+    ) {
     }
 
     #[Route('/ui/admin/vehicles/{id}/delete', name: 'ui_admin_vehicle_delete', methods: ['POST'], requirements: ['id' => self::UUID_ROUTE_REQUIREMENT])]
@@ -50,6 +53,12 @@ final class AdminVehicleDeleteController extends AbstractController
         $this->vehicleRepository->delete($id);
         $this->addFlash('success', 'Vehicle deleted.');
 
-        return new RedirectResponse($this->generateUrl('ui_admin_vehicle_list'), Response::HTTP_SEE_OTHER);
+        return new RedirectResponse(
+            $this->safeReturnPathResolver->resolve(
+                $request->request->get('_redirect'),
+                $this->generateUrl('ui_admin_vehicle_list'),
+            ),
+            Response::HTTP_SEE_OTHER,
+        );
     }
 }

@@ -303,6 +303,45 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame(101250, $savedReceipt->getOdometerKilometers());
     }
 
+    public function testImportDetailKeepsReturnToContext(): void
+    {
+        $email = 'import.web.context@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/context.jpg');
+        $job->setOriginalFilename('context.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(2048);
+        $job->setFileChecksumSha256(str_repeat('c', 64));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:00:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $returnTo = '/ui/imports?summary=last';
+
+        $detailResponse = $this->request(
+            'GET',
+            '/ui/imports/'.$job->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo),
+            [],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $content = (string) $detailResponse->getContent();
+        self::assertStringContainsString('href="'.$returnTo.'"', $content);
+        self::assertStringContainsString('name="_redirect" value="'.$returnTo.'"', $content);
+    }
+
     public function testUserCanFinalizeNeedsReviewImportWithManualCorrectionsFromUi(): void
     {
         $email = 'import.web.manual.finalize@example.com';

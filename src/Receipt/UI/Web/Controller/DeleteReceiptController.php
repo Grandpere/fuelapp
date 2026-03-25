@@ -16,6 +16,7 @@ namespace App\Receipt\UI\Web\Controller;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Security\Voter\ReceiptVoter;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,6 +30,7 @@ final class DeleteReceiptController extends AbstractController
     public function __construct(
         private readonly ReceiptRepository $receiptRepository,
         private readonly ReceiptStreamPublisher $streamPublisher,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -45,10 +47,10 @@ final class DeleteReceiptController extends AbstractController
         $this->streamPublisher->publishDeleted($id);
         $this->addFlash('success', 'Receipt deleted.');
 
-        $redirectUrl = (string) $request->request->get('_redirect', '');
-        if (!str_starts_with($redirectUrl, '/') || str_starts_with($redirectUrl, '//')) {
-            $redirectUrl = $this->generateUrl('ui_receipt_index');
-        }
+        $redirectUrl = $this->safeReturnPathResolver->resolve(
+            $request->request->get('_redirect'),
+            $this->generateUrl('ui_receipt_index'),
+        );
 
         return new RedirectResponse($redirectUrl, Response::HTTP_SEE_OTHER);
     }

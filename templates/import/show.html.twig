@@ -3,6 +3,8 @@
 {% block title %}Import Review{% endblock %}
 
 {% block body %}
+    {% set requestedReturnTo = app.request.query.get('return_to') %}
+    {% set backToImportsUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_import_index') %}
     {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
     {% set issuedAtMissing = 'issued_at_missing' in issueList %}
     {% set reviewLines = reviewLines is defined and reviewLines is iterable ? reviewLines : [] %}
@@ -17,7 +19,7 @@
                     <p class="muted section-lead">Review extracted values, optionally correct fields, then finalize to create the receipt.</p>
                 </div>
                 <div class="actions-wrap">
-                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
+                    <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
                     {% if job.status.value == 'needs_review' %}
                         <form method="post" action="{{ path('ui_import_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
                             <input type="hidden" name="_token" value="{{ csrf_token('ui_import_reparse_' ~ job.id.toString) }}">
@@ -26,6 +28,7 @@
                     {% endif %}
                     <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
                         <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
+                        <input type="hidden" name="_redirect" value="{{ backToImportsUrl }}">
                         <button class="btn btn-danger" type="submit">Delete import</button>
                     </form>
                 </div>
@@ -93,7 +96,7 @@
                     {% elseif duplicateOfImportJobId is not null %}
                         <a class="btn btn-primary" href="{{ path('ui_import_show', {id: duplicateOfImportJobId}) }}" data-turbo-frame="_top">Open original import</a>
                     {% endif %}
-                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
+                    <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
                 </div>
             </section>
         {% endif %}

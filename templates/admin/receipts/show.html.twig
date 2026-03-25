@@ -5,6 +5,8 @@
 {% set admin_section = 'receipts' %}
 
 {% block admin_content %}
+    {% set requestedReturnTo = app.request.query.get('return_to') %}
+    {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_receipt_list') %}
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
@@ -15,9 +17,10 @@
                 <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_edit', {id: receipt.id.toString()}) }}">Edit</a>
                 <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_receipt_delete_' ~ receipt.id.toString()) }}">
+                    <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
                     <button class="btn btn-danger" type="submit">Delete</button>
                 </form>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_list') }}">Back</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back</a>
             </div>
         </div>
 

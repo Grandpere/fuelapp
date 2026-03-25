@@ -343,6 +343,55 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringNotContainsString('BO-200-BB', (string) $afterDelete->getContent());
     }
 
+    public function testAdminMaintenanceEventDetailKeepsFilteredReturnContext(): void
+    {
+        $adminEmail = 'ui.admin.maintenance.context@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.maintenance.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($owner);
+        $vehicle->setName('Context Vehicle');
+        $vehicle->setPlateNumber('CTX-100-AA');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $event = new MaintenanceEventEntity();
+        $event->setId(Uuid::v7());
+        $event->setOwner($owner);
+        $event->setVehicle($vehicle);
+        $event->setEventType(MaintenanceEventType::SERVICE);
+        $event->setOccurredAt(new DateTimeImmutable('2026-03-11 09:00:00'));
+        $event->setDescription('Context maintenance event');
+        $event->setOdometerKilometers(98000);
+        $event->setTotalCostCents(15500);
+        $event->setCurrencyCode('EUR');
+        $event->setCreatedAt(new DateTimeImmutable('2026-03-11 09:00:00'));
+        $event->setUpdatedAt(new DateTimeImmutable('2026-03-11 09:00:00'));
+        $this->em->persist($event);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $returnTo = '/ui/admin/maintenance/events?owner_id='.$owner->getId()->toRfc4122().'&event_type=service';
+
+        $detailResponse = $this->request(
+            'GET',
+            '/ui/admin/maintenance/events/'.$event->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo),
+            [],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $content = (string) $detailResponse->getContent();
+        $escapedReturnTo = htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        self::assertStringContainsString('href="'.$escapedReturnTo.'"', $content);
+        self::assertStringContainsString('name="_redirect" value="'.$escapedReturnTo.'"', $content);
+    }
+
     public function testAdminCanToggleUserFlagsResetPasswordAndResendVerificationFromBackofficeUi(): void
     {
         $adminEmail = 'ui.admin.user.write@example.com';

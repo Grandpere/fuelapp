@@ -29,8 +29,8 @@
                         <thead>
                             <tr>
                                 <th>Fuel</th>
-                                <th>Quantity (mL)</th>
-                                <th>Unit Price (deci-cents/L)</th>
+                                <th>Quantity (L)</th>
+                                <th>Unit Price (€/L)</th>
                                 <th>VAT %</th>
                             </tr>
                         </thead>
@@ -44,8 +44,8 @@
                                             {% endfor %}
                                         </select>
                                     </td>
-                                    <td><input class="input" type="number" min="1" step="1" name="lines[{{ loop.index0 }}][quantityMilliLiters]" value="{{ line.quantityMilliLiters }}"></td>
-                                    <td><input class="input" type="number" min="0" step="1" name="lines[{{ loop.index0 }}][unitPriceDeciCentsPerLiter]" value="{{ line.unitPriceDeciCentsPerLiter }}"></td>
+                                    <td><input class="input" type="text" inputmode="decimal" name="lines[{{ loop.index0 }}][quantityLiters]" value="{{ line.quantityLiters }}" placeholder="40.40"></td>
+                                    <td><input class="input" type="text" inputmode="decimal" name="lines[{{ loop.index0 }}][unitPriceEurosPerLiter]" value="{{ line.unitPriceEurosPerLiter }}" placeholder="1.769"></td>
                                     <td><input class="input" type="number" min="0" max="100" step="1" name="lines[{{ loop.index0 }}][vatRatePercent]" value="{{ line.vatRatePercent }}"></td>
                                 </tr>
                             {% endfor %}

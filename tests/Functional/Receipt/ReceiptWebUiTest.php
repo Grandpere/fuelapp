@@ -103,8 +103,8 @@ final class ReceiptWebUiTest extends WebTestCase
                 'lines' => [
                     [
                         'fuelType' => 'sp95',
-                        'quantityMilliLiters' => '12000',
-                        'unitPriceDeciCentsPerLiter' => '1750',
+                        'quantityLiters' => '12.000',
+                        'unitPriceEurosPerLiter' => '1.750',
                         'vatRatePercent' => '20',
                     ],
                 ],
@@ -122,6 +122,54 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame('sp95', $updatedLine->getFuelType());
         self::assertSame(12000, $updatedLine->getQuantityMilliLiters());
         self::assertSame(1750, $updatedLine->getUnitPriceDeciCentsPerLiter());
+    }
+
+    public function testUserCanCreateReceiptFromHumanFriendlyUnits(): void
+    {
+        $email = 'receipt.ui.create@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $createPage = $this->request('GET', '/ui/receipts/new');
+        self::assertSame(Response::HTTP_OK, $createPage->getStatusCode());
+        $createContent = (string) $createPage->getContent();
+        self::assertStringContainsString('Quantity (L)', $createContent);
+        self::assertStringContainsString('Unit price (€/L)', $createContent);
+        $csrf = $this->extractFormCsrf($createContent);
+
+        $createResponse = $this->request('POST', '/ui/receipts/new', [
+            '_token' => $csrf,
+            'issuedAt' => '2026-03-05T14:20',
+            'fuelType' => 'diesel',
+            'quantityLiters' => '40,40',
+            'unitPriceEurosPerLiter' => '1,769',
+            'vatRatePercent' => '20',
+            'stationName' => 'PETRO EST',
+            'stationStreetName' => 'LECLERC SEZANNE HYPER',
+            'stationPostalCode' => '51120',
+            'stationCity' => 'SEZANNE',
+            'latitudeMicroDegrees' => '',
+            'longitudeMicroDegrees' => '',
+            'odometerKilometers' => '120450',
+        ]);
+        self::assertSame(Response::HTTP_SEE_OTHER, $createResponse->getStatusCode());
+
+        $this->em->clear();
+        $receipts = $this->em->getRepository(ReceiptEntity::class)->findAll();
+        self::assertCount(1, $receipts);
+        $receipt = $receipts[0];
+        self::assertInstanceOf(ReceiptEntity::class, $receipt);
+        self::assertSame($owner->getId()->toRfc4122(), $receipt->getOwner()?->getId()->toRfc4122());
+        self::assertSame(120450, $receipt->getOdometerKilometers());
+        $lines = $receipt->getLines()->toArray();
+        self::assertCount(1, $lines);
+        $line = $lines[0];
+        self::assertInstanceOf(ReceiptLineEntity::class, $line);
+        self::assertSame(40400, $line->getQuantityMilliLiters());
+        self::assertSame(1769, $line->getUnitPriceDeciCentsPerLiter());
     }
 
     public function testReceiptIndexRowsUseSharedRowLinkNavigation(): void

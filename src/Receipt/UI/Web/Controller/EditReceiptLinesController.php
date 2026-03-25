@@ -57,8 +57,8 @@ final class EditReceiptLinesController extends AbstractController
         foreach ($receipt->lines() as $line) {
             $formLines[] = [
                 'fuelType' => $line->fuelType()->value,
-                'quantityMilliLiters' => (string) $line->quantityMilliLiters(),
-                'unitPriceDeciCentsPerLiter' => (string) $line->unitPriceDeciCentsPerLiter(),
+                'quantityLiters' => number_format($line->quantityMilliLiters() / 1000, 3, '.', ''),
+                'unitPriceEurosPerLiter' => number_format($line->unitPriceDeciCentsPerLiter() / 1000, 3, '.', ''),
                 'vatRatePercent' => (string) $line->vatRatePercent(),
             ];
         }
@@ -82,14 +82,14 @@ final class EditReceiptLinesController extends AbstractController
                     }
 
                     $fuelType = $rawLine['fuelType'] ?? '';
-                    $quantity = $rawLine['quantityMilliLiters'] ?? '';
-                    $unitPrice = $rawLine['unitPriceDeciCentsPerLiter'] ?? '';
+                    $quantity = $rawLine['quantityLiters'] ?? '';
+                    $unitPrice = $rawLine['unitPriceEurosPerLiter'] ?? '';
                     $vatRate = $rawLine['vatRatePercent'] ?? '';
 
                     $formLines[] = [
                         'fuelType' => is_scalar($fuelType) ? trim((string) $fuelType) : '',
-                        'quantityMilliLiters' => is_scalar($quantity) ? trim((string) $quantity) : '',
-                        'unitPriceDeciCentsPerLiter' => is_scalar($unitPrice) ? trim((string) $unitPrice) : '',
+                        'quantityLiters' => is_scalar($quantity) ? trim((string) $quantity) : '',
+                        'unitPriceEurosPerLiter' => is_scalar($unitPrice) ? trim((string) $unitPrice) : '',
                         'vatRatePercent' => is_scalar($vatRate) ? trim((string) $vatRate) : '',
                     ];
                 }
@@ -132,7 +132,7 @@ final class EditReceiptLinesController extends AbstractController
     }
 
     /**
-     * @param list<array{fuelType:string,quantityMilliLiters:string,unitPriceDeciCentsPerLiter:string,vatRatePercent:string}> $formLines
+     * @param list<array{fuelType:string,quantityLiters:string,unitPriceEurosPerLiter:string,vatRatePercent:string}> $formLines
      *
      * @return array{0:list<CreateReceiptLineCommand>,1:list<string>}
      */
@@ -149,15 +149,15 @@ final class EditReceiptLinesController extends AbstractController
                 continue;
             }
 
-            $quantity = filter_var($line['quantityMilliLiters'], FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-            $unitPrice = filter_var($line['unitPriceDeciCentsPerLiter'], FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+            $quantity = $this->parseScaledDecimalToInt($line['quantityLiters'], 1000, 3);
+            $unitPrice = $this->parseScaledDecimalToInt($line['unitPriceEurosPerLiter'], 1000, 3);
             $vatRate = filter_var($line['vatRatePercent'], FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
 
             if (null === $quantity || $quantity <= 0) {
-                $errors[] = sprintf('Line %d: quantity must be a positive integer.', $index + 1);
+                $errors[] = sprintf('Line %d: quantity must be a valid liters value.', $index + 1);
             }
             if (null === $unitPrice || $unitPrice < 0) {
-                $errors[] = sprintf('Line %d: unit price must be an integer >= 0.', $index + 1);
+                $errors[] = sprintf('Line %d: unit price must be a valid €/L value.', $index + 1);
             }
             if (null === $vatRate || $vatRate < 0 || $vatRate > 100) {
                 $errors[] = sprintf('Line %d: VAT rate must be between 0 and 100.', $index + 1);
@@ -173,5 +173,26 @@ final class EditReceiptLinesController extends AbstractController
         }
 
         return [$commands, array_values(array_unique($errors))];
+    }
+
+    private function parseScaledDecimalToInt(?string $value, int $scale, int $maxDecimals): ?int
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        $normalized = trim(str_replace(' ', '', str_replace(',', '.', $value)));
+        if ('' === $normalized) {
+            return null;
+        }
+
+        if (!preg_match('/^\d+(?:\.\d{1,'.$maxDecimals.'})?$/', $normalized)) {
+            return null;
+        }
+
+        [$whole, $fraction] = array_pad(explode('.', $normalized, 2), 2, '');
+        $fraction = str_pad($fraction, $maxDecimals, '0');
+
+        return ((int) $whole * $scale) + (int) substr($fraction, 0, $maxDecimals);
     }
 }

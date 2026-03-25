@@ -1,21 +1,24 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 15 - Product flow refinement
+- Sprint 16 - Product flow ergonomics
 
 ## Current goal
-- Re-prioritize the next sprint now that Sprint 15 product cleanup is delivered.
+- Remove the most visible remaining front-office data-entry friction, starting with human-friendly receipt forms.
+
+## In progress
+- SP16-001 - receipt create/edit forms should use human-friendly units instead of storage values
 
 ## Next tickets (ordered)
-1. Re-prioritize the next sprint
+1. SP16-002 - Maintenance flow clarity
+2. SP16-003 - Search/filter persistence across key lists
+3. Sprint 17 ops/perf follow-up after Sprint 16 lands
 
 ## Notes
 - Sprint 13 UX work is delivered and merged.
 - Sprint 14 is fully delivered across headers, asset-sovereignty baseline, and runtime hardening coverage.
-- Sprint 15 intentionally shifts back to product flow quality on top of that technical baseline.
-- SP15-001 is delivered: import review/finalize now supports all parsed lines in front/admin.
-- SP15-002 is delivered: bulk upload results now surface as a readable summary card on `/ui/imports`.
-- SP15-003 is delivered: import detail outcomes are clearer, receipt row navigation is restored, and duplicate detection now covers semantically identical receipts.
+- Sprint 15 is delivered across import review, bulk-upload summary, and product-friction cleanup.
+- Sprint 16 intentionally stays product-facing before the planned Sprint 17 ops/perf follow-up.
 - Sprint 11 is closed from a backlog perspective.
 - Sprint 12 is closed from a backlog perspective.
 - Microsoft OIDC remains deferred unless product priority changes.

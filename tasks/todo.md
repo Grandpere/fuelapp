@@ -174,6 +174,16 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] User-run functional suite validated (`make phpunit-functional`).
 
+# TODO - SP16-001 Receipt create/edit flow polish
+
+## Plan
+- [in_progress] Reframe Sprint 16/17 backlog and document the front-only scope for receipt form ergonomics.
+- [pending] Replace technical receipt form inputs with human-friendly units (`L`, `€/L`) while keeping integer persistence.
+- [pending] Align receipt line editing with the same parsing/display rules.
+- [pending] Add/update unit and functional coverage for decimal parsing and form rendering.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 
 ## Plan

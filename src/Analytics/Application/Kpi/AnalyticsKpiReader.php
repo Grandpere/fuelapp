@@ -17,6 +17,8 @@ use DateTimeImmutable;
 
 interface AnalyticsKpiReader
 {
+    public function readFuelDashboardSnapshot(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): FuelDashboardSnapshotKpi;
+
     /** @return list<MonthlyCostKpi> */
     public function readCostPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array;
 

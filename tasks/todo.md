@@ -202,6 +202,18 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP17-001 Analytics query profiling and hot-path optimization
+
+## Plan
+- [completed] Identify redundant dashboard analytics reads on the same KPI table hot path.
+- [completed] Collapse monthly fuel cost/consumption/price and average-price dashboard reads into one grouped snapshot query.
+- [completed] Add unit coverage proving the aggregated snapshot rebuilds all expected metrics.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 
 ## Plan

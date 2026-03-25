@@ -55,4 +55,45 @@ final class DoctrineAnalyticsKpiReaderTest extends TestCase
         self::assertSame(-33868800, $result[0]->latitudeMicroDegrees);
         self::assertSame(-151209300, $result[0]->longitudeMicroDegrees);
     }
+
+    public function testReadFuelDashboardSnapshotBuildsAllFuelMetricsFromSingleGroupedQuery(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection
+            ->expects(self::once())
+            ->method('fetchAllAssociative')
+            ->willReturn([
+                [
+                    'month' => '2026-01',
+                    'fuel_type' => 'diesel',
+                    'total_cost_cents' => '28000',
+                    'total_quantity_milli_liters' => '15000',
+                ],
+                [
+                    'month' => '2026-02',
+                    'fuel_type' => 'sp95',
+                    'total_cost_cents' => '34000',
+                    'total_quantity_milli_liters' => '20000',
+                ],
+            ]);
+
+        $reader = new DoctrineAnalyticsKpiReader($connection);
+        $snapshot = $reader->readFuelDashboardSnapshot(
+            'owner-1',
+            null,
+            null,
+            null,
+            new DateTimeImmutable('2026-01-01 00:00:00'),
+            new DateTimeImmutable('2026-02-28 23:59:59'),
+        );
+
+        self::assertCount(2, $snapshot->costPerMonth);
+        self::assertSame(28000, $snapshot->costPerMonth[0]->totalCostCents);
+        self::assertSame(20000, $snapshot->consumptionPerMonth[1]->totalQuantityMilliLiters);
+        self::assertCount(2, $snapshot->fuelPricePerMonth);
+        self::assertSame('diesel', $snapshot->fuelPricePerMonth[0]->fuelType);
+        self::assertSame(62000, $snapshot->averagePrice->totalCostCents);
+        self::assertSame(35000, $snapshot->averagePrice->totalQuantityMilliLiters);
+        self::assertSame(17714, $snapshot->averagePrice->averagePriceDeciCentsPerLiter);
+    }
 }

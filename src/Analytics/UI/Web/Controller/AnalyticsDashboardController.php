@@ -54,10 +54,11 @@ final class AnalyticsDashboardController extends AbstractController
         $vehicleId = $this->readVehicleFilter($request, $ownerId);
         $stationId = $this->readStationFilter($request);
         $fuelType = $this->readFuelTypeFilter($request);
-        $costPerMonth = $this->kpiReader->readCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
-        $consumptionPerMonth = $this->kpiReader->readConsumptionPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
-        $averagePrice = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
-        $fuelPricePerMonth = $this->kpiReader->readFuelPricePerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $fuelSnapshot = $this->kpiReader->readFuelDashboardSnapshot($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $costPerMonth = $fuelSnapshot->costPerMonth;
+        $consumptionPerMonth = $fuelSnapshot->consumptionPerMonth;
+        $averagePrice = $fuelSnapshot->averagePrice;
+        $fuelPricePerMonth = $fuelSnapshot->fuelPricePerMonth;
         $comparedCostPerMonth = $this->kpiReader->readComparedCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $visitedStations = $this->kpiReader->readVisitedStations($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 

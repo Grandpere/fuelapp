@@ -214,7 +214,12 @@
             <article class="card panel">
                 <h2>Timeline events</h2>
                 {% if events is empty %}
-                    <div class="empty-state">No maintenance event yet.</div>
+                    <div class="empty-state">
+                        <p>No maintenance event yet.</p>
+                        <div class="actions-wrap">
+                            <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new') }}">Add first event</a>
+                        </div>
+                    </div>
                 {% else %}
                     <div class="timeline-list">
                         {% for event in events %}
@@ -242,7 +247,12 @@
                 <section class="card panel">
                     <h2>Planner (upcoming)</h2>
                     {% if upcomingPlans is empty %}
-                        <div class="empty-state">No upcoming planned cost.</div>
+                        <div class="empty-state">
+                            <p>No upcoming planned cost.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new') }}">Add first plan</a>
+                            </div>
+                        </div>
                     {% else %}
                         <div class="planner-list">
                             {% for plan in upcomingPlans|slice(0, 8) %}
@@ -269,7 +279,13 @@
                 <section class="card panel">
                     <h2>Triggered reminders</h2>
                     {% if reminders is empty %}
-                        <div class="empty-state">No triggered reminder yet. Run reminder dispatch to evaluate rules.</div>
+                        <div class="empty-state">
+                            <p>No triggered reminder yet. They will appear here once your planned rules become due.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new') }}">Add a plan</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new') }}">Add an event</a>
+                            </div>
+                        </div>
                     {% else %}
                         <div class="planner-list">
                             {% for reminder in reminders|slice(0, 8) %}

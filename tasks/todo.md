@@ -177,12 +177,21 @@
 # TODO - SP16-001 Receipt create/edit flow polish
 
 ## Plan
-- [in_progress] Reframe Sprint 16/17 backlog and document the front-only scope for receipt form ergonomics.
-- [pending] Replace technical receipt form inputs with human-friendly units (`L`, `€/L`) while keeping integer persistence.
-- [pending] Align receipt line editing with the same parsing/display rules.
-- [pending] Add/update unit and functional coverage for decimal parsing and form rendering.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Reframe Sprint 16/17 backlog and document the front-only scope for receipt form ergonomics.
+- [completed] Replace technical receipt form inputs with human-friendly units (`L`, `€/L`) while keeping integer persistence.
+- [completed] Align receipt line editing with the same parsing/display rules.
+- [completed] Add/update unit and functional coverage for decimal parsing and form rendering.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP16-002 Maintenance flow clarity
+
+## Plan
+- [completed] Reframe maintenance event/plan forms around user-facing EUR amounts instead of storage cents.
+- [completed] Clarify maintenance dashboard empty states with explicit next actions.
+- [completed] Add/update functional coverage for the revised event/plan form payloads and empty-state rendering.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 

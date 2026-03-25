@@ -464,3 +464,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: receipts still used inline `onclick` navigation, while the rest of the UI had been standardized on the shared `row-link` Stimulus controller.
 - Fix: migrate receipt rows to `data-controller="row-link"` / `click->row-link#navigate` and mark action cells with `data-row-link-ignore`.
 - Prevention: when harmonizing list UIs, align every clickable row on the same controller instead of mixing inline JS and Stimulus patterns.
+
+## 2026-03-26 - Front-office money inputs should use user-facing EUR amounts, not storage cents
+- Symptom: maintenance forms exposed `...Cents` fields, which made normal data entry feel technical and error-prone even though the domain correctly persisted integer cents.
+- Root cause: the UI mirrored storage-oriented field names and units instead of translating them into user-facing amounts.
+- Fix: switch front-office maintenance event/plan forms to EUR strings (`189.90`, `245,00`), parse them in the controllers, and keep integer cent persistence internally.
+- Prevention: when a domain stores money as integers, keep that rule inside controllers/forms and never expose storage units directly in the front-office UX.

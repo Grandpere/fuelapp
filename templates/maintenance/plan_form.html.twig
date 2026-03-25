@@ -78,8 +78,9 @@
                         <input class="input" type="text" name="plannedFor" data-datepicker="date" value="{{ formData.plannedFor }}" autocomplete="off" required>
                     </label>
                     <label class="label">
-                        Planned cost (cents)
-                        <input class="input" type="number" min="1" step="1" name="plannedCostCents" value="{{ formData.plannedCostCents }}" required>
+                        Planned cost (EUR)
+                        <input class="input" type="text" inputmode="decimal" name="plannedCostEuros" value="{{ formData.plannedCostEuros }}" placeholder="320.00" required>
+                        <small class="muted">Use an amount in euros, for example <code>320.00</code>.</small>
                     </label>
                     <label class="label">
                         Currency

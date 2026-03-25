@@ -4,15 +4,15 @@
 - Sprint 16 - Product flow ergonomics
 
 ## Current goal
-- Remove the most visible remaining front-office data-entry friction, starting with human-friendly receipt forms.
+- Keep removing small front-office frictions so routine receipt and maintenance work feels more obvious than technical.
 
 ## In progress
-- SP16-001 - receipt create/edit forms should use human-friendly units instead of storage values
+- SP16-003 - search/filter persistence across key lists
 
 ## Next tickets (ordered)
-1. SP16-002 - Maintenance flow clarity
-2. SP16-003 - Search/filter persistence across key lists
-3. Sprint 17 ops/perf follow-up after Sprint 16 lands
+1. Sprint 17 ops/perf follow-up after Sprint 16 lands
+2. Microsoft OIDC remains deferred
+3. Re-open a product polish ticket only if fresh real-world friction appears
 
 ## Notes
 - Sprint 13 UX work is delivered and merged.

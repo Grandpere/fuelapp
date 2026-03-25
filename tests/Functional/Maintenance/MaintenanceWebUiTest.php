@@ -108,6 +108,8 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('Maintenance', (string) $response->getContent());
         self::assertStringContainsString('Timeline events', (string) $response->getContent());
         self::assertStringContainsString('Planner (upcoming)', (string) $response->getContent());
+        self::assertStringContainsString('Add first event', (string) $response->getContent());
+        self::assertStringContainsString('Add first plan', (string) $response->getContent());
     }
 
     public function testUserCanCreateAndEditMaintenanceEventAndPlan(): void
@@ -144,7 +146,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
                 'occurredAt' => '2026-03-02T09:30',
                 'description' => 'Initial annual service',
                 'odometerKilometers' => '124000',
-                'totalCostCents' => '18990',
+                'totalCostEuros' => '189.90',
                 'currencyCode' => 'EUR',
                 '_token' => $eventCsrf,
             ],
@@ -171,7 +173,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
                 'occurredAt' => '2026-03-05T18:15',
                 'description' => 'Updated repair entry',
                 'odometerKilometers' => '124850',
-                'totalCostCents' => '24500',
+                'totalCostEuros' => '245,00',
                 'currencyCode' => 'EUR',
                 '_token' => $eventEditCsrf,
             ],
@@ -193,7 +195,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
                 'label' => 'Front brake replacement',
                 'eventType' => MaintenanceEventType::REPAIR->value,
                 'plannedFor' => '2026-06-10',
-                'plannedCostCents' => '32000',
+                'plannedCostEuros' => '320.00',
                 'currencyCode' => 'EUR',
                 'notes' => 'Before summer trip',
                 '_token' => $planCsrf,
@@ -220,7 +222,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
                 'label' => 'Front + rear brake replacement',
                 'eventType' => MaintenanceEventType::REPAIR->value,
                 'plannedFor' => '2026-06-15',
-                'plannedCostCents' => '47000',
+                'plannedCostEuros' => '470,00',
                 'currencyCode' => 'EUR',
                 'notes' => 'Updated budget after quote',
                 '_token' => $planEditCsrf,

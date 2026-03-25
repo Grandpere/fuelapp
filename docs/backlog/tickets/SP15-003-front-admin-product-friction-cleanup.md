@@ -19,3 +19,9 @@ Several core flows are technically complete but still leave users/admins without
 - duplicate import detail shows a direct action to open the original import
 - admin import detail offers the equivalent shortcuts
 - functional coverage protects the new terminal-state shortcuts
+
+## Delivered
+- front import detail now shows direct next-step actions for `processed` and `duplicate` outcomes
+- admin import detail mirrors the same shortcuts
+- duplicate detection now also catches semantically identical receipts after OCR, not only byte-identical files
+- receipt list rows use the shared `row-link` controller again, restoring consistent detail navigation

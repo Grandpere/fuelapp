@@ -164,6 +164,16 @@
 - [completed] Link decision artifact in backlog ticket and mark Sprint 10 execution plan as completed.
 - [completed] Documentation-only ticket: no code quality/test commands executed.
 
+# TODO - SP15-003 Front/admin product friction cleanup
+
+## Plan
+- [completed] Add clearer terminal-state next actions on front/admin import detail pages.
+- [completed] Restore shared row-click behavior on receipt list rows.
+- [completed] Extend duplicate detection so semantically identical receipts are flagged even when the uploaded file bytes differ.
+- [completed] Add/update unit, integration, and functional coverage for the new duplicate/shortcut behaviors.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 
 ## Plan

@@ -298,3 +298,12 @@
 - [completed] Update focused functional coverage on oversized ZIP entry behavior and message.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP13-002 Navigation and layout cohesion
+
+## Plan
+- [completed] Add shared front/admin utility classes for common page, filter, table and action patterns.
+- [completed] Harmonize the highest-traffic front/admin templates to use those shared patterns instead of inline styles.
+- [completed] Update Sprint 13/current-focus docs and capture any UX lessons in `docs/ai/memory.md` if needed.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and validate the visual flow.

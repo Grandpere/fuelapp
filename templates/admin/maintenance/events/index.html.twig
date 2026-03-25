@@ -6,11 +6,13 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Maintenance Events</h2>
-        <p class="muted">Cross-owner timeline of maintenance operations.</p>
+        <div class="admin-page-header">
+            <h2 class="page-title">Maintenance Events</h2>
+            <p class="muted">Cross-owner timeline of maintenance operations.</p>
+        </div>
 
-        <form method="get" action="{{ path('ui_admin_maintenance_event_list') }}" style="display:grid; gap:0.8rem; margin-top:1rem;">
-            <div class="form-grid-2">
+        <form method="get" action="{{ path('ui_admin_maintenance_event_list') }}" class="admin-filters-form">
+            <div class="form-grid-2 admin-table-top">
                 <label class="label">
                     Owner ID
                     <input class="input" type="text" name="owner_id" value="{{ filters.ownerId }}" placeholder="UUID v7">
@@ -37,14 +39,14 @@
                     <input class="input" type="text" name="occurred_to" data-datepicker="date" value="{{ filters.occurredTo }}" autocomplete="off">
                 </label>
             </div>
-            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <div class="admin-form-actions">
                 <button class="btn btn-primary" type="submit">Apply</button>
                 <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Reset</a>
             </div>
         </form>
 
-        <div class="table-wrap" style="margin-top: 1rem;">
-            <table class="app-table" style="min-width: 1040px;">
+        <div class="table-wrap admin-table-top table-min-1040">
+            <table class="app-table">
                 <thead>
                 <tr>
                     <th>Occurred</th>
@@ -60,8 +62,7 @@
                 <tbody>
                 {% for event in events %}
                     <tr
-                        class="table-row"
-                        style="cursor:pointer;"
+                        class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
                         data-row-link-url-value="{{ path('ui_admin_maintenance_event_show', {id: event.id.toString}) }}"
@@ -79,7 +80,7 @@
                         </td>
                         <td>{{ event.odometerKilometers ?? 'n/a' }}</td>
                         <td>{{ event.description ?? 'n/a' }}</td>
-                        <td style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                        <td class="action-cell-flex">
                             <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_show', {id: event.id.toString}) }}" data-turbo-frame="_top">Detail</a>
                             <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString}) }}" data-turbo-frame="_top">Edit</a>
                             <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this maintenance event?');">

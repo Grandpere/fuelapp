@@ -6,10 +6,12 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Identities</h2>
-        <p class="muted">Manage linked social/OIDC identities and reassign ownership when needed.</p>
+        <div class="admin-page-header">
+            <h2 class="page-title">Identities</h2>
+            <p class="muted">Manage linked social/OIDC identities and reassign ownership when needed.</p>
+        </div>
 
-        <form method="get" action="{{ path('ui_admin_identity_list') }}" style="margin-top: 1rem; display:grid; gap:0.6rem; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items:end;">
+        <form method="get" action="{{ path('ui_admin_identity_list') }}" class="admin-filter-grid-4 admin-table-top">
             <label class="label">
                 Search
                 <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="provider, subject, email">
@@ -22,14 +24,14 @@
                 User id
                 <input class="input" type="text" name="user_id" value="{{ filters.user_id }}" placeholder="UUID">
             </label>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <div class="admin-form-actions">
                 <button class="btn btn-primary" type="submit">Apply</button>
                 <a class="btn btn-secondary" href="{{ path('ui_admin_identity_list') }}">Reset</a>
             </div>
         </form>
 
-        <div class="table-wrap" style="margin-top: 1rem;">
-            <table class="app-table" style="min-width: 1120px;">
+        <div class="table-wrap admin-table-top table-min-1120">
+            <table class="app-table">
                 <thead>
                 <tr>
                     <th>Provider</th>
@@ -49,10 +51,10 @@
                             <div>{{ identity.userEmail }}</div>
                             <small class="muted">{{ identity.userId }}</small>
                         </td>
-                        <td style="display:grid; gap:0.45rem;">
-                            <form method="post" action="{{ path('ui_admin_identity_relink', {id: identity.id}) }}" style="display:flex; gap:0.45rem; flex-wrap:wrap;" data-turbo-frame="_top">
+                        <td class="stack-sm">
+                            <form method="post" action="{{ path('ui_admin_identity_relink', {id: identity.id}) }}" class="admin-form-actions" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_identity_relink_' ~ identity.id) }}">
-                                <select class="select" name="user_id" style="min-width: 240px;">
+                                <select class="select" name="user_id">
                                     {% for user in users %}
                                         <option value="{{ user.id }}" {% if user.id == identity.userId %}selected{% endif %}>{{ user.email }}</option>
                                     {% endfor %}

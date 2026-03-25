@@ -6,10 +6,12 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Security Activities</h2>
-        <p class="muted">Track login attempts and security-sensitive account changes.</p>
+        <div class="admin-page-header">
+            <h2 class="page-title">Security Activities</h2>
+            <p class="muted">Track login attempts and security-sensitive account changes.</p>
+        </div>
 
-        <form method="get" action="{{ path('ui_admin_security_activity_list') }}" style="margin-top: 1rem; display:grid; gap:0.6rem; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items:end;">
+        <form method="get" action="{{ path('ui_admin_security_activity_list') }}" class="admin-filter-grid-5 admin-table-top">
             <label class="label">
                 Action
                 <input class="input" type="text" name="action" value="{{ filters.action }}" placeholder="security.login.failure">
@@ -26,14 +28,14 @@
                 To
                 <input class="input" type="date" name="to" value="{{ filters.to }}">
             </label>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <div class="admin-form-actions">
                 <button class="btn btn-primary" type="submit">Apply</button>
                 <a class="btn btn-secondary" href="{{ path('ui_admin_security_activity_list') }}">Reset</a>
             </div>
         </form>
 
-        <div class="table-wrap" style="margin-top: 1rem;">
-            <table class="app-table" style="min-width: 1080px;">
+        <div class="table-wrap admin-table-top table-min-1080">
+            <table class="app-table">
                 <thead>
                 <tr>
                     <th>When</th>

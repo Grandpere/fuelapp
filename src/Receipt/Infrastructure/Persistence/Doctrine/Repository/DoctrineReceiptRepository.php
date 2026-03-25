@@ -660,7 +660,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository
         $lines = [];
         foreach ($entity->getLines() as $lineEntity) {
             $lines[] = ReceiptLine::reconstitute(
-                FuelType::from($lineEntity->getFuelType()),
+                FuelType::fromStorage($lineEntity->getFuelType()),
                 $lineEntity->getQuantityMilliLiters(),
                 $lineEntity->getUnitPriceDeciCentsPerLiter(),
                 $lineEntity->getVatRatePercent(),

@@ -21,4 +21,12 @@ enum FuelType: string
     case E85 = 'e85';
     case DIESEL = 'diesel';
     case LPG = 'lpg';
+
+    public static function fromStorage(string $value): self
+    {
+        return match ($value) {
+            'unleaded95' => self::SP95,
+            default => self::from($value),
+        };
+    }
 }

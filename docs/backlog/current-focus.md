@@ -1,21 +1,21 @@
 # Current Focus
 
 ## Active sprint
-- No active sprint locked yet
+- Sprint 13 - UX cohesion and product polish
 
 ## Current goal
-- Backlog is aligned after Sprint 11 and Sprint 12 delivery; the next implementation subject should be re-prioritized from product needs.
+- Finish the horizontal UX pass so front/admin navigation, headers, filters, and tables feel like one consistent product.
 
 ## In progress
-- No committed implementation ticket currently in progress.
+- `SP13-002` - Navigation and layout cohesion pass
 
 ## Next tickets (ordered)
-1. `SP11-001` - Microsoft OIDC rollout (still deferred unless product priority changes)
-2. New follow-up OCR/parser tickets if fresh real-world samples reveal gaps
-3. New product sprint to be selected explicitly before implementation resumes
+1. `SP13-002` - Navigation and layout cohesion pass
+2. `SP11-001` - Microsoft OIDC rollout (still deferred unless product priority changes)
+3. New OCR/parser follow-up tickets if fresh real-world samples reveal gaps
 
 ## Notes
-- Sprint 11 is considered delivered and closed from a backlog perspective.
-- Sprint 12 is considered delivered and closed from a backlog perspective.
+- `SP13-001` analytics demo/chart work is delivered.
+- Sprint 11 is closed from a backlog perspective.
+- Sprint 12 is closed from a backlog perspective.
 - Microsoft OIDC remains deferred unless product priority changes.
-- No mandatory pre-existing ticket remains open besides deferred items; next work should start from a fresh prioritization pass.

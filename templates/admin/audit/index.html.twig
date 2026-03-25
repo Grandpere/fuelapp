@@ -6,13 +6,15 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Audit Logs</h2>
-        <p class="muted">Immutable admin action trail with actor, target and correlation id.</p>
+        <div class="admin-page-header">
+            <h2 class="page-title">Audit Logs</h2>
+            <p class="muted">Immutable admin action trail with actor, target and correlation id.</p>
+        </div>
     </section>
 
-    <section class="card admin-panel" style="margin-top: 1rem;">
-        <h3 style="margin: 0;">Filters</h3>
-        <form method="get" style="margin-top: .9rem; display: grid; gap: .75rem;">
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Filters</h3>
+        <form method="get" class="admin-filters-form">
             <div class="form-grid-2">
                 <label class="label">
                     Action
@@ -43,16 +45,16 @@
                     <input class="input" type="text" name="to" value="{{ filters.to ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
             </div>
-            <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+            <div class="admin-form-actions">
                 <button class="btn btn-primary" type="submit">Apply filters</button>
                 <a class="btn btn-secondary" href="{{ path('ui_admin_audit_log_list') }}">Reset</a>
             </div>
         </form>
     </section>
 
-    <section class="card admin-panel" style="margin-top: 1rem;">
-        <div class="table-wrap">
-            <table class="app-table" style="min-width: 1150px;">
+    <section class="card admin-panel admin-section-spaced">
+        <div class="table-wrap table-min-1150">
+            <table class="app-table">
                 <thead>
                 <tr>
                     <th>Created</th>
@@ -70,18 +72,18 @@
                         <td>{{ entry.action }}</td>
                         <td>
                             <div>{{ entry.actorEmail ?? 'n/a' }}</div>
-                            <div class="muted" style="font-size: .78rem;">{{ entry.actorId ?? 'n/a' }}</div>
+                            <div class="muted inline-meta">{{ entry.actorId ?? 'n/a' }}</div>
                         </td>
                         <td>
                             <div>{{ entry.targetType }}</div>
-                            <div class="muted" style="font-size: .78rem;">{{ entry.targetId }}</div>
+                            <div class="muted inline-meta">{{ entry.targetId }}</div>
                         </td>
                         <td>{{ entry.correlationId }}</td>
                         <td>
                             {% if entry.diffSummary is not empty %}
                                 <details>
                                     <summary>view</summary>
-                                    <pre style="margin: .4rem 0 0; white-space: pre-wrap; font-size: .78rem;">{{ entry.diffSummary|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                                    <pre class="preformatted-block">{{ entry.diffSummary|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
                                 </details>
                             {% else %}
                                 <span class="muted">n/a</span>

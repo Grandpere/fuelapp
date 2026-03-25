@@ -49,20 +49,20 @@ final class ProcessImportJobMessageHandler
     ) {
     }
 
-    public function __invoke(ProcessImportJobMessage $message, int $retryCount = 0): void
+    public function __invoke(ProcessImportJobMessage $message): void
     {
-        $this->logger->info('import.job.started', [
-            'import_job_id' => $message->importJobId,
-            'message' => ProcessImportJobMessage::class,
-            'retry_count' => $retryCount,
-        ]);
-
         $job = $this->repository->getForSystem($message->importJobId);
         if (null === $job) {
             $this->logger->warning('import.job.skipped_not_found', ['import_job_id' => $message->importJobId]);
 
             return;
         }
+
+        $this->logger->info('import.job.started', [
+            'import_job_id' => $message->importJobId,
+            'message' => ProcessImportJobMessage::class,
+            'ocr_retry_count' => $job->ocrRetryCount(),
+        ]);
 
         if (in_array($job->status(), [ImportJobStatus::PROCESSED, ImportJobStatus::NEEDS_REVIEW, ImportJobStatus::DUPLICATE], true)) {
             $this->logger->info('import.job.skipped_already_terminal', [
@@ -108,11 +108,13 @@ final class ProcessImportJobMessageHandler
                 'parse_issues_count' => count($parsedDraft->issues),
             ]);
         } catch (OcrProviderException $ocrException) {
+            $ocrRetryCount = $job->ocrRetryCount();
+
             if ($ocrException->isRetryable()) {
-                if ($retryCount < self::MAX_RETRYABLE_PROVIDER_ATTEMPTS) {
-                    $nextRetryCount = $retryCount + 1;
-                    $delayMs = $this->retryDelayForAttempt($retryCount);
-                    $job->markQueuedForRetry();
+                if ($ocrRetryCount < self::MAX_RETRYABLE_PROVIDER_ATTEMPTS) {
+                    $nextRetryCount = $ocrRetryCount + 1;
+                    $delayMs = $this->retryDelayForAttempt($ocrRetryCount);
+                    $job->markQueuedForOcrRetry($nextRetryCount);
                     $this->repository->save($job);
 
                     $this->logger->warning('import.job.retry_scheduled', [
@@ -130,14 +132,14 @@ final class ProcessImportJobMessageHandler
                     $fingerprint,
                     $ocrException->getMessage(),
                     $this->fallbackStrategy,
-                    $retryCount,
+                    $ocrRetryCount,
                 ));
                 $this->repository->save($job);
 
                 $this->logger->warning('import.job.needs_review_provider_retry_exhausted', [
                     'import_job_id' => $job->id()->toString(),
                     'error' => $ocrException->getMessage(),
-                    'retry_count' => $retryCount,
+                    'retry_count' => $ocrRetryCount,
                     'fallback_strategy' => $this->fallbackStrategy,
                 ]);
 
@@ -151,16 +153,17 @@ final class ProcessImportJobMessageHandler
                 'import_job_id' => $job->id()->toString(),
                 'error' => $ocrException->getMessage(),
                 'retryable' => $ocrException->isRetryable(),
-                'retry_count' => $retryCount,
+                'retry_count' => $ocrRetryCount,
             ]);
         } catch (Throwable $throwable) {
+            $ocrRetryCount = $job->ocrRetryCount();
             $job->markFailed($this->buildUnexpectedFailureReason($throwable));
             $this->repository->save($job);
             $this->logger->error('import.job.failed_unexpected', [
                 'import_job_id' => $job->id()->toString(),
                 'error' => $throwable->getMessage(),
                 'exception_class' => $throwable::class,
-                'retry_count' => $retryCount,
+                'retry_count' => $ocrRetryCount,
             ]);
 
             throw $throwable;

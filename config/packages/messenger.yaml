@@ -4,7 +4,6 @@ framework:
             messenger.bus.default:
                 default_middleware: true
                 middleware:
-                    - App\Import\Infrastructure\Messenger\ProcessImportRetryContextMiddleware
                     - App\Shared\Infrastructure\Observability\Messenger\CorrelationIdMiddleware
 
         failure_transport: failed

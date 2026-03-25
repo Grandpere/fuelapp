@@ -55,6 +55,9 @@ class ImportJobEntity
     #[ORM\Column(type: 'string', length: 64, name: 'file_checksum_sha256')]
     private string $fileChecksumSha256;
 
+    #[ORM\Column(type: 'integer', name: 'ocr_retry_count', options: ['default' => 0])]
+    private int $ocrRetryCount = 0;
+
     #[ORM\Column(type: 'text', nullable: true, name: 'error_payload')]
     private ?string $errorPayload = null;
 
@@ -169,6 +172,16 @@ class ImportJobEntity
     public function getErrorPayload(): ?string
     {
         return $this->errorPayload;
+    }
+
+    public function getOcrRetryCount(): int
+    {
+        return $this->ocrRetryCount;
+    }
+
+    public function setOcrRetryCount(int $ocrRetryCount): void
+    {
+        $this->ocrRetryCount = max(0, $ocrRetryCount);
     }
 
     public function setErrorPayload(?string $errorPayload): void

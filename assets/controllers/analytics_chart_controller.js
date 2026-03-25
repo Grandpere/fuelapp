@@ -93,7 +93,11 @@ export default class extends Controller {
 
         const savedView = window.localStorage?.getItem(this.storageKey);
 
-        return savedView === 'line' ? 'line' : fallback;
+        if (savedView === 'line' || savedView === 'bars') {
+            return savedView;
+        }
+
+        return fallback;
     }
 
     syncButtons() {

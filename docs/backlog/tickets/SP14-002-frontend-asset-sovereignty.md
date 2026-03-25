@@ -21,4 +21,4 @@ The UI currently uses multiple remote assets (for example fonts and browser libr
 - Sprint 14 CSP baseline.
 
 ## Status
-- todo
+- done

@@ -97,8 +97,8 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertStringContainsString("frame-ancestors 'none'", $csp);
         self::assertStringContainsString("object-src 'none'", $csp);
         self::assertStringContainsString("form-action 'self'", $csp);
-        self::assertStringContainsString("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com", $csp);
-        self::assertStringContainsString("font-src 'self' data: https://fonts.gstatic.com", $csp);
+        self::assertStringContainsString("style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com", $csp);
+        self::assertStringContainsString("font-src 'self' data:", $csp);
         self::assertStringContainsString("script-src 'self' 'unsafe-inline' https://unpkg.com", $csp);
         self::assertStringContainsString("connect-src 'self' https:", $csp);
     }

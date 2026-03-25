@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-25 - Importmap removals can break cached frontend runtime
+- Symptom: row-click navigation and Turbo frame actions stopped working after frontend asset cleanup, even though templates still had the right `data-controller` / `data-turbo-frame` wiring.
+- Root cause: browsers could keep an older cached `app.js` that still imported removed importmap modules, which broke JS bootstrap early and disabled Turbo/Stimulus behavior across the page.
+- Fix: keep compatibility for removed modules during the transition or version asset changes explicitly, then validate runtime behaviors like row-link navigation and frame loading after a hard refresh.
+- Prevention: when removing importmap entries, assume old cached entrypoints may still exist client-side; verify JS boot-critical interactions and phase removals carefully.
+
 ## 2026-03-25 - OCR retry budget must not depend on Messenger redelivery count
 - Symptom: import jobs could exhaust OCR retries too early after unrelated redeliveries caused by locator/parser/runtime failures.
 - Root cause: OCR retry logic reused `RedeliveryStamp::getRetryCountFromEnvelope()`, which counts all transport redeliveries, not only OCR provider retryable failures.

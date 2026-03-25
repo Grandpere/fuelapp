@@ -65,8 +65,8 @@ final readonly class SecurityHeadersResponseSubscriber implements EventSubscribe
             "frame-ancestors 'none'",
             "object-src 'none'",
             "img-src 'self' data: https:",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com",
-            "font-src 'self' data: https://fonts.gstatic.com",
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com",
+            "font-src 'self' data:",
             "script-src 'self' 'unsafe-inline' https://unpkg.com",
             "connect-src 'self' https:",
         ]);

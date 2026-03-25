@@ -271,11 +271,20 @@
 # TODO - SP14-001 Security headers and CSP baseline
 
 ## Plan
-- [in_progress] Inventory current frontend/browser dependencies and define a CSP-compatible baseline that does not break the current app.
-- [pending] Add a shared response-level security-header subscriber for UI/API responses.
-- [pending] Add regression coverage for expected browser security headers on representative public/protected routes.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share any failures.
+- [completed] Inventory current frontend/browser dependencies and define a CSP-compatible baseline that does not break the current app.
+- [completed] Add a shared response-level security-header subscriber for UI/API responses.
+- [completed] Add regression coverage for expected browser security headers on representative public/protected routes.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP14-002 Frontend asset sovereignty and external dependency reduction
+
+## Plan
+- [completed] Inventory current remote frontend assets and pick the highest-value removals that do not require new dependencies.
+- [completed] Remove Google Fonts and keep only justified frontend runtime dependencies for themed datepickers/maps.
+- [completed] Tighten CSP expectations after dependency reduction and keep analytics map behavior intact.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
 # TODO - SP12-003 Import/upload security hardening
 

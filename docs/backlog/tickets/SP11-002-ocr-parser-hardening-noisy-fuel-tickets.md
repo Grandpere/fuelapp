@@ -24,4 +24,4 @@ Some noisy OCR outputs still fail to extract quantity and unit price consistentl
 - SP3-005, SP3-007, SP3-011.
 
 ## Status
-- in_progress
+- done

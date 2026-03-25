@@ -7,11 +7,15 @@ Deliver immediate value by improving OCR import reliability and cleaning UI cons
 
 ### Step 1 - OCR hardening
 - Ticket: `SP11-002`
-- Outcome: in_progress
+- Outcome: done
 
 ### Step 2 - UX consistency polish
 - Ticket: `SP11-003`
-- Outcome: in_progress
+- Outcome: done
+
+### Step 3 - OCR resilience hardening
+- Ticket: `SP11-004` + `SP11-005` + `SP11-006`
+- Outcome: done
 
 ### Deferred item
 - Ticket: `SP11-001` (Microsoft OIDC)
@@ -23,3 +27,7 @@ Deliver immediate value by improving OCR import reliability and cleaning UI cons
 - `make phpunit-integration`
 - `make php-cs-fixer-check`
 - Ask user to run `make phpunit-functional` and share failures.
+
+## Closeout
+- Sprint 11 delivery is complete.
+- Remaining OCR/parser refinements, if any, should be tracked as new follow-up tickets based on future real samples instead of keeping Sprint 11 artificially open.

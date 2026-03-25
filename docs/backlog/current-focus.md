@@ -1,31 +1,21 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 12 - Security hardening
+- No active sprint locked yet
 
 ## Current goal
-- Finish the dedicated security hardening pass with concrete, low-risk protections across auth/session and import/upload surfaces.
+- Backlog is aligned after Sprint 11 and Sprint 12 delivery; the next implementation subject should be re-prioritized from product needs.
 
 ## In progress
-- `SP12-001` - Auth and session hardening
-- `SP12-002` - API abuse protection and input hardening
-- `SP12-003` - Import/upload security hardening
+- No committed implementation ticket currently in progress.
 
 ## Next tickets (ordered)
-1. `SP12-001` - Auth and session hardening
-2. `SP12-002` - API abuse protection and input hardening
-3. `SP12-003` - Import/upload security hardening
-4. `SP12-004` - Security observability and incident runbook hardening
-5. `SP11-001` - Microsoft OIDC rollout (deferred)
+1. `SP11-001` - Microsoft OIDC rollout (still deferred unless product priority changes)
+2. New follow-up OCR/parser tickets if fresh real-world samples reveal gaps
+3. New product sprint to be selected explicitly before implementation resumes
 
 ## Notes
-- Sprint 11 OCR resilience work is delivered enough to switch active focus to Sprint 12.
-- Recent Sprint 12 progress already delivered:
-  - explicit session fixation / logout invalidation guarantees,
-  - UI session revocation when a user is disabled after login,
-  - stale API token regression coverage for disabled users,
-  - redundant verification resend blocking for already verified accounts,
-  - controlled validation responses for unusable upload files,
-  - ZIP entry-limit regression coverage.
+- Sprint 11 is considered delivered and closed from a backlog perspective.
+- Sprint 12 is considered delivered and closed from a backlog perspective.
 - Microsoft OIDC remains deferred unless product priority changes.
-- Security observability baseline/runbook is already documented; remaining work is mostly alignment/closure unless a new gap appears.
+- No mandatory pre-existing ticket remains open besides deferred items; next work should start from a fresh prioritization pass.

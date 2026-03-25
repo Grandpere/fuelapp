@@ -162,6 +162,16 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('All fuel types', $stationFuelContent);
         self::assertStringContainsString('station_id='.$stationA->getId()->toRfc4122(), $stationFuelContent);
         self::assertStringContainsString('fuel_type=diesel', $stationFuelContent);
+
+        self::assertStringContainsString('data-chart-key="cost"', $content);
+        self::assertStringContainsString('data-chart-key="fuel-price"', $content);
+        self::assertStringContainsString('data-controller="analytics-chart"', $content);
+        self::assertStringContainsString('data-default-view="line"', $content);
+        self::assertStringContainsString('data-analytics-chart-target="canvas"', $content);
+        self::assertStringContainsString('data-analytics-chart-target="config"', $content);
+        self::assertStringContainsString('data-view="bars"', $content);
+        self::assertStringContainsString('data-view="line"', $content);
+        self::assertStringContainsString('trend-chart-shell', $content);
     }
 
     /**

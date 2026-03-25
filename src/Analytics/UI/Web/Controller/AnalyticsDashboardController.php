@@ -54,7 +54,6 @@ final class AnalyticsDashboardController extends AbstractController
         $vehicleId = $this->readVehicleFilter($request, $ownerId);
         $stationId = $this->readStationFilter($request);
         $fuelType = $this->readFuelTypeFilter($request);
-
         $costPerMonth = $this->kpiReader->readCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $consumptionPerMonth = $this->kpiReader->readConsumptionPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
         $averagePrice = $this->kpiReader->readAveragePrice($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);

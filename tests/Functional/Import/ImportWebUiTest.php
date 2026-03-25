@@ -121,7 +121,8 @@ final class ImportWebUiTest extends WebTestCase
         $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
-        self::assertStringContainsString('import job(s) queued', $listContent);
+        self::assertStringContainsString('Last upload summary', $listContent);
+        self::assertStringContainsString('1 queued, 0 rejected.', $listContent);
         self::assertStringContainsString('ticket.png', $listContent);
         self::assertStringContainsString('Queued', $listContent);
         self::assertStringContainsString('data-controller="row-link"', $listContent);
@@ -179,6 +180,55 @@ final class ImportWebUiTest extends WebTestCase
         $savedB = $this->em->getRepository(ImportJobEntity::class)->findOneBy(['originalFilename' => 'ticket-b.png']);
         self::assertInstanceOf(ImportJobEntity::class, $savedA);
         self::assertInstanceOf(ImportJobEntity::class, $savedB);
+    }
+
+    public function testUserSeesStructuredBulkUploadSummaryFromUi(): void
+    {
+        $email = 'import.web.bulk.summary@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $pageResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $pageResponse->getStatusCode());
+        $pageContent = (string) $pageResponse->getContent();
+
+        preg_match('/name="_token" value="([^"]+)"/', $pageContent, $matches);
+        $csrfToken = $matches[1] ?? null;
+        self::assertIsString($csrfToken);
+
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+
+        $uploadResponse = $this->request(
+            'POST',
+            '/ui/imports',
+            ['_token' => $csrfToken],
+            [
+                'files' => [
+                    $this->createUploadedFile('valid.png', $png, 'image/png'),
+                    $this->createUploadedFile('invalid.txt', 'hello', 'text/plain'),
+                ],
+            ],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_FOUND, $uploadResponse->getStatusCode());
+
+        $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('Last upload summary', $listContent);
+        self::assertStringContainsString('1 queued, 1 rejected.', $listContent);
+        self::assertStringContainsString('valid.png', $listContent);
+        self::assertStringContainsString('invalid.txt', $listContent);
+        self::assertStringContainsString('Unsupported file type', $listContent);
     }
 
     public function testUserCanFinalizeNeedsReviewImportFromUi(): void

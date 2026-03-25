@@ -267,6 +267,16 @@
 - [completed] Accept multi-line review form payloads in front/admin finalize controllers while keeping validation explicit.
 - [completed] Add/update front/admin tests for multi-line review/finalization.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP15-002 Bulk import feedback and recovery polish
+
+## Plan
+- [completed] Clarify Sprint 15 backlog tracking after SP15-001 delivery.
+- [in_progress] Replace generic bulk-upload flash floods with a structured post-upload summary on `/ui/imports`.
+- [pending] Keep accepted/rejected filename context readable for ZIP-originated entries.
+- [pending] Add/update web functional coverage for the new summary behavior.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP13-003 Theme toggle and light mode

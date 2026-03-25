@@ -3,6 +3,8 @@
 {% block title %}Import Receipts{% endblock %}
 
 {% block body %}
+    {% set uploadSummaries = app.flashes('import_summary') %}
+    {% set uploadSummary = uploadSummaries|length > 0 ? uploadSummaries|last : null %}
     <main class="app-shell page-stack">
         <header class="page-header-split">
             <div class="page-header">
@@ -31,6 +33,53 @@
                 </div>
             </form>
         </section>
+
+        {% if uploadSummary is iterable %}
+            <section class="card section-card">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Last upload summary</h2>
+                        <p class="muted section-lead">
+                            {{ uploadSummary.acceptedCount }} queued, {{ uploadSummary.rejectedCount }} rejected.
+                        </p>
+                    </div>
+                </div>
+
+                {% if uploadSummary.accepted|length > 0 %}
+                    <div class="form-stack">
+                        <p class="text-block-title">Accepted</p>
+                        <ul class="flash-list">
+                            {% for accepted in uploadSummary.accepted %}
+                                <li class="flash">
+                                    <strong>{{ accepted.filename }}</strong>
+                                    {% if accepted.source != accepted.filename %}
+                                        <span class="muted">({{ accepted.source }})</span>
+                                    {% endif %}
+                                    <span class="muted">queued as {{ accepted.status }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {% if uploadSummary.rejected|length > 0 %}
+                    <div class="form-stack">
+                        <p class="text-block-title">Rejected</p>
+                        <ul class="flash-list">
+                            {% for rejected in uploadSummary.rejected %}
+                                <li class="flash flash-error">
+                                    <strong>{{ rejected.filename }}</strong>
+                                    {% if rejected.source != rejected.filename %}
+                                        <span class="muted">({{ rejected.source }})</span>
+                                    {% endif %}
+                                    <span>{{ rejected.reason }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </section>
+        {% endif %}
 
         <section class="card section-card">
             <div class="section-header">

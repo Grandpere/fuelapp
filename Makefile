@@ -84,14 +84,14 @@ restart-app: ## Restart app container only
 .PHONY: wait-app
 wait-app: ## Wait until app HTTP endpoint responds
 	@echo "Waiting for app readiness (in-container /ui/login check) ..."; \
-	for i in $$(seq 1 45); do \
+	for i in $$(seq 1 90); do \
 		if $(DC_EXEC) php -r 'exit(@file_get_contents("http://127.0.0.1/ui/login") === false ? 1 : 0);' >/dev/null 2>&1; then \
 			echo "App is ready."; \
 			exit 0; \
 		fi; \
 		sleep 1; \
 	done; \
-	echo "App did not become ready within 45s."; \
+	echo "App did not become ready within 90s."; \
 	exit 1
 
 

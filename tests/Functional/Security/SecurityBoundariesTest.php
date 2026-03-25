@@ -79,6 +79,41 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
     }
 
+    public function testPublicUiRouteExposesSecurityHeadersBaseline(): void
+    {
+        $response = $this->request('GET', '/ui/login');
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        self::assertSame('strict-origin-when-cross-origin', $response->headers->get('Referrer-Policy'));
+        self::assertSame('deny', mb_strtolower((string) $response->headers->get('X-Frame-Options')));
+        self::assertSame('nosniff', $response->headers->get('X-Content-Type-Options'));
+        self::assertSame(
+            'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
+            $response->headers->get('Permissions-Policy'),
+        );
+
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        self::assertStringContainsString("default-src 'self'", $csp);
+        self::assertStringContainsString("frame-ancestors 'none'", $csp);
+        self::assertStringContainsString("object-src 'none'", $csp);
+        self::assertStringContainsString("form-action 'self'", $csp);
+        self::assertStringContainsString("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com", $csp);
+        self::assertStringContainsString("font-src 'self' data: https://fonts.gstatic.com", $csp);
+        self::assertStringContainsString("script-src 'self' 'unsafe-inline' https://unpkg.com", $csp);
+        self::assertStringContainsString("connect-src 'self' https:", $csp);
+    }
+
+    public function testApiDocsAlsoExposeSecurityHeadersBaseline(): void
+    {
+        $response = $this->request('GET', '/api/docs.jsonopenapi');
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        self::assertSame('strict-origin-when-cross-origin', $response->headers->get('Referrer-Policy'));
+        self::assertSame('deny', mb_strtolower((string) $response->headers->get('X-Frame-Options')));
+        self::assertSame('nosniff', $response->headers->get('X-Content-Type-Options'));
+        self::assertNotNull($response->headers->get('Content-Security-Policy'));
+    }
+
     public function testApiLoginFailureWithOverlongEmailDoesNotReturnServerError(): void
     {
         $overlongEmail = str_repeat('ab', 70).'@example.com';

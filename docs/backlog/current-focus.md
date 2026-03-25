@@ -1,23 +1,22 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 13 - UX cohesion and product polish
+- Sprint 14 - Frontend hardening and delivery baseline
 
 ## Current goal
-- Finish the horizontal UX pass so front/admin navigation, headers, filters, tables, and theming feel like one consistent product.
+- Harden the new frontend/runtime surface added by Sprint 13 so theming, charts, and shared UI delivery stay secure and maintainable.
 
 ## In progress
-- `SP13-002` - Navigation and layout cohesion pass
-- `SP13-003` - Light/Dark theme toggle
+- `SP14-001` - Security headers and CSP baseline
 
 ## Next tickets (ordered)
-1. `SP13-003` - Light/Dark theme toggle
-2. `SP11-001` - Microsoft OIDC rollout (still deferred unless product priority changes)
-3. New OCR/parser follow-up tickets if fresh real-world samples reveal gaps
+1. `SP14-001` - Security headers and CSP baseline
+2. `SP14-002` - Frontend asset sovereignty and external dependency reduction
+3. `SP14-003` - Theme/chart runtime hardening and test coverage
 
 ## Notes
-- `SP13-001` analytics demo/chart work is delivered.
-- `SP13-002` is in finishing/validation mode while `SP13-003` starts from the shared layout layer.
+- Sprint 13 UX work is delivered and merged.
+- Sprint 14 is intentionally technical: it targets the browser/runtime surface we just expanded.
 - Sprint 11 is closed from a backlog perspective.
 - Sprint 12 is closed from a backlog perspective.
 - Microsoft OIDC remains deferred unless product priority changes.

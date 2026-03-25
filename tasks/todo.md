@@ -268,6 +268,15 @@
 - [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and validate the visual result.
 
+# TODO - SP14-001 Security headers and CSP baseline
+
+## Plan
+- [in_progress] Inventory current frontend/browser dependencies and define a CSP-compatible baseline that does not break the current app.
+- [pending] Add a shared response-level security-header subscriber for UI/API responses.
+- [pending] Add regression coverage for expected browser security headers on representative public/protected routes.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.
+
 # TODO - SP12-003 Import/upload security hardening
 
 ## Plan

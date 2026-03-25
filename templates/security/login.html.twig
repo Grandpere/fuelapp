@@ -21,6 +21,35 @@
             font-family: "Space Grotesk", sans-serif;
             font-size: 1.4rem;
         }
+
+        .login-lead,
+        .login-provider-list {
+            margin: 0;
+        }
+
+        .login-form {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+            content: "";
+            height: 1px;
+            flex: 1;
+            background: var(--table-wrap-border);
+        }
+
+        .login-provider-list {
+            display: grid;
+            gap: 0.5rem;
+        }
     </style>
 {% endblock %}
 
@@ -28,15 +57,15 @@
     <main class="app-shell login-shell">
         <section class="card login-card">
             <h1>Sign in</h1>
-            <p class="muted" style="margin: 0;">Use your FuelApp account credentials.</p>
+            <p class="muted login-lead">Use your FuelApp account credentials.</p>
 
             {% if error %}
-                <div class="flash" style="border-color: rgba(255,95,86,0.5); background: rgba(103,33,40,0.4); color: #ffd6d4;">
+                <div class="flash flash-error-soft">
                     Invalid credentials.
                 </div>
             {% endif %}
 
-            <form method="post" style="display: grid; gap: 0.75rem;">
+            <form method="post" class="login-form">
                 <label class="label">
                     Email
                     <input class="input" type="email" name="email" value="{{ lastUsername }}" autocomplete="email" required autofocus>
@@ -53,12 +82,10 @@
             </form>
 
             {% if oidcProviders is not empty %}
-                <div class="muted" style="display: flex; align-items: center; gap: .7rem;">
-                    <span style="height:1px;background:rgba(255,255,255,.2);flex:1;"></span>
+                <div class="muted login-divider">
                     <span>or continue with</span>
-                    <span style="height:1px;background:rgba(255,255,255,.2);flex:1;"></span>
                 </div>
-                <div style="display:grid; gap:.5rem;">
+                <div class="login-provider-list">
                     {% for provider in oidcProviders %}
                         <a class="btn btn-secondary" href="{{ path('ui_oidc_start', {provider: provider.name}) }}">
                             Continue with {{ provider.label }}

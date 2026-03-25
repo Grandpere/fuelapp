@@ -259,6 +259,15 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] User-run functional suite validated (`make phpunit-functional`).
 
+# TODO - SP13-003 Theme toggle and light mode
+
+## Plan
+- [in_progress] Introduce shared light/dark theme tokens in the base layout and keep current look as dark mode.
+- [pending] Add a persistent theme toggle in the UI shell with system-preference fallback.
+- [pending] Adjust the most visible screens/components so light mode stays readable without page-specific regressions.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and validate the visual result.
+
 # TODO - SP12-003 Import/upload security hardening
 
 ## Plan
@@ -298,3 +307,12 @@
 - [completed] Update focused functional coverage on oversized ZIP entry behavior and message.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP13-002 Navigation and layout cohesion
+
+## Plan
+- [completed] Add shared front/admin utility classes for common page, filter, table and action patterns.
+- [completed] Harmonize the highest-traffic front/admin templates to use those shared patterns instead of inline styles.
+- [completed] Update Sprint 13/current-focus docs and capture any UX lessons in `docs/ai/memory.md` if needed.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and validate the visual flow.

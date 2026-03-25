@@ -34,6 +34,7 @@ export default class extends Controller {
         this.config = null;
         this.storageKey = null;
         this.currentView = this.element.dataset.defaultView === 'line' ? 'line' : 'bars';
+        this.handleThemeChanged = this.handleThemeChanged.bind(this);
 
         if (!this.hasConfigTarget || !this.hasCanvasTarget) {
             this.syncButtons();
@@ -46,9 +47,11 @@ export default class extends Controller {
         this.currentView = this.readInitialView();
         this.syncButtons();
         this.renderChart();
+        window.addEventListener('fuelapp:theme-changed', this.handleThemeChanged);
     }
 
     disconnect() {
+        window.removeEventListener('fuelapp:theme-changed', this.handleThemeChanged);
         this.destroyChart();
     }
 
@@ -134,12 +137,21 @@ export default class extends Controller {
         }
     }
 
+    handleThemeChanged() {
+        if (this.currentView !== 'line') {
+            return;
+        }
+
+        this.renderChart();
+    }
+
     buildChartConfig() {
         if (null === this.config) {
             throw new Error('Analytics chart config is missing.');
         }
 
         const isLine = this.currentView === 'line';
+        const theme = this.resolveThemePalette();
 
         return {
             type: isLine ? 'line' : 'bar',
@@ -159,7 +171,7 @@ export default class extends Controller {
                     legend: {
                         display: this.config.datasets.length > 1,
                         labels: {
-                            color: '#d6e5ef',
+                            color: theme.chartText,
                             usePointStyle: true,
                             boxWidth: 10,
                             boxHeight: 10,
@@ -178,38 +190,46 @@ export default class extends Controller {
                 scales: {
                     x: {
                         ticks: {
-                            color: 'rgba(214, 229, 239, 0.78)',
+                            color: theme.chartTextSoft,
                             maxRotation: 0,
                             autoSkip: false,
+                            font: {
+                                size: 12,
+                                weight: '600',
+                            },
                         },
                         grid: {
                             display: false,
                         },
                         border: {
-                            color: 'rgba(147, 178, 198, 0.3)',
+                            color: theme.chartAxis,
                         },
                     },
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            color: 'rgba(214, 229, 239, 0.78)',
+                            color: theme.chartText,
+                            font: {
+                                size: 12,
+                                weight: '600',
+                            },
                             callback: (value) => this.formatTick(value),
                         },
                         title: {
                             display: true,
                             text: this.config.yAxisLabel,
-                            color: '#eef8ff',
+                            color: theme.chartTextStrong,
                             font: {
-                                size: 11,
-                                weight: '600',
+                                size: 12,
+                                weight: '700',
                             },
                         },
                         grid: {
-                            color: 'rgba(147, 178, 198, 0.14)',
+                            color: theme.chartGridLine,
                             drawBorder: false,
                         },
                         border: {
-                            color: 'rgba(147, 178, 198, 0.3)',
+                            color: theme.chartAxis,
                         },
                     },
                 },
@@ -219,6 +239,7 @@ export default class extends Controller {
 
     buildDataset(dataset, isLine) {
         const subtlePoints = dataset.subtlePoints === true;
+        const theme = this.resolveThemePalette();
 
         return {
             label: dataset.label,
@@ -230,13 +251,26 @@ export default class extends Controller {
             borderWidth: isLine ? 2 : 0,
             pointRadius: isLine ? (subtlePoints ? 2 : 2.8) : 0,
             pointHoverRadius: isLine ? (subtlePoints ? 3 : 4) : 0,
-            pointBackgroundColor: isLine ? '#08141c' : dataset.barColor,
+            pointBackgroundColor: isLine ? theme.chartPointFill : dataset.barColor,
             pointBorderColor: dataset.borderColor,
             pointBorderWidth: isLine ? 1.2 : 0,
             pointHitRadius: 10,
             barThickness: 18,
             maxBarThickness: 22,
             borderRadius: isLine ? 0 : 999,
+        };
+    }
+
+    resolveThemePalette() {
+        const styles = window.getComputedStyle(document.documentElement);
+
+        return {
+            chartText: styles.getPropertyValue('--chart-text').trim() || 'rgba(214, 229, 239, 0.78)',
+            chartTextStrong: styles.getPropertyValue('--chart-text-strong').trim() || '#eef8ff',
+            chartTextSoft: styles.getPropertyValue('--chart-text-soft').trim() || 'rgba(214, 229, 239, 0.78)',
+            chartAxis: styles.getPropertyValue('--chart-axis').trim() || 'rgba(147, 178, 198, 0.3)',
+            chartGridLine: styles.getPropertyValue('--chart-grid-line').trim() || 'rgba(147, 178, 198, 0.14)',
+            chartPointFill: styles.getPropertyValue('--chart-point-fill').trim() || '#08141c',
         };
     }
 

@@ -29,6 +29,12 @@
             flex-wrap: wrap;
         }
 
+        .analytics-filter-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
         .analytics-filters {
             padding: 1rem;
             display: grid;
@@ -88,9 +94,9 @@
         .map-canvas {
             height: 360px;
             border-radius: 12px;
-            border: 1px solid rgba(92, 133, 159, 0.35);
+            border: 1px solid var(--surface-soft-border-strong);
             overflow: hidden;
-            background: rgba(6, 26, 38, 0.55);
+            background: var(--surface-soft-bg-strong);
         }
 
         .station-map-list {
@@ -107,13 +113,13 @@
             gap: 0.5rem 0.9rem;
             padding: 0.6rem 0.7rem;
             border-radius: 10px;
-            border: 1px solid rgba(92, 133, 159, 0.24);
-            background: rgba(8, 26, 38, 0.5);
+            border: 1px solid var(--surface-soft-border);
+            background: var(--surface-soft-bg);
             font-size: 0.86rem;
         }
 
         .station-map-item strong {
-            color: #e6f0f6;
+            color: var(--text-strong);
         }
 
         .trend-card {
@@ -144,9 +150,9 @@
             display: inline-flex;
             gap: 0.35rem;
             padding: 0.22rem;
-            border: 1px solid rgba(92, 133, 159, 0.28);
+            border: 1px solid var(--surface-soft-border);
             border-radius: 999px;
-            background: rgba(8, 26, 38, 0.42);
+            background: var(--surface-soft-bg);
         }
 
         .trend-view-link {
@@ -167,13 +173,13 @@
         }
 
         .trend-view-link:hover {
-            color: #f4fbff;
+            color: var(--text-strong);
             transform: translateY(-1px);
         }
 
         .trend-view-link.is-active {
             background: linear-gradient(135deg, rgba(247, 181, 0, 0.92), rgba(240, 138, 0, 0.96));
-            color: #08141c;
+            color: var(--nav-active-text);
         }
 
         .trend-list {
@@ -196,8 +202,8 @@
         }
 
         .trend-bar-wrap {
-            background: rgba(6, 26, 38, 0.55);
-            border: 1px solid rgba(92, 133, 159, 0.32);
+            background: var(--surface-soft-bg-strong);
+            border: 1px solid var(--surface-soft-border-strong);
             border-radius: 999px;
             height: 12px;
             overflow: hidden;
@@ -241,9 +247,9 @@
             display: grid;
             gap: 0.45rem;
             padding: 0.55rem 0.6rem;
-            border: 1px solid rgba(92, 133, 159, 0.25);
+            border: 1px solid var(--surface-soft-border);
             border-radius: 10px;
-            background: rgba(8, 26, 38, 0.5);
+            background: var(--surface-soft-bg);
         }
 
         .compared-trend-label {
@@ -261,7 +267,7 @@
 
         .trend-value {
             font-size: 0.82rem;
-            color: #d6e5ef;
+            color: var(--chart-text);
             font-weight: 600;
             white-space: nowrap;
         }
@@ -276,8 +282,8 @@
             height: 236px;
             padding: 0.75rem 0.85rem 0.55rem;
             border-radius: 14px;
-            border: 1px solid rgba(92, 133, 159, 0.26);
-            background: linear-gradient(180deg, rgba(13, 39, 55, 0.92), rgba(8, 25, 37, 0.76));
+            border: 1px solid var(--surface-soft-border);
+            background: var(--surface-chart-bg);
         }
 
         .trend-chart-shell.compared {
@@ -294,10 +300,10 @@
             height: 236px;
             padding: 0.85rem 0.7rem 1rem 2.9rem;
             border-radius: 14px;
-            border: 1px solid rgba(92, 133, 159, 0.26);
+            border: 1px solid var(--surface-soft-border);
             background:
-                linear-gradient(to top, rgba(147, 178, 198, 0.06) 1px, transparent 1px) 0 0 / 100% 25%,
-                linear-gradient(180deg, rgba(13, 39, 55, 0.92), rgba(8, 25, 37, 0.76));
+                linear-gradient(to top, var(--surface-chart-grid) 1px, transparent 1px) 0 0 / 100% 25%,
+                var(--surface-chart-bg);
         }
 
         .trend-line-shell.compared {
@@ -324,7 +330,7 @@
 
         .trend-line-point {
             stroke-width: 1;
-            fill: #08141c;
+            fill: var(--chart-point-fill);
         }
 
         .trend-line-point.is-subtle {
@@ -338,12 +344,12 @@
         }
 
         .trend-line-axis-line {
-            stroke: rgba(147, 178, 198, 0.42);
+            stroke: var(--chart-axis);
             stroke-width: 0.7;
         }
 
         .trend-line-grid-line {
-            stroke: rgba(147, 178, 198, 0.18);
+            stroke: var(--chart-grid-line);
             stroke-width: 0.5;
             stroke-dasharray: 1.8 2.4;
         }
@@ -351,10 +357,10 @@
         .trend-line-y-axis {
             position: absolute;
             inset: 0.8rem auto 1rem 0.5rem;
-            width: 2rem;
-            color: rgba(214, 229, 239, 0.78);
-            font-size: 0.66rem;
-            font-weight: 600;
+            width: 2.25rem;
+            color: var(--chart-text);
+            font-size: 0.72rem;
+            font-weight: 700;
             letter-spacing: 0.01em;
         }
 
@@ -362,8 +368,9 @@
             position: absolute;
             top: -0.1rem;
             left: 0;
-            color: rgba(230, 240, 246, 0.92);
-            font-size: 0.64rem;
+            color: var(--chart-text-strong);
+            font-size: 0.68rem;
+            font-weight: 700;
             text-transform: uppercase;
         }
 
@@ -392,32 +399,33 @@
         .trend-line-x-axis {
             display: grid;
             gap: 0.35rem;
-            padding: 0 0.35rem 0 2.9rem;
+            padding: 0 0.35rem 0 3rem;
             align-items: start;
         }
 
         .trend-line-x-axis-label {
             text-align: center;
-            color: rgba(214, 229, 239, 0.72);
-            font-size: 0.68rem;
+            color: var(--chart-text-soft);
+            font-size: 0.74rem;
             line-height: 1.15;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .trend-line-x-axis-label span {
             display: block;
-            color: rgba(147, 178, 198, 0.86);
-            font-size: 0.62rem;
-            font-weight: 500;
+            color: var(--chart-text-muted);
+            font-size: 0.68rem;
+            font-weight: 600;
         }
 
         .trend-line-axis-caption {
             display: flex;
             justify-content: space-between;
             gap: 0.7rem;
-            padding: 0 0.35rem 0 2.9rem;
-            color: rgba(147, 178, 198, 0.9);
-            font-size: 0.68rem;
+            padding: 0 0.35rem 0 3rem;
+            color: var(--chart-axis-caption);
+            font-size: 0.72rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.04em;
         }
@@ -464,7 +472,7 @@
 
         .empty-state {
             padding: 0.8rem;
-            border: 1px dashed rgba(147, 178, 198, 0.35);
+            border: 1px dashed var(--table-wrap-border);
             border-radius: 10px;
             color: var(--text-soft);
         }
@@ -544,7 +552,7 @@
                         {% endfor %}
                     </select>
                 </label>
-                <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <div class="analytics-filter-actions">
                     <button class="btn btn-primary" type="submit">Apply filters</button>
                     <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard') }}">Reset</a>
                 </div>

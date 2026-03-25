@@ -61,7 +61,7 @@
             gap: 0.5rem 0.8rem;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             font-size: 0.84rem;
-            color: #c6d6e2;
+            color: var(--text-soft);
         }
 
         .checkbox-grid label {
@@ -90,9 +90,27 @@
         }
 
         .summary nav a {
-            color: #ffd27a;
+            color: var(--link-accent);
             text-decoration: none;
             font-weight: 700;
+        }
+
+        .receipt-preset-label {
+            max-width: 260px;
+        }
+
+        .receipt-note {
+            margin: 0.9rem 0 0;
+            font-size: 0.84rem;
+        }
+
+        .receipt-inline-title {
+            font-size: 1.15rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .receipt-inline-lead {
+            margin-top: 0;
         }
 
         .side-panel {
@@ -130,7 +148,7 @@
             margin-top: 0.8rem;
             padding: 0.85rem;
             border-radius: 10px;
-            border: 1px dashed rgba(147, 178, 198, 0.35);
+            border: 1px dashed var(--table-wrap-border);
             color: var(--text-soft);
         }
 
@@ -284,7 +302,7 @@
 
                 <fieldset class="card-subtle columns-wrap">
                     <legend class="muted">Columns (UI + export)</legend>
-                    <label class="label" style="max-width: 260px;">
+                    <label class="label receipt-preset-label">
                         Preset
                         <select class="select" name="columns_preset" onchange="this.form.submit()">
                             {% for presetKey, presetLabel in columnPresetOptions %}
@@ -316,14 +334,14 @@
                                 {% if 'station_street_name' in visibleColumns %}<th>Street</th>{% endif %}
                                 {% if 'station_postal_code' in visibleColumns %}<th>Postal code</th>{% endif %}
                                 {% if 'station_city' in visibleColumns %}<th>City</th>{% endif %}
-                                {% if 'odometer_kilometers' in visibleColumns %}<th style="text-align:right;">Odometer</th>{% endif %}
+                                {% if 'odometer_kilometers' in visibleColumns %}<th class="text-right">Odometer</th>{% endif %}
                                 {% if 'fuel_type' in visibleColumns %}<th>Fuel</th>{% endif %}
-                                {% if 'quantity_milli_liters' in visibleColumns %}<th style="text-align:right;">Quantity</th>{% endif %}
-                                {% if 'unit_price_deci_cents_per_liter' in visibleColumns %}<th style="text-align:right;">Unit price</th>{% endif %}
-                                {% if 'vat_rate_percent' in visibleColumns %}<th style="text-align:right;">VAT rate</th>{% endif %}
-                                {% if 'total_cents' in visibleColumns %}<th style="text-align:right;">Total</th>{% endif %}
-                                {% if 'vat_amount_cents' in visibleColumns %}<th style="text-align:right;">VAT</th>{% endif %}
-                                <th style="text-align:right;">Actions</th>
+                                {% if 'quantity_milli_liters' in visibleColumns %}<th class="text-right">Quantity</th>{% endif %}
+                                {% if 'unit_price_deci_cents_per_liter' in visibleColumns %}<th class="text-right">Unit price</th>{% endif %}
+                                {% if 'vat_rate_percent' in visibleColumns %}<th class="text-right">VAT rate</th>{% endif %}
+                                {% if 'total_cents' in visibleColumns %}<th class="text-right">Total</th>{% endif %}
+                                {% if 'vat_amount_cents' in visibleColumns %}<th class="text-right">VAT</th>{% endif %}
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="receipts_rows">
@@ -363,12 +381,12 @@
                             <div class="kpi-value">{{ perPage }}</div>
                         </article>
                     </div>
-                    <p class="muted" style="margin: 0.9rem 0 0; font-size: 0.84rem;">Presets apply to both the table and CSV export.</p>
+                    <p class="muted receipt-note">Presets apply to both the table and CSV export.</p>
                 </section>
 
                 <section class="card panel">
-                    <h2 class="page-title" style="font-size: 1.15rem; margin-bottom: 0.25rem;">New receipt</h2>
-                    <p class="muted" style="margin-top: 0;">Create it inline without leaving this page.</p>
+                    <h2 class="page-title receipt-inline-title">New receipt</h2>
+                    <p class="muted receipt-inline-lead">Create it inline without leaving this page.</p>
                     <turbo-frame id="receipt_form_frame">
                         <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Load form</a>
                     </turbo-frame>

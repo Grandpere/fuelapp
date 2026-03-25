@@ -6,11 +6,13 @@
 
 {% block admin_content %}
     <section class="card admin-panel">
-        <h2 class="page-title">Maintenance Reminders</h2>
-        <p class="muted">Triggered reminder states produced by scheduler evaluation.</p>
+        <div class="admin-page-header">
+            <h2 class="page-title">Maintenance Reminders</h2>
+            <p class="muted">Triggered reminder states produced by scheduler evaluation.</p>
+        </div>
 
-        <form method="get" action="{{ path('ui_admin_maintenance_reminder_list') }}" style="display:grid; gap:0.8rem; margin-top:1rem;">
-            <div class="form-grid-2">
+        <form method="get" action="{{ path('ui_admin_maintenance_reminder_list') }}" class="admin-filters-form">
+            <div class="form-grid-2 admin-table-top">
                 <label class="label">
                     Owner ID
                     <input class="input" type="text" name="owner_id" value="{{ filters.ownerId }}" placeholder="UUID v7">
@@ -37,14 +39,14 @@
                     <input class="input" type="text" name="due_to" data-datepicker="date" value="{{ filters.dueTo }}" autocomplete="off">
                 </label>
             </div>
-            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <div class="admin-form-actions">
                 <button class="btn btn-primary" type="submit">Apply</button>
                 <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_list') }}">Reset</a>
             </div>
         </form>
 
-        <div class="table-wrap" style="margin-top: 1rem;">
-            <table class="app-table" style="min-width: 1020px;">
+        <div class="table-wrap admin-table-top table-min-1020">
+            <table class="app-table">
                 <thead>
                 <tr>
                     <th>Created</th>
@@ -60,8 +62,7 @@
                 <tbody>
                 {% for reminder in reminders %}
                     <tr
-                        class="table-row"
-                        style="cursor:pointer;"
+                        class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
                         data-row-link-url-value="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}"
@@ -73,8 +74,8 @@
                         <td>{{ reminder.dueAtDate ? reminder.dueAtDate|date('Y-m-d') : 'n/a' }}</td>
                         <td>{{ reminder.dueAtOdometerKilometers ?? 'n/a' }}</td>
                         <td>
-                            {% if reminder.dueByDate %}<span class="pill" style="background: rgba(247,181,0,0.2); color: #ffd27a;">date</span>{% endif %}
-                            {% if reminder.dueByOdometer %}<span class="pill" style="background: rgba(54,180,252,0.2); color: #9fdefe;">odometer</span>{% endif %}
+                            {% if reminder.dueByDate %}<span class="pill pill-soft-warning">date</span>{% endif %}
+                            {% if reminder.dueByOdometer %}<span class="pill pill-soft-info">odometer</span>{% endif %}
                         </td>
                         <td>
                             <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}" data-turbo-frame="_top">Detail</a>

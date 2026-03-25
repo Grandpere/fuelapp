@@ -12,8 +12,12 @@
     {% set issuedAtMissing = 'issued_at_missing' in issueList %}
 
     <section class="card admin-panel">
-        <h2 class="page-title">Import Job Detail</h2>
-        <p class="muted">Detailed payload and processing metadata for troubleshooting.</p>
+        <div class="admin-page-head">
+            <div class="admin-page-header">
+                <h2 class="page-title">Import Job Detail</h2>
+                <p class="muted">Detailed payload and processing metadata for troubleshooting.</p>
+            </div>
+        </div>
 
         <dl class="admin-dl admin-table-top">
             <dt class="admin-dt">ID</dt>
@@ -120,7 +124,7 @@
             <h3 class="section-title">Fix And Finalize</h3>
             <p class="muted">Optional corrections can be provided before finalization. Leave fields empty to use payload values.</p>
 
-            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="section-card" style="padding: 0;">
+            <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="form-stack">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_finalize_' ~ job.id.toString) }}">
 
                 <div class="form-grid-2">

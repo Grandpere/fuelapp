@@ -72,7 +72,7 @@
             <section class="card section-card">
                 <h2 class="section-title">Fix And Finalize</h2>
                 <p class="muted section-lead">Leave empty to use extracted values when available.</p>
-                <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="section-card" style="padding: 0;">
+                <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="form-stack">
                     <input type="hidden" name="_token" value="{{ csrf_token('ui_import_finalize_' ~ job.id.toString) }}">
 
                     <div class="form-grid-2">

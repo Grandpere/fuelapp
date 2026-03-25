@@ -37,11 +37,6 @@ security:
             custom_authenticators:
                 - App\Security\LoginFormAuthenticator
             entry_point: App\Security\LoginFormAuthenticator
-            logout:
-                path: ui_logout
-                target: ui_login
-                enable_csrf: true
-                invalidate_session: true
 
             # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall

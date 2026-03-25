@@ -201,9 +201,26 @@
                     gap: 1rem;
                 }
 
+                .page-narrow {
+                    max-width: 760px;
+                    margin: 0 auto;
+                }
+
+                .page-medium {
+                    max-width: 1080px;
+                    margin: 0 auto;
+                }
+
                 .page-header {
                     display: grid;
                     gap: 0.35rem;
+                }
+
+                .page-header-split {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) auto;
+                    gap: 0.8rem;
+                    align-items: start;
                 }
 
                 .section-card {
@@ -234,6 +251,20 @@
                     display: flex;
                     gap: 0.6rem;
                     flex-wrap: wrap;
+                }
+
+                .form-stack {
+                    display: grid;
+                    gap: 0.9rem;
+                }
+
+                .flash-list {
+                    margin: 0;
+                    padding-left: 1.15rem;
+                }
+
+                .shell-compact {
+                    padding-bottom: 1.5rem;
                 }
 
                 .kv-grid {
@@ -501,6 +532,10 @@
 
                 @media (max-width: 720px) {
                     .form-grid-2 {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .page-header-split {
                         grid-template-columns: 1fr;
                     }
 

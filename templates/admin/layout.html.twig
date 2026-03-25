@@ -37,6 +37,12 @@
             gap: 0.5rem;
         }
 
+        .admin-sidebar-actions {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.6rem;
+        }
+
         .admin-nav-link {
             display: block;
             padding: 0.62rem 0.72rem;
@@ -161,6 +167,9 @@
         <aside class="admin-sidebar card" aria-label="Navigation admin">
             <h1 class="admin-title">Back-office</h1>
             <p class="admin-subtitle">Operations and system management</p>
+            <div class="admin-sidebar-actions">
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}">Back to app</a>
+            </div>
             <nav class="admin-nav">
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'dashboard' ? 'is-active' : '' }}" href="{{ path('ui_admin_dashboard') }}">Dashboard</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'users' ? 'is-active' : '' }}" href="{{ path('ui_admin_user_list') }}">Users</a>

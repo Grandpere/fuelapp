@@ -39,6 +39,7 @@ final class SeedAnalyticsDemoDataCommand extends Command
 {
     private const string DEFAULT_EMAIL = 'analytics.demo@example.com';
     private const string DEFAULT_PASSWORD = 'demo1234';
+    private const string DEMO_ROLE = 'ROLE_ANALYTICS_DEMO';
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -73,9 +74,16 @@ final class SeedAnalyticsDemoDataCommand extends Command
             return Command::INVALID;
         }
 
-        $user = $this->findOrCreateUser($email, $password);
+        try {
+            $user = $this->findOrCreateUser($email, $password);
+        } catch (RuntimeException $exception) {
+            $output->writeln(sprintf('<error>%s</error>', $exception->getMessage()));
+
+            return Command::FAILURE;
+        }
+
         $this->em->flush();
-        $user = $this->resetDemoDataForUser($user);
+        $user = $this->resetDemoDataForUser($user, $password);
 
         [$familyCar, $cityCar] = $this->createVehicles($user);
         [$stationParis, $stationLyon, $stationBordeaux] = $this->createStations();
@@ -126,9 +134,12 @@ final class SeedAnalyticsDemoDataCommand extends Command
     {
         $user = $this->em->getRepository(UserEntity::class)->findOneBy(['email' => $email]);
         if ($user instanceof UserEntity) {
-            $user->setRoles(['ROLE_USER']);
+            if (!$this->isManagedDemoUser($user)) {
+                throw new RuntimeException(sprintf('Refusing to reuse existing non-demo user "%s". Choose a dedicated demo email instead.', $email));
+            }
+
+            $user->setRoles(['ROLE_USER', self::DEMO_ROLE]);
             $user->setIsActive(true);
-            $user->setPassword($this->passwordHasher->hashPassword($user, $password));
 
             return $user;
         }
@@ -136,7 +147,7 @@ final class SeedAnalyticsDemoDataCommand extends Command
         $user = new UserEntity();
         $user->setId(Uuid::v7());
         $user->setEmail($email);
-        $user->setRoles(['ROLE_USER']);
+        $user->setRoles(['ROLE_USER', self::DEMO_ROLE]);
         $user->setIsActive(true);
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
 
@@ -145,7 +156,12 @@ final class SeedAnalyticsDemoDataCommand extends Command
         return $user;
     }
 
-    private function resetDemoDataForUser(UserEntity $user): UserEntity
+    private function isManagedDemoUser(UserEntity $user): bool
+    {
+        return in_array(self::DEMO_ROLE, $user->getRoles(), true);
+    }
+
+    private function resetDemoDataForUser(UserEntity $user, string $password): UserEntity
     {
         $ownerId = $user->getId()->toRfc4122();
         $connection = $this->em->getConnection();
@@ -167,6 +183,8 @@ final class SeedAnalyticsDemoDataCommand extends Command
 
         $managedUser = $this->em->find(UserEntity::class, $ownerId);
         if ($managedUser instanceof UserEntity) {
+            $managedUser->setPassword($this->passwordHasher->hashPassword($managedUser, $password));
+
             return $managedUser;
         }
 

@@ -21,11 +21,14 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Uid\Uuid;
 
 final class SeedAnalyticsDemoDataCommandTest extends KernelTestCase
 {
     private EntityManagerInterface $em;
     private Connection $connection;
+    private UserPasswordHasherInterface $passwordHasher;
 
     protected function setUp(): void
     {
@@ -37,6 +40,11 @@ final class SeedAnalyticsDemoDataCommandTest extends KernelTestCase
         }
         $this->em = $em;
         $this->connection = $em->getConnection();
+        $passwordHasher = self::getContainer()->get(UserPasswordHasherInterface::class);
+        if (!$passwordHasher instanceof UserPasswordHasherInterface) {
+            throw new RuntimeException('Password hasher service not found.');
+        }
+        $this->passwordHasher = $passwordHasher;
 
         $this->connection->executeStatement('TRUNCATE TABLE analytics_daily_fuel_kpis, analytics_projection_states, admin_audit_logs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, import_jobs, receipt_lines, receipts, stations, vehicles, user_identities, users CASCADE');
     }
@@ -59,6 +67,7 @@ final class SeedAnalyticsDemoDataCommandTest extends KernelTestCase
         self::assertSame(3, $this->countRows('maintenance_events', 'owner_id', $user->getId()->toRfc4122()));
         self::assertSame(2, $this->countRows('vehicles', 'owner_id', $user->getId()->toRfc4122()));
         self::assertGreaterThan(0, $this->countRows('analytics_daily_fuel_kpis', 'owner_id', $user->getId()->toRfc4122()));
+        self::assertContains('ROLE_ANALYTICS_DEMO', $user->getRoles());
 
         $secondRunExitCode = $tester->execute([
             '--email' => 'demo.analytics@test.local',
@@ -69,6 +78,33 @@ final class SeedAnalyticsDemoDataCommandTest extends KernelTestCase
         self::assertSame(8, $this->countRows('receipts', 'owner_id', $user->getId()->toRfc4122()));
         self::assertSame(3, $this->countRows('maintenance_events', 'owner_id', $user->getId()->toRfc4122()));
         self::assertSame(2, $this->countRows('vehicles', 'owner_id', $user->getId()->toRfc4122()));
+    }
+
+    public function testCommandRejectsExistingNonDemoUserEmail(): void
+    {
+        $user = new UserEntity();
+        $user->setId(Uuid::v7());
+        $user->setEmail('real.user@test.local');
+        $user->setRoles(['ROLE_ADMIN']);
+        $user->setIsActive(true);
+        $user->setPassword($this->passwordHasher->hashPassword($user, 'real-password'));
+        $this->em->persist($user);
+        $this->em->flush();
+
+        $tester = $this->commandTester();
+        $exitCode = $tester->execute([
+            '--email' => 'real.user@test.local',
+            '--password' => 'secret-demo-password',
+        ]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Refusing to reuse existing non-demo user', $tester->getDisplay());
+        self::assertSame(0, $this->countRows('receipts', 'owner_id', $user->getId()->toRfc4122()));
+
+        $this->em->clear();
+        $reloadedUser = $this->em->find(UserEntity::class, $user->getId()->toRfc4122());
+        self::assertInstanceOf(UserEntity::class, $reloadedUser);
+        self::assertSame(['ROLE_ADMIN', 'ROLE_USER'], $reloadedUser->getRoles());
     }
 
     private function commandTester(): CommandTester

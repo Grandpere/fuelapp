@@ -602,7 +602,7 @@
         </section>
 
         <section class="trend-grid">
-            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="cost" data-default-view="bars" data-chart-view="bars">
+            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="cost" data-chart-storage-key="analytics.chartView.cost" data-default-view="bars" data-chart-view="bars" data-chart-runtime-state="idle">
                 <div class="trend-card-header">
                     <h2>Cost trend by month</h2>
                     <div class="trend-view-switch">
@@ -654,7 +654,7 @@
                 {% endif %}
             </article>
 
-            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="consumption" data-default-view="bars" data-chart-view="bars">
+            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="consumption" data-chart-storage-key="analytics.chartView.consumption" data-default-view="bars" data-chart-view="bars" data-chart-runtime-state="idle">
                 <div class="trend-card-header">
                     <h2>Consumption trend by month</h2>
                     <div class="trend-view-switch">
@@ -706,7 +706,7 @@
                 {% endif %}
             </article>
 
-            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="fuel-price" data-default-view="line" data-chart-view="bars">
+            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="fuel-price" data-chart-storage-key="analytics.chartView.fuel-price" data-default-view="line" data-chart-view="bars" data-chart-runtime-state="idle">
                 <div class="trend-card-header">
                     <h2>Fuel price trend by month</h2>
                     <div class="trend-view-switch">
@@ -765,7 +765,7 @@
                 {% endif %}
             </article>
 
-            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="compared-cost" data-default-view="bars" data-chart-view="bars">
+            <article class="card trend-card" data-controller="analytics-chart" data-chart-key="compared-cost" data-chart-storage-key="analytics.chartView.compared-cost" data-default-view="bars" data-chart-view="bars" data-chart-runtime-state="idle">
                 <div class="trend-card-header">
                     <h2>Compared cost trend (fuel vs maintenance vs total)</h2>
                     <div class="trend-view-switch">

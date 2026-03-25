@@ -286,6 +286,14 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] User-run functional suite validated (`make phpunit-functional`).
 
+# TODO - SP14-003 Theme/chart runtime hardening and test coverage
+
+## Plan
+- [completed] Harden theme and chart runtime behavior against storage, navigation, and lifecycle edge cases.
+- [completed] Add targeted regression coverage for rendered theme/chart runtime hooks.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
 # TODO - SP12-003 Import/upload security hardening
 
 ## Plan

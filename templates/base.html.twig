@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-theme-storage-key="fuelapp-theme" data-theme-ready="0">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,6 +22,7 @@
                     : (prefersDark ? 'dark' : 'light');
 
                 root.dataset.theme = theme;
+                root.dataset.themeReady = '1';
                 root.style.colorScheme = theme;
             })();
         </script>
@@ -945,6 +946,7 @@
 
                 function paintTheme(theme) {
                     root.dataset.theme = theme;
+                    root.dataset.themeReady = '1';
                     root.style.colorScheme = theme;
 
                     buttons.forEach(function (button) {
@@ -1004,6 +1006,10 @@
                         prefersDarkMedia.addListener(updateFromSystem);
                     }
                 }
+
+                document.addEventListener('turbo:render', function () {
+                    paintTheme(activeTheme);
+                });
             })();
         </script>
     </body>

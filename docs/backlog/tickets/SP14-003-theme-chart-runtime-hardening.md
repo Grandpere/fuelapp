@@ -21,4 +21,4 @@ The new theme toggle and analytics charts work well, but they add client-side co
 - Sprint 13 theme toggle and analytics chart runtime.
 
 ## Status
-- todo
+- done

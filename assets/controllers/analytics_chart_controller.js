@@ -35,6 +35,8 @@ export default class extends Controller {
         this.storageKey = null;
         this.currentView = this.element.dataset.defaultView === 'line' ? 'line' : 'bars';
         this.handleThemeChanged = this.handleThemeChanged.bind(this);
+        this.handlePageShow = this.handlePageShow.bind(this);
+        this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
 
         if (!this.hasConfigTarget || !this.hasCanvasTarget) {
             this.syncButtons();
@@ -42,16 +44,29 @@ export default class extends Controller {
             return;
         }
 
-        this.config = this.readConfig();
+        try {
+            this.config = this.readConfig();
+        } catch (error) {
+            this.element.dataset.chartRuntimeState = 'config-error';
+            this.currentView = 'bars';
+            this.syncButtons();
+
+            return;
+        }
+
         this.storageKey = this.config.key ? `analytics.chartView.${this.config.key}` : null;
         this.currentView = this.readInitialView();
         this.syncButtons();
         this.renderChart();
         window.addEventListener('fuelapp:theme-changed', this.handleThemeChanged);
+        window.addEventListener('pageshow', this.handlePageShow);
+        document.addEventListener('visibilitychange', this.handleVisibilityChange);
     }
 
     disconnect() {
         window.removeEventListener('fuelapp:theme-changed', this.handleThemeChanged);
+        window.removeEventListener('pageshow', this.handlePageShow);
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
         this.destroyChart();
     }
 
@@ -68,7 +83,7 @@ export default class extends Controller {
 
         this.currentView = nextView;
         if (this.storageKey) {
-            window.localStorage?.setItem(this.storageKey, nextView);
+            this.writeStoredView(nextView);
         }
 
         this.syncButtons();
@@ -94,7 +109,7 @@ export default class extends Controller {
             return fallback;
         }
 
-        const savedView = window.localStorage?.getItem(this.storageKey);
+        const savedView = this.readStoredView();
 
         if (savedView === 'line' || savedView === 'bars') {
             return savedView;
@@ -116,6 +131,7 @@ export default class extends Controller {
     renderChart() {
         if (!this.hasCanvasTarget || this.currentView !== 'line') {
             this.destroyChart();
+            this.element.dataset.chartRuntimeState = 'idle';
 
             return;
         }
@@ -124,10 +140,17 @@ export default class extends Controller {
 
         const context = this.canvasTarget.getContext('2d');
         if (!context) {
+            this.element.dataset.chartRuntimeState = 'missing-canvas-context';
+
             return;
         }
 
-        this.chart = new Chart(context, this.buildChartConfig());
+        try {
+            this.chart = new Chart(context, this.buildChartConfig());
+            this.element.dataset.chartRuntimeState = 'ready';
+        } catch (error) {
+            this.fallbackToBars('chart-error');
+        }
     }
 
     destroyChart() {
@@ -139,6 +162,22 @@ export default class extends Controller {
 
     handleThemeChanged() {
         if (this.currentView !== 'line') {
+            return;
+        }
+
+        this.renderChart();
+    }
+
+    handlePageShow() {
+        if (this.currentView !== 'line') {
+            return;
+        }
+
+        this.renderChart();
+    }
+
+    handleVisibilityChange() {
+        if (document.visibilityState !== 'visible' || this.currentView !== 'line') {
             return;
         }
 
@@ -301,5 +340,27 @@ export default class extends Controller {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
         }).format(value);
+    }
+
+    readStoredView() {
+        try {
+            return window.localStorage?.getItem(this.storageKey) ?? null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    writeStoredView(nextView) {
+        try {
+            window.localStorage?.setItem(this.storageKey, nextView);
+        } catch (error) {
+        }
+    }
+
+    fallbackToBars(reason) {
+        this.currentView = 'bars';
+        this.destroyChart();
+        this.element.dataset.chartRuntimeState = reason;
+        this.syncButtons();
     }
 }

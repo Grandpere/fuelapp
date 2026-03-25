@@ -101,6 +101,10 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertStringContainsString("font-src 'self' data:", $csp);
         self::assertStringContainsString("script-src 'self' 'unsafe-inline' https://unpkg.com", $csp);
         self::assertStringContainsString("connect-src 'self' https:", $csp);
+        self::assertStringContainsString('data-theme-toggle', (string) $response->getContent());
+        self::assertStringContainsString('fuelapp-theme', (string) $response->getContent());
+        self::assertStringContainsString('fuelapp:theme-changed', (string) $response->getContent());
+        self::assertStringContainsString('data-theme-ready', (string) $response->getContent());
     }
 
     public function testApiDocsAlsoExposeSecurityHeadersBaseline(): void

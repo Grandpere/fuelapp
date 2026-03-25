@@ -49,6 +49,7 @@ final readonly class DoctrineImportJobRepository implements ImportJobRepository
         $entity->setMimeType($job->mimeType());
         $entity->setFileSizeBytes($job->fileSizeBytes());
         $entity->setFileChecksumSha256($job->fileChecksumSha256());
+        $entity->setOcrRetryCount($job->ocrRetryCount());
         $entity->setErrorPayload($job->errorPayload());
         $entity->setCreatedAt($job->createdAt());
         $entity->setUpdatedAt($job->updatedAt());
@@ -215,6 +216,7 @@ final readonly class DoctrineImportJobRepository implements ImportJobRepository
             $entity->getMimeType(),
             $entity->getFileSizeBytes(),
             $entity->getFileChecksumSha256(),
+            $entity->getOcrRetryCount(),
             $entity->getErrorPayload(),
             $entity->getCreatedAt(),
             $entity->getUpdatedAt(),

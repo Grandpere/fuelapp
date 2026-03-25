@@ -19,4 +19,4 @@ Authentication and session flows are operational but need a focused hardening pa
 - Existing security and admin auth baseline.
 
 ## Status
-- in_progress
+- done

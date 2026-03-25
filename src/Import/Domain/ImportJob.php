@@ -28,6 +28,7 @@ final class ImportJob
     private string $mimeType;
     private int $fileSizeBytes;
     private string $fileChecksumSha256;
+    private int $ocrRetryCount;
     private ?string $errorPayload;
     private DateTimeImmutable $createdAt;
     private DateTimeImmutable $updatedAt;
@@ -46,6 +47,7 @@ final class ImportJob
         string $mimeType,
         int $fileSizeBytes,
         string $fileChecksumSha256,
+        int $ocrRetryCount,
         ?string $errorPayload,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
@@ -63,6 +65,7 @@ final class ImportJob
         $this->mimeType = $mimeType;
         $this->fileSizeBytes = $fileSizeBytes;
         $this->fileChecksumSha256 = $fileChecksumSha256;
+        $this->ocrRetryCount = max(0, $ocrRetryCount);
         $this->errorPayload = $errorPayload;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
@@ -95,6 +98,7 @@ final class ImportJob
             $mimeType,
             $fileSizeBytes,
             $fileChecksumSha256,
+            0,
             null,
             $now,
             $now,
@@ -115,6 +119,7 @@ final class ImportJob
         string $mimeType,
         int $fileSizeBytes,
         string $fileChecksumSha256,
+        int $ocrRetryCount,
         ?string $errorPayload,
         DateTimeImmutable $createdAt,
         DateTimeImmutable $updatedAt,
@@ -133,6 +138,7 @@ final class ImportJob
             $mimeType,
             $fileSizeBytes,
             $fileChecksumSha256,
+            $ocrRetryCount,
             $errorPayload,
             $createdAt,
             $updatedAt,
@@ -186,6 +192,11 @@ final class ImportJob
     public function fileChecksumSha256(): string
     {
         return $this->fileChecksumSha256;
+    }
+
+    public function ocrRetryCount(): int
+    {
+        return $this->ocrRetryCount;
     }
 
     public function errorPayload(): ?string
@@ -242,6 +253,7 @@ final class ImportJob
         $this->status = ImportJobStatus::PROCESSED;
         $this->completedAt = $at;
         $this->failedAt = null;
+        $this->ocrRetryCount = 0;
         $this->errorPayload = null;
         $this->updatedAt = $at;
     }
@@ -269,6 +281,7 @@ final class ImportJob
         $this->status = ImportJobStatus::NEEDS_REVIEW;
         $this->completedAt = null;
         $this->failedAt = null;
+        $this->ocrRetryCount = 0;
         $this->errorPayload = null !== $payload ? mb_substr($payload, 0, 5000) : null;
         $this->updatedAt = $at;
     }
@@ -280,11 +293,17 @@ final class ImportJob
         $this->status = ImportJobStatus::DUPLICATE;
         $this->completedAt = $at;
         $this->failedAt = null;
+        $this->ocrRetryCount = 0;
         $this->errorPayload = mb_substr($payload, 0, 5000);
         $this->updatedAt = $at;
     }
 
     public function markQueuedForRetry(?DateTimeImmutable $at = null): void
+    {
+        $this->markQueuedForOcrRetry(0, $at);
+    }
+
+    public function markQueuedForOcrRetry(int $retryCount, ?DateTimeImmutable $at = null): void
     {
         $at ??= new DateTimeImmutable();
 
@@ -292,6 +311,7 @@ final class ImportJob
         $this->startedAt = null;
         $this->completedAt = null;
         $this->failedAt = null;
+        $this->ocrRetryCount = max(0, $retryCount);
         $this->errorPayload = null;
         $this->updatedAt = $at;
     }

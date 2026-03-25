@@ -169,7 +169,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         self::assertStringContainsString('ocr_provider_permanent', (string) $saved->errorPayload());
     }
 
-    public function testHandlerMarksFailedAndRethrowsForRetryableProviderError(): void
+    public function testHandlerQueuesRetryAndPersistsDedicatedOcrRetryCountForRetryableProviderError(): void
     {
         $job = $this->createQueuedJob('import.provider.retryable@example.com', str_repeat('d', 64));
 
@@ -190,6 +190,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
             self::assertNotNull($saved);
             self::assertSame(ImportJobStatus::QUEUED, $saved->status());
             self::assertNull($saved->errorPayload());
+            self::assertSame(1, $saved->ocrRetryCount());
         }
     }
 
@@ -207,10 +208,10 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         );
 
         $message = new ProcessImportJobMessage($job->id()->toString());
-        for ($attempt = 1; $attempt <= 3; ++$attempt) {
+        for ($attempt = 0; $attempt < 3; ++$attempt) {
             try {
                 $handler($message);
-                self::fail('Expected retryable exception for attempt '.$attempt);
+                self::fail('Expected retryable exception for attempt '.($attempt + 1));
             } catch (RecoverableMessageHandlingException) {
             }
         }
@@ -224,6 +225,8 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
         self::assertStringContainsString('OCR provider unavailable after retries', (string) $saved->errorPayload());
         self::assertStringContainsString('manual_review', (string) $saved->errorPayload());
         self::assertStringContainsString('Manual review remains available', (string) $saved->errorPayload());
+        self::assertStringContainsString('"retryCount":3', (string) $saved->errorPayload());
+        self::assertSame(0, $saved->ocrRetryCount());
     }
 
     public function testHandlerMarksFailedAndRethrowsForUnexpectedParserFailure(): void
@@ -247,6 +250,52 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
             self::assertNotNull($saved);
             self::assertSame(ImportJobStatus::FAILED, $saved->status());
             self::assertStringContainsString('ocr_unexpected', (string) $saved->errorPayload());
+        }
+    }
+
+    public function testUnexpectedFailuresDoNotConsumeDedicatedOcrRetryBudget(): void
+    {
+        $job = $this->createQueuedJob('import.locator.then.retryable@example.com', str_repeat('1', 64));
+        $message = new ProcessImportJobMessage($job->id()->toString());
+
+        $unexpectedFailureHandler = new ProcessImportJobMessageHandler(
+            $this->importJobRepository,
+            new StaticImportFileStorage(),
+            new ThrowingFileLocator(new RuntimeException('temporary locator failure')),
+            new ThrowingOcrProvider(OcrProviderException::retryable('provider timeout')),
+            new StaticReceiptParser(),
+            new NullLogger(),
+        );
+
+        try {
+            $unexpectedFailureHandler($message);
+            self::fail('Expected unexpected locator failure.');
+        } catch (RuntimeException) {
+        }
+
+        $failed = $this->importJobRepository->getForSystem($job->id()->toString());
+        self::assertNotNull($failed);
+        self::assertSame(ImportJobStatus::FAILED, $failed->status());
+        self::assertSame(0, $failed->ocrRetryCount());
+
+        $retryableHandler = new ProcessImportJobMessageHandler(
+            $this->importJobRepository,
+            new StaticImportFileStorage(),
+            new StaticFileLocator('/tmp/fake.pdf'),
+            new ThrowingOcrProvider(OcrProviderException::retryable('provider timeout')),
+            new StaticReceiptParser(),
+            new NullLogger(),
+        );
+
+        $this->expectException(RecoverableMessageHandlingException::class);
+
+        try {
+            $retryableHandler($message);
+        } finally {
+            $queued = $this->importJobRepository->getForSystem($job->id()->toString());
+            self::assertNotNull($queued);
+            self::assertSame(ImportJobStatus::QUEUED, $queued->status());
+            self::assertSame(1, $queued->ocrRetryCount());
         }
     }
 
@@ -296,6 +345,18 @@ final class StaticImportFileStorage implements ImportFileStorage
 
     public function delete(string $storage, string $path): void
     {
+    }
+}
+
+final class ThrowingFileLocator implements ImportStoredFileLocator
+{
+    public function __construct(private readonly Throwable $throwable)
+    {
+    }
+
+    public function locate(string $storage, string $path): string
+    {
+        throw $this->throwable;
     }
 }
 

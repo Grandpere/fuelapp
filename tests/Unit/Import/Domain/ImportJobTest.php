@@ -37,6 +37,7 @@ final class ImportJobTest extends TestCase
         self::assertSame('test.pdf', $job->originalFilename());
         self::assertNull($job->errorPayload());
         self::assertNull($job->startedAt());
+        self::assertSame(0, $job->ocrRetryCount());
     }
 
     public function testLifecycleTransitionsAreTracked(): void
@@ -90,5 +91,31 @@ final class ImportJobTest extends TestCase
         self::assertSame(ImportJobStatus::PROCESSED, $job->status());
         self::assertSame($processedAt, $job->completedAt());
         self::assertSame('{"status":"processed"}', $job->errorPayload());
+    }
+
+    public function testOcrRetryLifecycleIsTrackedAndResetOnTerminalStates(): void
+    {
+        $queuedAt = new DateTimeImmutable('2026-02-21 10:00:00');
+        $retryAt = new DateTimeImmutable('2026-02-21 10:01:00');
+        $reviewAt = new DateTimeImmutable('2026-02-21 10:02:00');
+
+        $job = ImportJob::createQueued(
+            '0195c5ad-3f61-75de-b06f-3539f2b3ce61',
+            'local',
+            '2026/02/21/test.pdf',
+            'test.pdf',
+            'application/pdf',
+            1234,
+            str_repeat('a', 64),
+            $queuedAt,
+        );
+
+        $job->markQueuedForOcrRetry(2, $retryAt);
+        self::assertSame(ImportJobStatus::QUEUED, $job->status());
+        self::assertSame(2, $job->ocrRetryCount());
+
+        $job->markNeedsReview('payload', $reviewAt);
+        self::assertSame(ImportJobStatus::NEEDS_REVIEW, $job->status());
+        self::assertSame(0, $job->ocrRetryCount());
     }
 }

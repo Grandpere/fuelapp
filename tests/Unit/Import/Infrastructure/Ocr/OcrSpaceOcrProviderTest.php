@@ -16,7 +16,9 @@ namespace App\Tests\Unit\Import\Infrastructure\Ocr;
 use App\Import\Application\Ocr\OcrProviderException;
 use App\Import\Infrastructure\Ocr\OcrSpaceOcrProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\AbstractLogger;
 use ReflectionMethod;
+use Stringable;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -119,6 +121,7 @@ final class OcrSpaceOcrProviderTest extends TestCase
     public function testItOpensCircuitBreakerAfterConsecutiveTransientFailures(): void
     {
         $calls = 0;
+        $logger = new InMemoryLogger();
         $httpClient = new MockHttpClient(static function () use (&$calls): MockResponse {
             ++$calls;
 
@@ -135,6 +138,7 @@ final class OcrSpaceOcrProviderTest extends TestCase
             2,
             60,
             300,
+            $logger,
         );
         $firstFailure = $this->captureProviderException($provider);
         self::assertTrue($firstFailure->isRetryable());
@@ -147,6 +151,44 @@ final class OcrSpaceOcrProviderTest extends TestCase
         self::assertStringContainsString('circuit breaker is open', $openCircuitFailure->getMessage());
 
         self::assertSame(2, $calls);
+        self::assertTrue($logger->hasRecord('warning', 'import.ocr_space.circuit_opened'));
+        self::assertTrue($logger->hasRecord('warning', 'import.ocr_space.circuit_open_fast_fail'));
+    }
+
+    public function testItLogsCircuitCloseAndFailureStateResetAfterSuccess(): void
+    {
+        $cache = new ArrayAdapter();
+        $logger = new InMemoryLogger();
+        $httpClient = new MockHttpClient([
+            new MockResponse('{"error":"busy"}', ['http_code' => 503]),
+            new MockResponse('{"IsErroredOnProcessing":false,"ParsedResults":[{"ParsedText":"TOTAL 80.00"}]}', ['http_code' => 200]),
+        ], 'https://api.ocr.space/parse');
+
+        $provider = new OcrSpaceOcrProvider(
+            $httpClient,
+            $cache,
+            'https://api.ocr.space/parse',
+            'test-key',
+            'eng',
+            2,
+            3,
+            60,
+            1,
+            $logger,
+        );
+
+        $firstFailure = $this->captureProviderException($provider);
+        self::assertTrue($firstFailure->isRetryable());
+
+        $openUntilItem = $cache->getItem('import.ocr_space.circuit_open_until');
+        $openUntilItem->set(time() - 1);
+        $cache->save($openUntilItem);
+
+        $result = $provider->extract($this->createTempFile('sample'), 'image/png');
+
+        self::assertSame('ocr_space', $result->provider);
+        self::assertTrue($logger->hasRecord('info', 'import.ocr_space.circuit_closed'));
+        self::assertTrue($logger->hasRecord('info', 'import.ocr_space.circuit_failure_state_reset'));
     }
 
     public function testItCompressesOversizedImageBeforeUpload(): void
@@ -239,5 +281,34 @@ final class OcrSpaceOcrProviderTest extends TestCase
         self::assertGreaterThan(1_000_000, $size);
 
         return $path;
+    }
+}
+
+final class InMemoryLogger extends AbstractLogger
+{
+    /** @var list<array{level: string, message: string, context: array<mixed>}> */
+    public array $records = [];
+
+    /**
+     * @param array<mixed> $context
+     */
+    public function log($level, string|Stringable $message, array $context = []): void
+    {
+        $this->records[] = [
+            'level' => is_string($level) ? $level : get_debug_type($level),
+            'message' => (string) $message,
+            'context' => $context,
+        ];
+    }
+
+    public function hasRecord(string $level, string $message): bool
+    {
+        foreach ($this->records as $record) {
+            if ($record['level'] === $level && $record['message'] === $message) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

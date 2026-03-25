@@ -74,4 +74,18 @@ final readonly class AdminUserManager
 
         return $result;
     }
+
+    public function requestVerificationResend(string $targetId): AdminUserRecord
+    {
+        $user = $this->repository->get($targetId);
+        if (!$user instanceof AdminUserRecord) {
+            throw new LogicException('User not found.');
+        }
+
+        if ($user->isEmailVerified()) {
+            throw new LogicException('User email is already verified.');
+        }
+
+        return $user;
+    }
 }

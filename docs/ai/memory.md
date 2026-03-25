@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-25 - OCR retry budget must not depend on Messenger redelivery count
+- Symptom: import jobs could exhaust OCR retries too early after unrelated redeliveries caused by locator/parser/runtime failures.
+- Root cause: OCR retry logic reused `RedeliveryStamp::getRetryCountFromEnvelope()`, which counts all transport redeliveries, not only OCR provider retryable failures.
+- Fix: persist a dedicated `ocrRetryCount` on `import_jobs` and increment it only when an `OcrProviderException` is explicitly retryable.
+- Prevention: when a retry budget belongs to a specific failure class, store and manage that counter in domain state instead of reusing transport-level retry metadata.
+
 ## 2026-03-13 - OCR.Space 1MB limit should be handled before provider call
 - Symptom: imports could fail with provider-side validation when image uploads exceeded OCR.Space size limit.
 - Root cause: OCR adapter sent original stored files directly without pre-upload size normalization.

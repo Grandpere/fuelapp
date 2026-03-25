@@ -29,7 +29,9 @@ use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use RuntimeException;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
+use Throwable;
 
 final class ProcessImportJobMessageHandlerTest extends TestCase
 {
@@ -114,7 +116,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         self::assertSame(2, $repository->saveCount);
     }
 
-    public function testItMarksFailedAndRethrowsRetryableProviderError(): void
+    public function testItQueuesRetryAndPersistsDedicatedOcrRetryCountForRetryableProviderError(): void
     {
         $job = ImportJob::createQueued(
             '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
@@ -145,6 +147,7 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
             self::assertNotNull($saved);
             self::assertSame(ImportJobStatus::QUEUED, $saved->status());
             self::assertNull($saved->errorPayload());
+            self::assertSame(1, $saved->ocrRetryCount());
         }
     }
 
@@ -172,10 +175,10 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
 
         $message = new ProcessImportJobMessage($job->id()->toString());
 
-        for ($attempt = 1; $attempt <= 3; ++$attempt) {
+        for ($attempt = 0; $attempt < 3; ++$attempt) {
             try {
                 $handler($message);
-                self::fail('Expected retryable exception for attempt '.$attempt);
+                self::fail('Expected retryable exception for attempt '.($attempt + 1));
             } catch (RecoverableMessageHandlingException) {
             }
         }
@@ -189,6 +192,8 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         self::assertStringContainsString('OCR provider unavailable after retries', (string) $saved->errorPayload());
         self::assertStringContainsString('manual_review', (string) $saved->errorPayload());
         self::assertStringContainsString('Manual review remains available', (string) $saved->errorPayload());
+        self::assertStringContainsString('"retryCount":3', (string) $saved->errorPayload());
+        self::assertSame(0, $saved->ocrRetryCount());
     }
 
     public function testItMarksJobAsDuplicateWhenFingerprintAlreadyExists(): void
@@ -230,6 +235,62 @@ final class ProcessImportJobMessageHandlerTest extends TestCase
         self::assertNotNull($saved);
         self::assertSame(ImportJobStatus::DUPLICATE, $saved->status());
         self::assertStringContainsString('same_file_checksum', (string) $saved->errorPayload());
+    }
+
+    public function testUnexpectedFailuresDoNotConsumeDedicatedOcrRetryBudget(): void
+    {
+        $job = ImportJob::createQueued(
+            '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+            'local',
+            '2026/02/21/file.pdf',
+            'file.pdf',
+            'application/pdf',
+            1024,
+            str_repeat('a', 64),
+        );
+
+        $repository = new InMemoryImportJobRepository([$job]);
+        $message = new ProcessImportJobMessage($job->id()->toString());
+
+        $unexpectedFailureHandler = new ProcessImportJobMessageHandler(
+            $repository,
+            new NullImportFileStorage(),
+            new ThrowingStoredFileLocator(new RuntimeException('temporary locator failure')),
+            new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
+            new FakeReceiptOcrParser(),
+            new NullLogger(),
+        );
+
+        try {
+            $unexpectedFailureHandler($message);
+            self::fail('Expected unexpected locator failure.');
+        } catch (RuntimeException) {
+        }
+
+        $failed = $repository->getForSystem($job->id()->toString());
+        self::assertNotNull($failed);
+        self::assertSame(ImportJobStatus::FAILED, $failed->status());
+        self::assertSame(0, $failed->ocrRetryCount());
+
+        $retryableOcrHandler = new ProcessImportJobMessageHandler(
+            $repository,
+            new NullImportFileStorage(),
+            new FakeStoredFileLocator('/tmp/upload.pdf'),
+            new ThrowingOcrProvider(OcrProviderException::retryable('temporary outage')),
+            new FakeReceiptOcrParser(),
+            new NullLogger(),
+        );
+
+        $this->expectException(RecoverableMessageHandlingException::class);
+
+        try {
+            $retryableOcrHandler($message);
+        } finally {
+            $queued = $repository->getForSystem($job->id()->toString());
+            self::assertNotNull($queued);
+            self::assertSame(ImportJobStatus::QUEUED, $queued->status());
+            self::assertSame(1, $queued->ocrRetryCount());
+        }
     }
 }
 
@@ -330,6 +391,18 @@ final class FakeStoredFileLocator implements ImportStoredFileLocator
     public function locate(string $storage, string $path): string
     {
         return $this->path;
+    }
+}
+
+final class ThrowingStoredFileLocator implements ImportStoredFileLocator
+{
+    public function __construct(private readonly Throwable $throwable)
+    {
+    }
+
+    public function locate(string $storage, string $path): string
+    {
+        throw $this->throwable;
     }
 }
 

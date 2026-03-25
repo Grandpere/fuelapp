@@ -17,8 +17,9 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Admin\Application\User\AdminUserManager;
-use App\Admin\Application\User\AdminUserRecord;
 use App\Admin\UI\Api\Resource\Output\AdminUserVerificationDispatchOutput;
+use LogicException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Uuid;
 
@@ -40,9 +41,14 @@ final readonly class AdminUserResendVerificationStateProcessor implements Proces
             throw new NotFoundHttpException();
         }
 
-        $user = $this->userManager->getUser($id);
-        if (!$user instanceof AdminUserRecord) {
-            throw new NotFoundHttpException();
+        try {
+            $user = $this->userManager->requestVerificationResend($id);
+        } catch (LogicException $e) {
+            if ('User not found.' === $e->getMessage()) {
+                throw new NotFoundHttpException();
+            }
+
+            throw new ConflictHttpException($e->getMessage(), $e);
         }
 
         $this->auditTrail->record(

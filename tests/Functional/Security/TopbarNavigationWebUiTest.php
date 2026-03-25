@@ -18,6 +18,7 @@ use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
@@ -136,6 +137,110 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         self::assertSame(mb_substr(mb_strtolower(trim($overlongEmail)), 0, 120), $entry->getTargetId());
     }
 
+    public function testUiLoginRotatesSessionCookieAndKeepsSecureCookieFlags(): void
+    {
+        $email = 'topbar.rotation@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $loginPageResponse = $this->request('GET', '/ui/login');
+        self::assertSame(Response::HTTP_OK, $loginPageResponse->getStatusCode());
+        $initialSessionCookie = $this->extractSessionCookie($loginPageResponse);
+        self::assertNotEmpty($initialSessionCookie);
+
+        $content = (string) $loginPageResponse->getContent();
+        preg_match('/name="_csrf_token" value="([^"]+)"/', $content, $matches);
+        $csrfToken = $matches[1] ?? null;
+        self::assertIsString($csrfToken);
+
+        $loginResponse = $this->request(
+            'POST',
+            '/ui/login',
+            [
+                'email' => $email,
+                'password' => $password,
+                '_csrf_token' => $csrfToken,
+            ],
+            [],
+            $initialSessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_FOUND, $loginResponse->getStatusCode());
+
+        $rotatedCookie = $this->extractSessionCookie($loginResponse);
+        self::assertNotEmpty($rotatedCookie);
+        self::assertNotSame(array_values($initialSessionCookie)[0], array_values($rotatedCookie)[0]);
+
+        $sessionCookie = $this->findSessionCookie($loginResponse);
+        self::assertInstanceOf(Cookie::class, $sessionCookie);
+        self::assertTrue($sessionCookie->isHttpOnly());
+        self::assertSame(Cookie::SAMESITE_LAX, $sessionCookie->getSameSite());
+    }
+
+    public function testUiLogoutRequiresValidCsrfAndInvalidatesSession(): void
+    {
+        $email = 'topbar.logout@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $invalidLogoutResponse = $this->request(
+            'POST',
+            '/ui/logout',
+            ['_csrf_token' => 'invalid'],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FORBIDDEN, $invalidLogoutResponse->getStatusCode());
+
+        $stillAuthenticatedResponse = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $stillAuthenticatedResponse->getStatusCode());
+
+        $authenticatedPage = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $authenticatedPage->getStatusCode());
+        preg_match('/action="\/ui\/logout".*?name="_csrf_token" value="([^"]+)"/s', (string) $authenticatedPage->getContent(), $matches);
+        $logoutToken = $matches[1] ?? null;
+        self::assertIsString($logoutToken);
+
+        $logoutResponse = $this->request(
+            'POST',
+            '/ui/logout',
+            ['_csrf_token' => $logoutToken],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $logoutResponse->getStatusCode());
+        self::assertStringEndsWith('/ui/login', (string) $logoutResponse->headers->get('Location'));
+
+        $postLogoutResponse = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_FOUND, $postLogoutResponse->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $postLogoutResponse->headers->get('Location'));
+    }
+
+    public function testUiSessionIsRevokedWhenUserGetsDeactivated(): void
+    {
+        $email = 'topbar.deactivated@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $beforeDeactivation = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $beforeDeactivation->getStatusCode());
+
+        $user->setIsActive(false);
+        $this->em->flush();
+        $this->em->clear();
+
+        $afterDeactivation = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_FOUND, $afterDeactivation->getStatusCode());
+        self::assertStringStartsWith('/ui/login', (string) $afterDeactivation->headers->get('Location'));
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server
@@ -184,14 +289,24 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
     /** @return array<string, string> */
     private function extractSessionCookie(Response $response): array
     {
-        $cookies = $response->headers->getCookies();
-        foreach ($cookies as $cookie) {
-            if (str_starts_with($cookie->getName(), 'MOCKSESSID') || str_starts_with($cookie->getName(), 'PHPSESSID')) {
-                return [$cookie->getName() => (string) $cookie->getValue()];
-            }
+        $cookie = $this->findSessionCookie($response);
+        if ($cookie instanceof Cookie) {
+            return [$cookie->getName() => (string) $cookie->getValue()];
         }
 
         return [];
+    }
+
+    private function findSessionCookie(Response $response): ?Cookie
+    {
+        $cookies = $response->headers->getCookies();
+        foreach ($cookies as $cookie) {
+            if (str_starts_with($cookie->getName(), 'MOCKSESSID') || str_starts_with($cookie->getName(), 'PHPSESSID')) {
+                return $cookie;
+            }
+        }
+
+        return null;
     }
 
     /** @param list<string> $roles */

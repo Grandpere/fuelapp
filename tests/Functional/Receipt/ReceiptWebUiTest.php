@@ -464,6 +464,40 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringNotContainsString($receiptB->getId()->toRfc4122(), $content);
     }
 
+    public function testReceiptIndexShowsVehicleScopedShortcutsAndPrefilledCreateLink(): void
+    {
+        $email = 'receipt.ui.list.shortcuts@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Shortcut Car');
+        $vehicle->setPlateNumber('SC-100-AA');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $response = $this->request('GET', '/ui/receipts?vehicle_id='.$vehicleId);
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('Vehicle shortcuts', $content);
+        self::assertStringContainsString('Shortcut Car (SC-100-AA)', $content);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/analytics?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('Vehicle:</strong> Shortcut Car (SC-100-AA)', $content);
+        self::assertStringContainsString('Last 30 days', $content);
+        self::assertStringContainsString('This month', $content);
+    }
+
     public function testReceiptDetailKeepsReturnToContextFromFilteredList(): void
     {
         $email = 'receipt.ui.context@example.com';

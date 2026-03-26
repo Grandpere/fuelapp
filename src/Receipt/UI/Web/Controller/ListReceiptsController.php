@@ -198,6 +198,9 @@ final class ListReceiptsController extends AbstractController
             static fn (array $a, array $b): int => strcmp((string) $a['label'], (string) $b['label']),
         );
 
+        $selectedVehicle = $this->findOption($vehicleOptions, $vehicleId);
+        $selectedStation = $this->findOption($stationOptions, $stationId);
+
         $queryParams = [
             'per_page' => $perPage,
             'vehicle_id' => $vehicleId,
@@ -263,7 +266,180 @@ final class ListReceiptsController extends AbstractController
             'fuelTypeChoices' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
             'enableRealtime' => $enableRealtime,
             'mercureTopic' => ReceiptStreamPublisher::TOPIC,
+            'selectedVehicle' => $selectedVehicle,
+            'selectedStation' => $selectedStation,
+            'activeFilters' => $this->buildActiveFilters($selectedVehicle, $selectedStation, $issuedFrom, $issuedTo, $fuelType, $vatRatePercent),
+            'dateShortcutLinks' => $this->buildDateShortcutLinks(
+                $perPage,
+                $vehicleId,
+                $stationId,
+                $fuelType,
+                $selectedColumnsPreset,
+                $visibleColumns,
+                $quantityMilliLitersMin,
+                $quantityMilliLitersMax,
+                $unitPriceDeciCentsPerLiterMin,
+                $unitPriceDeciCentsPerLiterMax,
+                $vatRatePercent,
+                $sortBy,
+                $sortDirection,
+                $issuedFrom,
+                $issuedTo,
+            ),
+            'newReceiptParams' => null !== $vehicleId ? ['vehicle_id' => $vehicleId] : [],
         ]);
+    }
+
+    /** @param list<array{id: string, label: string}> $options
+     * @return array{id: string, label: string}|null
+     */
+    private function findOption(array $options, ?string $id): ?array
+    {
+        if (null === $id) {
+            return null;
+        }
+
+        foreach ($options as $option) {
+            if ($option['id'] === $id) {
+                return $option;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array{id: string, label: string}|null $selectedVehicle
+     * @param array{id: string, label: string}|null $selectedStation
+     *
+     * @return list<array{label: string, value: string}>
+     */
+    private function buildActiveFilters(
+        ?array $selectedVehicle,
+        ?array $selectedStation,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        ?string $fuelType,
+        ?int $vatRatePercent,
+    ): array {
+        $filters = [];
+
+        if (null !== $selectedVehicle) {
+            $filters[] = ['label' => 'Vehicle', 'value' => $selectedVehicle['label']];
+        }
+
+        if (null !== $selectedStation) {
+            $filters[] = ['label' => 'Station', 'value' => $selectedStation['label']];
+        }
+
+        if ($issuedFrom instanceof DateTimeImmutable || $issuedTo instanceof DateTimeImmutable) {
+            $filters[] = [
+                'label' => 'Issued window',
+                'value' => sprintf('%s -> %s', $issuedFrom?->format('d/m/Y') ?? '...', $issuedTo?->format('d/m/Y') ?? '...'),
+            ];
+        }
+
+        if (null !== $fuelType) {
+            $filters[] = ['label' => 'Fuel', 'value' => strtoupper($fuelType)];
+        }
+
+        if (null !== $vatRatePercent) {
+            $filters[] = ['label' => 'VAT', 'value' => sprintf('%d%%', $vatRatePercent)];
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @param list<string> $visibleColumns
+     *
+     * @return list<array{label: string, params: array<string, mixed>, isActive: bool}>
+     */
+    private function buildDateShortcutLinks(
+        int $perPage,
+        ?string $vehicleId,
+        ?string $stationId,
+        ?string $fuelType,
+        string $selectedColumnsPreset,
+        array $visibleColumns,
+        ?int $quantityMilliLitersMin,
+        ?int $quantityMilliLitersMax,
+        ?int $unitPriceDeciCentsPerLiterMin,
+        ?int $unitPriceDeciCentsPerLiterMax,
+        ?int $vatRatePercent,
+        string $sortBy,
+        string $sortDirection,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+    ): array {
+        return [
+            [
+                'label' => 'Last 30 days',
+                'params' => $this->buildShortcutQueryParams('-30 days', 'today', $perPage, $vehicleId, $stationId, $fuelType, $selectedColumnsPreset, $visibleColumns, $quantityMilliLitersMin, $quantityMilliLitersMax, $unitPriceDeciCentsPerLiterMin, $unitPriceDeciCentsPerLiterMax, $vatRatePercent, $sortBy, $sortDirection),
+                'isActive' => $this->isSameDateShortcut($issuedFrom, $issuedTo, '-30 days', 'today'),
+            ],
+            [
+                'label' => 'Last 90 days',
+                'params' => $this->buildShortcutQueryParams('-90 days', 'today', $perPage, $vehicleId, $stationId, $fuelType, $selectedColumnsPreset, $visibleColumns, $quantityMilliLitersMin, $quantityMilliLitersMax, $unitPriceDeciCentsPerLiterMin, $unitPriceDeciCentsPerLiterMax, $vatRatePercent, $sortBy, $sortDirection),
+                'isActive' => $this->isSameDateShortcut($issuedFrom, $issuedTo, '-90 days', 'today'),
+            ],
+            [
+                'label' => 'This month',
+                'params' => $this->buildShortcutQueryParams('first day of this month', 'last day of this month', $perPage, $vehicleId, $stationId, $fuelType, $selectedColumnsPreset, $visibleColumns, $quantityMilliLitersMin, $quantityMilliLitersMax, $unitPriceDeciCentsPerLiterMin, $unitPriceDeciCentsPerLiterMax, $vatRatePercent, $sortBy, $sortDirection),
+                'isActive' => $this->isSameDateShortcut($issuedFrom, $issuedTo, 'first day of this month', 'last day of this month'),
+            ],
+        ];
+    }
+
+    /**
+     * @param list<string> $visibleColumns
+     *
+     * @return array<string, mixed>
+     */
+    private function buildShortcutQueryParams(
+        string $fromExpression,
+        string $toExpression,
+        int $perPage,
+        ?string $vehicleId,
+        ?string $stationId,
+        ?string $fuelType,
+        string $selectedColumnsPreset,
+        array $visibleColumns,
+        ?int $quantityMilliLitersMin,
+        ?int $quantityMilliLitersMax,
+        ?int $unitPriceDeciCentsPerLiterMin,
+        ?int $unitPriceDeciCentsPerLiterMax,
+        ?int $vatRatePercent,
+        string $sortBy,
+        string $sortDirection,
+    ): array {
+        return [
+            'per_page' => $perPage,
+            'vehicle_id' => $vehicleId,
+            'station_id' => $stationId,
+            'issued_from' => new DateTimeImmutable($fromExpression)->format('Y-m-d'),
+            'issued_to' => new DateTimeImmutable($toExpression)->format('Y-m-d'),
+            'fuel_type' => $fuelType,
+            'columns_preset' => $selectedColumnsPreset,
+            'columns' => $visibleColumns,
+            'quantity_min' => $quantityMilliLitersMin,
+            'quantity_max' => $quantityMilliLitersMax,
+            'unit_price_min' => $unitPriceDeciCentsPerLiterMin,
+            'unit_price_max' => $unitPriceDeciCentsPerLiterMax,
+            'vat_rate' => $vatRatePercent,
+            'sort_by' => $sortBy,
+            'sort_direction' => $sortDirection,
+        ];
+    }
+
+    private function isSameDateShortcut(?DateTimeImmutable $issuedFrom, ?DateTimeImmutable $issuedTo, string $fromExpression, string $toExpression): bool
+    {
+        if (!$issuedFrom instanceof DateTimeImmutable || !$issuedTo instanceof DateTimeImmutable) {
+            return false;
+        }
+
+        return $issuedFrom->format('Y-m-d') === new DateTimeImmutable($fromExpression)->format('Y-m-d')
+            && $issuedTo->format('Y-m-d') === new DateTimeImmutable($toExpression)->format('Y-m-d');
     }
 
     private function nullableString(mixed $value): ?string

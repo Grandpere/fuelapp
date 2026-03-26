@@ -120,6 +120,29 @@
             gap: 0.8rem;
         }
 
+        .shortcut-row {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .shortcut-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.6rem;
+            border-radius: 999px;
+            background: var(--surface-soft);
+            border: 1px solid var(--table-wrap-border);
+            color: var(--text-soft);
+            font-size: 0.82rem;
+        }
+
+        .shortcut-pill strong {
+            color: var(--text-primary);
+        }
+
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -203,7 +226,7 @@
                 <h1 class="page-title">Fuel Receipts</h1>
                 <p class="muted">Track station spend, VAT and consumption in one operational view.</p>
             </div>
-            <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+            <a class="btn btn-primary" href="{{ path('ui_receipt_new', newReceiptParams) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
         </section>
 
         {% for message in app.flashes('success') %}
@@ -309,6 +332,12 @@
                     <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams|merge({ format: 'xlsx' })) }}">Export XLSX</a>
                 </div>
 
+                <div class="shortcut-row">
+                    {% for shortcut in dateShortcutLinks %}
+                        <a class="btn {{ shortcut.isActive ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ path('ui_receipt_index', shortcut.params) }}">{{ shortcut.label }}</a>
+                    {% endfor %}
+                </div>
+
                 <fieldset class="card-subtle columns-wrap">
                     <legend class="muted">Columns (UI + export)</legend>
                     <label class="label receipt-preset-label">
@@ -330,6 +359,16 @@
                 </fieldset>
             </form>
         </section>
+
+        {% if activeFilters is not empty %}
+            <section class="card panel">
+                <div class="shortcut-row">
+                    {% for filter in activeFilters %}
+                        <span class="shortcut-pill"><strong>{{ filter.label }}:</strong> {{ filter.value }}</span>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
 
         <div class="receipt-grid">
             <section class="card panel">
@@ -393,11 +432,24 @@
                     <p class="muted receipt-note">Presets apply to both the table and CSV export.</p>
                 </section>
 
+                {% if selectedVehicle %}
+                    <section class="card panel">
+                        <h2 class="page-title receipt-inline-title">Vehicle shortcuts</h2>
+                        <p class="muted receipt-inline-lead">{{ selectedVehicle.label }}</p>
+                        <div class="actions-row">
+                            <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: selectedVehicle.id}) }}">Open vehicle</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', {vehicle_id: selectedVehicle.id}) }}">Maintenance</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard', {vehicle_id: selectedVehicle.id}) }}">Analytics</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new', {vehicle_id: selectedVehicle.id, return_to: app.request.uri}) }}">Add event</a>
+                        </div>
+                    </section>
+                {% endif %}
+
                 <section class="card panel">
                     <h2 class="page-title receipt-inline-title">New receipt</h2>
                     <p class="muted receipt-inline-lead">Create it inline without leaving this page.</p>
                     <turbo-frame id="receipt_form_frame">
-                        <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Load form</a>
+                        <a class="btn btn-primary" href="{{ path('ui_receipt_new', newReceiptParams) }}" data-turbo-frame="receipt_form_frame">Load form</a>
                     </turbo-frame>
                 </section>
             </aside>

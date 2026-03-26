@@ -505,3 +505,13 @@
 - [completed] Add/update functional coverage for the vehicle cockpit additions.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP21-001 Receipt list productivity pass
+
+## Plan
+- [completed] Reframe Sprint 21 backlog/docs and keep this ticket front-office only.
+- [completed] Make active receipt filters easier to read and give quick date shortcuts for common ranges.
+- [completed] Add vehicle-context shortcuts and prefilled manual receipt creation from the current filter state.
+- [completed] Add/update functional coverage for the new receipt-list shortcuts and summary behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

@@ -13,11 +13,15 @@ declare(strict_types=1);
 
 namespace App\Receipt\UI\Web\Controller;
 
+use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Security\Voter\ReceiptVoter;
+use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Station\Application\Repository\StationRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ShowReceiptController extends AbstractController
@@ -27,6 +31,9 @@ final class ShowReceiptController extends AbstractController
     public function __construct(
         private readonly ReceiptRepository $receiptRepository,
         private readonly StationRepository $stationRepository,
+        private readonly VehicleRepository $vehicleRepository,
+        private readonly MaintenanceEventRepository $maintenanceEventRepository,
+        private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
     ) {
     }
 
@@ -34,6 +41,10 @@ final class ShowReceiptController extends AbstractController
     public function __invoke(string $id): Response
     {
         $this->denyAccessUnlessGranted(ReceiptVoter::VIEW, $id);
+        $ownerId = $this->authenticatedUserIdProvider->getAuthenticatedUserId();
+        if (null === $ownerId) {
+            throw new NotFoundHttpException();
+        }
 
         $receipt = $this->receiptRepository->get($id);
         if (null === $receipt) {
@@ -45,9 +56,32 @@ final class ShowReceiptController extends AbstractController
             $station = $this->stationRepository->get($receipt->stationId()->toString());
         }
 
+        $vehicle = null;
+        $latestMaintenanceEvent = null;
+        $maintenanceOdometerDelta = null;
+        if (null !== $receipt->vehicleId()) {
+            $vehicle = $this->vehicleRepository->get($receipt->vehicleId()->toString());
+
+            $events = array_values(iterator_to_array(
+                $this->maintenanceEventRepository->allForOwnerAndVehicle($ownerId, $receipt->vehicleId()->toString()),
+            ));
+            usort(
+                $events,
+                static fn ($a, $b): int => $b->occurredAt() <=> $a->occurredAt(),
+            );
+            $latestMaintenanceEvent = $events[0] ?? null;
+
+            if (null !== $latestMaintenanceEvent?->odometerKilometers() && null !== $receipt->odometerKilometers()) {
+                $maintenanceOdometerDelta = $receipt->odometerKilometers() - $latestMaintenanceEvent->odometerKilometers();
+            }
+        }
+
         return $this->render('receipt/show.html.twig', [
             'receipt' => $receipt,
             'station' => $station,
+            'vehicle' => $vehicle,
+            'latestMaintenanceEvent' => $latestMaintenanceEvent,
+            'maintenanceOdometerDelta' => $maintenanceOdometerDelta,
         ]);
     }
 }

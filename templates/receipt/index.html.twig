@@ -40,7 +40,7 @@
         .filters-row {
             display: grid;
             gap: 0.75rem;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
         }
 
         .actions-row {
@@ -213,6 +213,15 @@
         <section class="card panel">
             <form method="get" action="{{ path('ui_receipt_index') }}" class="filters">
                 <div class="filters-row">
+                    <label class="label">
+                        Vehicle
+                        <select class="select" name="vehicle_id">
+                            <option value="">All</option>
+                            {% for option in vehicleOptions %}
+                                <option value="{{ option.id }}" {% if filters.vehicleId == option.id %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
                     <label class="label">
                         Station
                         <select class="select" name="station_id">

@@ -1,0 +1,103 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{% if isEdit %}Edit reminder rule{% else %}New reminder rule{% endif %}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .maintenance-form-page {
+            max-width: 880px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .maintenance-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .maintenance-form-card {
+            padding: 1rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell maintenance-form-page">
+        <header class="maintenance-form-header">
+            <div class="page-header">
+                <h1 class="page-title">{% if isEdit %}Edit reminder rule{% else %}Add reminder rule{% endif %}</h1>
+                <p class="muted section-lead">Define when a vehicle should surface a maintenance reminder based on time, mileage, or whichever comes first.</p>
+            </div>
+            <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', formData.vehicleId ? {vehicle_id: formData.vehicleId} : {}) }}" data-turbo-frame="_top">Back</a>
+        </header>
+
+        <section class="card maintenance-form-card">
+            {% if errors is not empty %}
+                <div class="flash flash-error">
+                    <ul class="flash-list">
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" action="" data-turbo-frame="_top" class="form-stack">
+                <input type="hidden" name="_token" value="{{ csrfToken }}">
+
+                <div class="form-grid-2">
+                    <label class="label">
+                        Vehicle
+                        <select class="select" name="vehicleId" required>
+                            <option value="">Select vehicle</option>
+                            {% for optionId, optionLabel in vehicleOptions %}
+                                <option value="{{ optionId }}" {% if formData.vehicleId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="label">
+                        Rule name
+                        <input class="input" type="text" name="name" maxlength="120" value="{{ formData.name }}" placeholder="Oil service" required>
+                    </label>
+                    <label class="label">
+                        Trigger mode
+                        <select class="select" name="triggerMode" required>
+                            {% for triggerMode in triggerModes %}
+                                <option value="{{ triggerMode }}" {% if formData.triggerMode == triggerMode %}selected{% endif %}>{{ triggerMode|replace({'_': ' '})|upper }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="label">
+                        Suggested event type (optional)
+                        <select class="select" name="eventType">
+                            <option value="">Not linked</option>
+                            {% for eventType in eventTypes %}
+                                <option value="{{ eventType }}" {% if formData.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="label">
+                        Interval days
+                        <input class="input" type="number" min="1" step="1" name="intervalDays" value="{{ formData.intervalDays }}" placeholder="180">
+                        <small class="muted">Required for <code>DATE</code> and <code>WHICHEVER FIRST</code>.</small>
+                    </label>
+                    <label class="label">
+                        Interval kilometers
+                        <input class="input" type="number" min="1" step="1" name="intervalKilometers" value="{{ formData.intervalKilometers }}" placeholder="12000">
+                        <small class="muted">Required for <code>ODOMETER</code> and <code>WHICHEVER FIRST</code>.</small>
+                    </label>
+                </div>
+
+                <div class="actions-wrap">
+                    <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create rule{% endif %}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', formData.vehicleId ? {vehicle_id: formData.vehicleId} : {}) }}" data-turbo-frame="_top">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+{% endblock %}

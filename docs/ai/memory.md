@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-26 - Front receipt metadata forms must not use system-wide vehicle lists
+- Symptom: the new receipt metadata edit form exposed vehicles owned by other users in its dropdown.
+- Root cause: `VehicleRepository::all()` is system-wide and the controller reused it without explicit owner filtering.
+- Fix: filter vehicle options with the authenticated owner id before rendering the front-office select.
+- Prevention: any front-office vehicle selector built from `VehicleRepository::all()` must apply explicit owner scoping in the controller.
+
 ## 2026-03-25 - Import review UI must mirror finalize handler line capabilities
 - Symptom: import review pages showed only one fuel line even when OCR payloads contained several, making multi-line receipts look incomplete in front/admin.
 - Root cause: web controllers/templates read only `firstLine` while `FinalizeImportJobHandler` already accepted multiple `CreateReceiptLineCommand`s.

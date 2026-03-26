@@ -13,8 +13,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Vehicle;
 
+use App\Maintenance\Domain\Enum\MaintenanceEventType;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenancePlannedCostEntity;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
+use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Application\Repository\VehicleRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -136,6 +143,99 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_SEE_OTHER, $deleteResponse->getStatusCode());
 
         self::assertNull($this->vehicleRepository->get($vehicleId));
+    }
+
+    public function testVehicleDetailActsAsWorkflowHub(): void
+    {
+        $email = 'vehicle.ui.hub@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new \App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Travel Car');
+        $vehicle->setPlateNumber('TR-900-AA');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Vehicle Hub Station');
+        $station->setStreetName('1 Hub Street');
+        $station->setPostalCode('75010');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setVehicle($vehicle);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-11 08:45:00'));
+        $receipt->setOdometerKilometers(125400);
+        $receipt->setTotalCents(2200);
+        $receipt->setVatAmountCents(366);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(12000);
+        $line->setUnitPriceDeciCentsPerLiter(1833);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+        $this->em->persist($receipt);
+
+        $event = new MaintenanceEventEntity();
+        $event->setId(Uuid::v7());
+        $event->setOwner($owner);
+        $event->setVehicle($vehicle);
+        $event->setEventType(MaintenanceEventType::SERVICE);
+        $event->setOccurredAt(new DateTimeImmutable('2026-03-09 09:30:00'));
+        $event->setDescription('Annual service');
+        $event->setOdometerKilometers(124900);
+        $event->setTotalCostCents(18990);
+        $event->setCurrencyCode('EUR');
+        $event->setCreatedAt(new DateTimeImmutable('2026-03-09 10:00:00'));
+        $event->setUpdatedAt(new DateTimeImmutable('2026-03-09 10:00:00'));
+        $this->em->persist($event);
+
+        $plan = new MaintenancePlannedCostEntity();
+        $plan->setId(Uuid::v7());
+        $plan->setOwner($owner);
+        $plan->setVehicle($vehicle);
+        $plan->setLabel('Tyre replacement');
+        $plan->setEventType(MaintenanceEventType::REPAIR);
+        $plan->setPlannedFor(new DateTimeImmutable('+10 days'));
+        $plan->setPlannedCostCents(32000);
+        $plan->setCurrencyCode('EUR');
+        $plan->setNotes('Before road trip');
+        $plan->setCreatedAt(new DateTimeImmutable('2026-03-09 10:00:00'));
+        $plan->setUpdatedAt(new DateTimeImmutable('2026-03-09 10:00:00'));
+        $this->em->persist($plan);
+
+        $this->em->flush();
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/vehicles/'.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('Travel Car', $content);
+        self::assertStringContainsString('Plate TR-900-AA', $content);
+        self::assertStringContainsString('View receipts', $content);
+        self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/receipts?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance/plans/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('Vehicle Hub Station', $content);
+        self::assertStringContainsString('Annual service', $content);
+        self::assertStringContainsString('Tyre replacement', $content);
+        self::assertStringContainsString('125400 km', $content);
     }
 
     /**

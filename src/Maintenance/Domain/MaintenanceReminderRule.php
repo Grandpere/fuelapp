@@ -160,6 +160,27 @@ final class MaintenanceReminderRule
         return $this->updatedAt;
     }
 
+    public function update(
+        string $vehicleId,
+        string $name,
+        ReminderRuleTriggerMode $triggerMode,
+        ?MaintenanceEventType $eventType,
+        ?int $intervalDays,
+        ?int $intervalKilometers,
+        ?DateTimeImmutable $now = null,
+    ): void {
+        $now ??= new DateTimeImmutable();
+
+        $this->vehicleId = self::normalizeUuid($vehicleId, 'vehicleId');
+        $this->name = self::normalizeName($name);
+        $this->triggerMode = $triggerMode;
+        $this->eventType = $eventType;
+        $this->intervalDays = self::normalizeNullablePositiveInt($intervalDays, 'intervalDays');
+        $this->intervalKilometers = self::normalizeNullablePositiveInt($intervalKilometers, 'intervalKilometers');
+        self::assertTriggerConfiguration($this->triggerMode, $this->intervalDays, $this->intervalKilometers);
+        $this->updatedAt = $now;
+    }
+
     private static function normalizeUuid(string $value, string $field): string
     {
         $normalized = trim($value);

@@ -218,29 +218,54 @@
 - [completed] Expose retry, fallback, duplicate-target, fingerprint, and timing metadata directly in the admin import detail flow.
 - [completed] Add/update functional coverage for fallback and failed import observability views.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 
-# TODO - SP17-003 Front runtime weight and cache polish
-
-## Plan
-- [completed] Align remaining high-visibility date filters on the shared datepicker behavior instead of mixing native browser date inputs and flatpickr.
-- [completed] Fix the CSP/importmap compatibility regression that blocked the entire frontend runtime (`data:` script entrypoints).
-- [completed] Add/update security coverage for the CSP contract after the runtime fix.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [completed] Ask user to run `make phpunit-functional` and share failures if any.
-- [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [completed] Ask user to run `make phpunit-functional` and share failures if any.
-
-# TODO - SP17-001 Analytics query profiling and hot-path optimization
+# TODO - SP19-001 Front maintenance reminder rules CRUD
 
 ## Plan
-- [completed] Identify redundant dashboard analytics reads on the same KPI table hot path.
-- [completed] Collapse monthly fuel cost/consumption/price and average-price dashboard reads into one grouped snapshot query.
-- [completed] Add unit coverage proving the aggregated snapshot rebuilds all expected metrics.
+- [completed] Add front-office create/edit/delete controllers for maintenance reminder rules with owner-scoped validation.
+- [completed] Surface reminder rules on the maintenance dashboard and wire the new form/delete actions.
+- [completed] Add/update functional coverage for rule create/edit/delete and dashboard rendering.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP19-003 Receipt metadata edit flow
+
+## Plan
+- [completed] Add a dedicated front-office receipt metadata edit controller/handler.
+- [completed] Expose the new edit flow from receipt detail and keep line editing separate.
+- [completed] Add/update functional coverage for date, vehicle, station, and odometer edits.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP18-001 Vehicle-centered workflow polish
+
+## Plan
+- [completed] Add a front-office vehicle detail page that acts as a daily workflow hub.
+- [completed] Link vehicle detail to filtered receipts and maintenance flows instead of forcing users back through generic lists.
+- [completed] Add vehicle preselection on maintenance create forms and support vehicle filtering on the receipt list.
+- [completed] Add/update functional coverage for the new vehicle hub, maintenance preselection, and receipt vehicle filter.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
-- [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
+
+# TODO - SP18-002 Receipt detail usefulness pass
+
+## Plan
+- [completed] Enrich the receipt detail page with linked vehicle context instead of showing only raw receipt fields.
+- [completed] Add direct next actions from a receipt toward vehicle, maintenance, analytics, and maintenance-event creation.
+- [completed] Allow manual receipt creation to link a vehicle, including preselection from the vehicle page.
+- [completed] Add/update functional coverage for the receipt detail context and vehicle-linked creation flow.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP18-003 Maintenance reminder actionability
+
+## Plan
+- [completed] Expose clearer trigger context on reminder cards instead of leaving them as passive alerts.
+- [completed] Add direct reminder actions toward vehicle view, filtered maintenance timeline, and event logging.
+- [completed] Support event-type prefill on maintenance event creation so reminder actions land on a ready-to-use form.
+- [completed] Add/update functional coverage for reminder action links and event-type prefill.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 

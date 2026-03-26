@@ -128,6 +128,25 @@
             gap: 0.8rem;
         }
 
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .rule-grid {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .rule-item {
+            padding: 0.78rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
         .pill-reminder-date {
             background: var(--pill-date-bg);
             color: var(--pill-date-text);
@@ -136,6 +155,11 @@
         .pill-reminder-odometer {
             background: var(--pill-odometer-bg);
             color: var(--pill-odometer-text);
+        }
+
+        .pill-reminder-due {
+            background: color-mix(in srgb, var(--accent-strong) 18%, transparent);
+            color: var(--accent-strong);
         }
 
         @media (max-width: 1100px) {
@@ -245,7 +269,10 @@
 
             <article class="planner-section">
                 <section class="card panel">
-                    <h2>Planner (upcoming)</h2>
+                    <div class="panel-header">
+                        <h2>Planner (upcoming)</h2>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add plan</a>
+                    </div>
                     {% if upcomingPlans is empty %}
                         <div class="empty-state">
                             <p>No upcoming planned cost.</p>
@@ -277,13 +304,72 @@
                 </section>
 
                 <section class="card panel">
-                    <h2>Triggered reminders</h2>
+                    <div class="panel-header">
+                        <h2>Reminder rules</h2>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add rule</a>
+                    </div>
+                    {% if reminderRules is empty %}
+                        <div class="empty-state">
+                            <p>No reminder rule yet. Add one to start generating due reminders from time or mileage.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add first rule</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="rule-grid">
+                            {% for rule in reminderRules %}
+                                <div class="card-subtle rule-item">
+                                    <div class="item-title">
+                                        <strong>{{ rule.name }}</strong>
+                                        <span class="muted">{{ vehicleOptions[rule.vehicleId] ?? rule.vehicleId }}</span>
+                                    </div>
+                                    {% set insight = ruleInsights[rule.id.toString] ?? null %}
+                                    <div class="item-meta">
+                                        <span>Trigger: {{ rule.triggerMode.value|replace({'_': ' '})|upper }}</span>
+                                        {% if rule.intervalDays is not null %}<span>Every {{ rule.intervalDays }} day{% if rule.intervalDays > 1 %}s{% endif %}</span>{% endif %}
+                                        {% if rule.intervalKilometers is not null %}<span>Every {{ rule.intervalKilometers }} km</span>{% endif %}
+                                        {% if rule.eventType is not null %}<span>Suggested event: {{ rule.eventType.value|upper }}</span>{% endif %}
+                                        {% if insight and insight.isDue %}<span class="pill pill-reminder-due">Due now</span>{% endif %}
+                                    </div>
+                                    {% if insight and insight.message %}
+                                        <div class="item-sub">{{ insight.message }}</div>
+                                    {% endif %}
+                                    {% if insight and insight.lastEventSummary %}
+                                        <div class="item-sub">{{ insight.lastEventSummary }}</div>
+                                    {% endif %}
+                                    <div class="actions-wrap">
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_edit', {id: rule.id.toString}) }}">Edit</a>
+                                        <form method="post" action="{{ path('ui_maintenance_rule_delete', {id: rule.id.toString}) }}" data-turbo-confirm="Delete reminder rule '{{ rule.name }}'?" style="display:inline-flex;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('maintenance_rule_delete_' ~ rule.id.toString) }}">
+                                            <button class="btn btn-secondary btn-compact" type="submit">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </section>
+
+                <section class="card panel">
+                    <div class="panel-header">
+                        <h2>Triggered reminders</h2>
+                        {% if reminderRules is not empty %}
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add another rule</a>
+                        {% endif %}
+                    </div>
                     {% if reminders is empty %}
                         <div class="empty-state">
-                            <p>No triggered reminder yet. They will appear here once your planned rules become due.</p>
+                            {% if reminderRules is empty %}
+                                <p>No triggered reminder yet because no reminder rule is configured for this scope.</p>
+                            {% elseif dueRuleCount > 0 %}
+                                <p>No triggered reminder is listed yet, but at least one rule is already due. They will appear here as soon as reminders are generated.</p>
+                            {% else %}
+                                <p>No triggered reminder yet. Your rules are being tracked, but none is due right now.</p>
+                            {% endif %}
                             <div class="actions-wrap">
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new') }}">Add a plan</a>
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new') }}">Add an event</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add a rule</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add a plan</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add an event</a>
                             </div>
                         </div>
                     {% else %}
@@ -300,6 +386,30 @@
                                         {% if reminder.dueAtOdometerKilometers is not null %}<span>Due odometer: {{ reminder.dueAtOdometerKilometers }} km</span>{% endif %}
                                         {% if reminder.dueByDate %}<span class="pill pill-reminder-date">Date due</span>{% endif %}
                                         {% if reminder.dueByOdometer %}<span class="pill pill-reminder-odometer">Odometer due</span>{% endif %}
+                                    </div>
+                                    {% set ruleDetail = ruleDetails[reminder.ruleId] ?? null %}
+                                    {% if ruleDetail %}
+                                        <div class="item-sub">
+                                            Trigger: {{ ruleDetail.triggerMode|replace({'_': ' '})|upper }}
+                                            {% if ruleDetail.intervalDays %}
+                                                · every {{ ruleDetail.intervalDays }} day{% if ruleDetail.intervalDays > 1 %}s{% endif %}
+                                            {% endif %}
+                                            {% if ruleDetail.intervalKilometers %}
+                                                · every {{ ruleDetail.intervalKilometers }} km
+                                            {% endif %}
+                                            {% if ruleDetail.eventType %}
+                                                · suggested event {{ ruleDetail.eventType|upper }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    {% set logEventParams = {vehicle_id: reminder.vehicleId} %}
+                                    {% if ruleDetail and ruleDetail.eventType %}
+                                        {% set logEventParams = logEventParams|merge({event_type: ruleDetail.eventType}) %}
+                                    {% endif %}
+                                    <div class="actions-wrap">
+                                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', logEventParams) }}">Log event now</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: reminder.vehicleId}) }}">Open vehicle</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: reminder.vehicleId}) }}">Vehicle timeline</a>
                                     </div>
                                 </div>
                             {% endfor %}

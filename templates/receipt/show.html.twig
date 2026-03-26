@@ -28,7 +28,7 @@
 
         .show-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 1rem;
         }
 
@@ -57,6 +57,18 @@
             flex-wrap: wrap;
         }
 
+        .show-action-list {
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1100px) {
+            .show-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 900px) {
             .show-grid {
                 grid-template-columns: 1fr;
@@ -81,6 +93,7 @@
                 <p class="muted section-lead">Traceable fuel purchase snapshot.</p>
             </div>
             <div class="show-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Edit details</a>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Edit lines</a>
                 <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">
@@ -97,10 +110,51 @@
                 <div class="show-kv">
                     <div><strong>ID:</strong> {{ receipt.id.toString() }}</div>
                     <div><strong>Date:</strong> {{ receipt.issuedAt|date('d/m/Y H:i') }}</div>
+                    <div><strong>Vehicle:</strong> {{ vehicle ? vehicle.name ~ ' (' ~ vehicle.plateNumber ~ ')' : 'n/a' }}</div>
                     <div><strong>Odometer:</strong> {{ receipt.odometerKilometers is not null ? receipt.odometerKilometers ~ ' km' : 'n/a' }}</div>
                     <div><strong>Total:</strong> {{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</div>
                     <div><strong>VAT:</strong> {{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</div>
                 </div>
+            </article>
+
+            <article class="card show-card">
+                <div class="show-card-head">
+                    <h2 class="section-title">Vehicle context</h2>
+                    {% if vehicle %}
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: vehicle.id.toString()}) }}">Open vehicle</a>
+                    {% endif %}
+                </div>
+                {% if vehicle %}
+                    <div class="show-kv">
+                        <div><strong>{{ vehicle.name }}</strong></div>
+                        <div>Plate {{ vehicle.plateNumber }}</div>
+                        {% if latestMaintenanceEvent %}
+                            <div><strong>Last maintenance:</strong> {{ latestMaintenanceEvent.eventType.value|upper }} on {{ latestMaintenanceEvent.occurredAt|date('d/m/Y H:i') }}</div>
+                            {% if latestMaintenanceEvent.description %}
+                                <div><strong>Maintenance note:</strong> {{ latestMaintenanceEvent.description }}</div>
+                            {% endif %}
+                            {% if latestMaintenanceEvent.totalCostCents is not null %}
+                                <div><strong>Maintenance cost:</strong> {{ (latestMaintenanceEvent.totalCostCents / 100)|number_format(2, ',', ' ') }} {{ latestMaintenanceEvent.currencyCode }}</div>
+                            {% endif %}
+                            {% if latestMaintenanceEvent.odometerKilometers is not null %}
+                                <div><strong>Maintenance odometer:</strong> {{ latestMaintenanceEvent.odometerKilometers }} km</div>
+                            {% endif %}
+                        {% else %}
+                            <div class="muted">No maintenance event tracked yet for this vehicle.</div>
+                        {% endif %}
+                        {% if maintenanceOdometerDelta is not null %}
+                            <div><strong>Distance since last maintenance:</strong> {{ maintenanceOdometerDelta }} km</div>
+                        {% endif %}
+                    </div>
+                    <div class="show-action-list">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">Vehicle receipts</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Maintenance</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: vehicle.id.toString()}) }}">Analytics</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString()}) }}">Add maintenance event</a>
+                    </div>
+                {% else %}
+                    <p class="muted section-lead">No vehicle linked to this receipt yet.</p>
+                {% endif %}
             </article>
 
             <article class="card show-card">

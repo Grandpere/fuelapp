@@ -17,6 +17,15 @@
             <input class="input" type="text" name="issuedAt" value="{{ formData.issuedAt }}" data-datepicker="datetime" autocomplete="off" required>
         </label>
         <label class="label">
+            Vehicle (optional)
+            <select class="select" name="vehicleId">
+                <option value="">No linked vehicle</option>
+                {% for optionId, optionLabel in vehicleOptions %}
+                    <option value="{{ optionId }}" {% if formData.vehicleId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="label">
             Odometer (km, optional)
             <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
         </label>

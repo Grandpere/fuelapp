@@ -20,14 +20,18 @@ use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\UI\Api\Resource\Input\ReceiptInput;
 use App\Receipt\UI\Api\Resource\Input\ReceiptLineInput;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
+use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Station\Application\Repository\StationRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use UnexpectedValueException;
 
@@ -37,6 +41,8 @@ final class CreateReceiptController extends AbstractController
         private readonly CreateReceiptWithStationHandler $createReceiptWithStationHandler,
         private readonly StationRepository $stationRepository,
         private readonly ReceiptStreamPublisher $streamPublisher,
+        private readonly VehicleRepository $vehicleRepository,
+        private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
         private readonly ValidatorInterface $validator,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
     ) {
@@ -45,18 +51,23 @@ final class CreateReceiptController extends AbstractController
     #[Route('/ui/receipts/new', name: 'ui_receipt_new', methods: ['GET', 'POST'])]
     public function __invoke(Request $request): Response
     {
+        $ownerId = $this->authenticatedUserIdProvider->getAuthenticatedUserId();
+        if (null === $ownerId) {
+            throw new NotFoundHttpException();
+        }
+
         $isTurboFrameRequest = $request->headers->has('Turbo-Frame');
-        $formData = $this->defaultFormData();
+        $formData = $this->defaultFormData($request, $ownerId);
         $errors = [];
 
         if ($request->isMethod('POST')) {
-            $formData = $this->extractFormData($request);
+            $formData = $this->extractFormData($request, $ownerId);
             if (!$this->isCsrfTokenValid('receipt_new', $formData['_token'])) {
                 $errors[] = 'Jeton CSRF invalide.';
             } else {
-                $errors = $this->validateFormData($formData);
+                $errors = $this->validateFormData($formData, $ownerId);
                 if ([] === $errors) {
-                    $this->persistReceiptFromForm($formData);
+                    $this->persistReceiptFromForm($formData, $ownerId);
                     $this->addFlash('success', 'Receipt created.');
 
                     return new RedirectResponse($this->generateUrl('ui_receipt_index'), Response::HTTP_SEE_OTHER);
@@ -68,6 +79,7 @@ final class CreateReceiptController extends AbstractController
             'formData' => $formData,
             'errors' => $errors,
             'fuelTypes' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
+            'vehicleOptions' => $this->vehicleOptions($ownerId),
             'csrfToken' => $this->csrfTokenManager->getToken('receipt_new')->getValue(),
         ]);
 
@@ -79,10 +91,11 @@ final class CreateReceiptController extends AbstractController
     }
 
     /** @return array<string, string> */
-    private function defaultFormData(): array
+    private function defaultFormData(Request $request, string $ownerId): array
     {
         return [
             'issuedAt' => new DateTimeImmutable()->format('Y-m-d\TH:i'),
+            'vehicleId' => $this->readPrefilledVehicleId($request, $ownerId) ?? '',
             'fuelType' => FuelType::DIESEL->value,
             'quantityLiters' => '',
             'unitPriceEurosPerLiter' => '',
@@ -99,9 +112,9 @@ final class CreateReceiptController extends AbstractController
     }
 
     /** @return array<string, string> */
-    private function extractFormData(Request $request): array
+    private function extractFormData(Request $request, string $ownerId): array
     {
-        $data = $this->defaultFormData();
+        $data = $this->defaultFormData($request, $ownerId);
 
         foreach (array_keys($data) as $key) {
             $value = $request->request->get($key, '');
@@ -114,12 +127,13 @@ final class CreateReceiptController extends AbstractController
     /** @param array<string, string> $formData
      * @return list<string>
      */
-    private function validateFormData(array $formData): array
+    private function validateFormData(array $formData, string $ownerId): array
     {
         $issuedAt = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $formData['issuedAt']) ?: null;
         $quantityMilliLiters = $this->parseScaledDecimalToInt($formData['quantityLiters'], 1000, 3);
         $unitPriceDeciCentsPerLiter = $this->parseScaledDecimalToInt($formData['unitPriceEurosPerLiter'], 1000, 3);
         $vatRatePercent = $this->toNullableInt($formData['vatRatePercent']);
+        $vehicleId = $this->nullIfEmpty($formData['vehicleId']);
 
         $lineInput = new ReceiptLineInput(
             $this->nullIfEmpty($formData['fuelType']),
@@ -137,7 +151,7 @@ final class CreateReceiptController extends AbstractController
             $this->nullIfEmpty($formData['stationCity']),
             $this->toNullableInt($formData['latitudeMicroDegrees']),
             $this->toNullableInt($formData['longitudeMicroDegrees']),
-            null,
+            $vehicleId,
             $this->toNullableInt($formData['odometerKilometers']),
         );
 
@@ -154,6 +168,9 @@ final class CreateReceiptController extends AbstractController
         if (null === $vatRatePercent) {
             $errors[] = 'VAT must be an integer percentage.';
         }
+        if (null !== $vehicleId && !$this->vehicleRepository->belongsToOwner($vehicleId, $ownerId)) {
+            $errors[] = 'Vehicle not found.';
+        }
 
         foreach ($this->validator->validate($receiptInput) as $violation) {
             $errors[] = (string) $violation->getMessage();
@@ -163,7 +180,7 @@ final class CreateReceiptController extends AbstractController
     }
 
     /** @param array<string, string> $formData */
-    private function persistReceiptFromForm(array $formData): void
+    private function persistReceiptFromForm(array $formData, string $ownerId): void
     {
         $quantityMilliLiters = $this->parseScaledDecimalToRequiredInt($formData['quantityLiters'], 1000, 3, 'quantityLiters');
         $unitPriceDeciCentsPerLiter = $this->parseScaledDecimalToRequiredInt($formData['unitPriceEurosPerLiter'], 1000, 3, 'unitPriceEurosPerLiter');
@@ -184,6 +201,8 @@ final class CreateReceiptController extends AbstractController
             $formData['stationCity'],
             $this->toNullableInt($formData['latitudeMicroDegrees']),
             $this->toNullableInt($formData['longitudeMicroDegrees']),
+            $this->nullIfEmpty($formData['vehicleId']),
+            $ownerId,
             odometerKilometers: $this->toNullableInt($formData['odometerKilometers']),
         );
 
@@ -260,5 +279,35 @@ final class CreateReceiptController extends AbstractController
         $stringValue = trim($value);
 
         return '' === $stringValue ? null : $stringValue;
+    }
+
+    /** @return array<string, string> */
+    private function vehicleOptions(string $ownerId): array
+    {
+        $options = [];
+        foreach ($this->vehicleRepository->all() as $vehicle) {
+            if ($vehicle->ownerId() !== $ownerId) {
+                continue;
+            }
+
+            $options[$vehicle->id()->toString()] = sprintf('%s (%s)', $vehicle->name(), $vehicle->plateNumber());
+        }
+
+        return $options;
+    }
+
+    private function readPrefilledVehicleId(Request $request, string $ownerId): ?string
+    {
+        $raw = $request->query->get('vehicle_id');
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $vehicleId = trim((string) $raw);
+        if ('' === $vehicleId || !Uuid::isValid($vehicleId)) {
+            return null;
+        }
+
+        return $this->vehicleRepository->belongsToOwner($vehicleId, $ownerId) ? $vehicleId : null;
     }
 }

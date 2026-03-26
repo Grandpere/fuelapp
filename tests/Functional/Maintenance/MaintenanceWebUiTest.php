@@ -16,6 +16,9 @@ namespace App\Tests\Functional\Maintenance;
 use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Application\Repository\MaintenancePlannedCostRepository;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
+use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderEntity;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderRuleEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
@@ -239,6 +242,246 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('Front + rear brake replacement', (string) $dashboardResponse->getContent());
     }
 
+    public function testCreateFormsCanPreselectVehicleFromQueryString(): void
+    {
+        $email = 'maintenance.ui.prefill@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Preset Car');
+        $vehicle->setPlateNumber('UI-300-CC');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-03 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-03 10:00:00'));
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $eventPage = $this->request('GET', '/ui/maintenance/events/new?vehicle_id='.$vehicleId.'&event_type='.MaintenanceEventType::INSPECTION->value, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $eventPage->getStatusCode());
+        self::assertStringContainsString('option value="'.$vehicleId.'" selected', (string) $eventPage->getContent());
+        self::assertStringContainsString('option value="'.MaintenanceEventType::INSPECTION->value.'" selected', (string) $eventPage->getContent());
+
+        $planPage = $this->request('GET', '/ui/maintenance/plans/new?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $planPage->getStatusCode());
+        self::assertStringContainsString('option value="'.$vehicleId.'" selected', (string) $planPage->getContent());
+    }
+
+    public function testTriggeredRemindersExposeDirectActionLinks(): void
+    {
+        $email = 'maintenance.ui.reminder.actions@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Reminder Car');
+        $vehicle->setPlateNumber('UI-400-DD');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-04 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-04 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('Oil service');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::WHICHEVER_FIRST);
+        $rule->setEventType(MaintenanceEventType::SERVICE);
+        $rule->setIntervalDays(180);
+        $rule->setIntervalKilometers(12000);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-01-01 08:00:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-01-01 08:00:00'));
+        $this->em->persist($rule);
+
+        $reminder = new MaintenanceReminderEntity();
+        $reminder->setId(Uuid::v7());
+        $reminder->setOwner($owner);
+        $reminder->setVehicle($vehicle);
+        $reminder->setRule($rule);
+        $reminder->setDedupKey('oil-service-1');
+        $reminder->setDueAtDate(new DateTimeImmutable('2026-03-20 00:00:00'));
+        $reminder->setDueAtOdometerKilometers(132000);
+        $reminder->setDueByDate(true);
+        $reminder->setDueByOdometer(true);
+        $reminder->setCreatedAt(new DateTimeImmutable('2026-03-21 09:00:00'));
+        $this->em->persist($reminder);
+
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $dashboard = $this->request('GET', '/ui/maintenance', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
+        $content = (string) $dashboard->getContent();
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        self::assertStringContainsString('Oil service', $content);
+        self::assertStringContainsString('Trigger: WHICHEVER FIRST', $content);
+        self::assertStringContainsString('every 180 days', $content);
+        self::assertStringContainsString('every 12000 km', $content);
+        self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId.'&amp;event_type=service', $content);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
+    }
+
+    public function testUserCanCreateEditAndDeleteReminderRuleFromFront(): void
+    {
+        $email = 'maintenance.ui.rules@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Rules Car');
+        $vehicle->setPlateNumber('UI-500-EE');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-05 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-05 10:00:00'));
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $createPage = $this->request('GET', '/ui/maintenance/rules/new?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $createPage->getStatusCode());
+        $createContent = (string) $createPage->getContent();
+        self::assertStringContainsString('option value="'.$vehicleId.'" selected', $createContent);
+        $createCsrf = $this->extractFormCsrf($createContent);
+
+        $createResponse = $this->request(
+            'POST',
+            '/ui/maintenance/rules/new',
+            [
+                'vehicleId' => $vehicleId,
+                'name' => 'Oil service',
+                'triggerMode' => ReminderRuleTriggerMode::WHICHEVER_FIRST->value,
+                'eventType' => MaintenanceEventType::SERVICE->value,
+                'intervalDays' => '180',
+                'intervalKilometers' => '12000',
+                '_token' => $createCsrf,
+            ],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_SEE_OTHER, $createResponse->getStatusCode());
+        self::assertSame('/ui/maintenance?vehicle_id='.$vehicleId, $createResponse->headers->get('Location'));
+
+        /** @var MaintenanceReminderRuleEntity|null $rule */
+        $rule = $this->em->getRepository(MaintenanceReminderRuleEntity::class)->findOneBy(['name' => 'Oil service']);
+        self::assertInstanceOf(MaintenanceReminderRuleEntity::class, $rule);
+        self::assertSame(ReminderRuleTriggerMode::WHICHEVER_FIRST, $rule->getTriggerMode());
+
+        $dashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
+        $dashboardContent = (string) $dashboard->getContent();
+        self::assertStringContainsString('Reminder rules', $dashboardContent);
+        self::assertStringContainsString('Oil service', $dashboardContent);
+        self::assertStringContainsString('Every 180 days', $dashboardContent);
+        self::assertStringContainsString('Every 12000 km', $dashboardContent);
+
+        $ruleId = $rule->getId()->toRfc4122();
+        $editPage = $this->request('GET', '/ui/maintenance/rules/'.$ruleId.'/edit', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
+        $editCsrf = $this->extractFormCsrf((string) $editPage->getContent());
+
+        $editResponse = $this->request(
+            'POST',
+            '/ui/maintenance/rules/'.$ruleId.'/edit',
+            [
+                'vehicleId' => $vehicleId,
+                'name' => 'Annual inspection',
+                'triggerMode' => ReminderRuleTriggerMode::DATE->value,
+                'eventType' => MaintenanceEventType::INSPECTION->value,
+                'intervalDays' => '365',
+                'intervalKilometers' => '',
+                '_token' => $editCsrf,
+            ],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_SEE_OTHER, $editResponse->getStatusCode());
+
+        $this->em->clear();
+
+        /** @var MaintenanceReminderRuleEntity|null $updatedRule */
+        $updatedRule = $this->em->getRepository(MaintenanceReminderRuleEntity::class)->find($ruleId);
+        self::assertInstanceOf(MaintenanceReminderRuleEntity::class, $updatedRule);
+        self::assertSame('Annual inspection', $updatedRule->getName());
+        self::assertSame(ReminderRuleTriggerMode::DATE, $updatedRule->getTriggerMode());
+        self::assertSame(365, $updatedRule->getIntervalDays());
+        self::assertNull($updatedRule->getIntervalKilometers());
+
+        $updatedDashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $updatedDashboard->getStatusCode());
+        $updatedDashboardContent = (string) $updatedDashboard->getContent();
+        self::assertStringContainsString('Annual inspection', $updatedDashboardContent);
+        self::assertStringNotContainsString('Oil service', $updatedDashboardContent);
+
+        $deleteToken = $this->extractDeleteToken($updatedDashboardContent, '/ui/maintenance/rules/'.$ruleId.'/delete');
+        $deleteResponse = $this->request(
+            'POST',
+            '/ui/maintenance/rules/'.$ruleId.'/delete',
+            ['_token' => $deleteToken],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_SEE_OTHER, $deleteResponse->getStatusCode());
+
+        $this->em->clear();
+        self::assertNull($this->em->getRepository(MaintenanceReminderRuleEntity::class)->find($ruleId));
+
+        $finalDashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $finalDashboard->getStatusCode());
+        self::assertStringContainsString('No reminder rule yet.', (string) $finalDashboard->getContent());
+    }
+
+    public function testReminderDashboardExplainsWhyNothingIsTriggeredYet(): void
+    {
+        $email = 'maintenance.ui.reminder.explain@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Explain Car');
+        $vehicle->setPlateNumber('UI-600-FF');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-06 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-06 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('Brake inspection');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::ODOMETER);
+        $rule->setEventType(MaintenanceEventType::INSPECTION);
+        $rule->setIntervalKilometers(10000);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-03-06 10:30:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-03-06 10:30:00'));
+        $this->em->persist($rule);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $dashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicle->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
+        $content = (string) $dashboard->getContent();
+        self::assertStringContainsString('Brake inspection', $content);
+        self::assertStringContainsString('Waiting for odometer data from a receipt or maintenance event to evaluate this rule.', $content);
+        self::assertStringContainsString('No triggered reminder yet. Your rules are being tracked, but none is due right now.', $content);
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server
@@ -303,6 +546,18 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertNotSame('', $csrfToken);
 
         return $csrfToken;
+    }
+
+    private function extractDeleteToken(string $content, string $actionPath): string
+    {
+        if (preg_match('/action="'.preg_quote($actionPath, '/').'"(?:(?!<\/form>).)*name="_token" value="([^"]+)"/s', $content, $matches)) {
+            $csrfToken = $matches[1];
+            self::assertNotSame('', $csrfToken);
+
+            return $csrfToken;
+        }
+
+        self::fail(sprintf('Delete token for "%s" not found.', $actionPath));
     }
 
     /** @return array<string, string> */

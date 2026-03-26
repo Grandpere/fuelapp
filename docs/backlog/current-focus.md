@@ -4,18 +4,17 @@
 - Sprint 20 - Import review throughput and workflow continuity
 
 ## Current goal
-- Finish the remaining cross-links around receipts, maintenance, and vehicle context before moving to the vehicle dashboard usefulness pass.
+- Sprint 20 is delivered; next sprint to be re-prioritized.
 
 ## In progress
-- SP20-003 - Vehicle dashboard usefulness pass
+- Next sprint to be re-prioritized
 
 ## Next tickets (ordered)
-1. SP20-003 - Vehicle dashboard usefulness pass
-2. Microsoft OIDC remains deferred
+1. Microsoft OIDC remains deferred
 
 ## Notes
 - Sprint 20 has started with a front-office-only pass on import review throughput; admin shortcuts are deferred unless support needs increase.
-- SP20-001 and SP20-002 are delivered across import review throughput and maintenance/receipt cross-navigation continuity.
+- SP20 is fully delivered across import review throughput, maintenance/receipt cross-navigation continuity, and a more useful vehicle cockpit.
 - Sprint 18 is fully delivered across vehicle hub, receipt detail usefulness, and reminder actionability.
 - Sprint 19 is fully delivered across reminder rule ownership, explainability, and receipt metadata completeness.
 - Sprint 13 UX work is delivered and merged.

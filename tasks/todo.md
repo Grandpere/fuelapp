@@ -496,3 +496,12 @@
 - [completed] Add/update functional coverage for the new cross-links and maintenance return context.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP20-003 Vehicle dashboard usefulness pass
+
+## Plan
+- [completed] Add a few higher-signal cockpit summaries to the front vehicle detail page without turning it into a full analytics screen.
+- [completed] Surface direct actions around the latest receipt, next maintenance plan, and current attention point.
+- [completed] Add/update functional coverage for the vehicle cockpit additions.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

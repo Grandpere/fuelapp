@@ -515,3 +515,13 @@
 - [completed] Add/update functional coverage for the new receipt-list shortcuts and summary behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP21-002 Station workflow usefulness pass
+
+## Plan
+- [completed] Add a front station detail page that turns a station into a useful navigation hub.
+- [completed] Connect receipt and receipt-list station contexts to the new station shortcuts.
+- [completed] Allow manual receipt creation to prefill station details from station context.
+- [completed] Add/update front functional coverage for station navigation and prefilled create flow.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

@@ -1,0 +1,214 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ station.name }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .station-show-page {
+            max-width: 1120px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .station-show-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .station-show-header p {
+            margin: 0.35rem 0 0;
+        }
+
+        .station-show-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .station-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .station-kpi-card,
+        .station-panel,
+        .station-item {
+            padding: 0.95rem;
+        }
+
+        .station-kpi-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-soft);
+        }
+
+        .station-kpi-value {
+            margin-top: 0.3rem;
+            font-size: 1.16rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+        }
+
+        .station-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.95fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .station-panel {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .station-panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .station-panel-head h2 {
+            margin: 0;
+            font-size: 1.06rem;
+        }
+
+        .station-list {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .station-item {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .station-item-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .station-item-sub,
+        .station-item-meta {
+            color: var(--text-soft);
+            font-size: 0.84rem;
+        }
+
+        .station-item-meta {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .station-empty {
+            padding: 0.85rem;
+            border: 1px dashed var(--table-wrap-border);
+            border-radius: 10px;
+            color: var(--text-soft);
+        }
+
+        @media (max-width: 980px) {
+            .station-grid,
+            .station-kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell station-show-page">
+        <header class="station-show-header">
+            <div>
+                <h1 class="page-title">{{ station.name }}</h1>
+                <p class="muted section-lead">{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}. Use this page as the quick hub for receipts and analytics linked to this station.</p>
+            </div>
+            <div class="station-show-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">View receipts</a>
+                <a class="btn btn-primary" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Open analytics</a>
+                <a class="btn btn-secondary" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl})}) }}">Edit station</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back</a>
+            </div>
+        </header>
+
+        <section class="station-kpi-grid">
+            <article class="card-subtle station-kpi-card">
+                <div class="station-kpi-label">Receipts tracked</div>
+                <div class="station-kpi-value">{{ receiptCount }}</div>
+            </article>
+            <article class="card-subtle station-kpi-card">
+                <div class="station-kpi-label">Latest visit</div>
+                <div class="station-kpi-value">
+                    {% if latestReceipt %}
+                        {{ latestReceipt.issuedAt|date('d/m/Y') }}
+                    {% else %}
+                        n/a
+                    {% endif %}
+                </div>
+            </article>
+            <article class="card-subtle station-kpi-card">
+                <div class="station-kpi-label">Recent spend snapshot</div>
+                <div class="station-kpi-value">{{ (recentFuelSpendCents / 100)|number_format(2, '.', ' ') }} EUR</div>
+            </article>
+        </section>
+
+        <section class="station-grid">
+            <section class="card station-panel">
+                <div class="station-panel-head">
+                    <h2>Latest receipts</h2>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">All receipts</a>
+                </div>
+                {% if receiptRows is not empty %}
+                    <div class="station-list">
+                        {% for row in receiptRows %}
+                            <article class="card-subtle station-item">
+                                <div class="station-item-title">
+                                    <strong>{{ row.issuedAt|date('d/m/Y H:i') }}</strong>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: row.id, return_to: path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl})}) }}">Open receipt</a>
+                                </div>
+                                <div class="station-item-meta">
+                                    <span>Total: {{ (row.totalCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                                    {% if row.odometerKilometers is not null %}<span>{{ row.odometerKilometers }} km</span>{% endif %}
+                                    {% if row.fuelType %}<span>{{ row.fuelType|upper }}</span>{% endif %}
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="station-empty">No receipt linked to this station yet.</div>
+                {% endif %}
+            </section>
+
+            <aside class="card station-panel">
+                <div class="station-panel-head">
+                    <h2>Station context</h2>
+                </div>
+                <div class="station-item-sub">{{ station.streetName }}</div>
+                <div class="station-item-sub">{{ station.postalCode }} {{ station.city }}</div>
+                {% if latestOdometer is not null %}
+                    <div class="station-item-meta">
+                        <span>Latest odometer seen: {{ latestOdometer }} km</span>
+                    </div>
+                {% endif %}
+                <div class="actions-wrap">
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">Receipt timeline</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Analytics</a>
+                </div>
+            </aside>
+        </section>
+    </main>
+{% endblock %}

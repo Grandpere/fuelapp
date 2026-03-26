@@ -286,7 +286,10 @@ final class ListReceiptsController extends AbstractController
                 $issuedFrom,
                 $issuedTo,
             ),
-            'newReceiptParams' => null !== $vehicleId ? ['vehicle_id' => $vehicleId] : [],
+            'newReceiptParams' => array_filter([
+                'vehicle_id' => $vehicleId,
+                'station_id' => $stationId,
+            ], static fn (mixed $value): bool => null !== $value && '' !== $value),
         ]);
     }
 

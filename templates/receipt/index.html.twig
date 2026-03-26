@@ -445,6 +445,18 @@
                     </section>
                 {% endif %}
 
+                {% if selectedStation %}
+                    <section class="card panel">
+                        <h2 class="page-title receipt-inline-title">Station shortcuts</h2>
+                        <p class="muted receipt-inline-lead">{{ selectedStation.label }}</p>
+                        <div class="actions-row">
+                            <a class="btn btn-secondary" href="{{ path('ui_station_show', {id: selectedStation.id, return_to: app.request.uri}) }}">Open station</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard', {station_id: selectedStation.id}) }}">Analytics</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_station_edit', {id: selectedStation.id, redirect: app.request.uri}) }}">Edit station</a>
+                        </div>
+                    </section>
+                {% endif %}
+
                 <section class="card panel">
                     <h2 class="page-title receipt-inline-title">New receipt</h2>
                     <p class="muted receipt-inline-lead">Create it inline without leaving this page.</p>

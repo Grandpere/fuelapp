@@ -498,6 +498,62 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('This month', $content);
     }
 
+    public function testReceiptIndexShowsStationScopedShortcutsAndPrefilledCreateLink(): void
+    {
+        $email = 'receipt.ui.station.shortcuts@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Shortcut Station');
+        $station->setStreetName('12 Route Nord');
+        $station->setPostalCode('59000');
+        $station->setCity('Lille');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-15 09:00:00'));
+        $receipt->setTotalCents(2300);
+        $receipt->setVatAmountCents(383);
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('sp95');
+        $line->setQuantityMilliLiters(11000);
+        $line->setUnitPriceDeciCentsPerLiter(2090);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $stationId = $station->getId()->toRfc4122();
+        $response = $this->request('GET', '/ui/receipts?station_id='.$stationId);
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('Station shortcuts', $content);
+        self::assertStringContainsString('Shortcut Station - 12 Route Nord, 59000 Lille', $content);
+        self::assertStringContainsString('/ui/stations/'.$stationId, $content);
+        self::assertStringContainsString('/ui/analytics?station_id='.$stationId, $content);
+        self::assertStringContainsString('/ui/stations/'.$stationId.'/edit', $content);
+        self::assertStringContainsString('redirect=', $content);
+        self::assertStringContainsString('station_id', $content);
+        self::assertStringContainsString('/ui/receipts/new?station_id='.$stationId, $content);
+        self::assertStringContainsString('Station:</strong> Shortcut Station - 12 Route Nord, 59000 Lille', $content);
+
+        $createPage = $this->request('GET', '/ui/receipts/new?station_id='.$stationId);
+        self::assertSame(Response::HTTP_OK, $createPage->getStatusCode());
+        $createContent = (string) $createPage->getContent();
+        self::assertStringContainsString('name="stationName" value="Shortcut Station"', $createContent);
+        self::assertStringContainsString('name="stationStreetName" value="12 Route Nord"', $createContent);
+        self::assertStringContainsString('name="stationPostalCode" value="59000"', $createContent);
+        self::assertStringContainsString('name="stationCity" value="Lille"', $createContent);
+    }
+
     public function testReceiptDetailKeepsReturnToContextFromFilteredList(): void
     {
         $email = 'receipt.ui.context@example.com';

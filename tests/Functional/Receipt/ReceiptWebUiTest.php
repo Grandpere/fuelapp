@@ -127,6 +127,162 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame(1750, $updatedLine->getUnitPriceDeciCentsPerLiter());
     }
 
+    public function testUserCanEditReceiptMetadataFromUi(): void
+    {
+        $email = 'receipt.ui.metadata@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicleA = new VehicleEntity();
+        $vehicleA->setId(Uuid::v7());
+        $vehicleA->setName('Metadata Car A');
+        $vehicleA->setPlateNumber('MD-100-AA');
+        $vehicleA->setOwner($owner);
+        $vehicleA->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicleA->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicleA);
+
+        $vehicleB = new VehicleEntity();
+        $vehicleB->setId(Uuid::v7());
+        $vehicleB->setName('Metadata Car B');
+        $vehicleB->setPlateNumber('MD-200-BB');
+        $vehicleB->setOwner($owner);
+        $vehicleB->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicleB->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicleB);
+
+        $stationA = new StationEntity();
+        $stationA->setId(Uuid::v7());
+        $stationA->setName('Station A');
+        $stationA->setStreetName('1 Main St');
+        $stationA->setPostalCode('75001');
+        $stationA->setCity('Paris');
+        $this->em->persist($stationA);
+
+        $stationB = new StationEntity();
+        $stationB->setId(Uuid::v7());
+        $stationB->setName('Station B');
+        $stationB->setStreetName('2 Side St');
+        $stationB->setPostalCode('69001');
+        $stationB->setCity('Lyon');
+        $this->em->persist($stationB);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setVehicle($vehicleA);
+        $receipt->setStation($stationA);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-03 11:00:00'));
+        $receipt->setOdometerKilometers(120000);
+        $receipt->setTotalCents(1800);
+        $receipt->setVatAmountCents(300);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(10000);
+        $line->setUnitPriceDeciCentsPerLiter(1800);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $receiptId = $receipt->getId()->toRfc4122();
+        $this->loginWithUiForm($email, $password);
+
+        $editPage = $this->request('GET', '/ui/receipts/'.$receiptId.'/edit-metadata');
+        self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
+        $content = (string) $editPage->getContent();
+        self::assertStringContainsString('Edit receipt details', $content);
+        self::assertStringContainsString('option value="'.$vehicleA->getId()->toRfc4122().'" selected', $content);
+        self::assertStringContainsString('option value="'.$stationA->getId()->toRfc4122().'" selected', $content);
+        $csrf = $this->extractFormCsrf($content);
+
+        $editResponse = $this->request(
+            'POST',
+            '/ui/receipts/'.$receiptId.'/edit-metadata',
+            [
+                '_token' => $csrf,
+                'issuedAt' => '2026-03-05T12:45',
+                'vehicleId' => $vehicleB->getId()->toRfc4122(),
+                'stationId' => $stationB->getId()->toRfc4122(),
+                'odometerKilometers' => '121500',
+            ],
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $editResponse->getStatusCode());
+
+        $this->em->clear();
+        $updated = $this->em->find(ReceiptEntity::class, $receiptId);
+        self::assertInstanceOf(ReceiptEntity::class, $updated);
+        self::assertSame($vehicleB->getId()->toRfc4122(), $updated->getVehicle()?->getId()->toRfc4122());
+        self::assertSame($stationB->getId()->toRfc4122(), $updated->getStation()?->getId()->toRfc4122());
+        self::assertSame(121500, $updated->getOdometerKilometers());
+        self::assertSame('2026-03-05 12:45', $updated->getIssuedAt()->format('Y-m-d H:i'));
+    }
+
+    public function testReceiptMetadataEditDoesNotExposeForeignVehicles(): void
+    {
+        $ownerEmail = 'receipt.ui.metadata.owner@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($ownerEmail, $password, ['ROLE_USER']);
+
+        $ownerVehicle = new VehicleEntity();
+        $ownerVehicle->setId(Uuid::v7());
+        $ownerVehicle->setName('Owner Car');
+        $ownerVehicle->setPlateNumber('OW-100-AA');
+        $ownerVehicle->setOwner($owner);
+        $ownerVehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $ownerVehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($ownerVehicle);
+
+        $foreignOwner = $this->createUser('receipt.ui.metadata.foreign@example.com', 'test1234', ['ROLE_USER']);
+        $foreignVehicle = new VehicleEntity();
+        $foreignVehicle->setId(Uuid::v7());
+        $foreignVehicle->setName('Foreign Car');
+        $foreignVehicle->setPlateNumber('FR-200-BB');
+        $foreignVehicle->setOwner($foreignOwner);
+        $foreignVehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $foreignVehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($foreignVehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Owner Station');
+        $station->setStreetName('1 Owner Street');
+        $station->setPostalCode('75001');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setVehicle($ownerVehicle);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-03 11:00:00'));
+        $receipt->setTotalCents(1800);
+        $receipt->setVatAmountCents(300);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(10000);
+        $line->setUnitPriceDeciCentsPerLiter(1800);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($ownerEmail, $password);
+
+        $editPage = $this->request('GET', '/ui/receipts/'.$receipt->getId()->toRfc4122().'/edit-metadata');
+        self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
+        $content = (string) $editPage->getContent();
+        self::assertStringContainsString('Owner Car', $content);
+        self::assertStringNotContainsString('Foreign Car', $content);
+    }
+
     public function testUserCanCreateReceiptFromHumanFriendlyUnits(): void
     {
         $email = 'receipt.ui.create@example.com';

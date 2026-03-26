@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit receipt details{% endblock %}
+
+{% block body %}
+    <main class="app-shell page-stack page-medium shell-compact">
+        <header class="page-header-split">
+            <div class="page-header">
+                <h1 class="page-title">Edit receipt details</h1>
+                <p class="muted section-lead">Update the receipt context without touching the fuel lines.</p>
+            </div>
+            <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Back</a>
+        </header>
+
+        {% if errors is not empty %}
+            <div class="flash flash-error">
+                <ul class="flash-list">
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <section class="card section-card">
+            <form method="post" action="" class="form-stack">
+                <input type="hidden" name="_token" value="{{ csrfToken }}">
+                <input type="hidden" name="_return_to" value="{{ backToListUrl }}">
+
+                <div class="form-grid-2">
+                    <label class="label">
+                        Date
+                        <input class="input" type="text" name="issuedAt" value="{{ formData.issuedAt }}" data-datepicker="datetime" autocomplete="off" required>
+                    </label>
+                    <label class="label">
+                        Vehicle
+                        <select class="select" name="vehicleId">
+                            <option value="">No linked vehicle</option>
+                            {% for optionId, optionLabel in vehicleOptions %}
+                                <option value="{{ optionId }}" {% if formData.vehicleId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="label">
+                        Station
+                        <select class="select" name="stationId">
+                            <option value="">No linked station</option>
+                            {% for optionId, optionLabel in stationOptions %}
+                                <option value="{{ optionId }}" {% if formData.stationId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="muted">This changes the linked station, without editing the shared station record itself.</small>
+                    </label>
+                    <label class="label">
+                        Odometer (km)
+                        <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
+                    </label>
+                </div>
+
+                <div class="actions-wrap">
+                    <button class="btn btn-primary" type="submit">Save details</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+{% endblock %}

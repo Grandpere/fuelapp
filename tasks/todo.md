@@ -224,10 +224,19 @@
 
 ## Plan
 - [completed] Add front-office create/edit/delete controllers for maintenance reminder rules with owner-scoped validation.
-- [in_progress] Surface reminder rules on the maintenance dashboard and wire the new form/delete actions.
-- [pending] Add/update functional coverage for rule create/edit/delete and dashboard rendering.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share any failures.
+- [completed] Surface reminder rules on the maintenance dashboard and wire the new form/delete actions.
+- [completed] Add/update functional coverage for rule create/edit/delete and dashboard rendering.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP19-003 Receipt metadata edit flow
+
+## Plan
+- [completed] Add a dedicated front-office receipt metadata edit controller/handler.
+- [completed] Expose the new edit flow from receipt detail and keep line editing separate.
+- [completed] Add/update functional coverage for date, vehicle, station, and odometer edits.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP18-001 Vehicle-centered workflow polish

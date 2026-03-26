@@ -93,6 +93,7 @@
                 <p class="muted section-lead">Traceable fuel purchase snapshot.</p>
             </div>
             <div class="show-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Edit details</a>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Edit lines</a>
                 <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">

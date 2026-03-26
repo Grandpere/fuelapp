@@ -15,6 +15,7 @@ namespace App\Admin\UI\Web\Controller;
 
 use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Maintenance\Application\Repository\MaintenanceEventRepository;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,6 +31,7 @@ final class AdminMaintenanceEventDeleteController extends AbstractController
     public function __construct(
         private readonly MaintenanceEventRepository $eventRepository,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -65,6 +67,12 @@ final class AdminMaintenanceEventDeleteController extends AbstractController
         );
         $this->addFlash('success', 'Maintenance event deleted.');
 
-        return new RedirectResponse($this->generateUrl('ui_admin_maintenance_event_list'), Response::HTTP_SEE_OTHER);
+        return new RedirectResponse(
+            $this->safeReturnPathResolver->resolve(
+                $request->request->get('_redirect'),
+                $this->generateUrl('ui_admin_maintenance_event_list'),
+            ),
+            Response::HTTP_SEE_OTHER,
+        );
     }
 }

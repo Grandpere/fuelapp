@@ -164,6 +164,86 @@
 - [completed] Link decision artifact in backlog ticket and mark Sprint 10 execution plan as completed.
 - [completed] Documentation-only ticket: no code quality/test commands executed.
 
+# TODO - SP15-003 Front/admin product friction cleanup
+
+## Plan
+- [completed] Add clearer terminal-state next actions on front/admin import detail pages.
+- [completed] Restore shared row-click behavior on receipt list rows.
+- [completed] Extend duplicate detection so semantically identical receipts are flagged even when the uploaded file bytes differ.
+- [completed] Add/update unit, integration, and functional coverage for the new duplicate/shortcut behaviors.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP16-001 Receipt create/edit flow polish
+
+## Plan
+- [completed] Reframe Sprint 16/17 backlog and document the front-only scope for receipt form ergonomics.
+- [completed] Replace technical receipt form inputs with human-friendly units (`L`, `€/L`) while keeping integer persistence.
+- [completed] Align receipt line editing with the same parsing/display rules.
+- [completed] Add/update unit and functional coverage for decimal parsing and form rendering.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP16-002 Maintenance flow clarity
+
+## Plan
+- [completed] Reframe maintenance event/plan forms around user-facing EUR amounts instead of storage cents.
+- [completed] Clarify maintenance dashboard empty states with explicit next actions.
+- [completed] Add/update functional coverage for the revised event/plan form payloads and empty-state rendering.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP16-003 Search/filter persistence across key lists
+
+## Plan
+- [completed] Keep front receipt/import list context when opening details and coming back.
+- [completed] Extend the same return-context behavior to the highest-friction admin lists and delete flows.
+- [completed] Add/update functional coverage for safe return paths and list-row detail navigation.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP17-001 Analytics query profiling and hot-path optimization
+
+## Plan
+- [completed] Collapse the repeated fuel KPI reads used by the analytics dashboard into a single grouped snapshot read.
+- [completed] Rewire the dashboard controller to consume the shared snapshot without changing output semantics.
+- [completed] Add/update targeted unit coverage for the grouped analytics reader behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP17-002 Import pipeline observability polish
+
+## Plan
+- [completed] Surface a triage-oriented admin summary for import terminal states instead of relying only on raw payload inspection.
+- [completed] Expose retry, fallback, duplicate-target, fingerprint, and timing metadata directly in the admin import detail flow.
+- [completed] Add/update functional coverage for fallback and failed import observability views.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP17-003 Front runtime weight and cache polish
+
+## Plan
+- [completed] Align remaining high-visibility date filters on the shared datepicker behavior instead of mixing native browser date inputs and flatpickr.
+- [completed] Fix the CSP/importmap compatibility regression that blocked the entire frontend runtime (`data:` script entrypoints).
+- [completed] Add/update security coverage for the CSP contract after the runtime fix.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP17-001 Analytics query profiling and hot-path optimization
+
+## Plan
+- [completed] Identify redundant dashboard analytics reads on the same KPI table hot path.
+- [completed] Collapse monthly fuel cost/consumption/price and average-price dashboard reads into one grouped snapshot query.
+- [completed] Add unit coverage proving the aggregated snapshot rebuilds all expected metrics.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 
 ## Plan
@@ -258,6 +338,36 @@
 - [completed] Add functional security regressions for oversized login payload and upload/bulk rate limiting.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP15-001 Import review multi-line finalization
+
+## Plan
+- [completed] Align Sprint 15 backlog/todo tracking around import review product gaps.
+- [completed] Expose every parsed/import line in user and admin review pages instead of only the first line.
+- [completed] Accept multi-line review form payloads in front/admin finalize controllers while keeping validation explicit.
+- [completed] Add/update front/admin tests for multi-line review/finalization.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP15-002 Bulk import feedback and recovery polish
+
+## Plan
+- [completed] Clarify Sprint 15 backlog tracking after SP15-001 delivery.
+- [completed] Replace generic bulk-upload flash floods with a structured post-upload summary on `/ui/imports`.
+- [completed] Keep accepted/rejected filename context readable for ZIP-originated entries.
+- [completed] Add/update web functional coverage for the new summary behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP15-003 Front/admin product friction cleanup
+
+## Plan
+- [completed] Clarify Sprint 15 tracking after SP15-002 delivery.
+- [in_progress] Add clearer next-step actions on import detail pages for processed/duplicate jobs.
+- [pending] Keep front/admin import detail shortcuts aligned.
+- [pending] Add/update functional coverage for the new terminal-state shortcuts.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP13-003 Theme toggle and light mode
 

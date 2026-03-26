@@ -48,7 +48,7 @@ final class ImportJobShowWebController extends AbstractController
             'text' => $this->readPayloadText($payloadData),
             'creationPayload' => $creationPayload,
             'parsedDraft' => $parsedDraft,
-            'firstLine' => $this->readFirstLine($creationPayload, $parsedDraft),
+            'reviewLines' => $this->readLines($creationPayload, $parsedDraft),
         ]);
     }
 
@@ -141,9 +141,9 @@ final class ImportJobShowWebController extends AbstractController
      * @param array<string, mixed>|null $creationPayload
      * @param array<string, mixed>|null $parsedDraft
      *
-     * @return array<string, mixed>|null
+     * @return list<array<string, mixed>>
      */
-    private function readFirstLine(?array $creationPayload, ?array $parsedDraft): ?array
+    private function readLines(?array $creationPayload, ?array $parsedDraft): array
     {
         $lines = $creationPayload['lines'] ?? null;
         if (!is_array($lines) && null !== $parsedDraft) {
@@ -151,16 +151,21 @@ final class ImportJobShowWebController extends AbstractController
         }
 
         if (!is_array($lines) || [] === $lines) {
-            return null;
+            return [];
         }
 
-        $first = $lines[0] ?? null;
-        if (!is_array($first)) {
-            return null;
+        $normalized = [];
+        foreach ($lines as $line) {
+            if (!is_array($line)) {
+                continue;
+            }
+
+            /** @var array<string, mixed> $typedLine */
+            $typedLine = $line;
+            $normalized[] = $typedLine;
         }
 
-        /** @var array<string, mixed> $first */
-        return $first;
+        return $normalized;
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

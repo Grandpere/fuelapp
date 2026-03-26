@@ -22,11 +22,11 @@
             </label>
             <label class="label">
                 From
-                <input class="input" type="date" name="from" value="{{ filters.from }}">
+                <input class="input" type="text" name="from" value="{{ filters.from }}" data-datepicker="date" autocomplete="off">
             </label>
             <label class="label">
                 To
-                <input class="input" type="date" name="to" value="{{ filters.to }}">
+                <input class="input" type="text" name="to" value="{{ filters.to }}" data-datepicker="date" autocomplete="off">
             </label>
             <div class="admin-form-actions">
                 <button class="btn btn-primary" type="submit">Apply</button>

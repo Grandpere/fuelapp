@@ -5,6 +5,7 @@
 {% set admin_section = 'imports' %}
 
 {% block admin_content %}
+    {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
@@ -91,7 +92,8 @@
                         class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
-                        data-row-link-url-value="{{ path('ui_admin_import_job_show', {id: job.id.toString}) }}"
+                        data-row-link-url-value="{{ path('ui_admin_import_job_show', {id: job.id.toString, return_to: returnTo}) }}"
+                        onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                     >
                         <td>{{ job.id.toString }}</td>
                         <td>
@@ -108,10 +110,11 @@
                         <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
                         <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
                         <td>
-                            <div class="action-row">
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Detail</a>
+                            <div class="action-row" data-row-link-ignore>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_show', {id: job.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Detail</a>
                                 <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');">
                                     <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
+                                    <input type="hidden" name="_redirect" value="{{ returnTo }}">
                                     <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                                 </form>
                             </div>

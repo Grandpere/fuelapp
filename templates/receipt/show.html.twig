@@ -72,6 +72,8 @@
 {% endblock %}
 
 {% block body %}
+    {% set requestedReturnTo = app.request.query.get('return_to') %}
+    {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_receipt_index') %}
     <main class="app-shell show-page">
         <header class="show-header">
             <div>
@@ -79,13 +81,13 @@
                 <p class="muted section-lead">Traceable fuel purchase snapshot.</p>
             </div>
             <div class="show-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString()}) }}">Edit lines</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Edit lines</a>
                 <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">
-                    <input type="hidden" name="_redirect" value="{{ path('ui_receipt_index') }}">
+                    <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
                     <button class="btn btn-danger" type="submit">Delete</button>
                 </form>
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Back to list</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back to list</a>
             </div>
         </header>
 
@@ -107,7 +109,7 @@
                     {% if station %}
                         <a
                             class="btn btn-secondary icon-btn"
-                            href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_receipt_show', {id: receipt.id.toString()})}) }}"
+                            href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl})}) }}"
                             aria-label="Edit station"
                             title="Edit station"
                         >
@@ -132,7 +134,7 @@
                 <h2 class="section-title">Lines</h2>
                 <a
                     class="btn btn-secondary icon-btn"
-                    href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString()}) }}"
+                    href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}"
                     aria-label="Edit lines"
                     title="Edit lines"
                 >

@@ -79,7 +79,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
                 $label = trim($formData['label']);
                 $eventType = '' === trim($formData['eventType']) ? null : MaintenanceEventType::from($formData['eventType']);
                 $plannedFor = DateTimeImmutable::createFromFormat('Y-m-d', $formData['plannedFor']) ?: new DateTimeImmutable();
-                $plannedCostCents = (int) $formData['plannedCostCents'];
+                $plannedCostCents = $this->nullableMoneyCents($formData['plannedCostEuros']) ?? 0;
                 $currencyCode = strtoupper(trim($formData['currencyCode']));
                 $notes = $this->nullIfEmpty($formData['notes']);
 
@@ -129,7 +129,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
             'label' => '',
             'eventType' => MaintenanceEventType::SERVICE->value,
             'plannedFor' => new DateTimeImmutable('+7 days')->format('Y-m-d'),
-            'plannedCostCents' => '',
+            'plannedCostEuros' => '',
             'currencyCode' => 'EUR',
             'notes' => '',
             '_token' => '',
@@ -146,7 +146,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
             'label' => $plan->label(),
             'eventType' => null === $eventType ? '' : $eventType->value,
             'plannedFor' => $plan->plannedFor()->format('Y-m-d'),
-            'plannedCostCents' => (string) $plan->plannedCostCents(),
+            'plannedCostEuros' => number_format($plan->plannedCostCents() / 100, 2, '.', ''),
             'currencyCode' => $plan->currencyCode(),
             'notes' => $plan->notes() ?? '',
             '_token' => '',
@@ -197,9 +197,9 @@ final class MaintenancePlannedCostFormController extends AbstractController
             $errors[] = 'Invalid planned date.';
         }
 
-        $plannedCost = filter_var(trim($formData['plannedCostCents']), FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+        $plannedCost = $this->nullableMoneyCents($formData['plannedCostEuros']);
         if (null === $plannedCost || $plannedCost <= 0) {
-            $errors[] = 'Planned cost must be a positive integer.';
+            $errors[] = 'Planned cost must be a positive EUR amount.';
         }
 
         $currencyCode = strtoupper(trim($formData['currencyCode']));
@@ -215,5 +215,23 @@ final class MaintenancePlannedCostFormController extends AbstractController
         $trimmed = trim($value);
 
         return '' === $trimmed ? null : $trimmed;
+    }
+
+    private function nullableMoneyCents(string $value): ?int
+    {
+        $trimmed = trim($value);
+        if ('' === $trimmed) {
+            return null;
+        }
+
+        $normalized = str_replace(',', '.', str_replace(' ', '', $trimmed));
+        if (!preg_match('/^\d+(?:\.\d{1,2})?$/', $normalized)) {
+            return null;
+        }
+
+        [$whole, $fraction] = array_pad(explode('.', $normalized, 2), 2, '');
+        $fraction = str_pad($fraction, 2, '0');
+
+        return ((int) $whole * 100) + (int) substr($fraction, 0, 2);
     }
 }

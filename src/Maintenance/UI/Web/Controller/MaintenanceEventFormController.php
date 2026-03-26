@@ -80,7 +80,7 @@ final class MaintenanceEventFormController extends AbstractController
                 $occurredAt = DateTimeImmutable::createFromFormat('Y-m-d\\TH:i', $formData['occurredAt']) ?: new DateTimeImmutable();
                 $description = $this->nullIfEmpty($formData['description']);
                 $odometer = $this->nullableInt($formData['odometerKilometers']);
-                $totalCost = $this->nullableInt($formData['totalCostCents']);
+                $totalCost = $this->nullableMoneyCents($formData['totalCostEuros']);
                 $currencyCode = strtoupper(trim($formData['currencyCode']));
 
                 if ($event instanceof MaintenanceEvent) {
@@ -130,7 +130,7 @@ final class MaintenanceEventFormController extends AbstractController
             'occurredAt' => new DateTimeImmutable()->format('Y-m-d\\TH:i'),
             'description' => '',
             'odometerKilometers' => '',
-            'totalCostCents' => '',
+            'totalCostEuros' => '',
             'currencyCode' => 'EUR',
             '_token' => '',
         ];
@@ -145,7 +145,7 @@ final class MaintenanceEventFormController extends AbstractController
             'occurredAt' => $event->occurredAt()->format('Y-m-d\\TH:i'),
             'description' => $event->description() ?? '',
             'odometerKilometers' => null === $event->odometerKilometers() ? '' : (string) $event->odometerKilometers(),
-            'totalCostCents' => null === $event->totalCostCents() ? '' : (string) $event->totalCostCents(),
+            'totalCostEuros' => null === $event->totalCostCents() ? '' : number_format($event->totalCostCents() / 100, 2, '.', ''),
             'currencyCode' => $event->currencyCode(),
             '_token' => '',
         ];
@@ -190,16 +190,18 @@ final class MaintenanceEventFormController extends AbstractController
             $errors[] = 'Invalid event date.';
         }
 
-        foreach (['odometerKilometers', 'totalCostCents'] as $field) {
-            $value = $this->nullableInt($formData[$field]);
-            if ('' !== trim($formData[$field]) && null === $value) {
-                $errors[] = sprintf('Field %s must be an integer.', $field);
-                continue;
-            }
+        $odometer = $this->nullableInt($formData['odometerKilometers']);
+        if ('' !== trim($formData['odometerKilometers']) && null === $odometer) {
+            $errors[] = 'Odometer must be an integer.';
+        } elseif (null !== $odometer && $odometer < 0) {
+            $errors[] = 'Odometer must be non-negative.';
+        }
 
-            if (null !== $value && $value < 0) {
-                $errors[] = sprintf('Field %s must be non-negative.', $field);
-            }
+        $totalCost = $this->nullableMoneyCents($formData['totalCostEuros']);
+        if ('' !== trim($formData['totalCostEuros']) && null === $totalCost) {
+            $errors[] = 'Total cost must be a valid EUR amount, for example 189.90.';
+        } elseif (null !== $totalCost && $totalCost < 0) {
+            $errors[] = 'Total cost must be non-negative.';
         }
 
         $currencyCode = strtoupper(trim($formData['currencyCode']));
@@ -220,6 +222,24 @@ final class MaintenanceEventFormController extends AbstractController
         $intValue = filter_var($trimmed, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
 
         return null === $intValue ? null : $intValue;
+    }
+
+    private function nullableMoneyCents(string $value): ?int
+    {
+        $trimmed = trim($value);
+        if ('' === $trimmed) {
+            return null;
+        }
+
+        $normalized = str_replace(',', '.', str_replace(' ', '', $trimmed));
+        if (!preg_match('/^\d+(?:\.\d{1,2})?$/', $normalized)) {
+            return null;
+        }
+
+        [$whole, $fraction] = array_pad(explode('.', $normalized, 2), 2, '');
+        $fraction = str_pad($fraction, 2, '0');
+
+        return ((int) $whole * 100) + (int) substr($fraction, 0, 2);
     }
 
     private function nullIfEmpty(string $value): ?string

@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-25 - Import review UI must mirror finalize handler line capabilities
+- Symptom: import review pages showed only one fuel line even when OCR payloads contained several, making multi-line receipts look incomplete in front/admin.
+- Root cause: web controllers/templates read only `firstLine` while `FinalizeImportJobHandler` already accepted multiple `CreateReceiptLineCommand`s.
+- Fix: expose `reviewLines`, post `lines[...]` arrays from both review forms, and keep legacy single-line fallback only for transition safety.
+- Prevention: when a handler supports collections (`lines`, items, rows), verify the paired UI/controller path renders and submits the full collection instead of only the first element.
+
 ## 2026-03-25 - Importmap removals can break cached frontend runtime
 - Symptom: row-click navigation and Turbo frame actions stopped working after frontend asset cleanup, even though templates still had the right `data-controller` / `data-turbo-frame` wiring.
 - Root cause: browsers could keep an older cached `app.js` that still imported removed importmap modules, which broke JS bootstrap early and disabled Turbo/Stimulus behavior across the page.
@@ -446,3 +452,45 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: parser heuristics were tuned on clean fixtures and failed on compact/single-line payloads (city over-capture, station/street mis-detection, fuel patterns like `Excellium 98`).
 - Fix: harden parser with real-sample-driven rules (postal pattern `L-xxxx`, city sanitation, stricter street candidate logic, noisy quantity/unit-price extraction) and add dedicated regression tests.
 - Prevention: for OCR parsing changes, always include at least one regression fixture copied from production-like payloads.
+
+## 2026-03-25 - Import duplicates need semantic matching beyond raw file checksum
+- Symptom: re-uploading the same receipt after re-encoding or re-exporting the image could bypass duplicate detection, land in `needs_review`, and confuse the user because the original receipt already existed.
+- Root cause: duplicate detection in async import processing only compared the stored file SHA-256, which changes as soon as the same ticket is re-saved with different bytes.
+- Fix: keep checksum-based duplicate detection for exact file matches, then add a second duplicate pass after OCR that compares a normalized receipt candidate (issuedAt, station identity, totals, lines) against existing owner receipts and marks the import as `duplicate` when the business payload is identical.
+- Prevention: for document imports, treat binary fingerprinting and business-payload fingerprinting as complementary layers, not interchangeable ones.
+
+## 2026-03-25 - Shared clickable table rows should use the row-link controller, not inline onclick handlers
+- Symptom: receipt list rows stopped opening their detail page while other admin/import lists kept working.
+- Root cause: receipts still used inline `onclick` navigation, while the rest of the UI had been standardized on the shared `row-link` Stimulus controller.
+- Fix: migrate receipt rows to `data-controller="row-link"` / `click->row-link#navigate` and mark action cells with `data-row-link-ignore`.
+- Prevention: when harmonizing list UIs, align every clickable row on the same controller instead of mixing inline JS and Stimulus patterns.
+
+## 2026-03-26 - Front-office money inputs should use user-facing EUR amounts, not storage cents
+- Symptom: maintenance forms exposed `...Cents` fields, which made normal data entry feel technical and error-prone even though the domain correctly persisted integer cents.
+- Root cause: the UI mirrored storage-oriented field names and units instead of translating them into user-facing amounts.
+- Fix: switch front-office maintenance event/plan forms to EUR strings (`189.90`, `245,00`), parse them in the controllers, and keep integer cent persistence internally.
+- Prevention: when a domain stores money as integers, keep that rule inside controllers/forms and never expose storage units directly in the front-office UX.
+
+## 2026-03-26 - Clickable list rows on critical flows should keep an HTML fallback, not only Stimulus wiring
+- Symptom: several receipt/import/admin list rows stopped opening their detail pages at once even though the shared `row-link` controller code itself had not changed.
+- Root cause: list navigation depended entirely on Stimulus attachment for `<tr>` click handling, so one frontend/runtime hiccup could degrade every clickable row simultaneously.
+- Fix: keep the shared `row-link` controller, but add a small inline fallback on critical `<tr>` rows and explicitly mark action cells with `data-row-link-ignore`; at the same time, propagate a safe `return_to` list URL through detail/delete flows.
+- Prevention: for high-frequency list navigation, provide a graceful HTML fallback and avoid tests that hard-code unescaped query strings in rendered attributes.
+
+## 2026-03-26 - Import support views should surface triage metadata above raw payloads
+- Symptom: admin import details exposed the raw/decoded payload, but support still had to manually scan JSON to understand retry exhaustion, duplicate targets, or terminal OCR/provider state.
+- Root cause: the import pipeline stored the right diagnostic data, but the admin detail screen treated it as opaque payload instead of first-class troubleshooting metadata.
+- Fix: derive a compact triage summary in the controller (status, OCR retries, queue/processing timings, fallback reason/strategy, duplicate target, finalized receipt, terminal detail) and render it ahead of the raw payload.
+- Prevention: when async workflows persist structured terminal payloads, expose the operator-facing subset explicitly in the UI rather than assuming raw JSON inspection is acceptable.
+
+## 2026-03-26 - CSP hardening must account for Symfony importmap data: script entrypoints
+- Symptom: after tightening browser security headers, Turbo, Stimulus, flatpickr, and chart behavior all appeared dead at once, including in private browsing.
+- Root cause: Symfony importmap rendered script entrypoints using `data:application/javascript`, but the CSP `script-src` directive did not allow `data:`, so the browser blocked the entire frontend bootstrap.
+- Fix: keep the CSP baseline compatible with importmap by allowing `data:` in `script-src`, then validate JS-critical flows such as Turbo frames, datepickers, and chart/theme switches.
+- Prevention: for Symfony importmap apps, never tighten `script-src` without explicitly checking how entrypoints are emitted in the browser.
+
+## 2026-03-26 - Realtime stream publishing must stay best-effort for receipt CRUD
+- Symptom: a front-office receipt create flow could return `500` in CI even though the form payload itself was valid.
+- Root cause: realtime Mercure/Twig publishing happened inline after persistence, so any transient stream/render failure could break the main CRUD response.
+- Fix: make `ReceiptStreamPublisher` swallow publish/render failures and log them as warnings; add a unit regression so Mercure issues cannot fail receipt creation/deletion flows.
+- Prevention: realtime/UI broadcast side effects should not be allowed to break the main transactional user flow unless explicitly required by product behavior.

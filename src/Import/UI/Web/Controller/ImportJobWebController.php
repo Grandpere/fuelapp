@@ -16,6 +16,7 @@ namespace App\Import\UI\Web\Controller;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\ImportJob;
 use App\Import\UI\Upload\BulkImportUploadProcessor;
+use App\Import\UI\Upload\BulkImportUploadResult;
 use App\Security\AuthenticatedUser;
 use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -53,24 +54,7 @@ final class ImportJobWebController extends AbstractController
             }
 
             $result = $this->bulkImportUploadProcessor->process($user->getId()->toRfc4122(), $uploadedFiles);
-            if ($result->acceptedCount() > 0) {
-                $this->addFlash('success', sprintf(
-                    '%d import job(s) queued%s.',
-                    $result->acceptedCount(),
-                    $result->rejectedCount() > 0 ? sprintf(' (%d rejected)', $result->rejectedCount()) : '',
-                ));
-            }
-
-            foreach ($result->rejected() as $rejection) {
-                $filename = $rejection['filename'];
-                $reason = $rejection['reason'];
-                $source = $rejection['source'];
-                if ($source === $filename) {
-                    $this->addFlash('error', sprintf('%s: %s', $filename, $reason));
-                } else {
-                    $this->addFlash('error', sprintf('%s (%s): %s', $filename, $source, $reason));
-                }
-            }
+            $this->storeUploadSummaryFlash($result);
 
             return $this->redirectToRoute('ui_import_index');
         }
@@ -162,5 +146,15 @@ final class ImportJobWebController extends AbstractController
         }
 
         return isset($parsedDraft['creationPayload']) && is_array($parsedDraft['creationPayload']);
+    }
+
+    private function storeUploadSummaryFlash(BulkImportUploadResult $result): void
+    {
+        $this->addFlash('import_summary', [
+            'acceptedCount' => $result->acceptedCount(),
+            'rejectedCount' => $result->rejectedCount(),
+            'accepted' => $result->accepted(),
+            'rejected' => $result->rejected(),
+        ]);
     }
 }

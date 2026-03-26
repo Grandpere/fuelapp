@@ -5,6 +5,7 @@
 {% set admin_section = 'stations' %}
 
 {% block admin_content %}
+    {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
             <h2 class="page-title">Stations</h2>
@@ -28,7 +29,8 @@
                         class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
-                        data-row-link-url-value="{{ path('ui_admin_station_show', {id: station.id.toString}) }}"
+                        data-row-link-url-value="{{ path('ui_admin_station_show', {id: station.id.toString, return_to: returnTo}) }}"
+                        onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                     >
                         <td>{{ station.name }}</td>
                         <td>{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}</td>
@@ -40,11 +42,12 @@
                                 <span class="muted">n/a</span>
                             {% endif %}
                         </td>
-                        <td class="action-cell-flex">
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_station_show', {id: station.id.toString}) }}">Detail</a>
+                        <td class="action-cell-flex" data-row-link-ignore>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_station_show', {id: station.id.toString, return_to: returnTo}) }}">Detail</a>
                             <a class="btn btn-secondary" href="{{ path('ui_admin_station_edit', {id: station.id.toString}) }}">Edit</a>
                             <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
+                                <input type="hidden" name="_redirect" value="{{ returnTo }}">
                                 <button class="btn btn-danger" type="submit">Delete</button>
                             </form>
                         </td>

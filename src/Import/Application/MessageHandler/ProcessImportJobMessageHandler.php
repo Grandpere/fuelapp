@@ -17,11 +17,15 @@ use App\Import\Application\Message\ProcessImportJobMessage;
 use App\Import\Application\Ocr\OcrProvider;
 use App\Import\Application\Ocr\OcrProviderException;
 use App\Import\Application\Parsing\ParsedReceiptDraft;
+use App\Import\Application\Parsing\ParsedReceiptLineDraft;
 use App\Import\Application\Parsing\ReceiptOcrParser;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Storage\ImportFileStorage;
 use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Domain\Enum\ImportJobStatus;
+use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateCandidate;
+use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateCandidateLine;
+use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateLookup;
 use JsonException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -40,6 +44,7 @@ final class ProcessImportJobMessageHandler
 
     public function __construct(
         private ImportJobRepository $repository,
+        private ReceiptDuplicateLookup $receiptDuplicateLookup,
         private ImportFileStorage $fileStorage,
         private ImportStoredFileLocator $storedFileLocator,
         private OcrProvider $ocrProvider,
@@ -96,6 +101,21 @@ final class ProcessImportJobMessageHandler
             $absolutePath = $this->storedFileLocator->locate($job->storage(), $job->filePath());
             $extraction = $this->ocrProvider->extract($absolutePath, $job->mimeType());
             $parsedDraft = $this->receiptParser->parse($extraction);
+
+            $duplicateReceiptId = $this->findSemanticDuplicateReceiptId($job->ownerId(), $parsedDraft);
+            if (null !== $duplicateReceiptId) {
+                $job->markDuplicate($this->buildReceiptDuplicatePayload($job->id()->toString(), $duplicateReceiptId, $fingerprint));
+                $this->repository->save($job);
+                $this->fileStorage->delete($job->storage(), $job->filePath());
+
+                $this->logger->info('import.job.marked_duplicate_receipt', [
+                    'import_job_id' => $job->id()->toString(),
+                    'duplicate_of_receipt_id' => $duplicateReceiptId,
+                    'fingerprint' => $fingerprint,
+                ]);
+
+                return;
+            }
 
             $payload = $this->buildNeedsReviewPayload($job->id()->toString(), $extraction->provider, $extraction->text, $extraction->pages, $parsedDraft, $fingerprint);
             $job->markNeedsReview($payload);
@@ -268,6 +288,89 @@ final class ProcessImportJobMessageHandler
         }
 
         return $encoded;
+    }
+
+    private function buildReceiptDuplicatePayload(string $jobId, string $duplicateOfReceiptId, string $fingerprint): string
+    {
+        $payload = [
+            'jobId' => $jobId,
+            'status' => 'duplicate',
+            'duplicateOfReceiptId' => $duplicateOfReceiptId,
+            'fingerprint' => $fingerprint,
+            'reason' => 'same_receipt_payload',
+        ];
+
+        try {
+            return json_encode($payload, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return 'duplicate_receipt_payload_serialization_failed';
+        }
+    }
+
+    private function findSemanticDuplicateReceiptId(string $ownerId, ParsedReceiptDraft $parsedDraft): ?string
+    {
+        $candidate = $this->buildReceiptDuplicateCandidate($parsedDraft);
+
+        return null === $candidate ? null : $this->receiptDuplicateLookup->findMatchingReceiptIdForOwner($ownerId, $candidate);
+    }
+
+    private function buildReceiptDuplicateCandidate(ParsedReceiptDraft $parsedDraft): ?ReceiptDuplicateCandidate
+    {
+        if (
+            null === $parsedDraft->issuedAt
+            || null === $parsedDraft->stationName
+            || null === $parsedDraft->stationStreetName
+            || null === $parsedDraft->stationPostalCode
+            || null === $parsedDraft->stationCity
+            || null === $parsedDraft->totalCents
+            || null === $parsedDraft->vatAmountCents
+        ) {
+            return null;
+        }
+
+        $lines = [];
+        foreach ($parsedDraft->lines as $line) {
+            $candidateLine = $this->buildReceiptDuplicateCandidateLine($line);
+            if (null === $candidateLine) {
+                return null;
+            }
+
+            $lines[] = $candidateLine;
+        }
+
+        if ([] === $lines) {
+            return null;
+        }
+
+        return new ReceiptDuplicateCandidate(
+            $parsedDraft->issuedAt,
+            $parsedDraft->stationName,
+            $parsedDraft->stationStreetName,
+            $parsedDraft->stationPostalCode,
+            $parsedDraft->stationCity,
+            $parsedDraft->totalCents,
+            $parsedDraft->vatAmountCents,
+            $lines,
+        );
+    }
+
+    private function buildReceiptDuplicateCandidateLine(ParsedReceiptLineDraft $line): ?ReceiptDuplicateCandidateLine
+    {
+        if (
+            null === $line->fuelType
+            || null === $line->quantityMilliLiters
+            || null === $line->unitPriceDeciCentsPerLiter
+            || null === $line->vatRatePercent
+        ) {
+            return null;
+        }
+
+        return new ReceiptDuplicateCandidateLine(
+            $line->fuelType,
+            $line->quantityMilliLiters,
+            $line->unitPriceDeciCentsPerLiter,
+            $line->vatRatePercent,
+        );
     }
 
     private function retryDelayForAttempt(int $retryCount): int

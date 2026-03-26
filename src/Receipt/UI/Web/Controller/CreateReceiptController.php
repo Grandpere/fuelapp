@@ -84,8 +84,8 @@ final class CreateReceiptController extends AbstractController
         return [
             'issuedAt' => new DateTimeImmutable()->format('Y-m-d\TH:i'),
             'fuelType' => FuelType::DIESEL->value,
-            'quantityMilliLiters' => '',
-            'unitPriceDeciCentsPerLiter' => '',
+            'quantityLiters' => '',
+            'unitPriceEurosPerLiter' => '',
             'vatRatePercent' => '20',
             'stationName' => '',
             'stationStreetName' => '',
@@ -117,12 +117,15 @@ final class CreateReceiptController extends AbstractController
     private function validateFormData(array $formData): array
     {
         $issuedAt = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $formData['issuedAt']) ?: null;
+        $quantityMilliLiters = $this->parseScaledDecimalToInt($formData['quantityLiters'], 1000, 3);
+        $unitPriceDeciCentsPerLiter = $this->parseScaledDecimalToInt($formData['unitPriceEurosPerLiter'], 1000, 3);
+        $vatRatePercent = $this->toNullableInt($formData['vatRatePercent']);
 
         $lineInput = new ReceiptLineInput(
             $this->nullIfEmpty($formData['fuelType']),
-            $this->toNullableInt($formData['quantityMilliLiters']),
-            $this->toNullableInt($formData['unitPriceDeciCentsPerLiter']),
-            $this->toNullableInt($formData['vatRatePercent']),
+            $quantityMilliLiters,
+            $unitPriceDeciCentsPerLiter,
+            $vatRatePercent,
         );
 
         $receiptInput = new ReceiptInput(
@@ -142,6 +145,15 @@ final class CreateReceiptController extends AbstractController
         if (null === $issuedAt) {
             $errors[] = 'Invalid issue date.';
         }
+        if (null === $quantityMilliLiters) {
+            $errors[] = 'Quantity must be a valid liters value, for example 40.40.';
+        }
+        if (null === $unitPriceDeciCentsPerLiter) {
+            $errors[] = 'Unit price must be a valid €/L value, for example 1.769.';
+        }
+        if (null === $vatRatePercent) {
+            $errors[] = 'VAT must be an integer percentage.';
+        }
 
         foreach ($this->validator->validate($receiptInput) as $violation) {
             $errors[] = (string) $violation->getMessage();
@@ -153,10 +165,13 @@ final class CreateReceiptController extends AbstractController
     /** @param array<string, string> $formData */
     private function persistReceiptFromForm(array $formData): void
     {
+        $quantityMilliLiters = $this->parseScaledDecimalToRequiredInt($formData['quantityLiters'], 1000, 3, 'quantityLiters');
+        $unitPriceDeciCentsPerLiter = $this->parseScaledDecimalToRequiredInt($formData['unitPriceEurosPerLiter'], 1000, 3, 'unitPriceEurosPerLiter');
+
         $line = new CreateReceiptLineCommand(
             FuelType::from($formData['fuelType']),
-            $this->toRequiredInt($formData['quantityMilliLiters'], 'quantityMilliLiters'),
-            $this->toRequiredInt($formData['unitPriceDeciCentsPerLiter'], 'unitPriceDeciCentsPerLiter'),
+            $quantityMilliLiters,
+            $unitPriceDeciCentsPerLiter,
             $this->toRequiredInt($formData['vatRatePercent'], 'vatRatePercent'),
         );
 
@@ -203,6 +218,37 @@ final class CreateReceiptController extends AbstractController
         }
 
         return $int;
+    }
+
+    private function parseScaledDecimalToRequiredInt(string $value, int $scale, int $maxDecimals, string $field): int
+    {
+        $parsed = $this->parseScaledDecimalToInt($value, $scale, $maxDecimals);
+        if (null === $parsed) {
+            throw new UnexpectedValueException(sprintf('Expected decimal value for %s.', $field));
+        }
+
+        return $parsed;
+    }
+
+    private function parseScaledDecimalToInt(?string $value, int $scale, int $maxDecimals): ?int
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        $normalized = trim(str_replace(' ', '', str_replace(',', '.', $value)));
+        if ('' === $normalized) {
+            return null;
+        }
+
+        if (!preg_match('/^\d+(?:\.\d{1,'.$maxDecimals.'})?$/', $normalized)) {
+            return null;
+        }
+
+        [$whole, $fraction] = array_pad(explode('.', $normalized, 2), 2, '');
+        $fraction = str_pad($fraction, $maxDecimals, '0');
+
+        return ((int) $whole * $scale) + (int) substr($fraction, 0, $maxDecimals);
     }
 
     private function nullIfEmpty(?string $value): ?string

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Admin\UI\Web\Controller;
 
 use App\Admin\Application\Audit\AdminAuditTrail;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use App\Station\Application\Repository\StationRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -30,6 +31,7 @@ final class AdminStationDeleteController extends AbstractController
     public function __construct(
         private readonly StationRepository $stationRepository,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -66,6 +68,12 @@ final class AdminStationDeleteController extends AbstractController
         );
         $this->addFlash('success', 'Station deleted.');
 
-        return new RedirectResponse($this->generateUrl('ui_admin_station_list'), Response::HTTP_SEE_OTHER);
+        return new RedirectResponse(
+            $this->safeReturnPathResolver->resolve(
+                $request->request->get('_redirect'),
+                $this->generateUrl('ui_admin_station_list'),
+            ),
+            Response::HTTP_SEE_OTHER,
+        );
     }
 }

@@ -5,6 +5,7 @@
 {% set admin_section = 'maintenance_reminders' %}
 
 {% block admin_content %}
+    {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
             <h2 class="page-title">Maintenance Reminders</h2>
@@ -65,7 +66,8 @@
                         class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
-                        data-row-link-url-value="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}"
+                        data-row-link-url-value="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString, return_to: returnTo}) }}"
+                        onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                     >
                         <td>{{ reminder.createdAt|date('Y-m-d H:i') }}</td>
                         <td>{{ ruleNames[reminder.ruleId] ?? reminder.ruleId }}</td>
@@ -78,7 +80,7 @@
                             {% if reminder.dueByOdometer %}<span class="pill pill-soft-info">odometer</span>{% endif %}
                         </td>
                         <td>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString}) }}" data-turbo-frame="_top">Detail</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Detail</a>
                         </td>
                     </tr>
                 {% else %}

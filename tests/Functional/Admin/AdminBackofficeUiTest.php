@@ -343,6 +343,55 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringNotContainsString('BO-200-BB', (string) $afterDelete->getContent());
     }
 
+    public function testAdminMaintenanceEventDetailKeepsFilteredReturnContext(): void
+    {
+        $adminEmail = 'ui.admin.maintenance.context@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.maintenance.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($owner);
+        $vehicle->setName('Context Vehicle');
+        $vehicle->setPlateNumber('CTX-100-AA');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $event = new MaintenanceEventEntity();
+        $event->setId(Uuid::v7());
+        $event->setOwner($owner);
+        $event->setVehicle($vehicle);
+        $event->setEventType(MaintenanceEventType::SERVICE);
+        $event->setOccurredAt(new DateTimeImmutable('2026-03-11 09:00:00'));
+        $event->setDescription('Context maintenance event');
+        $event->setOdometerKilometers(98000);
+        $event->setTotalCostCents(15500);
+        $event->setCurrencyCode('EUR');
+        $event->setCreatedAt(new DateTimeImmutable('2026-03-11 09:00:00'));
+        $event->setUpdatedAt(new DateTimeImmutable('2026-03-11 09:00:00'));
+        $this->em->persist($event);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $returnTo = '/ui/admin/maintenance/events?owner_id='.$owner->getId()->toRfc4122().'&event_type=service';
+
+        $detailResponse = $this->request(
+            'GET',
+            '/ui/admin/maintenance/events/'.$event->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo),
+            [],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $content = (string) $detailResponse->getContent();
+        $escapedReturnTo = htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        self::assertStringContainsString('href="'.$escapedReturnTo.'"', $content);
+        self::assertStringContainsString('name="_redirect" value="'.$escapedReturnTo.'"', $content);
+    }
+
     public function testAdminCanToggleUserFlagsResetPasswordAndResendVerificationFromBackofficeUi(): void
     {
         $adminEmail = 'ui.admin.user.write@example.com';
@@ -701,6 +750,104 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('name="issuedAt"', $reviewContent);
     }
 
+    public function testAdminCanFinalizeNeedsReviewImportWithMultipleLinesFromBackofficeUi(): void
+    {
+        $adminEmail = 'ui.admin.import.multiline@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.import.multiline.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/25/admin-multiline.jpg');
+        $job->setOriginalFilename('admin-multiline.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('d', 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'issuedAt' => '2026-03-25T12:20:00+00:00',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 28000,
+                        'unitPriceDeciCentsPerLiter' => 1810,
+                        'vatRatePercent' => 20,
+                    ],
+                    [
+                        'fuelType' => 'sp95',
+                        'quantityMilliLiters' => 12000,
+                        'unitPriceDeciCentsPerLiter' => 1760,
+                        'vatRatePercent' => 20,
+                    ],
+                ],
+                'creationPayload' => null,
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-25 12:21:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-25 12:21:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-25 12:21:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $reviewResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $reviewResponse->getStatusCode());
+        $reviewContent = (string) $reviewResponse->getContent();
+        self::assertStringContainsString('Receipt lines', $reviewContent);
+        self::assertStringContainsString('name="lines[0][fuelType]"', $reviewContent);
+        self::assertStringContainsString('name="lines[1][fuelType]"', $reviewContent);
+        $csrfToken = $this->extractFinalizeCsrfForImport((string) $reviewResponse->getContent(), $jobId);
+
+        $finalizeResponse = $this->request(
+            'POST',
+            '/ui/admin/imports/'.$jobId.'/finalize',
+            [
+                '_token' => $csrfToken,
+                'issuedAt' => '2026-03-25T12:20',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => '28000',
+                        'unitPriceDeciCentsPerLiter' => '1810',
+                        'vatRatePercent' => '20',
+                    ],
+                    [
+                        'fuelType' => 'sp95',
+                        'quantityMilliLiters' => '12000',
+                        'unitPriceDeciCentsPerLiter' => '1760',
+                        'vatRatePercent' => '20',
+                    ],
+                ],
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $finalizeResponse->getStatusCode());
+
+        $this->em->clear();
+        $updated = $this->em->find(ImportJobEntity::class, $jobId);
+        self::assertInstanceOf(ImportJobEntity::class, $updated);
+        self::assertSame(ImportJobStatus::PROCESSED, $updated->getStatus());
+
+        $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
+        self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
+        self::assertCount(2, $savedReceipt->getLines());
+    }
+
     public function testAdminCanEditAndDeleteStationAndMaintenanceEventFromBackofficeUi(): void
     {
         $adminEmail = 'ui.admin.station.event.write@example.com';
@@ -926,6 +1073,253 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringNotContainsString($receiptId, (string) $afterReceiptDelete->getContent());
     }
 
+    public function testAdminProcessedImportDetailShowsShortcutToCreatedReceipt(): void
+    {
+        $adminEmail = 'ui.admin.import.processed.shortcut@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.processed.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $receipt->setTotalCents(4200);
+        $receipt->setVatAmountCents(700);
+        $this->em->persist($receipt);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::PROCESSED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-processed.jpg');
+        $job->setOriginalFilename('admin-processed.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('r', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'processed',
+            'finalizedReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 10:01:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:01:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 10:01:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:01:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $jobId = $job->getId()->toRfc4122();
+        $receiptId = $receipt->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Import completed', $detailContent);
+        self::assertStringContainsString('/ui/admin/receipts/'.$receiptId, $detailContent);
+        self::assertStringContainsString('Open created receipt', $detailContent);
+    }
+
+    public function testAdminDuplicateImportDetailShowsShortcutToOriginalImport(): void
+    {
+        $adminEmail = 'ui.admin.import.duplicate.shortcut@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.duplicate.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $originalJob = new ImportJobEntity();
+        $originalJob->setId(Uuid::v7());
+        $originalJob->setOwner($owner);
+        $originalJob->setStatus(ImportJobStatus::PROCESSED);
+        $originalJob->setStorage('local');
+        $originalJob->setFilePath('2026/03/26/admin-original.jpg');
+        $originalJob->setOriginalFilename('admin-original.jpg');
+        $originalJob->setMimeType('image/jpeg');
+        $originalJob->setFileSizeBytes(64000);
+        $originalJob->setFileChecksumSha256(str_repeat('g', 64));
+        $originalJob->setErrorPayload('{"status":"processed"}');
+        $originalJob->setCreatedAt(new DateTimeImmutable('2026-03-26 10:30:00'));
+        $originalJob->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:30:00'));
+        $originalJob->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:30:00'));
+        $this->em->persist($originalJob);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-duplicate.jpg');
+        $job->setOriginalFilename('admin-duplicate.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('h', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfImportJobId' => $originalJob->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 10:35:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:35:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 10:35:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:35:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $jobId = $job->getId()->toRfc4122();
+        $originalJobId = $originalJob->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('/ui/admin/imports/'.$originalJobId, $detailContent);
+        self::assertStringContainsString('Open original import', $detailContent);
+    }
+
+    public function testAdminDuplicateImportDetailCanShortcutToExistingReceipt(): void
+    {
+        $adminEmail = 'ui.admin.import.duplicate.receipt@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.duplicate.receipt.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('PETRO EST');
+        $station->setStreetName('LECLERC SEZANNE HYPER');
+        $station->setPostalCode('51120');
+        $station->setCity('SEZANNE');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-26 10:45:00'));
+        $receipt->setTotalCents(7147);
+        $receipt->setVatAmountCents(1191);
+        $this->em->persist($receipt);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-duplicate-receipt.jpg');
+        $job->setOriginalFilename('admin-duplicate-receipt.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('y', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:50:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('/ui/admin/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
+        self::assertStringContainsString('Open existing receipt', $detailContent);
+    }
+
+    public function testAdminNeedsReviewImportDetailShowsTriageSummaryForOcrFallback(): void
+    {
+        $adminEmail = 'ui.admin.import.fallback@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.fallback.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-fallback.jpg');
+        $job->setOriginalFilename('admin-fallback.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('k', 64));
+        $job->setOcrRetryCount(0);
+        $job->setErrorPayload(json_encode([
+            'status' => 'needs_review',
+            'provider' => 'ocr_unavailable_fallback',
+            'fingerprint' => 'checksum-sha256:v1:'.str_repeat('k', 64),
+            'fallbackReason' => 'ocr_provider_retryable_exhausted',
+            'fallbackStrategy' => 'manual_review',
+            'retryCount' => 3,
+            'parsedDraft' => [
+                'issues' => [
+                    'OCR provider unavailable after retries: timeout',
+                    'Manual review remains available.',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 11:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 11:05:00'));
+        $job->setStartedAt(new DateTimeImmutable('2026-03-26 11:01:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 11:05:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 11:00:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Triage summary', $detailContent);
+        self::assertStringContainsString('Retry count at terminal state', $detailContent);
+        self::assertStringContainsString('ocr_provider_retryable_exhausted', $detailContent);
+        self::assertStringContainsString('Detected issues', $detailContent);
+        self::assertStringContainsString('2', $detailContent);
+    }
+
+    public function testAdminFailedImportDetailShowsTriageSummaryFromRawFailurePayload(): void
+    {
+        $adminEmail = 'ui.admin.import.failed@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.failed.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::FAILED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-failed.jpg');
+        $job->setOriginalFilename('admin-failed.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('m', 64));
+        $job->setOcrRetryCount(2);
+        $job->setErrorPayload('ocr_provider_permanent: provider quota exceeded');
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 11:10:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 11:12:00'));
+        $job->setStartedAt(new DateTimeImmutable('2026-03-26 11:11:00'));
+        $job->setFailedAt(new DateTimeImmutable('2026-03-26 11:12:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 11:10:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Triage summary', $detailContent);
+        self::assertStringContainsString('Terminal detail', $detailContent);
+        self::assertStringContainsString('ocr_provider_permanent: provider quota exceeded', $detailContent);
+        self::assertStringContainsString('OCR retry count', $detailContent);
+        self::assertStringContainsString('2', $detailContent);
+    }
+
     /**
      * @param array<string, string|int|float|bool|array<int, array<string, string>>|null> $parameters
      * @param array<string, string>                                                       $server
@@ -1004,6 +1398,18 @@ final class AdminBackofficeUiTest extends WebTestCase
     private function extractReparseCsrfForImport(string $content, string $importId): string
     {
         $pattern = '#/ui/admin/imports/'.preg_quote($importId, '#').'/reparse.*?name="_token" value="([^"]+)"#s';
+        self::assertMatchesRegularExpression($pattern, $content);
+        preg_match($pattern, $content, $matches);
+        $token = $matches[1] ?? null;
+        self::assertIsString($token);
+        self::assertNotSame('', $token);
+
+        return $token;
+    }
+
+    private function extractFinalizeCsrfForImport(string $content, string $importId): string
+    {
+        $pattern = '#/ui/admin/imports/'.preg_quote($importId, '#').'/finalize.*?name="_token" value="([^"]+)"#s';
         self::assertMatchesRegularExpression($pattern, $content);
         preg_match($pattern, $content, $matches);
         $token = $matches[1] ?? null;

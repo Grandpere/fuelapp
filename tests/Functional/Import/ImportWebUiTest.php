@@ -16,6 +16,7 @@ namespace App\Tests\Functional\Import;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Infrastructure\Persistence\Doctrine\Entity\ImportJobEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
+use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -121,7 +122,8 @@ final class ImportWebUiTest extends WebTestCase
         $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
-        self::assertStringContainsString('import job(s) queued', $listContent);
+        self::assertStringContainsString('Last upload summary', $listContent);
+        self::assertStringContainsString('1 queued, 0 rejected.', $listContent);
         self::assertStringContainsString('ticket.png', $listContent);
         self::assertStringContainsString('Queued', $listContent);
         self::assertStringContainsString('data-controller="row-link"', $listContent);
@@ -179,6 +181,55 @@ final class ImportWebUiTest extends WebTestCase
         $savedB = $this->em->getRepository(ImportJobEntity::class)->findOneBy(['originalFilename' => 'ticket-b.png']);
         self::assertInstanceOf(ImportJobEntity::class, $savedA);
         self::assertInstanceOf(ImportJobEntity::class, $savedB);
+    }
+
+    public function testUserSeesStructuredBulkUploadSummaryFromUi(): void
+    {
+        $email = 'import.web.bulk.summary@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $pageResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $pageResponse->getStatusCode());
+        $pageContent = (string) $pageResponse->getContent();
+
+        preg_match('/name="_token" value="([^"]+)"/', $pageContent, $matches);
+        $csrfToken = $matches[1] ?? null;
+        self::assertIsString($csrfToken);
+
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6p9x8AAAAASUVORK5CYII=',
+            true,
+        );
+        if (!is_string($png)) {
+            throw new RuntimeException('Unable to build PNG fixture.');
+        }
+
+        $uploadResponse = $this->request(
+            'POST',
+            '/ui/imports',
+            ['_token' => $csrfToken],
+            [
+                'files' => [
+                    $this->createUploadedFile('valid.png', $png, 'image/png'),
+                    $this->createUploadedFile('invalid.txt', 'hello', 'text/plain'),
+                ],
+            ],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_FOUND, $uploadResponse->getStatusCode());
+
+        $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('Last upload summary', $listContent);
+        self::assertStringContainsString('1 queued, 1 rejected.', $listContent);
+        self::assertStringContainsString('valid.png', $listContent);
+        self::assertStringContainsString('invalid.txt', $listContent);
+        self::assertStringContainsString('Unsupported file type', $listContent);
     }
 
     public function testUserCanFinalizeNeedsReviewImportFromUi(): void
@@ -250,6 +301,45 @@ final class ImportWebUiTest extends WebTestCase
         $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
         self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
         self::assertSame(101250, $savedReceipt->getOdometerKilometers());
+    }
+
+    public function testImportDetailKeepsReturnToContext(): void
+    {
+        $email = 'import.web.context@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/context.jpg');
+        $job->setOriginalFilename('context.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(2048);
+        $job->setFileChecksumSha256(str_repeat('c', 64));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:00:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $returnTo = '/ui/imports?summary=last';
+
+        $detailResponse = $this->request(
+            'GET',
+            '/ui/imports/'.$job->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo),
+            [],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $content = (string) $detailResponse->getContent();
+        self::assertStringContainsString('href="'.$returnTo.'"', $content);
+        self::assertStringContainsString('name="_redirect" value="'.$returnTo.'"', $content);
     }
 
     public function testUserCanFinalizeNeedsReviewImportWithManualCorrectionsFromUi(): void
@@ -333,6 +423,103 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame(152320, $savedReceipt->getOdometerKilometers());
     }
 
+    public function testUserCanFinalizeNeedsReviewImportWithMultipleLinesFromUi(): void
+    {
+        $email = 'import.web.multiline.finalize@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/25/manual-multiline.jpg');
+        $job->setOriginalFilename('manual-multiline.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('m', 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'issuedAt' => '2026-03-25T11:20:00+00:00',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 30000,
+                        'unitPriceDeciCentsPerLiter' => 1820,
+                        'vatRatePercent' => 20,
+                    ],
+                    [
+                        'fuelType' => 'sp98',
+                        'quantityMilliLiters' => 10000,
+                        'unitPriceDeciCentsPerLiter' => 1940,
+                        'vatRatePercent' => 20,
+                    ],
+                ],
+                'creationPayload' => null,
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-25 11:21:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-25 11:21:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-25 11:21:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $reviewPage = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $reviewPage->getStatusCode());
+        $reviewContent = (string) $reviewPage->getContent();
+        self::assertStringContainsString('Receipt lines', $reviewContent);
+        self::assertStringContainsString('name="lines[0][fuelType]"', $reviewContent);
+        self::assertStringContainsString('name="lines[1][fuelType]"', $reviewContent);
+        $csrfToken = $this->extractFinalizeCsrfToken($reviewContent, $jobId);
+
+        $finalizeResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$jobId.'/finalize',
+            [
+                '_token' => $csrfToken,
+                'issuedAt' => '2026-03-25T11:20',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => '30000',
+                        'unitPriceDeciCentsPerLiter' => '1820',
+                        'vatRatePercent' => '20',
+                    ],
+                    [
+                        'fuelType' => 'sp98',
+                        'quantityMilliLiters' => '10000',
+                        'unitPriceDeciCentsPerLiter' => '1940',
+                        'vatRatePercent' => '20',
+                    ],
+                ],
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $finalizeResponse->getStatusCode());
+
+        $this->em->clear();
+        $updated = $this->em->find(ImportJobEntity::class, $jobId);
+        self::assertInstanceOf(ImportJobEntity::class, $updated);
+        self::assertSame(ImportJobStatus::PROCESSED, $updated->getStatus());
+
+        $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
+        self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
+        self::assertCount(2, $savedReceipt->getLines());
+    }
+
     public function testUserCanDeleteOwnImportFromUiList(): void
     {
         $email = 'import.web.delete@example.com';
@@ -378,6 +565,161 @@ final class ImportWebUiTest extends WebTestCase
 
         $this->em->clear();
         self::assertNull($this->em->find(ImportJobEntity::class, $jobId));
+    }
+
+    public function testProcessedImportDetailShowsShortcutToCreatedReceipt(): void
+    {
+        $email = 'import.web.processed.shortcut@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($user);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-26 08:00:00'));
+        $receipt->setTotalCents(4200);
+        $receipt->setVatAmountCents(700);
+        $this->em->persist($receipt);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::PROCESSED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/processed-shortcut.jpg');
+        $job->setOriginalFilename('processed-shortcut.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('p', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'processed',
+            'finalizedReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 08:01:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 08:01:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 08:01:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 08:01:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+        $receiptId = $receipt->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Import completed', $detailContent);
+        self::assertStringContainsString('/ui/receipts/'.$receiptId, $detailContent);
+        self::assertStringContainsString('Open created receipt', $detailContent);
+    }
+
+    public function testDuplicateImportDetailShowsShortcutToOriginalImport(): void
+    {
+        $email = 'import.web.duplicate.shortcut@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $originalJob = new ImportJobEntity();
+        $originalJob->setId(Uuid::v7());
+        $originalJob->setOwner($user);
+        $originalJob->setStatus(ImportJobStatus::PROCESSED);
+        $originalJob->setStorage('local');
+        $originalJob->setFilePath('2026/03/26/original.jpg');
+        $originalJob->setOriginalFilename('original.jpg');
+        $originalJob->setMimeType('image/jpeg');
+        $originalJob->setFileSizeBytes(64000);
+        $originalJob->setFileChecksumSha256(str_repeat('o', 64));
+        $originalJob->setErrorPayload('{"status":"processed"}');
+        $originalJob->setCreatedAt(new DateTimeImmutable('2026-03-26 09:00:00'));
+        $originalJob->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:00:00'));
+        $originalJob->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:00:00'));
+        $this->em->persist($originalJob);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/duplicate.jpg');
+        $job->setOriginalFilename('duplicate.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('d', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfImportJobId' => $originalJob->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:05:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+        $originalJobId = $originalJob->getId()->toRfc4122();
+
+        $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('/ui/imports/'.$originalJobId, $detailContent);
+        self::assertStringContainsString('Open original import', $detailContent);
+    }
+
+    public function testDuplicateImportDetailCanShortcutToExistingReceipt(): void
+    {
+        $email = 'import.web.duplicate.receipt@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('PETRO EST');
+        $station->setStreetName('LECLERC SEZANNE HYPER');
+        $station->setPostalCode('51120');
+        $station->setCity('SEZANNE');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($user);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-26 09:00:00'));
+        $receipt->setTotalCents(7147);
+        $receipt->setVatAmountCents(1191);
+        $this->em->persist($receipt);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/duplicate-receipt.jpg');
+        $job->setOriginalFilename('duplicate-receipt.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('x', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:05:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
+        self::assertStringContainsString('Open existing receipt', $detailContent);
     }
 
     public function testUserCanReparseNeedsReviewImportFromUi(): void
@@ -541,9 +883,9 @@ final class ImportWebUiTest extends WebTestCase
     }
 
     /**
-     * @param array<string, string|int|float|bool|null> $parameters
-     * @param array<string, mixed>                      $files
-     * @param array<string, string>                     $cookies
+     * @param array<string, string|int|float|bool|array<int, array<string, string>>|null> $parameters
+     * @param array<string, mixed>                                                        $files
+     * @param array<string, string>                                                       $cookies
      */
     private function request(string $method, string $uri, array $parameters = [], array $files = [], array $cookies = []): Response
     {

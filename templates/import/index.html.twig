@@ -3,6 +3,9 @@
 {% block title %}Import Receipts{% endblock %}
 
 {% block body %}
+    {% set uploadSummaries = app.flashes('import_summary') %}
+    {% set uploadSummary = uploadSummaries|length > 0 ? uploadSummaries|last : null %}
+    {% set returnTo = app.request.requestUri %}
     <main class="app-shell page-stack">
         <header class="page-header-split">
             <div class="page-header">
@@ -32,6 +35,53 @@
             </form>
         </section>
 
+        {% if uploadSummary is iterable %}
+            <section class="card section-card">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Last upload summary</h2>
+                        <p class="muted section-lead">
+                            {{ uploadSummary.acceptedCount }} queued, {{ uploadSummary.rejectedCount }} rejected.
+                        </p>
+                    </div>
+                </div>
+
+                {% if uploadSummary.accepted|length > 0 %}
+                    <div class="form-stack">
+                        <p class="text-block-title">Accepted</p>
+                        <ul class="flash-list">
+                            {% for accepted in uploadSummary.accepted %}
+                                <li class="flash">
+                                    <strong>{{ accepted.filename }}</strong>
+                                    {% if accepted.source != accepted.filename %}
+                                        <span class="muted">({{ accepted.source }})</span>
+                                    {% endif %}
+                                    <span class="muted">queued as {{ accepted.status }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {% if uploadSummary.rejected|length > 0 %}
+                    <div class="form-stack">
+                        <p class="text-block-title">Rejected</p>
+                        <ul class="flash-list">
+                            {% for rejected in uploadSummary.rejected %}
+                                <li class="flash flash-error">
+                                    <strong>{{ rejected.filename }}</strong>
+                                    {% if rejected.source != rejected.filename %}
+                                        <span class="muted">({{ rejected.source }})</span>
+                                    {% endif %}
+                                    <span>{{ rejected.reason }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </section>
+        {% endif %}
+
         <section class="card section-card">
             <div class="section-header">
                 <div>
@@ -60,7 +110,8 @@
                                 class="table-row row-link"
                                 data-controller="row-link"
                                 data-action="click->row-link#navigate"
-                                data-row-link-url-value="{{ path('ui_import_show', {id: job.id.toString}) }}"
+                                data-row-link-url-value="{{ path('ui_import_show', {id: job.id.toString, return_to: returnTo}) }}"
+                                onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                             >
                                 <td>{{ job.id.toString }}</td>
                                 <td>
@@ -74,14 +125,15 @@
                                 <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
                                 <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
                                 <td class="action-cell">
-                                    <div class="action-row">
+                                    <div class="action-row" data-row-link-ignore>
                                         {% if job.status.value == 'needs_review' %}
-                                            <a class="btn btn-primary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Review</a>
+                                            <a class="btn btn-primary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Review</a>
                                         {% else %}
-                                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString}) }}" data-turbo-frame="_top">Detail</a>
+                                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Detail</a>
                                         {% endif %}
                                         <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
                                             <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
+                                            <input type="hidden" name="_redirect" value="{{ returnTo }}">
                                             <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                                         </form>
                                     </div>

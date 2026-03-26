@@ -77,8 +77,9 @@
                         <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
                     </label>
                     <label class="label">
-                        Total cost (cents)
-                        <input class="input" type="number" min="0" step="1" name="totalCostCents" value="{{ formData.totalCostCents }}">
+                        Total cost (EUR)
+                        <input class="input" type="text" inputmode="decimal" name="totalCostEuros" value="{{ formData.totalCostEuros }}" placeholder="189.90">
+                        <small class="muted">Use an amount in euros, for example <code>189.90</code>.</small>
                     </label>
                     <label class="label">
                         Currency

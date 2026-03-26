@@ -5,11 +5,16 @@
 {% set admin_section = 'imports' %}
 
 {% block admin_content %}
+    {% set requestedReturnTo = app.request.query.get('return_to') %}
+    {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_import_job_list') %}
     {% set parsedDraft = payloadData is not null and payloadData.parsedDraft is defined and payloadData.parsedDraft is iterable ? payloadData.parsedDraft : null %}
     {% set creationPayload = payloadData is not null and payloadData.creationPayload is defined and payloadData.creationPayload is iterable ? payloadData.creationPayload : null %}
-    {% set firstLine = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable and creationPayload.lines|length > 0 ? creationPayload.lines|first : (parsedDraft is not null and parsedDraft.lines is defined and parsedDraft.lines is iterable and parsedDraft.lines|length > 0 ? parsedDraft.lines|first : null) %}
+    {% set reviewLines = creationPayload is not null and creationPayload.lines is defined and creationPayload.lines is iterable ? creationPayload.lines : (parsedDraft is not null and parsedDraft.lines is defined and parsedDraft.lines is iterable ? parsedDraft.lines : []) %}
     {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
     {% set issuedAtMissing = 'issued_at_missing' in issueList %}
+    {% set finalizedReceiptId = payloadData is not null and payloadData.finalizedReceiptId is defined and payloadData.finalizedReceiptId is not null ? payloadData.finalizedReceiptId : null %}
+    {% set duplicateOfImportJobId = payloadData is not null and payloadData.duplicateOfImportJobId is defined and payloadData.duplicateOfImportJobId is not null ? payloadData.duplicateOfImportJobId : null %}
+    {% set duplicateOfReceiptId = payloadData is not null and payloadData.duplicateOfReceiptId is defined and payloadData.duplicateOfReceiptId is not null ? payloadData.duplicateOfReceiptId : null %}
 
     <section class="card admin-panel">
         <div class="admin-page-head">
@@ -50,6 +55,18 @@
             <dd class="admin-dd">{{ job.failedAt ? job.failedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
         </dl>
 
+        {% if triageSummary is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <p class="text-block-title">Triage summary</p>
+                <dl class="admin-dl">
+                    {% for label, value in triageSummary %}
+                        <dt class="admin-dt">{{ label }}</dt>
+                        <dd class="admin-dd">{{ value }}</dd>
+                    {% endfor %}
+                </dl>
+            </div>
+        {% endif %}
+
         {% if payloadData is not null %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <p class="text-block-title">Decoded payload</p>
@@ -65,7 +82,7 @@
         {% endif %}
 
         <div class="actions-wrap admin-table-top">
-            <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}" data-turbo-frame="_top">Back to list</a>
+            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to list</a>
             <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}" data-turbo-frame="_top">Open user API resource</a>
             <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry" data-turbo-frame="_top">Open admin retry endpoint</a>
             {% if job.status.value == 'needs_review' %}
@@ -76,6 +93,7 @@
             {% endif %}
             <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
+                <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
                 <button class="btn btn-danger" type="submit">Delete</button>
             </form>
         </div>
@@ -105,6 +123,32 @@
         <section class="card admin-panel admin-section-spaced">
             <h3 class="section-title">Date required before finalization</h3>
             <p class="muted">OCR could not read the receipt date. Enter the receipt date and time below before finalizing this import.</p>
+        </section>
+    {% endif %}
+
+    {% if job.status.value == 'processed' %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Import completed</h3>
+            <p class="muted">This import already created a receipt. Jump straight to the resulting receipt from here.</p>
+            <div class="actions-wrap">
+                {% if finalizedReceiptId is not null %}
+                    <a class="btn btn-primary" href="{{ path('ui_admin_receipt_show', {id: finalizedReceiptId}) }}" data-turbo-frame="_top">Open created receipt</a>
+                {% endif %}
+                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_list') }}" data-turbo-frame="_top">Back to receipts</a>
+            </div>
+        </section>
+    {% elseif job.status.value == 'duplicate' %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Duplicate import</h3>
+            <p class="muted">This job matches an existing receipt or previously uploaded import. Open the existing record directly from here.</p>
+            <div class="actions-wrap">
+                {% if duplicateOfReceiptId is not null %}
+                    <a class="btn btn-primary" href="{{ path('ui_admin_receipt_show', {id: duplicateOfReceiptId}) }}" data-turbo-frame="_top">Open existing receipt</a>
+                {% elseif duplicateOfImportJobId is not null %}
+                    <a class="btn btn-primary" href="{{ path('ui_admin_import_job_show', {id: duplicateOfImportJobId}) }}" data-turbo-frame="_top">Open original import</a>
+                {% endif %}
+                <a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}" data-turbo-frame="_top">Back to imports</a>
+            </div>
         </section>
     {% endif %}
 
@@ -161,22 +205,57 @@
                         Odometer (km)
                         <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : (parsedDraft is not null and parsedDraft.odometerKilometers is defined ? parsedDraft.odometerKilometers : '') }}" min="0" step="1">
                     </label>
-                    <label class="label">
-                        Line fuel type
-                        <input class="input" type="text" name="lineFuelType" value="{{ firstLine is not null and firstLine.fuelType is defined ? firstLine.fuelType : '' }}" placeholder="diesel">
-                    </label>
-                    <label class="label">
-                        Line quantity (mL)
-                        <input class="input" type="number" name="lineQuantityMilliLiters" value="{{ firstLine is not null and firstLine.quantityMilliLiters is defined ? firstLine.quantityMilliLiters : '' }}" min="1" step="1">
-                    </label>
-                    <label class="label">
-                        Line unit price (deci-cents/L)
-                        <input class="input" type="number" name="lineUnitPriceDeciCentsPerLiter" value="{{ firstLine is not null and firstLine.unitPriceDeciCentsPerLiter is defined ? firstLine.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
-                    </label>
-                    <label class="label">
-                        Line VAT rate (%)
-                        <input class="input" type="number" name="lineVatRatePercent" value="{{ firstLine is not null and firstLine.vatRatePercent is defined ? firstLine.vatRatePercent : '' }}" min="0" max="100" step="1">
-                    </label>
+                </div>
+
+                <div class="form-stack">
+                    <p class="text-block-title">Receipt lines</p>
+                    {% if reviewLines|length > 0 %}
+                        {% for line in reviewLines %}
+                            <section class="card-subtle card-subtle-block">
+                                <p class="compact-note muted">Line {{ loop.index }}</p>
+                                <div class="form-grid-2">
+                                    <label class="label">
+                                        Fuel type
+                                        <input class="input" type="text" name="lines[{{ loop.index0 }}][fuelType]" value="{{ line.fuelType is defined ? line.fuelType : '' }}" placeholder="diesel">
+                                    </label>
+                                    <label class="label">
+                                        Quantity (mL)
+                                        <input class="input" type="number" name="lines[{{ loop.index0 }}][quantityMilliLiters]" value="{{ line.quantityMilliLiters is defined and line.quantityMilliLiters is not null ? line.quantityMilliLiters : '' }}" min="1" step="1">
+                                    </label>
+                                    <label class="label">
+                                        Unit price (deci-cents/L)
+                                        <input class="input" type="number" name="lines[{{ loop.index0 }}][unitPriceDeciCentsPerLiter]" value="{{ line.unitPriceDeciCentsPerLiter is defined and line.unitPriceDeciCentsPerLiter is not null ? line.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
+                                    </label>
+                                    <label class="label">
+                                        VAT rate (%)
+                                        <input class="input" type="number" name="lines[{{ loop.index0 }}][vatRatePercent]" value="{{ line.vatRatePercent is defined and line.vatRatePercent is not null ? line.vatRatePercent : '' }}" min="0" max="100" step="1">
+                                    </label>
+                                </div>
+                            </section>
+                        {% endfor %}
+                    {% else %}
+                        <section class="card-subtle card-subtle-block">
+                            <p class="muted">No fuel lines were parsed. Add one manually below if you want to finalize this import.</p>
+                            <div class="form-grid-2">
+                                <label class="label">
+                                    Fuel type
+                                    <input class="input" type="text" name="lines[0][fuelType]" value="" placeholder="diesel">
+                                </label>
+                                <label class="label">
+                                    Quantity (mL)
+                                    <input class="input" type="number" name="lines[0][quantityMilliLiters]" value="" min="1" step="1">
+                                </label>
+                                <label class="label">
+                                    Unit price (deci-cents/L)
+                                    <input class="input" type="number" name="lines[0][unitPriceDeciCentsPerLiter]" value="" min="0" step="1">
+                                </label>
+                                <label class="label">
+                                    VAT rate (%)
+                                    <input class="input" type="number" name="lines[0][vatRatePercent]" value="" min="0" max="100" step="1">
+                                </label>
+                            </div>
+                        </section>
+                    {% endif %}
                 </div>
 
                 <div class="actions-wrap">

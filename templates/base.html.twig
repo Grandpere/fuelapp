@@ -905,12 +905,12 @@
             </button>
         {% endif %}
 
-        {% for label, messages in app.flashes %}
-            <section class="app-shell flash-shell">
-                {% for message in messages %}
+        {% for label in ['success', 'error'] %}
+            {% for message in app.flashes(label) %}
+                <section class="app-shell flash-shell">
                     <div class="flash {{ label == 'error' ? 'flash-error' : '' }}">{{ message }}</div>
-                {% endfor %}
-            </section>
+                </section>
+            {% endfor %}
         {% endfor %}
 
         {% block body %}{% endblock %}

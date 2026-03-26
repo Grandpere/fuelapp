@@ -103,8 +103,8 @@ final class ReceiptWebUiTest extends WebTestCase
                 'lines' => [
                     [
                         'fuelType' => 'sp95',
-                        'quantityMilliLiters' => '12000',
-                        'unitPriceDeciCentsPerLiter' => '1750',
+                        'quantityLiters' => '12.000',
+                        'unitPriceEurosPerLiter' => '1.750',
                         'vatRatePercent' => '20',
                     ],
                 ],
@@ -122,6 +122,141 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame('sp95', $updatedLine->getFuelType());
         self::assertSame(12000, $updatedLine->getQuantityMilliLiters());
         self::assertSame(1750, $updatedLine->getUnitPriceDeciCentsPerLiter());
+    }
+
+    public function testUserCanCreateReceiptFromHumanFriendlyUnits(): void
+    {
+        $email = 'receipt.ui.create@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $createPage = $this->request('GET', '/ui/receipts/new');
+        self::assertSame(Response::HTTP_OK, $createPage->getStatusCode());
+        $createContent = (string) $createPage->getContent();
+        self::assertStringContainsString('Quantity (L)', $createContent);
+        self::assertStringContainsString('Unit price (€/L)', $createContent);
+        $csrf = $this->extractFormCsrf($createContent);
+
+        $createResponse = $this->request('POST', '/ui/receipts/new', [
+            '_token' => $csrf,
+            'issuedAt' => '2026-03-05T14:20',
+            'fuelType' => 'diesel',
+            'quantityLiters' => '40,40',
+            'unitPriceEurosPerLiter' => '1,769',
+            'vatRatePercent' => '20',
+            'stationName' => 'PETRO EST',
+            'stationStreetName' => 'LECLERC SEZANNE HYPER',
+            'stationPostalCode' => '51120',
+            'stationCity' => 'SEZANNE',
+            'latitudeMicroDegrees' => '',
+            'longitudeMicroDegrees' => '',
+            'odometerKilometers' => '120450',
+        ]);
+        self::assertSame(Response::HTTP_SEE_OTHER, $createResponse->getStatusCode());
+
+        $this->em->clear();
+        $receipts = $this->em->getRepository(ReceiptEntity::class)->findAll();
+        self::assertCount(1, $receipts);
+        $receipt = $receipts[0];
+        self::assertInstanceOf(ReceiptEntity::class, $receipt);
+        self::assertSame($owner->getId()->toRfc4122(), $receipt->getOwner()?->getId()->toRfc4122());
+        self::assertSame(120450, $receipt->getOdometerKilometers());
+        $lines = $receipt->getLines()->toArray();
+        self::assertCount(1, $lines);
+        $line = $lines[0];
+        self::assertInstanceOf(ReceiptLineEntity::class, $line);
+        self::assertSame(40400, $line->getQuantityMilliLiters());
+        self::assertSame(1769, $line->getUnitPriceDeciCentsPerLiter());
+    }
+
+    public function testReceiptIndexRowsUseSharedRowLinkNavigation(): void
+    {
+        $email = 'receipt.ui.list@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('List Station');
+        $station->setStreetName('9 View Street');
+        $station->setPostalCode('75012');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-04 09:30:00'));
+        $receipt->setTotalCents(2200);
+        $receipt->setVatAmountCents(367);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(12000);
+        $line->setUnitPriceDeciCentsPerLiter(1833);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/receipts');
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('data-controller="row-link"', $content);
+        self::assertStringContainsString('data-row-link-url-value="/ui/receipts/'.$receipt->getId()->toRfc4122().'?', $content);
+        self::assertMatchesRegularExpression('/data-row-link-url-value="\\/ui\\/receipts\\/'.$receipt->getId()->toRfc4122().'\\?[^"]*return_to=/', $content);
+    }
+
+    public function testReceiptDetailKeepsReturnToContextFromFilteredList(): void
+    {
+        $email = 'receipt.ui.context@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Context Station');
+        $station->setStreetName('12 Filter Street');
+        $station->setPostalCode('75013');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-12 08:00:00'));
+        $receipt->setTotalCents(2150);
+        $receipt->setVatAmountCents(358);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(11000);
+        $line->setUnitPriceDeciCentsPerLiter(1955);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $returnTo = '/ui/receipts?issued_from=2026-03-01&issued_to=2026-03-31&sort_by=total&sort_direction=asc';
+        $showResponse = $this->request('GET', '/ui/receipts/'.$receipt->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo));
+        self::assertSame(Response::HTTP_OK, $showResponse->getStatusCode());
+        $content = (string) $showResponse->getContent();
+        $escapedReturnTo = htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        self::assertStringContainsString('href="'.$escapedReturnTo.'"', $content);
+        self::assertStringContainsString('name="_redirect" value="'.$escapedReturnTo.'"', $content);
     }
 
     /**

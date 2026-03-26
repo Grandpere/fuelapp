@@ -15,8 +15,10 @@ namespace App\Receipt\UI\Realtime;
 
 use App\Receipt\Domain\Receipt;
 use App\Station\Domain\Station;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
+use Throwable;
 use Twig\Environment;
 
 final readonly class ReceiptStreamPublisher
@@ -26,6 +28,7 @@ final readonly class ReceiptStreamPublisher
     public function __construct(
         private HubInterface $hub,
         private Environment $twig,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -49,19 +52,35 @@ final readonly class ReceiptStreamPublisher
             'vatRatePercent' => $firstLine?->vatRatePercent(),
         ];
 
-        $content = $this->twig->render('receipt/stream/created.stream.html.twig', [
-            'receipt' => $receiptRow,
-        ]);
+        try {
+            $content = $this->twig->render('receipt/stream/created.stream.html.twig', [
+                'receipt' => $receiptRow,
+            ]);
 
-        $this->hub->publish(new Update(self::TOPIC, $content));
+            $this->hub->publish(new Update(self::TOPIC, $content));
+        } catch (Throwable $exception) {
+            $this->logger->warning('receipt.stream.publish_created_failed', [
+                'receipt_id' => $receipt->id()->toString(),
+                'exception_class' => $exception::class,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     public function publishDeleted(string $receiptId): void
     {
-        $content = $this->twig->render('receipt/stream/deleted.stream.html.twig', [
-            'receiptId' => $receiptId,
-        ]);
+        try {
+            $content = $this->twig->render('receipt/stream/deleted.stream.html.twig', [
+                'receiptId' => $receiptId,
+            ]);
 
-        $this->hub->publish(new Update(self::TOPIC, $content));
+            $this->hub->publish(new Update(self::TOPIC, $content));
+        } catch (Throwable $exception) {
+            $this->logger->warning('receipt.stream.publish_deleted_failed', [
+                'receipt_id' => $receiptId,
+                'exception_class' => $exception::class,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 }

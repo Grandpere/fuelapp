@@ -16,6 +16,7 @@ namespace App\Admin\UI\Web\Controller;
 use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Import\Application\Command\DeleteImportJobCommand;
 use App\Import\Application\Command\DeleteImportJobHandler;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -28,6 +29,7 @@ final class AdminImportJobDeleteController extends AbstractController
     public function __construct(
         private readonly DeleteImportJobHandler $deleteImportJobHandler,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -56,7 +58,12 @@ final class AdminImportJobDeleteController extends AbstractController
             );
             $this->addFlash('success', 'Import file and job deleted.');
 
-            return $this->redirectToRoute('ui_admin_import_job_list');
+            return new RedirectResponse(
+                $this->safeReturnPathResolver->resolve(
+                    $request->request->get('_redirect'),
+                    $this->generateUrl('ui_admin_import_job_list'),
+                ),
+            );
         } catch (InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());
 

@@ -33,13 +33,14 @@
                     </select>
                 </label>
                 <label class="label">
-                    Quantity (mL)
-                    <input class="input" type="number" min="1" step="1" name="quantityMilliLiters" value="{{ formData.quantityMilliLiters }}" required>
+                    Quantity (L)
+                    <input class="input" type="text" inputmode="decimal" name="quantityLiters" value="{{ formData.quantityLiters }}" placeholder="40.40" required>
+                    <small class="muted">Use liters, for example <code>40.40</code>.</small>
                 </label>
                 <label class="label">
-                    Unit price (deci-cents/L)
-                    <input class="input" type="number" min="0" step="1" name="unitPriceDeciCentsPerLiter" value="{{ formData.unitPriceDeciCentsPerLiter }}" required>
-                    <small class="muted">Example: 1.879 €/L = 1879</small>
+                    Unit price (€/L)
+                    <input class="input" type="text" inputmode="decimal" name="unitPriceEurosPerLiter" value="{{ formData.unitPriceEurosPerLiter }}" placeholder="1.769" required>
+                    <small class="muted">Use euros per liter, for example <code>1.769</code>.</small>
                 </label>
                 <label class="label">
                     VAT (%)

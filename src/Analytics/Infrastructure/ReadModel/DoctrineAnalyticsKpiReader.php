@@ -15,6 +15,7 @@ namespace App\Analytics\Infrastructure\ReadModel;
 
 use App\Analytics\Application\Kpi\AnalyticsKpiReader;
 use App\Analytics\Application\Kpi\AverageFuelPriceKpi;
+use App\Analytics\Application\Kpi\FuelDashboardSnapshotKpi;
 use App\Analytics\Application\Kpi\MonthlyComparedCostKpi;
 use App\Analytics\Application\Kpi\MonthlyConsumptionKpi;
 use App\Analytics\Application\Kpi\MonthlyCostKpi;
@@ -29,6 +30,67 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
 
     public function __construct(private Connection $connection)
     {
+    }
+
+    public function readFuelDashboardSnapshot(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): FuelDashboardSnapshotKpi
+    {
+        $rows = $this->fetchMonthlyFuelRows($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+
+        $costByMonth = [];
+        $consumptionByMonth = [];
+        $fuelPricePerMonth = [];
+        $totalCostCents = 0;
+        $totalQuantityMilliLiters = 0;
+
+        foreach ($rows as $row) {
+            $month = $row['month'] ?? null;
+            $fuelTypeValue = $row['fuel_type'] ?? null;
+            if (!is_string($month) || '' === trim($month) || !is_string($fuelTypeValue) || '' === trim($fuelTypeValue)) {
+                continue;
+            }
+
+            $rowTotalCostCents = $this->toInt($row['total_cost_cents'] ?? null);
+            $rowTotalQuantityMilliLiters = $this->toInt($row['total_quantity_milli_liters'] ?? null);
+
+            $costByMonth[$month] = ($costByMonth[$month] ?? 0) + $rowTotalCostCents;
+            $consumptionByMonth[$month] = ($consumptionByMonth[$month] ?? 0) + $rowTotalQuantityMilliLiters;
+            $totalCostCents += $rowTotalCostCents;
+            $totalQuantityMilliLiters += $rowTotalQuantityMilliLiters;
+
+            $fuelPricePerMonth[] = new MonthlyFuelPriceKpi(
+                $month,
+                $fuelTypeValue,
+                $rowTotalCostCents,
+                $rowTotalQuantityMilliLiters,
+                $rowTotalQuantityMilliLiters > 0
+                    ? (int) round(($rowTotalCostCents * 10000) / $rowTotalQuantityMilliLiters, 0, PHP_ROUND_HALF_UP)
+                    : null,
+            );
+        }
+
+        ksort($costByMonth);
+        ksort($consumptionByMonth);
+
+        $costPerMonth = [];
+        foreach ($costByMonth as $month => $value) {
+            $costPerMonth[] = new MonthlyCostKpi($month, $value);
+        }
+
+        $consumptionPerMonth = [];
+        foreach ($consumptionByMonth as $month => $value) {
+            $consumptionPerMonth[] = new MonthlyConsumptionKpi($month, $value);
+        }
+
+        $averagePriceDeciCentsPerLiter = $totalQuantityMilliLiters > 0
+            ? (int) round(($totalCostCents * 10000) / $totalQuantityMilliLiters, 0, PHP_ROUND_HALF_UP)
+            : null;
+
+        return new FuelDashboardSnapshotKpi(
+            $costPerMonth,
+            $consumptionPerMonth,
+            $fuelPricePerMonth,
+            new AverageFuelPriceKpi($totalCostCents, $totalQuantityMilliLiters, $averagePriceDeciCentsPerLiter),
+        );
     }
 
     public function readCostPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
@@ -178,26 +240,7 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
 
     public function readFuelPricePerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
     {
-        [$whereClause, $params] = $this->buildFilters($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
-
-        $rows = $this->connection->fetchAllAssociative(
-            sprintf(
-                <<<'SQL'
-                        SELECT
-                            TO_CHAR(DATE_TRUNC('month', day::timestamp), 'YYYY-MM') AS month,
-                            fuel_type,
-                            COALESCE(SUM(total_cost_cents), 0) AS total_cost_cents,
-                            COALESCE(SUM(total_quantity_milli_liters), 0) AS total_quantity_milli_liters
-                        FROM %s
-                        WHERE %s
-                        GROUP BY DATE_TRUNC('month', day::timestamp), fuel_type
-                        ORDER BY DATE_TRUNC('month', day::timestamp), fuel_type
-                    SQL,
-                self::KPI_TABLE,
-                $whereClause,
-            ),
-            $params,
-        );
+        $rows = $this->fetchMonthlyFuelRows($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
 
         $items = [];
         foreach ($rows as $row) {
@@ -223,6 +266,33 @@ final readonly class DoctrineAnalyticsKpiReader implements AnalyticsKpiReader
         }
 
         return $items;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchMonthlyFuelRows(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
+    {
+        [$whereClause, $params] = $this->buildFilters($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+
+        return $this->connection->fetchAllAssociative(
+            sprintf(
+                <<<'SQL'
+                        SELECT
+                            TO_CHAR(DATE_TRUNC('month', day::timestamp), 'YYYY-MM') AS month,
+                            fuel_type,
+                            COALESCE(SUM(total_cost_cents), 0) AS total_cost_cents,
+                            COALESCE(SUM(total_quantity_milli_liters), 0) AS total_quantity_milli_liters
+                        FROM %s
+                        WHERE %s
+                        GROUP BY DATE_TRUNC('month', day::timestamp), fuel_type
+                        ORDER BY DATE_TRUNC('month', day::timestamp), fuel_type
+                    SQL,
+                self::KPI_TABLE,
+                $whereClause,
+            ),
+            $params,
+        );
     }
 
     public function readComparedCostPerMonth(string $ownerId, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array

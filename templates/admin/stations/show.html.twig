@@ -5,6 +5,8 @@
 {% set admin_section = 'stations' %}
 
 {% block admin_content %}
+    {% set requestedReturnTo = app.request.query.get('return_to') %}
+    {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_station_list') %}
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
@@ -15,9 +17,10 @@
                 <a class="btn btn-secondary" href="{{ path('ui_admin_station_edit', {id: station.id.toString}) }}">Edit station</a>
                 <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
+                    <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
                     <button class="btn btn-danger" type="submit">Delete</button>
                 </form>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Back to list</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back to list</a>
             </div>
         </div>
 

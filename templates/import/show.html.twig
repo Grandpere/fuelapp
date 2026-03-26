@@ -3,8 +3,14 @@
 {% block title %}Import Review{% endblock %}
 
 {% block body %}
+    {% set requestedReturnTo = app.request.query.get('return_to') %}
+    {% set backToImportsUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_import_index') %}
     {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
     {% set issuedAtMissing = 'issued_at_missing' in issueList %}
+    {% set reviewLines = reviewLines is defined and reviewLines is iterable ? reviewLines : [] %}
+    {% set finalizedReceiptId = payloadData is not null and payloadData.finalizedReceiptId is defined and payloadData.finalizedReceiptId is not null ? payloadData.finalizedReceiptId : null %}
+    {% set duplicateOfImportJobId = payloadData is not null and payloadData.duplicateOfImportJobId is defined and payloadData.duplicateOfImportJobId is not null ? payloadData.duplicateOfImportJobId : null %}
+    {% set duplicateOfReceiptId = payloadData is not null and payloadData.duplicateOfReceiptId is defined and payloadData.duplicateOfReceiptId is not null ? payloadData.duplicateOfReceiptId : null %}
     <main class="app-shell page-stack">
         <section class="card section-card">
             <div class="section-header">
@@ -13,7 +19,7 @@
                     <p class="muted section-lead">Review extracted values, optionally correct fields, then finalize to create the receipt.</p>
                 </div>
                 <div class="actions-wrap">
-                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Back to imports</a>
+                    <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
                     {% if job.status.value == 'needs_review' %}
                         <form method="post" action="{{ path('ui_import_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
                             <input type="hidden" name="_token" value="{{ csrf_token('ui_import_reparse_' ~ job.id.toString) }}">
@@ -22,6 +28,7 @@
                     {% endif %}
                     <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
                         <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
+                        <input type="hidden" name="_redirect" value="{{ backToImportsUrl }}">
                         <button class="btn btn-danger" type="submit">Delete import</button>
                     </form>
                 </div>
@@ -68,6 +75,32 @@
             </section>
         {% endif %}
 
+        {% if job.status.value == 'processed' %}
+            <section class="card section-card">
+                <p class="text-block-title">Import completed</p>
+                <p class="muted section-lead">This import already created a receipt. You can open it directly instead of going back through the list.</p>
+                <div class="actions-wrap">
+                    {% if finalizedReceiptId is not null %}
+                        <a class="btn btn-primary" href="{{ path('ui_receipt_show', {id: finalizedReceiptId}) }}" data-turbo-frame="_top">Open created receipt</a>
+                    {% endif %}
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Back to receipts</a>
+                </div>
+            </section>
+        {% elseif job.status.value == 'duplicate' %}
+            <section class="card section-card">
+                <p class="text-block-title">Duplicate import</p>
+                <p class="muted section-lead">This file matches an existing receipt or previously uploaded import. You can open the existing record directly from here.</p>
+                <div class="actions-wrap">
+                    {% if duplicateOfReceiptId is not null %}
+                        <a class="btn btn-primary" href="{{ path('ui_receipt_show', {id: duplicateOfReceiptId}) }}" data-turbo-frame="_top">Open existing receipt</a>
+                    {% elseif duplicateOfImportJobId is not null %}
+                        <a class="btn btn-primary" href="{{ path('ui_import_show', {id: duplicateOfImportJobId}) }}" data-turbo-frame="_top">Open original import</a>
+                    {% endif %}
+                    <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
+                </div>
+            </section>
+        {% endif %}
+
         {% if job.status.value == 'needs_review' %}
             <section class="card section-card">
                 <h2 class="section-title">Fix And Finalize</h2>
@@ -109,22 +142,57 @@
                             Odometer (km)
                             <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : (parsedDraft is not null and parsedDraft.odometerKilometers is defined ? parsedDraft.odometerKilometers : '') }}" min="0" step="1">
                         </label>
-                        <label class="label">
-                            Line fuel type
-                            <input class="input" type="text" name="lineFuelType" value="{{ firstLine is not null and firstLine.fuelType is defined ? firstLine.fuelType : '' }}" placeholder="diesel">
-                        </label>
-                        <label class="label">
-                            Line quantity (mL)
-                            <input class="input" type="number" name="lineQuantityMilliLiters" value="{{ firstLine is not null and firstLine.quantityMilliLiters is defined ? firstLine.quantityMilliLiters : '' }}" min="1" step="1">
-                        </label>
-                        <label class="label">
-                            Line unit price (deci-cents/L)
-                            <input class="input" type="number" name="lineUnitPriceDeciCentsPerLiter" value="{{ firstLine is not null and firstLine.unitPriceDeciCentsPerLiter is defined ? firstLine.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
-                        </label>
-                        <label class="label">
-                            Line VAT rate (%)
-                            <input class="input" type="number" name="lineVatRatePercent" value="{{ firstLine is not null and firstLine.vatRatePercent is defined ? firstLine.vatRatePercent : '' }}" min="0" max="100" step="1">
-                        </label>
+                    </div>
+
+                    <div class="form-stack">
+                        <p class="text-block-title">Receipt lines</p>
+                        {% if reviewLines|length > 0 %}
+                            {% for line in reviewLines %}
+                                <section class="card-subtle card-subtle-block">
+                                    <p class="compact-note muted">Line {{ loop.index }}</p>
+                                    <div class="form-grid-2">
+                                        <label class="label">
+                                            Fuel type
+                                            <input class="input" type="text" name="lines[{{ loop.index0 }}][fuelType]" value="{{ line.fuelType is defined ? line.fuelType : '' }}" placeholder="diesel">
+                                        </label>
+                                        <label class="label">
+                                            Quantity (mL)
+                                            <input class="input" type="number" name="lines[{{ loop.index0 }}][quantityMilliLiters]" value="{{ line.quantityMilliLiters is defined and line.quantityMilliLiters is not null ? line.quantityMilliLiters : '' }}" min="1" step="1">
+                                        </label>
+                                        <label class="label">
+                                            Unit price (deci-cents/L)
+                                            <input class="input" type="number" name="lines[{{ loop.index0 }}][unitPriceDeciCentsPerLiter]" value="{{ line.unitPriceDeciCentsPerLiter is defined and line.unitPriceDeciCentsPerLiter is not null ? line.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
+                                        </label>
+                                        <label class="label">
+                                            VAT rate (%)
+                                            <input class="input" type="number" name="lines[{{ loop.index0 }}][vatRatePercent]" value="{{ line.vatRatePercent is defined and line.vatRatePercent is not null ? line.vatRatePercent : '' }}" min="0" max="100" step="1">
+                                        </label>
+                                    </div>
+                                </section>
+                            {% endfor %}
+                        {% else %}
+                            <section class="card-subtle card-subtle-block">
+                                <p class="muted section-lead">No fuel lines were parsed. Add one manually below if you want to finalize this import.</p>
+                                <div class="form-grid-2">
+                                    <label class="label">
+                                        Fuel type
+                                        <input class="input" type="text" name="lines[0][fuelType]" value="" placeholder="diesel">
+                                    </label>
+                                    <label class="label">
+                                        Quantity (mL)
+                                        <input class="input" type="number" name="lines[0][quantityMilliLiters]" value="" min="1" step="1">
+                                    </label>
+                                    <label class="label">
+                                        Unit price (deci-cents/L)
+                                        <input class="input" type="number" name="lines[0][unitPriceDeciCentsPerLiter]" value="" min="0" step="1">
+                                    </label>
+                                    <label class="label">
+                                        VAT rate (%)
+                                        <input class="input" type="number" name="lines[0][vatRatePercent]" value="" min="0" max="100" step="1">
+                                    </label>
+                                </div>
+                            </section>
+                        {% endif %}
                     </div>
 
                     <div class="actions-wrap">

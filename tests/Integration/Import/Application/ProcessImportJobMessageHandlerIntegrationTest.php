@@ -27,7 +27,12 @@ use App\Import\Application\Storage\ImportStoredFileLocator;
 use App\Import\Application\Storage\StoredImportFile;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
+use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateLookup;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
+use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -40,6 +45,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 {
     private EntityManagerInterface $em;
     private ImportJobRepository $importJobRepository;
+    private ReceiptDuplicateLookup $receiptDuplicateLookup;
 
     protected function setUp(): void
     {
@@ -56,6 +62,12 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
             throw new RuntimeException('ImportJobRepository service not found.');
         }
         $this->importJobRepository = $repository;
+
+        $receiptDuplicateLookup = self::getContainer()->get(ReceiptDuplicateLookup::class);
+        if (!$receiptDuplicateLookup instanceof ReceiptDuplicateLookup) {
+            throw new RuntimeException('ReceiptDuplicateLookup service not found.');
+        }
+        $this->receiptDuplicateLookup = $receiptDuplicateLookup;
 
         $this->em->getConnection()->executeStatement('TRUNCATE TABLE import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
     }
@@ -83,6 +95,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            $this->receiptDuplicateLookup,
             new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new StaticOcrProvider(),
@@ -134,6 +147,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            $this->receiptDuplicateLookup,
             new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new StaticOcrProvider(),
@@ -155,6 +169,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            $this->receiptDuplicateLookup,
             new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new ThrowingOcrProvider(OcrProviderException::permanent('bad api key')),
@@ -175,6 +190,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            $this->receiptDuplicateLookup,
             new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('provider timeout')),
@@ -200,6 +216,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            $this->receiptDuplicateLookup,
             new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('provider timeout')),
@@ -235,6 +252,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $handler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            $this->receiptDuplicateLookup,
             new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new StaticOcrProvider(),
@@ -260,6 +278,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $unexpectedFailureHandler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            $this->receiptDuplicateLookup,
             new StaticImportFileStorage(),
             new ThrowingFileLocator(new RuntimeException('temporary locator failure')),
             new ThrowingOcrProvider(OcrProviderException::retryable('provider timeout')),
@@ -280,6 +299,7 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
 
         $retryableHandler = new ProcessImportJobMessageHandler(
             $this->importJobRepository,
+            $this->receiptDuplicateLookup,
             new StaticImportFileStorage(),
             new StaticFileLocator('/tmp/fake.pdf'),
             new ThrowingOcrProvider(OcrProviderException::retryable('provider timeout')),
@@ -297,6 +317,71 @@ final class ProcessImportJobMessageHandlerIntegrationTest extends KernelTestCase
             self::assertSame(ImportJobStatus::QUEUED, $queued->status());
             self::assertSame(1, $queued->ocrRetryCount());
         }
+    }
+
+    public function testHandlerMarksJobAsDuplicateWhenParsedReceiptAlreadyExists(): void
+    {
+        $user = new UserEntity();
+        $user->setId(Uuid::v7());
+        $user->setEmail('import.semantic.duplicate@example.com');
+        $user->setRoles(['ROLE_USER']);
+        $user->setPassword('test1234');
+        $this->em->persist($user);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('PETRO EST');
+        $station->setStreetName('LECLERC SEZANNE HYPER');
+        $station->setPostalCode('51120');
+        $station->setCity('SEZANNE');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($user);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2024-02-06 11:55:00'));
+        $receipt->setTotalCents(7147);
+        $receipt->setVatAmountCents(1191);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(40400);
+        $line->setUnitPriceDeciCentsPerLiter(1769);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $job = ImportJob::createQueued(
+            $user->getId()->toRfc4122(),
+            'local',
+            '2026/02/21/file.jpg',
+            'file.jpg',
+            'image/jpeg',
+            1024,
+            str_repeat('9', 64),
+        );
+        $this->importJobRepository->save($job);
+
+        $handler = new ProcessImportJobMessageHandler(
+            $this->importJobRepository,
+            $this->receiptDuplicateLookup,
+            new StaticImportFileStorage(),
+            new StaticFileLocator('/tmp/fake.jpg'),
+            new StaticOcrProvider(),
+            new CompleteStaticReceiptParser(),
+            new NullLogger(),
+        );
+        $handler(new ProcessImportJobMessage($job->id()->toString()));
+
+        $saved = $this->importJobRepository->getForSystem($job->id()->toString());
+        self::assertNotNull($saved);
+        self::assertSame(ImportJobStatus::DUPLICATE, $saved->status());
+        self::assertStringContainsString('same_receipt_payload', (string) $saved->errorPayload());
+        self::assertStringContainsString($receipt->getId()->toRfc4122(), (string) $saved->errorPayload());
     }
 
     private function createQueuedJob(string $email, string $checksum): ImportJob
@@ -381,6 +466,24 @@ final class StaticReceiptParser implements ReceiptOcrParser
             8000,
             1333,
             [new ParsedReceiptLineDraft('diesel', 10000, 1800, 1800, 20)],
+            [],
+        );
+    }
+}
+
+final class CompleteStaticReceiptParser implements ReceiptOcrParser
+{
+    public function parse(OcrExtraction $extraction): ParsedReceiptDraft
+    {
+        return new ParsedReceiptDraft(
+            'PETRO EST',
+            'LECLERC SEZANNE HYPER',
+            '51120',
+            'SEZANNE',
+            new DateTimeImmutable('2024-02-06 11:55:00'),
+            7147,
+            1191,
+            [new ParsedReceiptLineDraft('diesel', 40400, 1769, null, 20)],
             [],
         );
     }

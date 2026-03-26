@@ -5,6 +5,7 @@
 {% set admin_section = 'vehicles' %}
 
 {% block admin_content %}
+    {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
             <h2 class="page-title">Vehicles</h2>
@@ -28,17 +29,19 @@
                         class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
-                        data-row-link-url-value="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString}) }}"
+                        data-row-link-url-value="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString, return_to: returnTo}) }}"
+                        onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                     >
                         <td>{{ vehicle.name }}</td>
                         <td>{{ vehicle.plateNumber }}</td>
                         <td>{{ vehicle.ownerId ?? 'n/a' }}</td>
                         <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
-                        <td class="action-cell-flex">
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString}) }}" data-turbo-frame="_top">Detail</a>
+                        <td class="action-cell-flex" data-row-link-ignore>
+                            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Detail</a>
                             <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString}) }}" data-turbo-frame="_top">Edit</a>
                             <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this vehicle?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_vehicle_delete_' ~ vehicle.id.toString) }}">
+                                <input type="hidden" name="_redirect" value="{{ returnTo }}">
                                 <button class="btn btn-danger" type="submit">Delete</button>
                             </form>
                         </td>

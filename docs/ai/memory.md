@@ -482,3 +482,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the import pipeline stored the right diagnostic data, but the admin detail screen treated it as opaque payload instead of first-class troubleshooting metadata.
 - Fix: derive a compact triage summary in the controller (status, OCR retries, queue/processing timings, fallback reason/strategy, duplicate target, finalized receipt, terminal detail) and render it ahead of the raw payload.
 - Prevention: when async workflows persist structured terminal payloads, expose the operator-facing subset explicitly in the UI rather than assuming raw JSON inspection is acceptable.
+
+## 2026-03-26 - CSP hardening must account for Symfony importmap data: script entrypoints
+- Symptom: after tightening browser security headers, Turbo, Stimulus, flatpickr, and chart behavior all appeared dead at once, including in private browsing.
+- Root cause: Symfony importmap rendered script entrypoints using `data:application/javascript`, but the CSP `script-src` directive did not allow `data:`, so the browser blocked the entire frontend bootstrap.
+- Fix: keep the CSP baseline compatible with importmap by allowing `data:` in `script-src`, then validate JS-critical flows such as Turbo frames, datepickers, and chart/theme switches.
+- Prevention: for Symfony importmap apps, never tighten `script-src` without explicitly checking how entrypoints are emitted in the browser.

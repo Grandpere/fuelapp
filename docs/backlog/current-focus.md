@@ -7,11 +7,10 @@
 - Consolidate the now-cleaner product flows with targeted observability and performance work.
 
 ## In progress
-- SP17-003 - front runtime weight and cache polish
+- Re-open a product polish ticket only if fresh real-world friction appears
 
 ## Next tickets (ordered)
-1. Re-open a product polish ticket only if fresh real-world friction appears
-2. Microsoft OIDC remains deferred
+1. Microsoft OIDC remains deferred
 
 ## Notes
 - Sprint 13 UX work is delivered and merged.

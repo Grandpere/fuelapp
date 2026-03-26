@@ -99,8 +99,9 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertStringContainsString("form-action 'self'", $csp);
         self::assertStringContainsString("style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com", $csp);
         self::assertStringContainsString("font-src 'self' data:", $csp);
-        self::assertStringContainsString("script-src 'self' 'unsafe-inline' https://unpkg.com", $csp);
+        self::assertStringContainsString("script-src 'self' 'unsafe-inline' data: https://unpkg.com", $csp);
         self::assertStringContainsString("connect-src 'self' https:", $csp);
+        self::assertStringContainsString('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', (string) $response->getContent());
         self::assertStringContainsString('data-theme-toggle', (string) $response->getContent());
         self::assertStringContainsString('fuelapp-theme', (string) $response->getContent());
         self::assertStringContainsString('fuelapp:theme-changed', (string) $response->getContent());

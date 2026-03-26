@@ -219,6 +219,15 @@
 - [completed] Add/update functional coverage for fallback and failed import observability views.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP17-003 Front runtime weight and cache polish
+
+## Plan
+- [completed] Align remaining high-visibility date filters on the shared datepicker behavior instead of mixing native browser date inputs and flatpickr.
+- [completed] Fix the CSP/importmap compatibility regression that blocked the entire frontend runtime (`data:` script entrypoints).
+- [completed] Add/update security coverage for the CSP contract after the runtime fix.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
 - [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.

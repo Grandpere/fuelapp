@@ -55,6 +55,18 @@
             <dd class="admin-dd">{{ job.failedAt ? job.failedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
         </dl>
 
+        {% if triageSummary is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <p class="text-block-title">Triage summary</p>
+                <dl class="admin-dl">
+                    {% for label, value in triageSummary %}
+                        <dt class="admin-dt">{{ label }}</dt>
+                        <dd class="admin-dd">{{ value }}</dd>
+                    {% endfor %}
+                </dl>
+            </div>
+        {% endif %}
+
         {% if payloadData is not null %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <p class="text-block-title">Decoded payload</p>

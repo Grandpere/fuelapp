@@ -198,6 +198,27 @@
 ## Plan
 - [completed] Keep front receipt/import list context when opening details and coming back.
 - [completed] Extend the same return-context behavior to the highest-friction admin lists and delete flows.
+- [completed] Add/update functional coverage for safe return paths and list-row detail navigation.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP17-001 Analytics query profiling and hot-path optimization
+
+## Plan
+- [completed] Collapse the repeated fuel KPI reads used by the analytics dashboard into a single grouped snapshot read.
+- [completed] Rewire the dashboard controller to consume the shared snapshot without changing output semantics.
+- [completed] Add/update targeted unit coverage for the grouped analytics reader behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP17-002 Import pipeline observability polish
+
+## Plan
+- [completed] Surface a triage-oriented admin summary for import terminal states instead of relying only on raw payload inspection.
+- [completed] Expose retry, fallback, duplicate-target, fingerprint, and timing metadata directly in the admin import detail flow.
+- [completed] Add/update functional coverage for fallback and failed import observability views.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
 - [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.

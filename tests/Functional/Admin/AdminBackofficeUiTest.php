@@ -1231,6 +1231,95 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Open existing receipt', $detailContent);
     }
 
+    public function testAdminNeedsReviewImportDetailShowsTriageSummaryForOcrFallback(): void
+    {
+        $adminEmail = 'ui.admin.import.fallback@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.fallback.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-fallback.jpg');
+        $job->setOriginalFilename('admin-fallback.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('k', 64));
+        $job->setOcrRetryCount(0);
+        $job->setErrorPayload(json_encode([
+            'status' => 'needs_review',
+            'provider' => 'ocr_unavailable_fallback',
+            'fingerprint' => 'checksum-sha256:v1:'.str_repeat('k', 64),
+            'fallbackReason' => 'ocr_provider_retryable_exhausted',
+            'fallbackStrategy' => 'manual_review',
+            'retryCount' => 3,
+            'parsedDraft' => [
+                'issues' => [
+                    'OCR provider unavailable after retries: timeout',
+                    'Manual review remains available.',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 11:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 11:05:00'));
+        $job->setStartedAt(new DateTimeImmutable('2026-03-26 11:01:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 11:05:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 11:00:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Triage summary', $detailContent);
+        self::assertStringContainsString('Retry count at terminal state', $detailContent);
+        self::assertStringContainsString('ocr_provider_retryable_exhausted', $detailContent);
+        self::assertStringContainsString('Detected issues', $detailContent);
+        self::assertStringContainsString('2', $detailContent);
+    }
+
+    public function testAdminFailedImportDetailShowsTriageSummaryFromRawFailurePayload(): void
+    {
+        $adminEmail = 'ui.admin.import.failed@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.failed.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::FAILED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-failed.jpg');
+        $job->setOriginalFilename('admin-failed.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('m', 64));
+        $job->setOcrRetryCount(2);
+        $job->setErrorPayload('ocr_provider_permanent: provider quota exceeded');
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 11:10:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 11:12:00'));
+        $job->setStartedAt(new DateTimeImmutable('2026-03-26 11:11:00'));
+        $job->setFailedAt(new DateTimeImmutable('2026-03-26 11:12:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 11:10:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Triage summary', $detailContent);
+        self::assertStringContainsString('Terminal detail', $detailContent);
+        self::assertStringContainsString('ocr_provider_permanent: provider quota exceeded', $detailContent);
+        self::assertStringContainsString('OCR retry count', $detailContent);
+        self::assertStringContainsString('2', $detailContent);
+    }
+
     /**
      * @param array<string, string|int|float|bool|array<int, array<string, string>>|null> $parameters
      * @param array<string, string>                                                       $server

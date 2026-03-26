@@ -476,3 +476,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: list navigation depended entirely on Stimulus attachment for `<tr>` click handling, so one frontend/runtime hiccup could degrade every clickable row simultaneously.
 - Fix: keep the shared `row-link` controller, but add a small inline fallback on critical `<tr>` rows and explicitly mark action cells with `data-row-link-ignore`; at the same time, propagate a safe `return_to` list URL through detail/delete flows.
 - Prevention: for high-frequency list navigation, provide a graceful HTML fallback and avoid tests that hard-code unescaped query strings in rendered attributes.
+
+## 2026-03-26 - Import support views should surface triage metadata above raw payloads
+- Symptom: admin import details exposed the raw/decoded payload, but support still had to manually scan JSON to understand retry exhaustion, duplicate targets, or terminal OCR/provider state.
+- Root cause: the import pipeline stored the right diagnostic data, but the admin detail screen treated it as opaque payload instead of first-class troubleshooting metadata.
+- Fix: derive a compact triage summary in the controller (status, OCR retries, queue/processing timings, fallback reason/strategy, duplicate target, finalized receipt, terminal detail) and render it ahead of the raw payload.
+- Prevention: when async workflows persist structured terminal payloads, expose the operator-facing subset explicitly in the UI rather than assuming raw JSON inspection is acceptable.

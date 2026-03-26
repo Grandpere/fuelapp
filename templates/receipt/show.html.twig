@@ -63,6 +63,10 @@
             flex-wrap: wrap;
         }
 
+        .show-helper {
+            margin: 0 0 0.8rem;
+        }
+
         @media (max-width: 1100px) {
             .show-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -86,6 +90,7 @@
 {% block body %}
     {% set requestedReturnTo = app.request.query.get('return_to') %}
     {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_receipt_index') %}
+    {% set receiptShowUrl = path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl}) %}
     <main class="app-shell show-page">
         <header class="show-header">
             <div>
@@ -103,6 +108,31 @@
                 <a class="btn btn-secondary" href="{{ backToListUrl }}">Back to list</a>
             </div>
         </header>
+
+        <section class="card show-card">
+            <div class="show-card-head">
+                <h2 class="section-title">Quick corrections</h2>
+            </div>
+            <p class="muted section-lead show-helper">Use the closest correction flow without leaving the receipt context.</p>
+            <div class="show-action-list">
+                {% if vehicle is null %}
+                    <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Link vehicle</a>
+                {% endif %}
+                {% if station is null %}
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Link station</a>
+                {% endif %}
+                {% if receipt.odometerKilometers is null %}
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Add odometer</a>
+                {% endif %}
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Adjust fuel lines</a>
+                {% if latestMaintenanceEvent %}
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: latestMaintenanceEvent.id.toString(), return_to: receiptShowUrl}) }}">Edit last maintenance</a>
+                {% endif %}
+                {% if station %}
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: receiptShowUrl}) }}">Edit station</a>
+                {% endif %}
+            </div>
+        </section>
 
         <section class="show-grid">
             <article class="card show-card">
@@ -150,6 +180,9 @@
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">Vehicle receipts</a>
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Maintenance</a>
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: vehicle.id.toString()}) }}">Analytics</a>
+                        {% if latestMaintenanceEvent %}
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: latestMaintenanceEvent.id.toString(), return_to: receiptShowUrl}) }}">Edit last maintenance</a>
+                        {% endif %}
                         <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString()}) }}">Add maintenance event</a>
                     </div>
                 {% else %}
@@ -162,17 +195,10 @@
                     <h2 class="section-title">Station</h2>
                     {% if station %}
                         <div class="show-action-list">
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: station.id.toString(), return_to: path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl})}) }}">Open station</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: station.id.toString(), return_to: receiptShowUrl}) }}">Open station</a>
                             <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">Station receipts</a>
                             <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Analytics</a>
-                            <a
-                                class="btn btn-secondary icon-btn"
-                                href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl})}) }}"
-                                aria-label="Edit station"
-                                title="Edit station"
-                            >
-                                ✎
-                            </a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: receiptShowUrl}) }}">Edit station</a>
                         </div>
                     {% endif %}
                 </div>

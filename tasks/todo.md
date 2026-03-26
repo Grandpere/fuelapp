@@ -391,8 +391,8 @@
 - [in_progress] Add clearer next-step actions on import detail pages for processed/duplicate jobs.
 - [pending] Keep front/admin import detail shortcuts aligned.
 - [pending] Add/update functional coverage for the new terminal-state shortcuts.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP13-003 Theme toggle and light mode
 
@@ -400,7 +400,7 @@
 - [in_progress] Introduce shared light/dark theme tokens in the base layout and keep current look as dark mode.
 - [pending] Add a persistent theme toggle in the UI shell with system-preference fallback.
 - [pending] Adjust the most visible screens/components so light mode stays readable without page-specific regressions.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and validate the visual result.
 
 # TODO - SP14-001 Security headers and CSP baseline
@@ -457,7 +457,7 @@
 - [completed] Improve fuel line parsing for noisy patterns (`Excellium 98`, parenthesized quantity, split unit price forms).
 - [completed] Add unit regressions reproducing real sample patterns.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP11-013 follow-up upload thresholds by file type
 
@@ -467,7 +467,7 @@
 - [completed] Align API bulk/UI messages with split limits (8 MB images, 1 MB PDF).
 - [completed] Update focused functional coverage on oversized ZIP entry behavior and message.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP13-002 Navigation and layout cohesion
 
@@ -550,5 +550,14 @@
 - [completed] Add direct edit shortcuts on recent maintenance events and upcoming plans from the vehicle hub.
 - [completed] Keep all edit/create maintenance shortcuts anchored back to the vehicle page.
 - [completed] Add/update functional coverage for the new vehicle-hub editing actions.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP22-002 Receipt detail quick corrections pass
+
+## Plan
+- [completed] Expose compact quick-correction shortcuts on `/ui/receipts/{id}` for the highest-frequency fixes.
+- [completed] Add direct edit actions for already-visible nearby entities when a safe front flow already exists.
+- [completed] Add/update functional coverage for the new receipt detail shortcuts and missing-context guidance.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.

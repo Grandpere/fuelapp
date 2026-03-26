@@ -7,11 +7,11 @@
 - Make front-office cockpit screens more actionable with fewer correction clicks, starting with the vehicle hub.
 
 ## In progress
-- SP22-001 - Vehicle timeline editing shortcuts
+- SP22-002 - Receipt detail quick corrections pass
 
 ## Next tickets (ordered)
 1. SP22-002 - Receipt detail quick corrections pass
-2. Next Sprint 22 front-office follow-up to be decided after vehicle/detail polish
+2. Next Sprint 22 front-office follow-up to be decided after receipt/detail polish
 3. Microsoft OIDC remains deferred
 
 ## Notes

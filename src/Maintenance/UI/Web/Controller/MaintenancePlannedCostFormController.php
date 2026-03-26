@@ -17,6 +17,7 @@ use App\Maintenance\Application\Repository\MaintenancePlannedCostRepository;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Maintenance\Domain\MaintenancePlannedCost;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -37,6 +38,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
         private readonly VehicleRepository $vehicleRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -69,9 +71,11 @@ final class MaintenancePlannedCostFormController extends AbstractController
 
         $formData = null === $plan ? $this->defaultFormData($request, $ownerId) : $this->formDataFromPlan($plan);
         $errors = [];
+        $backToListUrl = $this->resolveReturnPath($request, $formData['vehicleId']);
 
         if ($request->isMethod('POST')) {
             $formData = $this->extractFormData($request, $ownerId);
+            $backToListUrl = $this->resolveReturnPath($request, $formData['vehicleId']);
             $errors = $this->validateFormData($formData, $ownerId);
 
             if ([] === $errors) {
@@ -92,7 +96,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
                 $this->plannedCostRepository->save($plan);
                 $this->addFlash('success', null === $id ? 'Planned cost created.' : 'Planned cost updated.');
 
-                return new RedirectResponse($this->generateUrl('ui_maintenance_index'), Response::HTTP_SEE_OTHER);
+                return new RedirectResponse($backToListUrl, Response::HTTP_SEE_OTHER);
             }
         }
 
@@ -112,6 +116,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
             'vehicleOptions' => $vehicleOptions,
             'eventTypes' => array_map(static fn (MaintenanceEventType $type): string => $type->value, MaintenanceEventType::cases()),
             'csrfToken' => $this->csrfTokenManager->getToken('maintenance_plan_form')->getValue(),
+            'backToListUrl' => $backToListUrl,
         ]);
 
         if ([] !== $errors) {
@@ -135,6 +140,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
             'currencyCode' => 'EUR',
             'notes' => '',
             '_token' => '',
+            '_return_to' => $this->resolveReturnPath($request, $prefilledVehicleId ?? ''),
         ];
     }
 
@@ -152,6 +158,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
             'currencyCode' => $plan->currencyCode(),
             'notes' => $plan->notes() ?? '',
             '_token' => '',
+            '_return_to' => '',
         ];
     }
 
@@ -225,6 +232,18 @@ final class MaintenancePlannedCostFormController extends AbstractController
         }
 
         return $this->vehicleRepository->belongsToOwner($vehicleId, $ownerId) ? $vehicleId : null;
+    }
+
+    private function resolveReturnPath(Request $request, string $vehicleId): string
+    {
+        $fallback = '' !== trim($vehicleId)
+            ? $this->generateUrl('ui_maintenance_index', ['vehicle_id' => $vehicleId])
+            : $this->generateUrl('ui_maintenance_index');
+
+        return $this->safeReturnPathResolver->resolve(
+            $request->request->get('_return_to', $request->query->get('return_to')),
+            $fallback,
+        );
     }
 
     private function nullIfEmpty(string $value): ?string

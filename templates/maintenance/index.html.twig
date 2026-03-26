@@ -186,6 +186,7 @@
 {% endblock %}
 
 {% block body %}
+    {% set maintenanceReturnTo = app.request.requestUri %}
     <main class="app-shell maintenance-page">
         <section class="maintenance-header">
             <div>
@@ -241,7 +242,7 @@
                     <div class="empty-state">
                         <p>No maintenance event yet.</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new') }}">Add first event</a>
+                            <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add first event</a>
                         </div>
                     </div>
                 {% else %}
@@ -258,8 +259,11 @@
                                     {% if event.totalCostCents is not null %}<span>Cost: {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}</span>{% endif %}
                                 </div>
                                 {% if event.description %}<div class="item-sub">{{ event.description }}</div>{% endif %}
-                                <div>
-                                    <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_edit', {id: event.id.toString}) }}">Edit</a>
+                                <div class="actions-wrap">
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: event.id.toString, return_to: maintenanceReturnTo}) }}">Edit</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: event.vehicleId}) }}">Open vehicle</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: event.vehicleId}) }}">Receipts</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: event.vehicleId}) }}">Analytics</a>
                                 </div>
                             </div>
                         {% endfor %}
@@ -271,13 +275,13 @@
                 <section class="card panel">
                     <div class="panel-header">
                         <h2>Planner (upcoming)</h2>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add plan</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add plan</a>
                     </div>
                     {% if upcomingPlans is empty %}
                         <div class="empty-state">
                             <p>No upcoming planned cost.</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new') }}">Add first plan</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add first plan</a>
                             </div>
                         </div>
                     {% else %}
@@ -294,8 +298,11 @@
                                         {% if plan.eventType is not null %}<span>Type: {{ plan.eventType.value|upper }}</span>{% endif %}
                                     </div>
                                     {% if plan.notes %}<div class="item-sub">{{ plan.notes }}</div>{% endif %}
-                                    <div>
-                                        <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_edit', {id: plan.id.toString}) }}">Edit</a>
+                                    <div class="actions-wrap">
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_edit', {id: plan.id.toString, return_to: maintenanceReturnTo}) }}">Edit</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: plan.vehicleId}) }}">Open vehicle</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: plan.vehicleId}) }}">Receipts</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: plan.vehicleId}) }}">Analytics</a>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -368,8 +375,8 @@
                             {% endif %}
                             <div class="actions-wrap">
                                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add a rule</a>
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add a plan</a>
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add an event</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add a plan</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add an event</a>
                             </div>
                         </div>
                     {% else %}
@@ -406,10 +413,13 @@
                                     {% if ruleDetail and ruleDetail.eventType %}
                                         {% set logEventParams = logEventParams|merge({event_type: ruleDetail.eventType}) %}
                                     {% endif %}
+                                    {% set logEventParams = logEventParams|merge({return_to: maintenanceReturnTo}) %}
                                     <div class="actions-wrap">
                                         <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', logEventParams) }}">Log event now</a>
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: reminder.vehicleId}) }}">Open vehicle</a>
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: reminder.vehicleId}) }}">Vehicle timeline</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: reminder.vehicleId}) }}">Receipts</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: reminder.vehicleId}) }}">Analytics</a>
                                     </div>
                                 </div>
                             {% endfor %}

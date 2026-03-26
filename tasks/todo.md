@@ -486,4 +486,13 @@
 - [completed] Add a direct "finalize and open next" action plus lightweight keyboard shortcuts.
 - [completed] Add/update functional coverage for queue context and continue-review behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP20-002 Receipt and maintenance cross-links completion
+
+## Plan
+- [completed] Preserve maintenance filter context when creating or editing events and plans from vehicle-scoped views.
+- [completed] Add direct receipt/analytics/vehicle links from timeline, planner, and triggered reminder blocks.
+- [completed] Add/update functional coverage for the new cross-links and maintenance return context.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

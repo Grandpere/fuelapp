@@ -525,3 +525,12 @@
 - [completed] Add/update front functional coverage for station navigation and prefilled create flow.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP21-003 Import post-processing clarity
+
+## Plan
+- [completed] Build a clearer front-office status summary for processed, duplicate, failed, and needs_review imports.
+- [completed] Surface next actions and key details directly from the import detail page without forcing payload reading.
+- [completed] Add/update functional coverage for the clearer post-processing copy and links.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

@@ -61,6 +61,7 @@ final class ImportJobShowWebController extends AbstractController
             'parsedDraft' => $parsedDraft,
             'reviewLines' => $this->readLines($creationPayload, $parsedDraft),
             'reviewQueue' => $this->buildReviewQueue($job, $backToImportsUrl),
+            'statusSummary' => $this->buildStatusSummary($job, $payloadData),
         ]);
     }
 
@@ -249,6 +250,152 @@ final class ImportJobShowWebController extends AbstractController
                 : null,
             'nextLabel' => $nextJob?->originalFilename(),
         ];
+    }
+
+    /**
+     * @param array<string, mixed>|null $payloadData
+     *
+     * @return array{
+     *     badge:string,
+     *     title:string,
+     *     lead:string,
+     *     keyDetails:list<string>,
+     *     nextSteps:list<string>
+     * }
+     */
+    private function buildStatusSummary(ImportJob $job, ?array $payloadData): array
+    {
+        $status = $job->status()->value;
+        $originalFilename = $job->originalFilename();
+
+        return match ($status) {
+            ImportJobStatus::PROCESSED->value => [
+                'badge' => 'processed',
+                'title' => 'Receipt created successfully',
+                'lead' => sprintf('We already turned %s into a receipt. You can jump straight to the created record or go back to the receipt list.', $originalFilename),
+                'keyDetails' => array_values(array_filter([
+                    $this->detailLine('Created receipt', $this->readStringValue($payloadData, 'finalizedReceiptId')),
+                    $this->detailLine('Completed at', $job->completedAt()?->format('d/m/Y H:i')),
+                ])),
+                'nextSteps' => [
+                    'Open the created receipt if you want to double-check imported values.',
+                    'Go back to the receipt list if this import no longer needs attention.',
+                ],
+            ],
+            ImportJobStatus::DUPLICATE->value => [
+                'badge' => 'duplicate',
+                'title' => 'Duplicate already handled',
+                'lead' => sprintf('This file (%s) matches something you already imported. Use the shortcut below to open the existing record instead of processing it again.', $originalFilename),
+                'keyDetails' => array_values(array_filter([
+                    $this->detailLine('Existing receipt', $this->readStringValue($payloadData, 'duplicateOfReceiptId')),
+                    $this->detailLine('Original import', $this->readStringValue($payloadData, 'duplicateOfImportJobId')),
+                    $this->detailLine('Reason', $this->readStringValue($payloadData, 'reason')),
+                ])),
+                'nextSteps' => [
+                    'Open the existing receipt or original import to confirm the duplicate.',
+                    'Delete this import if you do not need to keep the extra file around.',
+                ],
+            ],
+            ImportJobStatus::FAILED->value => [
+                'badge' => 'failed',
+                'title' => 'Import processing stopped',
+                'lead' => sprintf('We could not turn %s into a reviewable import automatically. Check the detail below, then retry or remove the file.', $originalFilename),
+                'keyDetails' => array_values(array_filter([
+                    $this->detailLine('Failure time', $job->failedAt()?->format('d/m/Y H:i')),
+                    $this->detailLine('OCR retry count', (string) $job->ocrRetryCount()),
+                    $this->detailLine('Fallback reason', $this->readStringValue($payloadData, 'fallbackReason')),
+                    $this->detailLine('Raw error', is_string($job->errorPayload()) && '' !== trim($job->errorPayload()) && null === $payloadData ? trim($job->errorPayload()) : null),
+                ])),
+                'nextSteps' => [
+                    'If the source file looks valid, retry or re-upload it after checking OCR/provider availability.',
+                    'If the file is clearly unusable, delete the import to keep the queue clean.',
+                ],
+            ],
+            ImportJobStatus::NEEDS_REVIEW->value => [
+                'badge' => 'needs_review',
+                'title' => 'Manual review required',
+                'lead' => sprintf('OCR got close, but %s still needs a manual pass before we can create the receipt.', $originalFilename),
+                'keyDetails' => array_values(array_filter([
+                    $this->detailLine('Detected issues', $this->formatIssueList($payloadData)),
+                    $this->detailLine('Fallback strategy', $this->readStringValue($payloadData, 'fallbackStrategy')),
+                    $this->detailLine('OCR retry count', (string) $job->ocrRetryCount()),
+                ])),
+                'nextSteps' => [
+                    'Review the extracted values below and finalize when they look right.',
+                    'Use reparse if the OCR draft looks incomplete and the source file is still worth another pass.',
+                ],
+            ],
+            default => [
+                'badge' => $status,
+                'title' => 'Import in progress',
+                'lead' => sprintf('%s is still moving through the import pipeline. Come back in a moment if the final state is not visible yet.', $originalFilename),
+                'keyDetails' => array_filter([
+                    $this->detailLine('Current status', $status),
+                ]),
+                'nextSteps' => [
+                    'Refresh later if you are waiting for OCR or queue processing to finish.',
+                ],
+            ],
+        };
+    }
+
+    /**
+     * @param array<string, mixed>|null $payloadData
+     */
+    private function formatIssueList(?array $payloadData): ?string
+    {
+        $parsedDraft = $this->readParsedDraft($payloadData);
+        if (null === $parsedDraft) {
+            return null;
+        }
+
+        $issues = $parsedDraft['issues'] ?? null;
+        if (!is_array($issues) || [] === $issues) {
+            return null;
+        }
+
+        $normalized = [];
+        foreach ($issues as $issue) {
+            if (!is_string($issue) || '' === trim($issue)) {
+                continue;
+            }
+
+            $normalized[] = str_replace('_', ' ', trim($issue));
+        }
+
+        if ([] === $normalized) {
+            return null;
+        }
+
+        return implode(', ', $normalized);
+    }
+
+    /**
+     * @param array<string, mixed>|null $payloadData
+     */
+    private function readStringValue(?array $payloadData, string $key): ?string
+    {
+        if (null === $payloadData) {
+            return null;
+        }
+
+        $value = $payloadData[$key] ?? null;
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return '' === $trimmed ? null : $trimmed;
+    }
+
+    private function detailLine(string $label, ?string $value): ?string
+    {
+        if (null === $value || '' === trim($value)) {
+            return null;
+        }
+
+        return sprintf('%s: %s', $label, $value);
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

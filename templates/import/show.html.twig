@@ -48,6 +48,36 @@
             </dl>
         </section>
 
+        <section class="card section-card">
+            <div class="section-header">
+                <div>
+                    <p class="text-block-title">What happened</p>
+                    <p class="muted section-lead">{{ statusSummary.lead }}</p>
+                </div>
+                <span class="pill status-pill status-{{ statusSummary.badge }}">{{ statusSummary.title }}</span>
+            </div>
+            {% if statusSummary.keyDetails is not empty %}
+                <div class="form-stack">
+                    <p class="text-block-title">Key details</p>
+                    <ul class="flash-list compact-list">
+                        {% for detail in statusSummary.keyDetails %}
+                            <li>{{ detail }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            {% if statusSummary.nextSteps is not empty %}
+                <div class="form-stack">
+                    <p class="text-block-title">What you can do now</p>
+                    <ul class="flash-list compact-list">
+                        {% for step in statusSummary.nextSteps %}
+                            <li>{{ step }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </section>
+
         {% if reviewQueue is not null %}
             <section class="card section-card" data-import-review-shortcuts data-previous-url="{{ reviewQueue.previousUrl ?? '' }}" data-next-url="{{ reviewQueue.nextUrl ?? '' }}">
                 <div class="section-header">

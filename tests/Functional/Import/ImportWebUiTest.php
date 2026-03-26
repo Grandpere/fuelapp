@@ -693,6 +693,9 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('Import completed', $detailContent);
+        self::assertStringContainsString('What happened', $detailContent);
+        self::assertStringContainsString('Receipt created successfully', $detailContent);
+        self::assertStringContainsString('What you can do now', $detailContent);
         self::assertStringContainsString('/ui/receipts/'.$receiptId, $detailContent);
         self::assertStringContainsString('Open created receipt', $detailContent);
     }
@@ -748,6 +751,8 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('Duplicate already handled', $detailContent);
+        self::assertStringContainsString('What you can do now', $detailContent);
         self::assertStringContainsString('/ui/imports/'.$originalJobId, $detailContent);
         self::assertStringContainsString('Open original import', $detailContent);
     }
@@ -801,8 +806,44 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('Duplicate already handled', $detailContent);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('Open existing receipt', $detailContent);
+    }
+
+    public function testFailedImportDetailExplainsNextSteps(): void
+    {
+        $email = 'import.web.failed.summary@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::FAILED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/failed.jpg');
+        $job->setOriginalFilename('failed.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('f', 64));
+        $job->setErrorPayload(json_encode([
+            'fallbackReason' => 'provider unavailable',
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:10:00'));
+        $job->setFailedAt(new DateTimeImmutable('2026-03-26 10:10:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:10:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Import processing stopped', $detailContent);
+        self::assertStringContainsString('Fallback reason: provider unavailable', $detailContent);
+        self::assertStringContainsString('What you can do now', $detailContent);
     }
 
     public function testUserCanReparseNeedsReviewImportFromUi(): void

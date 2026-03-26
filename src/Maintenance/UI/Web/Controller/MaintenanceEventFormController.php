@@ -128,7 +128,7 @@ final class MaintenanceEventFormController extends AbstractController
 
         return [
             'vehicleId' => $prefilledVehicleId ?? '',
-            'eventType' => MaintenanceEventType::SERVICE->value,
+            'eventType' => $this->readPrefilledEventType($request) ?? MaintenanceEventType::SERVICE->value,
             'occurredAt' => new DateTimeImmutable()->format('Y-m-d\\TH:i'),
             'description' => '',
             'odometerKilometers' => '',
@@ -227,6 +227,23 @@ final class MaintenanceEventFormController extends AbstractController
         }
 
         return $this->vehicleRepository->belongsToOwner($vehicleId, $ownerId) ? $vehicleId : null;
+    }
+
+    private function readPrefilledEventType(Request $request): ?string
+    {
+        $raw = $request->query->get('event_type');
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $eventType = trim((string) $raw);
+        if ('' === $eventType) {
+            return null;
+        }
+
+        $choices = array_map(static fn (MaintenanceEventType $type): string => $type->value, MaintenanceEventType::cases());
+
+        return in_array($eventType, $choices, true) ? $eventType : null;
     }
 
     private function nullableInt(string $value): ?int

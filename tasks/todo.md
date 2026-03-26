@@ -240,6 +240,16 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP18-003 Maintenance reminder actionability
+
+## Plan
+- [completed] Expose clearer trigger context on reminder cards instead of leaving them as passive alerts.
+- [completed] Add direct reminder actions toward vehicle view, filtered maintenance timeline, and event logging.
+- [completed] Support event-type prefill on maintenance event creation so reminder actions land on a ready-to-use form.
+- [completed] Add/update functional coverage for reminder action links and event-type prefill.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 
 ## Plan

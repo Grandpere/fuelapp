@@ -16,6 +16,9 @@ namespace App\Tests\Functional\Maintenance;
 use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Application\Repository\MaintenancePlannedCostRepository;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
+use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderEntity;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderRuleEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
@@ -258,13 +261,72 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $vehicleId = $vehicle->getId()->toRfc4122();
         $sessionCookie = $this->loginWithUiForm($email, $password);
 
-        $eventPage = $this->request('GET', '/ui/maintenance/events/new?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        $eventPage = $this->request('GET', '/ui/maintenance/events/new?vehicle_id='.$vehicleId.'&event_type='.MaintenanceEventType::INSPECTION->value, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $eventPage->getStatusCode());
         self::assertStringContainsString('option value="'.$vehicleId.'" selected', (string) $eventPage->getContent());
+        self::assertStringContainsString('option value="'.MaintenanceEventType::INSPECTION->value.'" selected', (string) $eventPage->getContent());
 
         $planPage = $this->request('GET', '/ui/maintenance/plans/new?vehicle_id='.$vehicleId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $planPage->getStatusCode());
         self::assertStringContainsString('option value="'.$vehicleId.'" selected', (string) $planPage->getContent());
+    }
+
+    public function testTriggeredRemindersExposeDirectActionLinks(): void
+    {
+        $email = 'maintenance.ui.reminder.actions@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Reminder Car');
+        $vehicle->setPlateNumber('UI-400-DD');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-04 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-04 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('Oil service');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::WHICHEVER_FIRST);
+        $rule->setEventType(MaintenanceEventType::SERVICE);
+        $rule->setIntervalDays(180);
+        $rule->setIntervalKilometers(12000);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-01-01 08:00:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-01-01 08:00:00'));
+        $this->em->persist($rule);
+
+        $reminder = new MaintenanceReminderEntity();
+        $reminder->setId(Uuid::v7());
+        $reminder->setOwner($owner);
+        $reminder->setVehicle($vehicle);
+        $reminder->setRule($rule);
+        $reminder->setDedupKey('oil-service-1');
+        $reminder->setDueAtDate(new DateTimeImmutable('2026-03-20 00:00:00'));
+        $reminder->setDueAtOdometerKilometers(132000);
+        $reminder->setDueByDate(true);
+        $reminder->setDueByOdometer(true);
+        $reminder->setCreatedAt(new DateTimeImmutable('2026-03-21 09:00:00'));
+        $this->em->persist($reminder);
+
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $dashboard = $this->request('GET', '/ui/maintenance', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
+        $content = (string) $dashboard->getContent();
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        self::assertStringContainsString('Oil service', $content);
+        self::assertStringContainsString('Trigger: WHICHEVER FIRST', $content);
+        self::assertStringContainsString('every 180 days', $content);
+        self::assertStringContainsString('every 12000 km', $content);
+        self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId.'&amp;event_type=service', $content);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
     }
 
     /**

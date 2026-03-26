@@ -7,11 +7,10 @@
 - Make the front-office day-to-day flow feel more vehicle-centered and actionable.
 
 ## In progress
-- SP18-003 - maintenance reminder actionability
+- Next sprint to be re-prioritized
 
 ## Next tickets (ordered)
-1. SP18-003 - Maintenance reminder actionability
-2. Microsoft OIDC remains deferred
+1. Microsoft OIDC remains deferred
 
 ## Notes
 - Sprint 13 UX work is delivered and merged.

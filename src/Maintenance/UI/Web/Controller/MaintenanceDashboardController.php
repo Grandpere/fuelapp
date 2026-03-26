@@ -83,6 +83,7 @@ final class MaintenanceDashboardController extends AbstractController
         ));
 
         $ruleNames = [];
+        $ruleDetails = [];
         foreach ($vehicles as $vehicle) {
             if (null !== $vehicleId && $vehicle->id()->toString() !== $vehicleId) {
                 continue;
@@ -90,6 +91,14 @@ final class MaintenanceDashboardController extends AbstractController
 
             foreach ($this->ruleRepository->allForOwnerAndVehicle($ownerId, $vehicle->id()->toString()) as $rule) {
                 $ruleNames[$rule->id()->toString()] = $rule->name();
+                $ruleDetails[$rule->id()->toString()] = [
+                    'name' => $rule->name(),
+                    'eventType' => $rule->eventType()?->value,
+                    'triggerMode' => $rule->triggerMode()->value,
+                    'intervalDays' => $rule->intervalDays(),
+                    'intervalKilometers' => $rule->intervalKilometers(),
+                    'vehicleId' => $rule->vehicleId(),
+                ];
             }
         }
 
@@ -105,6 +114,7 @@ final class MaintenanceDashboardController extends AbstractController
             'upcomingPlans' => $upcomingPlans,
             'reminders' => $reminders,
             'ruleNames' => $ruleNames,
+            'ruleDetails' => $ruleDetails,
             'variance' => $variance,
             'monthStart' => $monthStart,
             'monthEnd' => $monthEnd,

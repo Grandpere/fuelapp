@@ -301,6 +301,30 @@
                                         {% if reminder.dueByDate %}<span class="pill pill-reminder-date">Date due</span>{% endif %}
                                         {% if reminder.dueByOdometer %}<span class="pill pill-reminder-odometer">Odometer due</span>{% endif %}
                                     </div>
+                                    {% set ruleDetail = ruleDetails[reminder.ruleId] ?? null %}
+                                    {% if ruleDetail %}
+                                        <div class="item-sub">
+                                            Trigger: {{ ruleDetail.triggerMode|replace({'_': ' '})|upper }}
+                                            {% if ruleDetail.intervalDays %}
+                                                · every {{ ruleDetail.intervalDays }} day{% if ruleDetail.intervalDays > 1 %}s{% endif %}
+                                            {% endif %}
+                                            {% if ruleDetail.intervalKilometers %}
+                                                · every {{ ruleDetail.intervalKilometers }} km
+                                            {% endif %}
+                                            {% if ruleDetail.eventType %}
+                                                · suggested event {{ ruleDetail.eventType|upper }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                    {% set logEventParams = {vehicle_id: reminder.vehicleId} %}
+                                    {% if ruleDetail and ruleDetail.eventType %}
+                                        {% set logEventParams = logEventParams|merge({event_type: ruleDetail.eventType}) %}
+                                    {% endif %}
+                                    <div class="actions-wrap">
+                                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', logEventParams) }}">Log event now</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: reminder.vehicleId}) }}">Open vehicle</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: reminder.vehicleId}) }}">Vehicle timeline</a>
+                                    </div>
                                 </div>
                             {% endfor %}
                         </div>

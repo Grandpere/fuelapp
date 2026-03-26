@@ -32,7 +32,7 @@
                 <h1 class="page-title">{% if isEdit %}Edit vehicle{% else %}Add vehicle{% endif %}</h1>
                 <p class="muted section-lead">{% if isEdit %}Update the vehicle profile used to group receipts and maintenance costs.{% else %}Create a vehicle to group receipts, maintenance costs and reminders in one place.{% endif %}</p>
             </div>
-            <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}" data-turbo-frame="_top">Back</a>
+            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back</a>
         </header>
 
         <section class="card vehicle-form-card">
@@ -48,6 +48,7 @@
 
             <form method="post" action="" data-turbo-frame="_top" class="form-stack">
                 <input type="hidden" name="_token" value="{{ csrfToken }}">
+                <input type="hidden" name="_return_to" value="{{ backToListUrl }}">
                 <label class="label">
                     Name
                     <input class="input" type="text" name="name" maxlength="120" value="{{ formData.name }}" required>
@@ -59,7 +60,7 @@
 
                 <div class="actions-wrap">
                     <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create vehicle{% endif %}</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}" data-turbo-frame="_top">Cancel</a>
+                    <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Cancel</a>
                 </div>
             </form>
         </section>

@@ -36,6 +36,7 @@
                 <p class="muted">Manage your fleet used for receipts and maintenance planning.</p>
             </div>
             <div class="page-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_station_list') }}">Stations</a>
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
                 <a class="btn btn-primary" href="{{ path('ui_vehicle_new') }}">Add vehicle</a>
             </div>
@@ -53,24 +54,32 @@
                         <th>Name</th>
                         <th>Plate</th>
                         <th>Updated</th>
+                        <th>Workflow</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for vehicle in vehicles %}
+                        {% set vehicleShowUrl = path('ui_vehicle_show', {id: vehicle.id.toString}) %}
+                        {% set vehicleListUrl = path('ui_vehicle_list') %}
                         <tr
                             class="table-row row-link"
                             data-controller="row-link"
                             data-action="click->row-link#navigate"
-                            data-row-link-url-value="{{ path('ui_vehicle_show', {id: vehicle.id.toString}) }}"
+                            data-row-link-url-value="{{ vehicleShowUrl }}"
                             onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                         >
                             <td>{{ vehicle.name }}</td>
                             <td>{{ vehicle.plateNumber }}</td>
                             <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
                             <td class="action-cell-flex">
-                                <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicle.id.toString}) }}" data-row-link-ignore>Detail</a>
-                                <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString}) }}">Edit</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>Receipts</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>Maintenance</a>
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString}) }}" data-turbo-frame="receipt_form_frame" data-row-link-ignore>Add receipt</a>
+                            </td>
+                            <td class="action-cell-flex">
+                                <a class="btn btn-secondary" href="{{ vehicleShowUrl }}" data-row-link-ignore>Detail</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString, return_to: vehicleListUrl}) }}" data-row-link-ignore>Edit</a>
                                 <form method="post" action="{{ path('ui_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('Delete this vehicle?');" data-row-link-ignore>
                                     <input type="hidden" name="_token" value="{{ csrf_token('vehicle_delete_' ~ vehicle.id.toString) }}">
                                     <button class="btn btn-danger" type="submit">Delete</button>
@@ -79,7 +88,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="4" class="muted">No vehicle yet. Add your first one to start maintenance tracking.</td>
+                            <td colspan="5" class="muted">No vehicle yet. Add your first one to start maintenance tracking.</td>
                         </tr>
                     {% endfor %}
                     </tbody>

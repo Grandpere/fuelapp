@@ -579,3 +579,12 @@
 - [completed] Add/update functional coverage for the new station list workflow.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP23-001 Vehicle form and list workflow polish
+
+## Plan
+- [completed] Keep vehicle create/edit flows anchored to a safe `return_to` instead of always dropping back to the generic list.
+- [completed] Add the most useful front-office shortcuts directly from `/ui/vehicles` rows.
+- [completed] Add/update functional coverage for the new vehicle list/form workflow behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

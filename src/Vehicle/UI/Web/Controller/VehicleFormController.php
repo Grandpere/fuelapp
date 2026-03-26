@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Vehicle\UI\Web\Controller;
 
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use App\Vehicle\Domain\Vehicle;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,6 +34,7 @@ final class VehicleFormController extends AbstractController
         private readonly VehicleRepository $vehicleRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -68,19 +70,26 @@ final class VehicleFormController extends AbstractController
         }
 
         $formData = null === $vehicle
-            ? ['name' => '', 'plateNumber' => '', '_token' => '']
-            : ['name' => $vehicle->name(), 'plateNumber' => $vehicle->plateNumber(), '_token' => ''];
+            ? ['name' => '', 'plateNumber' => '', '_token' => '', '_return_to' => '']
+            : ['name' => $vehicle->name(), 'plateNumber' => $vehicle->plateNumber(), '_token' => '', '_return_to' => ''];
+        $backToListUrl = $this->safeReturnPathResolver->resolve(
+            $request->isMethod('POST') ? $request->request->get('_return_to') : $request->query->get('return_to'),
+            $this->generateUrl('ui_vehicle_list'),
+        );
+        $formData['_return_to'] = $backToListUrl;
         $errors = [];
 
         if ($request->isMethod('POST')) {
             $nameValue = $request->request->get('name', '');
             $plateValue = $request->request->get('plateNumber', '');
             $tokenValue = $request->request->get('_token', '');
+            $returnToValue = $request->request->get('_return_to', '');
 
             $formData = [
                 'name' => is_scalar($nameValue) ? (string) $nameValue : '',
                 'plateNumber' => is_scalar($plateValue) ? (string) $plateValue : '',
                 '_token' => is_scalar($tokenValue) ? (string) $tokenValue : '',
+                '_return_to' => is_scalar($returnToValue) ? (string) $returnToValue : '',
             ];
 
             $errors = $this->validate($formData, $ownerId, $vehicle);
@@ -98,7 +107,7 @@ final class VehicleFormController extends AbstractController
                     $this->addFlash('success', 'Vehicle created.');
                 }
 
-                return new RedirectResponse($this->generateUrl('ui_vehicle_list'), Response::HTTP_SEE_OTHER);
+                return new RedirectResponse($backToListUrl, Response::HTTP_SEE_OTHER);
             }
         }
 
@@ -107,6 +116,7 @@ final class VehicleFormController extends AbstractController
             'formData' => $formData,
             'errors' => $errors,
             'csrfToken' => $this->csrfTokenManager->getToken('vehicle_form')->getValue(),
+            'backToListUrl' => $backToListUrl,
         ]);
 
         if ([] !== $errors) {

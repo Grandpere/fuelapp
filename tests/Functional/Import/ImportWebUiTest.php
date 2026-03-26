@@ -342,6 +342,38 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('name="_redirect" value="'.$returnTo.'"', $content);
     }
 
+    public function testNeedsReviewDetailShowsQueueNavigationContext(): void
+    {
+        $email = 'import.web.queue@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+        $this->em->persist($this->createNeedsReviewJob($user, 'older-review.jpg', '2026-03-25 08:00:00', 'q'));
+        $middleJob = $this->createNeedsReviewJob($user, 'middle-review.jpg', '2026-03-25 09:00:00', 'r');
+        $this->em->persist($middleJob);
+        $this->em->persist($this->createNeedsReviewJob($user, 'newer-review.jpg', '2026-03-25 10:00:00', 's'));
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $returnTo = '/ui/imports?status=needs_review';
+
+        $detailResponse = $this->request(
+            'GET',
+            '/ui/imports/'.$middleJob->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo),
+            [],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $content = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Review queue', $content);
+        self::assertStringContainsString('Import 2 of 3', $content);
+        self::assertStringContainsString('Previous: newer-review.jpg', $content);
+        self::assertStringContainsString('Next: older-review.jpg', $content);
+        self::assertStringContainsString('/ui/imports?status=needs_review', $content);
+        self::assertStringContainsString('Finalize and open next', $content);
+    }
+
     public function testUserCanFinalizeNeedsReviewImportWithManualCorrectionsFromUi(): void
     {
         $email = 'import.web.manual.finalize@example.com';
@@ -518,6 +550,57 @@ final class ImportWebUiTest extends WebTestCase
         $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
         self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
         self::assertCount(2, $savedReceipt->getLines());
+    }
+
+    public function testUserCanFinalizeAndOpenNextNeedsReviewImportFromUi(): void
+    {
+        $email = 'import.web.continue@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $currentJob = $this->createNeedsReviewJob($user, 'current-review.jpg', '2026-03-25 10:00:00', 't');
+        $nextJob = $this->createNeedsReviewJob($user, 'next-review.jpg', '2026-03-25 09:00:00', 'u');
+        $this->em->persist($currentJob);
+        $this->em->persist($nextJob);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $currentJobId = $currentJob->getId()->toRfc4122();
+        $nextJobId = $nextJob->getId()->toRfc4122();
+        $returnTo = '/ui/imports?status=needs_review';
+
+        $reviewPage = $this->request(
+            'GET',
+            '/ui/imports/'.$currentJobId.'?return_to='.rawurlencode($returnTo),
+            [],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_OK, $reviewPage->getStatusCode());
+        $reviewContent = (string) $reviewPage->getContent();
+        $csrfToken = $this->extractFinalizeCsrfToken($reviewContent, $currentJobId);
+
+        $finalizeResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$currentJobId.'/finalize',
+            [
+                '_token' => $csrfToken,
+                '_continue' => '1',
+                '_return_to' => $returnTo,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $finalizeResponse->getStatusCode());
+        $location = $finalizeResponse->headers->get('Location');
+        self::assertIsString($location);
+        self::assertStringStartsWith('/ui/imports/'.$nextJobId.'?return_to=', $location);
+        self::assertStringContainsString('status%3Dneeds_review', $location);
+
+        $this->em->clear();
+        $updated = $this->em->find(ImportJobEntity::class, $currentJobId);
+        self::assertInstanceOf(ImportJobEntity::class, $updated);
+        self::assertSame(ImportJobStatus::PROCESSED, $updated->getStatus());
     }
 
     public function testUserCanDeleteOwnImportFromUiList(): void
@@ -938,6 +1021,42 @@ final class ImportWebUiTest extends WebTestCase
         file_put_contents($path, $content);
 
         return new UploadedFile($path, $name, $mimeType, null, true);
+    }
+
+    private function createNeedsReviewJob(UserEntity $user, string $filename, string $createdAt, string $checksumSeed): ImportJobEntity
+    {
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/25/'.$filename);
+        $job->setOriginalFilename($filename);
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat($checksumSeed, 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'creationPayload' => [
+                    'issuedAt' => '2026-03-25T11:20:00+00:00',
+                    'stationName' => 'TOTAL ENERGIES',
+                    'stationStreetName' => '1 Rue de Rivoli',
+                    'stationPostalCode' => '75001',
+                    'stationCity' => 'Paris',
+                    'lines' => [[
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 30000,
+                        'unitPriceDeciCentsPerLiter' => 1820,
+                        'vatRatePercent' => 20,
+                    ]],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable($createdAt));
+        $job->setUpdatedAt(new DateTimeImmutable($createdAt));
+        $job->setRetentionUntil(new DateTimeImmutable($createdAt)->modify('+30 days'));
+
+        return $job;
     }
 
     private function extractFinalizeCsrfToken(string $content, string $jobId): string

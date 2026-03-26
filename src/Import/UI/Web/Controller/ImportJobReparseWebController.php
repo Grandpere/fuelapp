@@ -15,6 +15,7 @@ namespace App\Import\UI\Web\Controller;
 
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Review\ImportJobPayloadReparser;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -27,6 +28,7 @@ final class ImportJobReparseWebController extends AbstractController
     public function __construct(
         private readonly ImportJobRepository $importJobRepository,
         private readonly ImportJobPayloadReparser $importJobPayloadReparser,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -37,10 +39,15 @@ final class ImportJobReparseWebController extends AbstractController
             throw $this->createNotFoundException();
         }
 
+        $returnTo = $this->safeReturnPathResolver->resolve(
+            $request->request->get('_return_to'),
+            $this->generateUrl('ui_import_index'),
+        );
+
         if (!$this->isCsrfTokenValid('ui_import_reparse_'.$id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Invalid CSRF token.');
 
-            return $this->redirectToRoute('ui_import_show', ['id' => $id]);
+            return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
         }
 
         $job = $this->importJobRepository->get($id);
@@ -56,7 +63,7 @@ final class ImportJobReparseWebController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('ui_import_show', ['id' => $id]);
+        return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

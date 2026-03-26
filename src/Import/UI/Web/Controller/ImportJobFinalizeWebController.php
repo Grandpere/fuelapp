@@ -16,8 +16,11 @@ namespace App\Import\UI\Web\Controller;
 use App\Import\Application\Command\FinalizeImportJobCommand;
 use App\Import\Application\Command\FinalizeImportJobHandler;
 use App\Import\Application\Repository\ImportJobRepository;
+use App\Import\Domain\Enum\ImportJobStatus;
+use App\Import\Domain\ImportJob;
 use App\Receipt\Application\Command\CreateReceiptLineCommand;
 use App\Receipt\Domain\Enum\FuelType;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,6 +35,7 @@ final class ImportJobFinalizeWebController extends AbstractController
     public function __construct(
         private readonly ImportJobRepository $importJobRepository,
         private readonly FinalizeImportJobHandler $finalizeImportJobHandler,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -47,10 +51,18 @@ final class ImportJobFinalizeWebController extends AbstractController
             throw $this->createNotFoundException();
         }
 
+        $returnTo = $this->safeReturnPathResolver->resolve(
+            $request->request->get('_return_to'),
+            $this->generateUrl('ui_import_index'),
+        );
+        $nextReviewId = $this->shouldContinueToNextReview($request)
+            ? $this->findNextReviewJobId($job)
+            : null;
+
         if (!$this->isCsrfTokenValid('ui_import_finalize_'.$id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Invalid CSRF token.');
 
-            return $this->redirectToRoute('ui_import_show', ['id' => $id]);
+            return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
         }
 
         try {
@@ -66,12 +78,69 @@ final class ImportJobFinalizeWebController extends AbstractController
                 $this->toNullableInt($request->request->get('longitudeMicroDegrees')),
                 $this->toNullableInt($request->request->get('odometerKilometers')),
             ));
+            if (null !== $nextReviewId && $this->shouldContinueToNextReview($request)) {
+                $this->addFlash('success', 'Import finalized. Opened the next review item.');
+
+                return $this->redirectToRoute('ui_import_show', ['id' => $nextReviewId, 'return_to' => $returnTo]);
+            }
+
+            if ($this->shouldContinueToNextReview($request)) {
+                $this->addFlash('success', 'Import finalized. Review queue completed for now.');
+
+                return $this->redirect($returnTo);
+            }
+
             $this->addFlash('success', 'Import finalized and receipt created.');
         } catch (InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('ui_import_show', ['id' => $id]);
+        return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
+    }
+
+    private function shouldContinueToNextReview(Request $request): bool
+    {
+        return '1' === (string) $request->request->get('_continue');
+    }
+
+    private function findNextReviewJobId(ImportJob $currentJob): ?string
+    {
+        if (ImportJobStatus::NEEDS_REVIEW !== $currentJob->status()) {
+            return null;
+        }
+
+        $queue = [];
+        foreach ($this->importJobRepository->all() as $job) {
+            if ($job->ownerId() !== $currentJob->ownerId() || ImportJobStatus::NEEDS_REVIEW !== $job->status()) {
+                continue;
+            }
+
+            $queue[] = $job;
+        }
+
+        usort(
+            $queue,
+            static function (ImportJob $left, ImportJob $right): int {
+                $createdAtOrder = $right->createdAt()->getTimestamp() <=> $left->createdAt()->getTimestamp();
+                if (0 !== $createdAtOrder) {
+                    return $createdAtOrder;
+                }
+
+                return strcmp($right->id()->toString(), $left->id()->toString());
+            },
+        );
+
+        foreach ($queue as $index => $job) {
+            if ($job->id()->toString() !== $currentJob->id()->toString()) {
+                continue;
+            }
+
+            $nextJob = $queue[$index + 1] ?? null;
+
+            return $nextJob instanceof ImportJob ? $nextJob->id()->toString() : null;
+        }
+
+        return null;
     }
 
     private function toNullableString(mixed $value): ?string

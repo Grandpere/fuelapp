@@ -477,3 +477,13 @@
 - [completed] Update Sprint 13/current-focus docs and capture any UX lessons in `docs/ai/memory.md` if needed.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and validate the visual flow.
+
+# TODO - SP20-001 Import review productivity shortcuts
+
+## Plan
+- [completed] Reframe Sprint 20 backlog/docs and keep this ticket front-office only.
+- [completed] Add review queue context with previous/next navigation on import review pages.
+- [completed] Add a direct "finalize and open next" action plus lightweight keyboard shortcuts.
+- [completed] Add/update functional coverage for queue context and continue-review behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.

@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Receipt;
 
+use App\Maintenance\Domain\Enum\MaintenanceEventType;
+use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -130,20 +132,31 @@ final class ReceiptWebUiTest extends WebTestCase
         $email = 'receipt.ui.create@example.com';
         $password = 'test1234';
         $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Create Car');
+        $vehicle->setPlateNumber('CR-100-AA');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicle);
         $this->em->flush();
 
         $this->loginWithUiForm($email, $password);
 
-        $createPage = $this->request('GET', '/ui/receipts/new');
+        $createPage = $this->request('GET', '/ui/receipts/new?vehicle_id='.$vehicle->getId()->toRfc4122());
         self::assertSame(Response::HTTP_OK, $createPage->getStatusCode());
         $createContent = (string) $createPage->getContent();
         self::assertStringContainsString('Quantity (L)', $createContent);
         self::assertStringContainsString('Unit price (€/L)', $createContent);
+        self::assertStringContainsString('option value="'.$vehicle->getId()->toRfc4122().'" selected', $createContent);
         $csrf = $this->extractFormCsrf($createContent);
 
         $createResponse = $this->request('POST', '/ui/receipts/new', [
             '_token' => $csrf,
             'issuedAt' => '2026-03-05T14:20',
+            'vehicleId' => $vehicle->getId()->toRfc4122(),
             'fuelType' => 'diesel',
             'quantityLiters' => '40,40',
             'unitPriceEurosPerLiter' => '1,769',
@@ -164,6 +177,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $receipt = $receipts[0];
         self::assertInstanceOf(ReceiptEntity::class, $receipt);
         self::assertSame($owner->getId()->toRfc4122(), $receipt->getOwner()?->getId()->toRfc4122());
+        self::assertSame($vehicle->getId()->toRfc4122(), $receipt->getVehicle()?->getId()->toRfc4122());
         self::assertSame(120450, $receipt->getOdometerKilometers());
         $lines = $receipt->getLines()->toArray();
         self::assertCount(1, $lines);
@@ -336,6 +350,81 @@ final class ReceiptWebUiTest extends WebTestCase
         $escapedReturnTo = htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         self::assertStringContainsString('href="'.$escapedReturnTo.'"', $content);
         self::assertStringContainsString('name="_redirect" value="'.$escapedReturnTo.'"', $content);
+    }
+
+    public function testReceiptDetailShowsVehicleContextAndNextActions(): void
+    {
+        $email = 'receipt.ui.detail.context@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Context Car');
+        $vehicle->setPlateNumber('CC-300-CC');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Context Detail Station');
+        $station->setStreetName('20 Detail Avenue');
+        $station->setPostalCode('75015');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $event = new MaintenanceEventEntity();
+        $event->setId(Uuid::v7());
+        $event->setOwner($owner);
+        $event->setVehicle($vehicle);
+        $event->setEventType(MaintenanceEventType::SERVICE);
+        $event->setOccurredAt(new DateTimeImmutable('2026-03-09 09:00:00'));
+        $event->setDescription('Recent maintenance');
+        $event->setOdometerKilometers(124000);
+        $event->setTotalCostCents(15990);
+        $event->setCurrencyCode('EUR');
+        $event->setCreatedAt(new DateTimeImmutable('2026-03-09 09:00:00'));
+        $event->setUpdatedAt(new DateTimeImmutable('2026-03-09 09:00:00'));
+        $this->em->persist($event);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setVehicle($vehicle);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-12 18:40:00'));
+        $receipt->setOdometerKilometers(124650);
+        $receipt->setTotalCents(2500);
+        $receipt->setVatAmountCents(417);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(13000);
+        $line->setUnitPriceDeciCentsPerLiter(1923);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/receipts/'.$receipt->getId()->toRfc4122());
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        self::assertStringContainsString('Vehicle context', $content);
+        self::assertStringContainsString('Context Car (CC-300-CC)', $content);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
+        self::assertStringContainsString('/ui/receipts?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/analytics?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('Recent maintenance', $content);
+        self::assertStringContainsString('Distance since last maintenance:</strong> 650 km', $content);
     }
 
     /**

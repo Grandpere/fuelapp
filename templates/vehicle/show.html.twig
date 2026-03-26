@@ -147,6 +147,7 @@
                 <p class="muted section-lead">Plate {{ vehicle.plateNumber }}. Use this page as the quick hub for receipts and maintenance attached to this vehicle.</p>
             </div>
             <div class="vehicle-show-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">View receipts</a>
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Maintenance</a>
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">Add plan</a>

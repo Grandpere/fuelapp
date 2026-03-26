@@ -229,25 +229,16 @@
 - [completed] Add/update functional coverage for the new vehicle hub, maintenance preselection, and receipt vehicle filter.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
-- [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
-# TODO - SP17-003 Front runtime weight and cache polish
+# TODO - SP18-002 Receipt detail usefulness pass
 
 ## Plan
-- [completed] Align remaining high-visibility date filters on the shared datepicker behavior instead of mixing native browser date inputs and flatpickr.
-- [completed] Fix the CSP/importmap compatibility regression that blocked the entire frontend runtime (`data:` script entrypoints).
-- [completed] Add/update security coverage for the CSP contract after the runtime fix.
+- [completed] Enrich the receipt detail page with linked vehicle context instead of showing only raw receipt fields.
+- [completed] Add direct next actions from a receipt toward vehicle, maintenance, analytics, and maintenance-event creation.
+- [completed] Allow manual receipt creation to link a vehicle, including preselection from the vehicle page.
+- [completed] Add/update functional coverage for the receipt detail context and vehicle-linked creation flow.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
-
-# TODO - SP18-001 Vehicle-centered workflow polish
-
-## Plan
-- [in_progress] Add a front-office vehicle detail page with a useful summary of recent receipts and maintenance context.
-- [pending] Add direct actions from the vehicle page into filtered receipts and preselected maintenance create flows.
-- [pending] Add/update functional coverage for vehicle detail and preselected maintenance workflow behavior.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 

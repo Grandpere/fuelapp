@@ -7,12 +7,11 @@
 - Make the front-office day-to-day flow feel more vehicle-centered and actionable.
 
 ## In progress
-- SP18-002 - receipt detail usefulness pass
+- SP18-003 - maintenance reminder actionability
 
 ## Next tickets (ordered)
-1. SP18-002 - Receipt detail usefulness pass
-2. SP18-003 - Maintenance reminder actionability
-3. Microsoft OIDC remains deferred
+1. SP18-003 - Maintenance reminder actionability
+2. Microsoft OIDC remains deferred
 
 ## Notes
 - Sprint 13 UX work is delivered and merged.

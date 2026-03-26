@@ -227,6 +227,7 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertStringContainsString('Travel Car', $content);
         self::assertStringContainsString('Plate TR-900-AA', $content);
         self::assertStringContainsString('View receipts', $content);
+        self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/receipts?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);

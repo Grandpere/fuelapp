@@ -543,3 +543,12 @@
 - [completed] Add/update functional coverage for the new import list signals and shortcuts.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP22-001 Vehicle timeline editing shortcuts
+
+## Plan
+- [completed] Add direct edit shortcuts on recent maintenance events and upcoming plans from the vehicle hub.
+- [completed] Keep all edit/create maintenance shortcuts anchored back to the vehicle page.
+- [completed] Add/update functional coverage for the new vehicle-hub editing actions.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

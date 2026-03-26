@@ -4,14 +4,14 @@
 - Sprint 22 - Front confidence and actionability
 
 ## Current goal
-- Make front-office queues and detail screens more confidence-building at first glance, starting with import list signals.
+- Make front-office cockpit screens more actionable with fewer correction clicks, starting with the vehicle hub.
 
 ## In progress
-- SP22-003 - Import queue confidence signals
+- SP22-001 - Vehicle timeline editing shortcuts
 
 ## Next tickets (ordered)
-1. SP22-001 - Vehicle timeline editing shortcuts
-2. SP22-002 - Receipt detail quick corrections pass
+1. SP22-002 - Receipt detail quick corrections pass
+2. Next Sprint 22 front-office follow-up to be decided after vehicle/detail polish
 3. Microsoft OIDC remains deferred
 
 ## Notes

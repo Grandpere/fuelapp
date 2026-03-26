@@ -1,20 +1,21 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 21 - Front product polish
+- Sprint 22 - Front confidence and actionability
 
 ## Current goal
-- Make the most-used front-office pages faster to operate day to day, starting with the receipt list.
+- Make front-office queues and detail screens more confidence-building at first glance, starting with import list signals.
 
 ## In progress
-- SP21-001 - Receipt list productivity pass
+- SP22-003 - Import queue confidence signals
 
 ## Next tickets (ordered)
-1. SP21-002 - Station workflow usefulness pass
-2. SP21-003 - Import post-processing clarity
+1. SP22-001 - Vehicle timeline editing shortcuts
+2. SP22-002 - Receipt detail quick corrections pass
 3. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 22 starts with a front-office confidence pass on import queues; admin parity remains deferred unless a support gap appears.
 - Sprint 21 starts on the front-office side again; admin parity is deferred unless a support need becomes clear.
 - Sprint 20 has started with a front-office-only pass on import review throughput; admin shortcuts are deferred unless support needs increase.
 - SP20 is fully delivered across import review throughput, maintenance/receipt cross-navigation continuity, and a more useful vehicle cockpit.

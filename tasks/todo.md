@@ -534,3 +534,12 @@
 - [completed] Add/update functional coverage for the clearer post-processing copy and links.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP22-003 Import queue confidence signals
+
+## Plan
+- [completed] Build clearer row-level confidence signals for processed, duplicate, failed, and needs_review imports on the queue list.
+- [completed] Surface direct primary actions from the queue when the next step is obvious.
+- [completed] Add/update functional coverage for the new import list signals and shortcuts.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

@@ -505,3 +505,32 @@
 - [completed] Add/update functional coverage for the vehicle cockpit additions.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP21-001 Receipt list productivity pass
+
+## Plan
+- [completed] Reframe Sprint 21 backlog/docs and keep this ticket front-office only.
+- [completed] Make active receipt filters easier to read and give quick date shortcuts for common ranges.
+- [completed] Add vehicle-context shortcuts and prefilled manual receipt creation from the current filter state.
+- [completed] Add/update functional coverage for the new receipt-list shortcuts and summary behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP21-002 Station workflow usefulness pass
+
+## Plan
+- [completed] Add a front station detail page that turns a station into a useful navigation hub.
+- [completed] Connect receipt and receipt-list station contexts to the new station shortcuts.
+- [completed] Allow manual receipt creation to prefill station details from station context.
+- [completed] Add/update front functional coverage for station navigation and prefilled create flow.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP21-003 Import post-processing clarity
+
+## Plan
+- [completed] Build a clearer front-office status summary for processed, duplicate, failed, and needs_review imports.
+- [completed] Surface next actions and key details directly from the import detail page without forcing payload reading.
+- [completed] Add/update functional coverage for the clearer post-processing copy and links.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

@@ -161,14 +161,19 @@
                 <div class="show-card-head">
                     <h2 class="section-title">Station</h2>
                     {% if station %}
-                        <a
-                            class="btn btn-secondary icon-btn"
-                            href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl})}) }}"
-                            aria-label="Edit station"
-                            title="Edit station"
-                        >
-                            ✎
-                        </a>
+                        <div class="show-action-list">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: station.id.toString(), return_to: path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl})}) }}">Open station</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">Station receipts</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Analytics</a>
+                            <a
+                                class="btn btn-secondary icon-btn"
+                                href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl})}) }}"
+                                aria-label="Edit station"
+                                title="Edit station"
+                            >
+                                ✎
+                            </a>
+                        </div>
                     {% endif %}
                 </div>
                 {% if station %}

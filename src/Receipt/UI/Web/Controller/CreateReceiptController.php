@@ -93,6 +93,8 @@ final class CreateReceiptController extends AbstractController
     /** @return array<string, string> */
     private function defaultFormData(Request $request, string $ownerId): array
     {
+        $prefilledStation = $this->readPrefilledStation($request);
+
         return [
             'issuedAt' => new DateTimeImmutable()->format('Y-m-d\TH:i'),
             'vehicleId' => $this->readPrefilledVehicleId($request, $ownerId) ?? '',
@@ -100,12 +102,12 @@ final class CreateReceiptController extends AbstractController
             'quantityLiters' => '',
             'unitPriceEurosPerLiter' => '',
             'vatRatePercent' => '20',
-            'stationName' => '',
-            'stationStreetName' => '',
-            'stationPostalCode' => '',
-            'stationCity' => '',
-            'latitudeMicroDegrees' => '',
-            'longitudeMicroDegrees' => '',
+            'stationName' => $prefilledStation?->name() ?? '',
+            'stationStreetName' => $prefilledStation?->streetName() ?? '',
+            'stationPostalCode' => $prefilledStation?->postalCode() ?? '',
+            'stationCity' => $prefilledStation?->city() ?? '',
+            'latitudeMicroDegrees' => null !== $prefilledStation?->latitudeMicroDegrees() ? (string) $prefilledStation->latitudeMicroDegrees() : '',
+            'longitudeMicroDegrees' => null !== $prefilledStation?->longitudeMicroDegrees() ? (string) $prefilledStation->longitudeMicroDegrees() : '',
             'odometerKilometers' => '',
             '_token' => '',
         ];
@@ -309,5 +311,20 @@ final class CreateReceiptController extends AbstractController
         }
 
         return $this->vehicleRepository->belongsToOwner($vehicleId, $ownerId) ? $vehicleId : null;
+    }
+
+    private function readPrefilledStation(Request $request): ?\App\Station\Domain\Station
+    {
+        $raw = $request->query->get('station_id');
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $stationId = trim((string) $raw);
+        if ('' === $stationId || !Uuid::isValid($stationId)) {
+            return null;
+        }
+
+        return $this->stationRepository->get($stationId);
     }
 }

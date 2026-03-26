@@ -1,18 +1,21 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 20 - Import review throughput and workflow continuity
+- Sprint 21 - Front product polish
 
 ## Current goal
-- Sprint 20 is delivered; next sprint to be re-prioritized.
+- Make the most-used front-office pages faster to operate day to day, starting with the receipt list.
 
 ## In progress
-- Next sprint to be re-prioritized
+- SP21-001 - Receipt list productivity pass
 
 ## Next tickets (ordered)
-1. Microsoft OIDC remains deferred
+1. SP21-002 - Station workflow usefulness pass
+2. SP21-003 - Import post-processing clarity
+3. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 21 starts on the front-office side again; admin parity is deferred unless a support need becomes clear.
 - Sprint 20 has started with a front-office-only pass on import review throughput; admin shortcuts are deferred unless support needs increase.
 - SP20 is fully delivered across import review throughput, maintenance/receipt cross-navigation continuity, and a more useful vehicle cockpit.
 - Sprint 18 is fully delivered across vehicle hub, receipt detail usefulness, and reminder actionability.

@@ -208,6 +208,7 @@
                     </div>
                     <div class="actions-wrap">
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: latestReceipt.id, return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Open receipt</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: latestReceipt.id, return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit details</a>
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">All receipts</a>
                     </div>
                 {% else %}
@@ -322,6 +323,10 @@
                                         {% if event.odometerKilometers is not null %}<span>Odometer: {{ event.odometerKilometers }} km</span>{% endif %}
                                         {% if event.totalCostCents is not null %}<span>Cost: {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}</span>{% endif %}
                                     </div>
+                                    <div class="actions-wrap">
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: event.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit event</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Timeline</a>
+                                    </div>
                                 </div>
                             {% endfor %}
                         </div>
@@ -351,6 +356,10 @@
                                         <span>Budget: {{ (plan.plannedCostCents / 100)|number_format(2, '.', ' ') }} {{ plan.currencyCode }}</span>
                                     </div>
                                     {% if plan.notes %}<div class="vehicle-item-sub">{{ plan.notes }}</div>{% endif %}
+                                    <div class="actions-wrap">
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_edit', {id: plan.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit plan</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Timeline</a>
+                                    </div>
                                 </div>
                             {% endfor %}
                         </div>

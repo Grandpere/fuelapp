@@ -183,6 +183,94 @@ final class ImportWebUiTest extends WebTestCase
         self::assertInstanceOf(ImportJobEntity::class, $savedB);
     }
 
+    public function testImportListShowsConfidenceSignalsAndPrimaryActions(): void
+    {
+        $email = 'import.web.list.signals@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($user);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-27 08:00:00'));
+        $receipt->setTotalCents(4200);
+        $receipt->setVatAmountCents(700);
+        $this->em->persist($receipt);
+
+        $processed = new ImportJobEntity();
+        $processed->setId(Uuid::v7());
+        $processed->setOwner($user);
+        $processed->setStatus(ImportJobStatus::PROCESSED);
+        $processed->setStorage('local');
+        $processed->setFilePath('2026/03/27/processed-list.jpg');
+        $processed->setOriginalFilename('processed-list.jpg');
+        $processed->setMimeType('image/jpeg');
+        $processed->setFileSizeBytes(64000);
+        $processed->setFileChecksumSha256(str_repeat('p', 64));
+        $processed->setErrorPayload(json_encode([
+            'status' => 'processed',
+            'finalizedReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $processed->setCreatedAt(new DateTimeImmutable('2026-03-27 08:01:00'));
+        $processed->setUpdatedAt(new DateTimeImmutable('2026-03-27 08:01:00'));
+        $processed->setCompletedAt(new DateTimeImmutable('2026-03-27 08:01:00'));
+        $processed->setRetentionUntil(new DateTimeImmutable('2026-04-27 08:01:00'));
+        $this->em->persist($processed);
+
+        $duplicate = new ImportJobEntity();
+        $duplicate->setId(Uuid::v7());
+        $duplicate->setOwner($user);
+        $duplicate->setStatus(ImportJobStatus::DUPLICATE);
+        $duplicate->setStorage('local');
+        $duplicate->setFilePath('2026/03/27/duplicate-list.jpg');
+        $duplicate->setOriginalFilename('duplicate-list.jpg');
+        $duplicate->setMimeType('image/jpeg');
+        $duplicate->setFileSizeBytes(64000);
+        $duplicate->setFileChecksumSha256(str_repeat('d', 64));
+        $duplicate->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $duplicate->setCreatedAt(new DateTimeImmutable('2026-03-27 08:05:00'));
+        $duplicate->setUpdatedAt(new DateTimeImmutable('2026-03-27 08:05:00'));
+        $duplicate->setCompletedAt(new DateTimeImmutable('2026-03-27 08:05:00'));
+        $duplicate->setRetentionUntil(new DateTimeImmutable('2026-04-27 08:05:00'));
+        $this->em->persist($duplicate);
+
+        $failed = new ImportJobEntity();
+        $failed->setId(Uuid::v7());
+        $failed->setOwner($user);
+        $failed->setStatus(ImportJobStatus::FAILED);
+        $failed->setStorage('local');
+        $failed->setFilePath('2026/03/27/failed-list.jpg');
+        $failed->setOriginalFilename('failed-list.jpg');
+        $failed->setMimeType('image/jpeg');
+        $failed->setFileSizeBytes(64000);
+        $failed->setFileChecksumSha256(str_repeat('f', 64));
+        $failed->setErrorPayload(json_encode([
+            'fallbackReason' => 'provider unavailable',
+        ], JSON_THROW_ON_ERROR));
+        $failed->setCreatedAt(new DateTimeImmutable('2026-03-27 08:10:00'));
+        $failed->setUpdatedAt(new DateTimeImmutable('2026-03-27 08:10:00'));
+        $failed->setFailedAt(new DateTimeImmutable('2026-03-27 08:10:00'));
+        $failed->setRetentionUntil(new DateTimeImmutable('2026-04-27 08:10:00'));
+        $this->em->persist($failed);
+
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $response = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('Receipt created', $content);
+        self::assertStringContainsString('Open receipt', $content);
+        self::assertStringContainsString('Already handled elsewhere', $content);
+        self::assertStringContainsString('Matches an existing receipt.', $content);
+        self::assertStringContainsString('Processing stopped', $content);
+        self::assertStringContainsString('Reason: provider unavailable.', $content);
+        self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $content);
+    }
+
     public function testUserSeesStructuredBulkUploadSummaryFromUi(): void
     {
         $email = 'import.web.bulk.summary@example.com';

@@ -669,8 +669,51 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/analytics?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance/events/'.$event->getId()->toRfc4122().'/edit', $content);
         self::assertStringContainsString('Recent maintenance', $content);
         self::assertStringContainsString('Distance since last maintenance:</strong> 650 km', $content);
+        self::assertStringContainsString('Quick corrections', $content);
+        self::assertStringContainsString('Adjust fuel lines', $content);
+        self::assertStringContainsString('Edit last maintenance', $content);
+        self::assertStringContainsString('Edit station', $content);
+    }
+
+    public function testReceiptDetailHighlightsMissingContextCorrections(): void
+    {
+        $email = 'receipt.ui.detail.quickfix@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-18 08:30:00'));
+        $receipt->setTotalCents(4500);
+        $receipt->setVatAmountCents(750);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(25000);
+        $line->setUnitPriceDeciCentsPerLiter(1800);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/receipts/'.$receipt->getId()->toRfc4122());
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+
+        self::assertStringContainsString('Quick corrections', $content);
+        self::assertStringContainsString('Link vehicle', $content);
+        self::assertStringContainsString('Link station', $content);
+        self::assertStringContainsString('Add odometer', $content);
+        self::assertStringContainsString('Adjust fuel lines', $content);
+        self::assertStringNotContainsString('Edit last maintenance', $content);
     }
 
     /**

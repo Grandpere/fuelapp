@@ -239,6 +239,34 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('Front + rear brake replacement', (string) $dashboardResponse->getContent());
     }
 
+    public function testCreateFormsCanPreselectVehicleFromQueryString(): void
+    {
+        $email = 'maintenance.ui.prefill@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Preset Car');
+        $vehicle->setPlateNumber('UI-300-CC');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-03 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-03 10:00:00'));
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $eventPage = $this->request('GET', '/ui/maintenance/events/new?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $eventPage->getStatusCode());
+        self::assertStringContainsString('option value="'.$vehicleId.'" selected', (string) $eventPage->getContent());
+
+        $planPage = $this->request('GET', '/ui/maintenance/plans/new?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $planPage->getStatusCode());
+        self::assertStringContainsString('option value="'.$vehicleId.'" selected', (string) $planPage->getContent());
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server

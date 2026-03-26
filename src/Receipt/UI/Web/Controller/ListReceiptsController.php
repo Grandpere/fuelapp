@@ -17,6 +17,7 @@ use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Station\Application\Repository\StationRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -107,6 +108,7 @@ final class ListReceiptsController extends AbstractController
     public function __construct(
         private readonly ReceiptRepository $receiptRepository,
         private readonly StationRepository $stationRepository,
+        private readonly VehicleRepository $vehicleRepository,
     ) {
     }
 
@@ -115,6 +117,7 @@ final class ListReceiptsController extends AbstractController
     {
         $page = max(1, $request->query->getInt('page', 1));
         $perPage = min(100, max(1, $request->query->getInt('per_page', 25)));
+        $vehicleId = $this->nullableString($request->query->get('vehicle_id'));
         $stationId = $this->nullableString($request->query->get('station_id'));
         $issuedFrom = $this->parseDate($request->query->get('issued_from'));
         $issuedTo = $this->parseDate($request->query->get('issued_to'));
@@ -134,7 +137,7 @@ final class ListReceiptsController extends AbstractController
         $sortDirection = 'asc' === strtolower((string) $request->query->get('sort_direction')) ? 'asc' : 'desc';
 
         $total = $this->receiptRepository->countFiltered(
-            null,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -151,7 +154,7 @@ final class ListReceiptsController extends AbstractController
         $rows = $this->receiptRepository->paginateFilteredListRows(
             $page,
             $perPage,
-            null,
+            $vehicleId,
             $stationId,
             $issuedFrom,
             $issuedTo,
@@ -166,6 +169,7 @@ final class ListReceiptsController extends AbstractController
         );
 
         $stationOptions = [];
+        $vehicleOptions = [];
         foreach ($this->stationRepository->all() as $stationOption) {
             $stationOptions[] = [
                 'id' => $stationOption->id()->toString(),
@@ -178,14 +182,25 @@ final class ListReceiptsController extends AbstractController
                 ),
             ];
         }
+        foreach ($this->vehicleRepository->all() as $vehicleOption) {
+            $vehicleOptions[] = [
+                'id' => $vehicleOption->id()->toString(),
+                'label' => sprintf('%s (%s)', $vehicleOption->name(), $vehicleOption->plateNumber()),
+            ];
+        }
 
         usort(
             $stationOptions,
             static fn (array $a, array $b): int => strcmp((string) $a['label'], (string) $b['label']),
         );
+        usort(
+            $vehicleOptions,
+            static fn (array $a, array $b): int => strcmp((string) $a['label'], (string) $b['label']),
+        );
 
         $queryParams = [
             'per_page' => $perPage,
+            'vehicle_id' => $vehicleId,
             'station_id' => $stationId,
             'issued_from' => $issuedFrom?->format('Y-m-d'),
             'issued_to' => $issuedTo?->format('Y-m-d'),
@@ -202,6 +217,7 @@ final class ListReceiptsController extends AbstractController
         ];
 
         $enableRealtime = 1 === $page
+            && null === $vehicleId
             && null === $stationId
             && null === $issuedFrom
             && null === $issuedTo
@@ -221,8 +237,10 @@ final class ListReceiptsController extends AbstractController
             'perPage' => $perPage,
             'total' => $total,
             'lastPage' => $lastPage,
+            'vehicleOptions' => $vehicleOptions,
             'stationOptions' => $stationOptions,
             'filters' => [
+                'vehicleId' => $vehicleId,
                 'stationId' => $stationId,
                 'issuedFrom' => $issuedFrom?->format('Y-m-d'),
                 'issuedTo' => $issuedTo?->format('Y-m-d'),

@@ -67,11 +67,11 @@ final class MaintenancePlannedCostFormController extends AbstractController
             }
         }
 
-        $formData = null === $plan ? $this->defaultFormData() : $this->formDataFromPlan($plan);
+        $formData = null === $plan ? $this->defaultFormData($request, $ownerId) : $this->formDataFromPlan($plan);
         $errors = [];
 
         if ($request->isMethod('POST')) {
-            $formData = $this->extractFormData($request);
+            $formData = $this->extractFormData($request, $ownerId);
             $errors = $this->validateFormData($formData, $ownerId);
 
             if ([] === $errors) {
@@ -122,10 +122,12 @@ final class MaintenancePlannedCostFormController extends AbstractController
     }
 
     /** @return array<string, string> */
-    private function defaultFormData(): array
+    private function defaultFormData(Request $request, string $ownerId): array
     {
+        $prefilledVehicleId = $this->readPrefilledVehicleId($request, $ownerId);
+
         return [
-            'vehicleId' => '',
+            'vehicleId' => $prefilledVehicleId ?? '',
             'label' => '',
             'eventType' => MaintenanceEventType::SERVICE->value,
             'plannedFor' => new DateTimeImmutable('+7 days')->format('Y-m-d'),
@@ -154,9 +156,9 @@ final class MaintenancePlannedCostFormController extends AbstractController
     }
 
     /** @return array<string, string> */
-    private function extractFormData(Request $request): array
+    private function extractFormData(Request $request, string $ownerId): array
     {
-        $data = $this->defaultFormData();
+        $data = $this->defaultFormData($request, $ownerId);
         foreach (array_keys($data) as $key) {
             $value = $request->request->get($key, '');
             $data[$key] = is_scalar($value) ? (string) $value : '';
@@ -208,6 +210,21 @@ final class MaintenancePlannedCostFormController extends AbstractController
         }
 
         return array_values(array_unique($errors));
+    }
+
+    private function readPrefilledVehicleId(Request $request, string $ownerId): ?string
+    {
+        $raw = $request->query->get('vehicle_id');
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $vehicleId = trim((string) $raw);
+        if ('' === $vehicleId || !Uuid::isValid($vehicleId)) {
+            return null;
+        }
+
+        return $this->vehicleRepository->belongsToOwner($vehicleId, $ownerId) ? $vehicleId : null;
     }
 
     private function nullIfEmpty(string $value): ?string

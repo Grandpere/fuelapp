@@ -17,6 +17,7 @@ use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -213,6 +214,84 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('data-controller="row-link"', $content);
         self::assertStringContainsString('data-row-link-url-value="/ui/receipts/'.$receipt->getId()->toRfc4122().'?', $content);
         self::assertMatchesRegularExpression('/data-row-link-url-value="\\/ui\\/receipts\\/'.$receipt->getId()->toRfc4122().'\\?[^"]*return_to=/', $content);
+    }
+
+    public function testReceiptIndexCanFilterByVehicle(): void
+    {
+        $email = 'receipt.ui.vehicle.filter@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicleA = new VehicleEntity();
+        $vehicleA->setId(Uuid::v7());
+        $vehicleA->setName('Vehicle A');
+        $vehicleA->setPlateNumber('AA-100-AA');
+        $vehicleA->setOwner($owner);
+        $vehicleA->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicleA->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicleA);
+
+        $vehicleB = new VehicleEntity();
+        $vehicleB->setId(Uuid::v7());
+        $vehicleB->setName('Vehicle B');
+        $vehicleB->setPlateNumber('BB-200-BB');
+        $vehicleB->setOwner($owner);
+        $vehicleB->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicleB->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicleB);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Vehicle Filter Station');
+        $station->setStreetName('2 Filter Avenue');
+        $station->setPostalCode('75014');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receiptA = new ReceiptEntity();
+        $receiptA->setId(Uuid::v7());
+        $receiptA->setOwner($owner);
+        $receiptA->setVehicle($vehicleA);
+        $receiptA->setStation($station);
+        $receiptA->setIssuedAt(new DateTimeImmutable('2026-03-14 08:00:00'));
+        $receiptA->setTotalCents(2100);
+        $receiptA->setVatAmountCents(350);
+        $lineA = new ReceiptLineEntity();
+        $lineA->setId(Uuid::v7());
+        $lineA->setFuelType('diesel');
+        $lineA->setQuantityMilliLiters(10000);
+        $lineA->setUnitPriceDeciCentsPerLiter(2100);
+        $lineA->setVatRatePercent(20);
+        $receiptA->addLine($lineA);
+        $this->em->persist($receiptA);
+
+        $receiptB = new ReceiptEntity();
+        $receiptB->setId(Uuid::v7());
+        $receiptB->setOwner($owner);
+        $receiptB->setVehicle($vehicleB);
+        $receiptB->setStation($station);
+        $receiptB->setIssuedAt(new DateTimeImmutable('2026-03-15 09:00:00'));
+        $receiptB->setTotalCents(2300);
+        $receiptB->setVatAmountCents(383);
+        $lineB = new ReceiptLineEntity();
+        $lineB->setId(Uuid::v7());
+        $lineB->setFuelType('sp95');
+        $lineB->setQuantityMilliLiters(11000);
+        $lineB->setUnitPriceDeciCentsPerLiter(2090);
+        $lineB->setVatRatePercent(20);
+        $receiptB->addLine($lineB);
+        $this->em->persist($receiptB);
+
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/receipts?vehicle_id='.$vehicleA->getId()->toRfc4122());
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('Vehicle A (AA-100-AA)', $content);
+        self::assertStringContainsString($receiptA->getId()->toRfc4122(), $content);
+        self::assertStringNotContainsString($receiptB->getId()->toRfc4122(), $content);
     }
 
     public function testReceiptDetailKeepsReturnToContextFromFilteredList(): void

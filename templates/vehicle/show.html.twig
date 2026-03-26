@@ -1,0 +1,277 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ vehicle.name }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .vehicle-show-page {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .vehicle-show-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .vehicle-show-header p {
+            margin: 0.35rem 0 0;
+        }
+
+        .vehicle-show-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .vehicle-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .vehicle-kpi-card {
+            padding: 0.95rem;
+        }
+
+        .vehicle-kpi-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-soft);
+        }
+
+        .vehicle-kpi-value {
+            margin-top: 0.3rem;
+            font-size: 1.18rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+        }
+
+        .vehicle-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .vehicle-panel {
+            padding: 1rem;
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .vehicle-panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .vehicle-panel-head h2 {
+            margin: 0;
+            font-size: 1.06rem;
+        }
+
+        .vehicle-list {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .vehicle-item {
+            padding: 0.85rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .vehicle-item-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .vehicle-item-sub,
+        .vehicle-item-meta {
+            color: var(--text-soft);
+            font-size: 0.84rem;
+        }
+
+        .vehicle-item-meta {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .vehicle-empty {
+            padding: 0.85rem;
+            border: 1px dashed var(--table-wrap-border);
+            border-radius: 10px;
+            color: var(--text-soft);
+        }
+
+        @media (max-width: 1100px) {
+            .vehicle-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .vehicle-kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 700px) {
+            .vehicle-kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell vehicle-show-page">
+        <header class="vehicle-show-header">
+            <div>
+                <h1 class="page-title">{{ vehicle.name }}</h1>
+                <p class="muted section-lead">Plate {{ vehicle.plateNumber }}. Use this page as the quick hub for receipts and maintenance attached to this vehicle.</p>
+            </div>
+            <div class="vehicle-show-actions">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">View receipts</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Maintenance</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">Add plan</a>
+                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString()}) }}">Add event</a>
+                <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString()}) }}">Edit vehicle</a>
+                <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}">Back to vehicles</a>
+            </div>
+        </header>
+
+        <section class="vehicle-kpi-grid">
+            <article class="card-subtle vehicle-kpi-card">
+                <div class="vehicle-kpi-label">Receipts tracked</div>
+                <div class="vehicle-kpi-value">{{ receiptCount }}</div>
+            </article>
+            <article class="card-subtle vehicle-kpi-card">
+                <div class="vehicle-kpi-label">Maintenance events</div>
+                <div class="vehicle-kpi-value">{{ maintenanceEventCount }}</div>
+            </article>
+            <article class="card-subtle vehicle-kpi-card">
+                <div class="vehicle-kpi-label">Upcoming plans</div>
+                <div class="vehicle-kpi-value">{{ upcomingMaintenancePlanCount }}</div>
+            </article>
+            <article class="card-subtle vehicle-kpi-card">
+                <div class="vehicle-kpi-label">Latest odometer seen</div>
+                <div class="vehicle-kpi-value">{{ latestReceiptOdometer ?? latestMaintenanceOdometer ?? 'n/a' }}{% if latestReceiptOdometer is not null or latestMaintenanceOdometer is not null %} km{% endif %}</div>
+            </article>
+        </section>
+
+        <section class="vehicle-grid">
+            <article class="card vehicle-panel">
+                <div class="vehicle-panel-head">
+                    <h2>Recent receipts</h2>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">Open filtered list</a>
+                </div>
+
+                {% if receiptRows is empty %}
+                    <div class="vehicle-empty">
+                        <p>No receipt linked to this vehicle yet.</p>
+                    </div>
+                {% else %}
+                    <div class="table-wrap table-min-740">
+                        <table class="app-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Station</th>
+                                    <th class="text-right">Odometer</th>
+                                    <th>Fuel</th>
+                                    <th class="text-right">Total</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for receipt in receiptRows %}
+                                    {% include 'receipt/_row.html.twig' with {
+                                        receipt: receipt,
+                                        redirectUrl: path('ui_vehicle_show', {id: vehicle.id.toString()}),
+                                        visibleColumns: ['issued_at', 'station_name', 'odometer_kilometers', 'fuel_type', 'total_cents']
+                                    } only %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </article>
+
+            <div class="vehicle-list">
+                <article class="card vehicle-panel">
+                    <div class="vehicle-panel-head">
+                        <h2>Recent maintenance events</h2>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Open maintenance</a>
+                    </div>
+
+                    {% if recentMaintenanceEvents is empty %}
+                        <div class="vehicle-empty">
+                            <p>No maintenance event recorded for this vehicle yet.</p>
+                        </div>
+                    {% else %}
+                        <div class="vehicle-list">
+                            {% for event in recentMaintenanceEvents %}
+                                <div class="card-subtle vehicle-item">
+                                    <div class="vehicle-item-title">
+                                        <strong>{{ event.eventType.value|upper }}</strong>
+                                        <span class="muted">{{ event.occurredAt|date('d/m/Y H:i') }}</span>
+                                    </div>
+                                    {% if event.description %}<div class="vehicle-item-sub">{{ event.description }}</div>{% endif %}
+                                    <div class="vehicle-item-meta">
+                                        {% if event.odometerKilometers is not null %}<span>Odometer: {{ event.odometerKilometers }} km</span>{% endif %}
+                                        {% if event.totalCostCents is not null %}<span>Cost: {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}</span>{% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </article>
+
+                <article class="card vehicle-panel">
+                    <div class="vehicle-panel-head">
+                        <h2>Upcoming maintenance plans</h2>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">Add plan</a>
+                    </div>
+
+                    {% if upcomingMaintenancePlans is empty %}
+                        <div class="vehicle-empty">
+                            <p>No upcoming maintenance plan for this vehicle.</p>
+                        </div>
+                    {% else %}
+                        <div class="vehicle-list">
+                            {% for plan in upcomingMaintenancePlans %}
+                                <div class="card-subtle vehicle-item">
+                                    <div class="vehicle-item-title">
+                                        <strong>{{ plan.label }}</strong>
+                                        <span class="muted">{{ plan.plannedFor|date('d/m/Y') }}</span>
+                                    </div>
+                                    <div class="vehicle-item-meta">
+                                        {% if plan.eventType is not null %}<span>{{ plan.eventType.value|upper }}</span>{% endif %}
+                                        <span>Budget: {{ (plan.plannedCostCents / 100)|number_format(2, '.', ' ') }} {{ plan.currencyCode }}</span>
+                                    </div>
+                                    {% if plan.notes %}<div class="vehicle-item-sub">{{ plan.notes }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </article>
+            </div>
+        </section>
+    </main>
+{% endblock %}

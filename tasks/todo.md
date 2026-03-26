@@ -220,6 +220,17 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP18-001 Vehicle-centered workflow polish
+
+## Plan
+- [completed] Add a front-office vehicle detail page that acts as a daily workflow hub.
+- [completed] Link vehicle detail to filtered receipts and maintenance flows instead of forcing users back through generic lists.
+- [completed] Add vehicle preselection on maintenance create forms and support vehicle filtering on the receipt list.
+- [completed] Add/update functional coverage for the new vehicle hub, maintenance preselection, and receipt vehicle filter.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP17-003 Front runtime weight and cache polish
 
 ## Plan
@@ -228,21 +239,15 @@
 - [completed] Add/update security coverage for the CSP contract after the runtime fix.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
-- [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
-# TODO - SP17-001 Analytics query profiling and hot-path optimization
+# TODO - SP18-001 Vehicle-centered workflow polish
 
 ## Plan
-- [completed] Identify redundant dashboard analytics reads on the same KPI table hot path.
-- [completed] Collapse monthly fuel cost/consumption/price and average-price dashboard reads into one grouped snapshot query.
-- [completed] Add unit coverage proving the aggregated snapshot rebuilds all expected metrics.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [completed] Ask user to run `make phpunit-functional` and share failures if any.
-- [completed] Add/update functional coverage for the new `return_to` behavior without overfitting HTML encoding.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+- [in_progress] Add a front-office vehicle detail page with a useful summary of recent receipts and maintenance context.
+- [pending] Add direct actions from the vehicle page into filtered receipts and preselected maintenance create flows.
+- [pending] Add/update functional coverage for vehicle detail and preselected maintenance workflow behavior.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP10 follow-up OTEL wiring to SigNoZ
 

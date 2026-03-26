@@ -103,6 +103,64 @@ final class StationWebUiTest extends WebTestCase
         self::assertStringContainsString('145200 km', $content);
     }
 
+    public function testStationListActsAsProductiveFrontIndex(): void
+    {
+        $email = 'station.ui.index@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $stationA = new StationEntity();
+        $stationA->setId(Uuid::v7());
+        $stationA->setName('North Station');
+        $stationA->setStreetName('12 Route Nord');
+        $stationA->setPostalCode('59000');
+        $stationA->setCity('Lille');
+        $this->em->persist($stationA);
+
+        $stationB = new StationEntity();
+        $stationB->setId(Uuid::v7());
+        $stationB->setName('Unused Station');
+        $stationB->setStreetName('4 Avenue Sud');
+        $stationB->setPostalCode('31000');
+        $stationB->setCity('Toulouse');
+        $this->em->persist($stationB);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($stationA);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-22 09:45:00'));
+        $receipt->setOdometerKilometers(158900);
+        $receipt->setTotalCents(6200);
+        $receipt->setVatAmountCents(1033);
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(34000);
+        $line->setUnitPriceDeciCentsPerLiter(1824);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/stations');
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+
+        self::assertStringContainsString('Stations', $content);
+        self::assertStringContainsString('Tracked stations', $content);
+        self::assertStringContainsString('North Station', $content);
+        self::assertStringNotContainsString('Unused Station', $content);
+        self::assertStringContainsString('Accessible stations', $content);
+        self::assertStringContainsString('/ui/stations/'.$stationA->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('/ui/receipts?station_id='.$stationA->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('/ui/analytics?station_id='.$stationA->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('/ui/receipts/new?station_id='.$stationA->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('158900 km', $content);
+    }
+
     /**
      * @param array<string, string|int|float|bool|array<int, array<string, string>>|null> $parameters
      * @param array<string, string>                                                       $server

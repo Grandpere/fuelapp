@@ -173,7 +173,7 @@
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Maintenance</a>
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">Add plan</a>
                 <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString()}) }}">Add event</a>
-                <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString()}) }}">Edit vehicle</a>
+                <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit vehicle</a>
                 <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}">Back to vehicles</a>
             </div>
         </header>

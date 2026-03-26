@@ -561,3 +561,30 @@
 - [completed] Add/update functional coverage for the new receipt detail shortcuts and missing-context guidance.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP23-003 Maintenance dashboard scanability pass
+
+## Plan
+- [completed] Add at-a-glance scan signals for urgent reminders, near-term plans, and recently handled events on `/ui/maintenance`.
+- [completed] Mark timeline and planner rows with lightweight visual labels that reduce read time.
+- [completed] Add/update functional coverage for the new maintenance scanability signals.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP23-002 Station list productivity pass
+
+## Plan
+- [completed] Add a front-office `/ui/stations` working list with basic usage signals per station.
+- [completed] Expose direct station shortcuts into receipts, analytics, and receipt creation from the list.
+- [completed] Add/update functional coverage for the new station list workflow.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP23-001 Vehicle form and list workflow polish
+
+## Plan
+- [completed] Keep vehicle create/edit flows anchored to a safe `return_to` instead of always dropping back to the generic list.
+- [completed] Add the most useful front-office shortcuts directly from `/ui/vehicles` rows.
+- [completed] Add/update functional coverage for the new vehicle list/form workflow behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

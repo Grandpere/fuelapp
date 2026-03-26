@@ -145,6 +145,74 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertNull($this->vehicleRepository->get($vehicleId));
     }
 
+    public function testVehicleFormAndListKeepWorkflowContext(): void
+    {
+        $email = 'vehicle.ui.workflow@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $ownerId = $owner->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $newPage = $this->request('GET', '/ui/vehicles/new?return_to='.rawurlencode('/ui/vehicles'), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $newPage->getStatusCode());
+        $newContent = (string) $newPage->getContent();
+        self::assertStringContainsString('href="/ui/vehicles"', $newContent);
+        self::assertStringContainsString('name="_return_to" value="/ui/vehicles"', $newContent);
+        $newCsrf = $this->extractFormCsrf($newContent);
+
+        $createResponse = $this->request(
+            'POST',
+            '/ui/vehicles/new',
+            [
+                'name' => 'Workflow Car',
+                'plateNumber' => 'WF-333-DD',
+                '_token' => $newCsrf,
+                '_return_to' => '/ui/vehicles',
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $createResponse->getStatusCode());
+        self::assertSame('/ui/vehicles', $createResponse->headers->get('Location'));
+
+        $vehicle = $this->vehicleRepository->findByOwnerAndPlateNumber($ownerId, 'WF-333-DD');
+        self::assertNotNull($vehicle);
+        $vehicleId = $vehicle->id()->toString();
+
+        $listPage = $this->request('GET', '/ui/vehicles', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listPage->getStatusCode());
+        $listContent = (string) $listPage->getContent();
+        self::assertStringContainsString('/ui/receipts?vehicle_id='.$vehicleId, $listContent);
+        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $listContent);
+        self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $listContent);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicleId.'/edit', $listContent);
+        self::assertStringContainsString('return_to=', $listContent);
+
+        $editPage = $this->request('GET', '/ui/vehicles/'.$vehicleId.'/edit?return_to='.rawurlencode('/ui/vehicles/'.$vehicleId), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
+        $editContent = (string) $editPage->getContent();
+        self::assertStringContainsString('href="/ui/vehicles/'.$vehicleId.'"', $editContent);
+        self::assertStringContainsString('name="_return_to" value="/ui/vehicles/'.$vehicleId.'"', $editContent);
+        $editCsrf = $this->extractFormCsrf($editContent);
+
+        $editResponse = $this->request(
+            'POST',
+            '/ui/vehicles/'.$vehicleId.'/edit',
+            [
+                'name' => 'Workflow Car Updated',
+                'plateNumber' => 'WF-444-EE',
+                '_token' => $editCsrf,
+                '_return_to' => '/ui/vehicles/'.$vehicleId,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $editResponse->getStatusCode());
+        self::assertSame('/ui/vehicles/'.$vehicleId, $editResponse->headers->get('Location'));
+    }
+
     public function testVehicleDetailActsAsWorkflowHub(): void
     {
         $email = 'vehicle.ui.hub@example.com';

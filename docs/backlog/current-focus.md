@@ -7,14 +7,15 @@
 - Make the maintenance dashboard easier to scan so urgent work, near-term plans, and recently handled items stand out immediately.
 
 ## In progress
-- SP23-003 - Maintenance dashboard scanability pass
+- SP23-002 - Station list productivity pass
 
 ## Next tickets (ordered)
-1. SP23-002 - Station list productivity pass
-2. SP23-001 - Vehicle form and list workflow polish
+1. SP23-001 - Vehicle form and list workflow polish
+2. Next Sprint 23 front-office follow-up to be decided after stations polish
 3. Microsoft OIDC remains deferred
 
 ## Notes
+- SP23-003 is fully delivered across maintenance dashboard scan signals and quick urgency cues.
 - Sprint 22 is fully delivered across import confidence signals, vehicle edit shortcuts, and receipt quick corrections.
 - Sprint 22 starts with a front-office confidence pass on import queues; admin parity remains deferred unless a support gap appears.
 - Sprint 21 starts on the front-office side again; admin parity is deferred unless a support need becomes clear.

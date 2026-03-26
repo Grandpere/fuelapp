@@ -570,3 +570,12 @@
 - [completed] Add/update functional coverage for the new maintenance scanability signals.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP23-002 Station list productivity pass
+
+## Plan
+- [completed] Add a front-office `/ui/stations` working list with basic usage signals per station.
+- [completed] Expose direct station shortcuts into receipts, analytics, and receipt creation from the list.
+- [completed] Add/update functional coverage for the new station list workflow.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

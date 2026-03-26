@@ -157,6 +157,11 @@
             color: var(--pill-odometer-text);
         }
 
+        .pill-reminder-due {
+            background: color-mix(in srgb, var(--accent-strong) 18%, transparent);
+            color: var(--accent-strong);
+        }
+
         @media (max-width: 1100px) {
             .maintenance-grid {
                 grid-template-columns: 1fr;
@@ -318,12 +323,20 @@
                                         <strong>{{ rule.name }}</strong>
                                         <span class="muted">{{ vehicleOptions[rule.vehicleId] ?? rule.vehicleId }}</span>
                                     </div>
+                                    {% set insight = ruleInsights[rule.id.toString] ?? null %}
                                     <div class="item-meta">
                                         <span>Trigger: {{ rule.triggerMode.value|replace({'_': ' '})|upper }}</span>
                                         {% if rule.intervalDays is not null %}<span>Every {{ rule.intervalDays }} day{% if rule.intervalDays > 1 %}s{% endif %}</span>{% endif %}
                                         {% if rule.intervalKilometers is not null %}<span>Every {{ rule.intervalKilometers }} km</span>{% endif %}
                                         {% if rule.eventType is not null %}<span>Suggested event: {{ rule.eventType.value|upper }}</span>{% endif %}
+                                        {% if insight and insight.isDue %}<span class="pill pill-reminder-due">Due now</span>{% endif %}
                                     </div>
+                                    {% if insight and insight.message %}
+                                        <div class="item-sub">{{ insight.message }}</div>
+                                    {% endif %}
+                                    {% if insight and insight.lastEventSummary %}
+                                        <div class="item-sub">{{ insight.lastEventSummary }}</div>
+                                    {% endif %}
                                     <div class="actions-wrap">
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_edit', {id: rule.id.toString}) }}">Edit</a>
                                         <form method="post" action="{{ path('ui_maintenance_rule_delete', {id: rule.id.toString}) }}" data-turbo-confirm="Delete reminder rule '{{ rule.name }}'?" style="display:inline-flex;">
@@ -346,7 +359,13 @@
                     </div>
                     {% if reminders is empty %}
                         <div class="empty-state">
-                            <p>No triggered reminder yet. They will appear here once your planned rules become due.</p>
+                            {% if reminderRules is empty %}
+                                <p>No triggered reminder yet because no reminder rule is configured for this scope.</p>
+                            {% elseif dueRuleCount > 0 %}
+                                <p>No triggered reminder is listed yet, but at least one rule is already due. They will appear here as soon as reminders are generated.</p>
+                            {% else %}
+                                <p>No triggered reminder yet. Your rules are being tracked, but none is due right now.</p>
+                            {% endif %}
                             <div class="actions-wrap">
                                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add a rule</a>
                                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add a plan</a>

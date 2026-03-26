@@ -14,10 +14,14 @@ declare(strict_types=1);
 namespace App\Maintenance\UI\Web\Controller;
 
 use App\Maintenance\Application\Cost\MaintenanceCostVarianceReader;
+use App\Maintenance\Application\Reminder\ReminderDueCalculator;
+use App\Maintenance\Application\Reminder\ReminderDueState;
+use App\Maintenance\Application\Reminder\VehicleCurrentOdometerResolver;
 use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Application\Repository\MaintenancePlannedCostRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository;
+use App\Maintenance\Domain\MaintenanceReminderRule;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use App\Vehicle\Domain\Vehicle;
@@ -36,6 +40,8 @@ final class MaintenanceDashboardController extends AbstractController
         private readonly MaintenancePlannedCostRepository $plannedCostRepository,
         private readonly MaintenanceReminderRepository $reminderRepository,
         private readonly MaintenanceReminderRuleRepository $ruleRepository,
+        private readonly ReminderDueCalculator $dueCalculator,
+        private readonly VehicleCurrentOdometerResolver $odometerResolver,
         private readonly MaintenanceCostVarianceReader $varianceReader,
         private readonly VehicleRepository $vehicleRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
@@ -85,10 +91,17 @@ final class MaintenanceDashboardController extends AbstractController
         $ruleNames = [];
         $ruleDetails = [];
         $reminderRules = [];
+        $reminderStates = [];
+        $currentOdometers = [];
+        $ruleInsights = [];
+        $dueRuleCount = 0;
         foreach ($vehicles as $vehicle) {
             if (null !== $vehicleId && $vehicle->id()->toString() !== $vehicleId) {
                 continue;
             }
+
+            $resolvedOdometer = $this->odometerResolver->resolve($ownerId, $vehicle->id()->toString());
+            $currentOdometers[$vehicle->id()->toString()] = $resolvedOdometer;
 
             foreach ($this->ruleRepository->allForOwnerAndVehicle($ownerId, $vehicle->id()->toString()) as $rule) {
                 $reminderRules[] = $rule;
@@ -101,6 +114,18 @@ final class MaintenanceDashboardController extends AbstractController
                     'intervalKilometers' => $rule->intervalKilometers(),
                     'vehicleId' => $rule->vehicleId(),
                 ];
+            }
+
+            foreach ($this->dueCalculator->computeForVehicle($ownerId, $vehicle->id()->toString(), $resolvedOdometer) as $state) {
+                $reminderStates[$state->ruleId] = $state;
+                if ($state->isDue) {
+                    ++$dueRuleCount;
+                }
+            }
+
+            foreach ($this->ruleRepository->allForOwnerAndVehicle($ownerId, $vehicle->id()->toString()) as $rule) {
+                $state = $reminderStates[$rule->id()->toString()] ?? null;
+                $ruleInsights[$rule->id()->toString()] = $this->buildRuleInsight($rule, $state, $resolvedOdometer);
             }
         }
 
@@ -118,6 +143,10 @@ final class MaintenanceDashboardController extends AbstractController
             'reminderRules' => $reminderRules,
             'ruleNames' => $ruleNames,
             'ruleDetails' => $ruleDetails,
+            'reminderStates' => $reminderStates,
+            'currentOdometers' => $currentOdometers,
+            'ruleInsights' => $ruleInsights,
+            'dueRuleCount' => $dueRuleCount,
             'variance' => $variance,
             'monthStart' => $monthStart,
             'monthEnd' => $monthEnd,
@@ -152,5 +181,79 @@ final class MaintenanceDashboardController extends AbstractController
         }
 
         return $this->vehicleRepository->belongsToOwner($vehicleId, $ownerId) ? $vehicleId : null;
+    }
+
+    /** @return array{message: ?string, lastEventSummary: ?string, isDue: bool} */
+    private function buildRuleInsight(MaintenanceReminderRule $rule, ?ReminderDueState $state, ?int $currentOdometer): array
+    {
+        if (!$state instanceof ReminderDueState) {
+            return [
+                'message' => null,
+                'lastEventSummary' => null,
+                'isDue' => false,
+            ];
+        }
+
+        $message = null;
+        if ($state->isDue) {
+            if ($state->dueByDate && $state->dueByOdometer) {
+                $message = 'This rule is already due by date and mileage.';
+            } elseif ($state->dueByDate) {
+                $message = 'This rule is already due by date.';
+            } elseif ($state->dueByOdometer) {
+                $message = 'This rule is already due by mileage.';
+            } else {
+                $message = 'This rule is already due.';
+            }
+        } elseif ('date' === $rule->triggerMode()->value) {
+            if (null === $state->lastEventOccurredAt) {
+                $message = sprintf(
+                    'No matching maintenance event yet. The first reminder will appear after %d day%s.',
+                    $rule->intervalDays() ?? 0,
+                    1 === ($rule->intervalDays() ?? 0) ? '' : 's',
+                );
+            } elseif (null !== $state->dueAtDate) {
+                $message = sprintf('Next due on %s.', $state->dueAtDate->format('d/m/Y'));
+            }
+        } elseif ('odometer' === $rule->triggerMode()->value) {
+            if (null === $currentOdometer) {
+                $message = 'Waiting for odometer data from a receipt or maintenance event to evaluate this rule.';
+            } elseif (null !== $state->dueAtOdometerKilometers) {
+                $message = sprintf('Next due at %d km. Current estimate: %d km.', $state->dueAtOdometerKilometers, $currentOdometer);
+            }
+        } else {
+            if (null === $currentOdometer && null !== $state->dueAtDate) {
+                $message = sprintf(
+                    'Next due on %s. Mileage-based due checks will start once the vehicle has odometer data.',
+                    $state->dueAtDate->format('d/m/Y'),
+                );
+            } elseif (null !== $state->dueAtDate && null !== $state->dueAtOdometerKilometers && null !== $currentOdometer) {
+                $message = sprintf(
+                    'Next due on %s or at %d km. Current estimate: %d km.',
+                    $state->dueAtDate->format('d/m/Y'),
+                    $state->dueAtOdometerKilometers,
+                    $currentOdometer,
+                );
+            } elseif (null !== $state->dueAtDate) {
+                $message = sprintf('Next due on %s.', $state->dueAtDate->format('d/m/Y'));
+            } elseif (null !== $state->dueAtOdometerKilometers) {
+                $message = sprintf('Next due at %d km.', $state->dueAtOdometerKilometers);
+            }
+        }
+
+        $lastEventSummary = null;
+        if (null !== $state->lastEventOccurredAt) {
+            $lastEventSummary = sprintf(
+                'Last matching event: %s%s',
+                $state->lastEventOccurredAt->format('d/m/Y H:i'),
+                null !== $state->lastEventOdometerKilometers ? sprintf(' · %d km', $state->lastEventOdometerKilometers) : '',
+            );
+        }
+
+        return [
+            'message' => $message,
+            'lastEventSummary' => $lastEventSummary,
+            'isDue' => $state->isDue,
+        ];
     }
 }

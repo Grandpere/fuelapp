@@ -444,6 +444,44 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('No reminder rule yet.', (string) $finalDashboard->getContent());
     }
 
+    public function testReminderDashboardExplainsWhyNothingIsTriggeredYet(): void
+    {
+        $email = 'maintenance.ui.reminder.explain@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Explain Car');
+        $vehicle->setPlateNumber('UI-600-FF');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-06 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-06 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('Brake inspection');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::ODOMETER);
+        $rule->setEventType(MaintenanceEventType::INSPECTION);
+        $rule->setIntervalKilometers(10000);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-03-06 10:30:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-03-06 10:30:00'));
+        $this->em->persist($rule);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $dashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicle->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
+        $content = (string) $dashboard->getContent();
+        self::assertStringContainsString('Brake inspection', $content);
+        self::assertStringContainsString('Waiting for odometer data from a receipt or maintenance event to evaluate this rule.', $content);
+        self::assertStringContainsString('No triggered reminder yet. Your rules are being tracked, but none is due right now.', $content);
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server

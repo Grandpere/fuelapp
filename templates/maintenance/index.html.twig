@@ -34,8 +34,30 @@
             gap: 0.75rem;
         }
 
+        .scan-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
         .kpi {
             padding: 0.95rem;
+        }
+
+        .scan-card {
+            padding: 0.95rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .scan-card.is-alert {
+            border-color: color-mix(in srgb, var(--accent-strong) 38%, var(--table-wrap-border));
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-strong) 14%, transparent);
+        }
+
+        .scan-copy {
+            color: var(--text-soft);
+            font-size: 0.88rem;
         }
 
         .kpi-label {
@@ -162,6 +184,21 @@
             color: var(--accent-strong);
         }
 
+        .pill-maintenance-recent {
+            background: color-mix(in srgb, var(--success) 16%, transparent);
+            color: var(--success);
+        }
+
+        .pill-maintenance-soon {
+            background: color-mix(in srgb, var(--warning) 18%, transparent);
+            color: var(--warning);
+        }
+
+        .pill-maintenance-later {
+            background: color-mix(in srgb, var(--text-soft) 16%, transparent);
+            color: var(--text-soft);
+        }
+
         @media (max-width: 1100px) {
             .maintenance-grid {
                 grid-template-columns: 1fr;
@@ -170,6 +207,10 @@
 
         @media (max-width: 760px) {
             .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .scan-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -233,6 +274,34 @@
                     <div class="kpi-value">{{ (variance.varianceCents / 100)|number_format(2, '.', ' ') }} EUR</div>
                 </article>
             </div>
+
+            <div class="scan-grid">
+                <article class="card-subtle scan-card {% if reminders|length > 0 %}is-alert{% endif %}">
+                    <div class="kpi-label">Attention now</div>
+                    <div class="kpi-value">{{ reminders|length }}</div>
+                    <div class="scan-copy">
+                        {% if reminders|length > 0 %}
+                            Triggered reminder{% if reminders|length > 1 %}s{% endif %} already waiting for action.
+                        {% else %}
+                            No triggered reminder is waiting right now.
+                        {% endif %}
+                    </div>
+                </article>
+                <article class="card-subtle scan-card {% if dueSoonPlanCount > 0 %}is-alert{% endif %}">
+                    <div class="kpi-label">Due soon</div>
+                    <div class="kpi-value">{{ dueSoonPlanCount }}</div>
+                    <div class="scan-copy">
+                        Planned item{% if dueSoonPlanCount > 1 %}s{% endif %} scheduled in the next 14 days.
+                    </div>
+                </article>
+                <article class="card-subtle scan-card">
+                    <div class="kpi-label">Recently handled</div>
+                    <div class="kpi-value">{{ recentEventCount }}</div>
+                    <div class="scan-copy">
+                        Maintenance event{% if recentEventCount > 1 %}s{% endif %} logged in the last 30 days.
+                    </div>
+                </article>
+            </div>
         </section>
 
         <section class="maintenance-grid">
@@ -251,7 +320,12 @@
                             <div class="card-subtle timeline-item">
                                 <div class="item-title">
                                     <strong>{{ event.eventType.value|upper }}</strong>
-                                    <span class="muted">{{ event.occurredAt|date('d/m/Y H:i') }}</span>
+                                    <div class="show-action-list">
+                                        {% if event.occurredAt >= recentEventCutoff %}
+                                            <span class="pill pill-maintenance-recent">Handled recently</span>
+                                        {% endif %}
+                                        <span class="muted">{{ event.occurredAt|date('d/m/Y H:i') }}</span>
+                                    </div>
                                 </div>
                                 <div class="item-sub">{{ vehicleOptions[event.vehicleId] ?? event.vehicleId }}</div>
                                 <div class="item-meta">
@@ -288,10 +362,17 @@
                         <div class="planner-list">
                             {% for plan in upcomingPlans|slice(0, 8) %}
                                 <div class="card-subtle planner-item">
-                                    <div class="item-title">
-                                        <strong>{{ plan.label }}</strong>
+                                <div class="item-title">
+                                    <strong>{{ plan.label }}</strong>
+                                    <div class="show-action-list">
+                                        {% if plan.plannedFor <= soonPlanCutoff %}
+                                            <span class="pill pill-maintenance-soon">Due soon</span>
+                                        {% else %}
+                                            <span class="pill pill-maintenance-later">Later</span>
+                                        {% endif %}
                                         <span class="muted">{{ plan.plannedFor|date('d/m/Y') }}</span>
                                     </div>
+                                </div>
                                     <div class="item-sub">{{ vehicleOptions[plan.vehicleId] ?? plan.vehicleId }}</div>
                                     <div class="item-meta">
                                         <span>Budget: {{ (plan.plannedCostCents / 100)|number_format(2, '.', ' ') }} {{ plan.currencyCode }}</span>

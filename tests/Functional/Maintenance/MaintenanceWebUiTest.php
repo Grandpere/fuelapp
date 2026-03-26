@@ -111,6 +111,9 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('Maintenance', (string) $response->getContent());
         self::assertStringContainsString('Timeline events', (string) $response->getContent());
         self::assertStringContainsString('Planner (upcoming)', (string) $response->getContent());
+        self::assertStringContainsString('Attention now', (string) $response->getContent());
+        self::assertStringContainsString('Due soon', (string) $response->getContent());
+        self::assertStringContainsString('Recently handled', (string) $response->getContent());
         self::assertStringContainsString('Add first event', (string) $response->getContent());
         self::assertStringContainsString('Add first plan', (string) $response->getContent());
     }
@@ -238,8 +241,11 @@ final class MaintenanceWebUiTest extends KernelTestCase
 
         $dashboardResponse = $this->request('GET', '/ui/maintenance', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $dashboardResponse->getStatusCode());
-        self::assertStringContainsString('Updated repair entry', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Front + rear brake replacement', (string) $dashboardResponse->getContent());
+        $dashboardContent = (string) $dashboardResponse->getContent();
+        self::assertStringContainsString('Updated repair entry', $dashboardContent);
+        self::assertStringContainsString('Front + rear brake replacement', $dashboardContent);
+        self::assertStringContainsString('Handled recently', $dashboardContent);
+        self::assertStringContainsString('Due soon', $dashboardContent);
     }
 
     public function testCreateFormsCanPreselectVehicleFromQueryString(): void

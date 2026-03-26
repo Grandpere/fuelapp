@@ -1,20 +1,21 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 22 - Front confidence and actionability
+- Sprint 23 - Front maintenance scanability
 
 ## Current goal
-- Make front-office cockpit screens more actionable with fewer correction clicks, starting with the vehicle hub.
+- Make the maintenance dashboard easier to scan so urgent work, near-term plans, and recently handled items stand out immediately.
 
 ## In progress
-- SP22-002 - Receipt detail quick corrections pass
+- SP23-003 - Maintenance dashboard scanability pass
 
 ## Next tickets (ordered)
-1. SP22-002 - Receipt detail quick corrections pass
-2. Next Sprint 22 front-office follow-up to be decided after receipt/detail polish
+1. SP23-002 - Station list productivity pass
+2. SP23-001 - Vehicle form and list workflow polish
 3. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 22 is fully delivered across import confidence signals, vehicle edit shortcuts, and receipt quick corrections.
 - Sprint 22 starts with a front-office confidence pass on import queues; admin parity remains deferred unless a support gap appears.
 - Sprint 21 starts on the front-office side again; admin parity is deferred unless a support need becomes clear.
 - Sprint 20 has started with a front-office-only pass on import review throughput; admin shortcuts are deferred unless support needs increase.

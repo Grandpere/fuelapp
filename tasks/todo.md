@@ -561,3 +561,12 @@
 - [completed] Add/update functional coverage for the new receipt detail shortcuts and missing-context guidance.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP23-003 Maintenance dashboard scanability pass
+
+## Plan
+- [completed] Add at-a-glance scan signals for urgent reminders, near-term plans, and recently handled events on `/ui/maintenance`.
+- [completed] Mark timeline and planner rows with lightweight visual labels that reduce read time.
+- [completed] Add/update functional coverage for the new maintenance scanability signals.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

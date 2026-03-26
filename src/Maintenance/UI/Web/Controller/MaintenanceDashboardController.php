@@ -66,6 +66,10 @@ final class MaintenanceDashboardController extends AbstractController
         $events = null === $vehicleId
             ? iterator_to_array($this->eventRepository->allForOwner($ownerId))
             : iterator_to_array($this->eventRepository->allForOwnerAndVehicle($ownerId, $vehicleId));
+        usort(
+            $events,
+            static fn ($a, $b): int => $b->occurredAt() <=> $a->occurredAt(),
+        );
 
         $plannedCosts = array_values(array_filter(
             iterator_to_array($this->plannedCostRepository->allForOwner($ownerId)),
@@ -78,6 +82,8 @@ final class MaintenanceDashboardController extends AbstractController
         );
 
         $today = new DateTimeImmutable('today')->setTime(0, 0, 0);
+        $recentEventCutoff = $today->modify('-30 days');
+        $soonPlanCutoff = $today->modify('+14 days');
         $upcomingPlans = array_values(array_filter(
             $plannedCosts,
             static fn ($plan): bool => $plan->plannedFor() >= $today,
@@ -132,6 +138,14 @@ final class MaintenanceDashboardController extends AbstractController
         $monthStart = new DateTimeImmutable(date('Y-m-01'));
         $monthEnd = $monthStart->modify('last day of this month');
         $variance = $this->varianceReader->read($ownerId, $vehicleId, $monthStart, $monthEnd);
+        $recentEventCount = count(array_filter(
+            $events,
+            static fn ($event): bool => $event->occurredAt() >= $recentEventCutoff,
+        ));
+        $dueSoonPlanCount = count(array_filter(
+            $upcomingPlans,
+            static fn ($plan): bool => $plan->plannedFor() <= $soonPlanCutoff,
+        ));
 
         return $this->render('maintenance/index.html.twig', [
             'vehicleOptions' => $vehicleMap,
@@ -150,6 +164,10 @@ final class MaintenanceDashboardController extends AbstractController
             'variance' => $variance,
             'monthStart' => $monthStart,
             'monthEnd' => $monthEnd,
+            'recentEventCutoff' => $recentEventCutoff,
+            'recentEventCount' => $recentEventCount,
+            'soonPlanCutoff' => $soonPlanCutoff,
+            'dueSoonPlanCount' => $dueSoonPlanCount,
         ]);
     }
 

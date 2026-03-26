@@ -106,6 +106,34 @@ final class VehicleShowController extends AbstractController
             }
         }
 
+        $latestReceipt = $receiptRows[0] ?? null;
+        $latestMaintenanceEvent = $recentMaintenanceEvents[0] ?? null;
+        $nextMaintenancePlan = $upcomingMaintenancePlans[0] ?? null;
+        $fuelSpendTotalCents = 0;
+        foreach ($receiptRows as $row) {
+            $fuelSpendTotalCents += $row['totalCents'];
+        }
+
+        $attentionSummary = null;
+        if (null !== $nextMaintenancePlan) {
+            $attentionSummary = sprintf(
+                'Next planned maintenance: %s on %s.',
+                $nextMaintenancePlan->label(),
+                $nextMaintenancePlan->plannedFor()->format('d/m/Y'),
+            );
+        } elseif (null !== $latestMaintenanceEvent) {
+            $attentionSummary = sprintf(
+                'Last maintenance recorded: %s on %s.',
+                $latestMaintenanceEvent->eventType()->value,
+                $latestMaintenanceEvent->occurredAt()->format('d/m/Y'),
+            );
+        } elseif (null !== $latestReceipt) {
+            $attentionSummary = sprintf(
+                'Latest fuel receipt tracked on %s.',
+                $latestReceipt['issuedAt']->format('d/m/Y'),
+            );
+        }
+
         return $this->render('vehicle/show.html.twig', [
             'vehicle' => $vehicle,
             'receiptRows' => $receiptRows,
@@ -117,6 +145,11 @@ final class VehicleShowController extends AbstractController
             'upcomingMaintenancePlanCount' => count($upcomingMaintenancePlans),
             'latestReceiptOdometer' => $latestReceiptOdometer,
             'latestMaintenanceOdometer' => $latestMaintenanceOdometer,
+            'latestReceipt' => $latestReceipt,
+            'latestMaintenanceEvent' => $latestMaintenanceEvent,
+            'nextMaintenancePlan' => $nextMaintenancePlan,
+            'fuelSpendTotalCents' => $fuelSpendTotalCents,
+            'attentionSummary' => $attentionSummary,
         ]);
     }
 

@@ -327,6 +327,83 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId.'&amp;event_type=service', $content);
         self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/receipts?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/analytics?vehicle_id='.$vehicleId, $content);
+    }
+
+    public function testMaintenanceFormsKeepVehicleFilteredReturnContext(): void
+    {
+        $email = 'maintenance.ui.return-context@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Context Car');
+        $vehicle->setPlateNumber('UI-700-GG');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-07 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-07 10:00:00'));
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $returnTo = '/ui/maintenance?vehicle_id='.$vehicleId;
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $eventPage = $this->request('GET', '/ui/maintenance/events/new?vehicle_id='.$vehicleId.'&return_to='.rawurlencode($returnTo), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $eventPage->getStatusCode());
+        $eventContent = (string) $eventPage->getContent();
+        self::assertStringContainsString('href="'.$returnTo.'"', $eventContent);
+        self::assertStringContainsString('name="_return_to" value="'.$returnTo.'"', $eventContent);
+        $eventCsrf = $this->extractFormCsrf($eventContent);
+
+        $createEventResponse = $this->request(
+            'POST',
+            '/ui/maintenance/events/new',
+            [
+                'vehicleId' => $vehicleId,
+                'eventType' => MaintenanceEventType::SERVICE->value,
+                'occurredAt' => '2026-03-07T09:30',
+                'description' => 'Context service',
+                'odometerKilometers' => '88000',
+                'totalCostEuros' => '120.00',
+                'currencyCode' => 'EUR',
+                '_token' => $eventCsrf,
+                '_return_to' => $returnTo,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $createEventResponse->getStatusCode());
+        self::assertSame($returnTo, $createEventResponse->headers->get('Location'));
+
+        $planPage = $this->request('GET', '/ui/maintenance/plans/new?vehicle_id='.$vehicleId.'&return_to='.rawurlencode($returnTo), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $planPage->getStatusCode());
+        $planContent = (string) $planPage->getContent();
+        self::assertStringContainsString('href="'.$returnTo.'"', $planContent);
+        self::assertStringContainsString('name="_return_to" value="'.$returnTo.'"', $planContent);
+        $planCsrf = $this->extractFormCsrf($planContent);
+
+        $createPlanResponse = $this->request(
+            'POST',
+            '/ui/maintenance/plans/new',
+            [
+                'vehicleId' => $vehicleId,
+                'label' => 'Context plan',
+                'eventType' => MaintenanceEventType::SERVICE->value,
+                'plannedFor' => '2026-03-20',
+                'plannedCostEuros' => '240.00',
+                'currencyCode' => 'EUR',
+                'notes' => 'Context budget',
+                '_token' => $planCsrf,
+                '_return_to' => $returnTo,
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $createPlanResponse->getStatusCode());
+        self::assertSame($returnTo, $createPlanResponse->headers->get('Location'));
     }
 
     public function testUserCanCreateEditAndDeleteReminderRuleFromFront(): void

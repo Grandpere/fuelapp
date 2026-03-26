@@ -3,8 +3,7 @@
 {% block title %}Import Review{% endblock %}
 
 {% block body %}
-    {% set requestedReturnTo = app.request.query.get('return_to') %}
-    {% set backToImportsUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_import_index') %}
+    {% set backToImportsUrl = backToImportsUrl is defined and backToImportsUrl is not empty ? backToImportsUrl : path('ui_import_index') %}
     {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
     {% set issuedAtMissing = 'issued_at_missing' in issueList %}
     {% set reviewLines = reviewLines is defined and reviewLines is iterable ? reviewLines : [] %}
@@ -21,8 +20,9 @@
                 <div class="actions-wrap">
                     <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
                     {% if job.status.value == 'needs_review' %}
-                        <form method="post" action="{{ path('ui_import_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
+                        <form id="import-reparse-form" method="post" action="{{ path('ui_import_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
                             <input type="hidden" name="_token" value="{{ csrf_token('ui_import_reparse_' ~ job.id.toString) }}">
+                            <input type="hidden" name="_return_to" value="{{ backToImportsUrl }}">
                             <button class="btn btn-secondary" type="submit">Reparse</button>
                         </form>
                     {% endif %}
@@ -47,6 +47,39 @@
                 <dd>{{ job.originalFilename }}</dd>
             </dl>
         </section>
+
+        {% if reviewQueue is not null %}
+            <section class="card section-card" data-import-review-shortcuts data-previous-url="{{ reviewQueue.previousUrl ?? '' }}" data-next-url="{{ reviewQueue.nextUrl ?? '' }}">
+                <div class="section-header">
+                    <div>
+                        <p class="text-block-title">Review queue</p>
+                        <p class="muted section-lead">Import {{ reviewQueue.position }} of {{ reviewQueue.total }} that still need manual review.</p>
+                    </div>
+                    <div class="actions-wrap">
+                        {% if reviewQueue.previousUrl is not null %}
+                            <a class="btn btn-secondary" href="{{ reviewQueue.previousUrl }}" data-turbo-frame="_top">Previous review</a>
+                        {% endif %}
+                        {% if reviewQueue.nextUrl is not null %}
+                            <a class="btn btn-secondary" href="{{ reviewQueue.nextUrl }}" data-turbo-frame="_top">Next review</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="muted compact-note">
+                    Shortcuts: <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to finalize, <kbd>Shift</kbd> + <kbd>R</kbd> to reparse,
+                    <kbd>J</kbd>/<kbd>K</kbd> to move through the review queue.
+                </p>
+                {% if reviewQueue.previousLabel is not null or reviewQueue.nextLabel is not null %}
+                    <div class="actions-wrap">
+                        {% if reviewQueue.previousLabel is not null %}
+                            <span class="muted compact-note">Previous: {{ reviewQueue.previousLabel }}</span>
+                        {% endif %}
+                        {% if reviewQueue.nextLabel is not null %}
+                            <span class="muted compact-note">Next: {{ reviewQueue.nextLabel }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </section>
+        {% endif %}
 
         {% if issueList|length > 0 %}
             <section class="card section-card">
@@ -105,8 +138,9 @@
             <section class="card section-card">
                 <h2 class="section-title">Fix And Finalize</h2>
                 <p class="muted section-lead">Leave empty to use extracted values when available.</p>
-                <form method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="form-stack">
+                <form id="import-finalize-form" method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="form-stack">
                     <input type="hidden" name="_token" value="{{ csrf_token('ui_import_finalize_' ~ job.id.toString) }}">
+                    <input type="hidden" name="_return_to" value="{{ backToImportsUrl }}">
 
                     <div class="form-grid-2">
                         <label class="label">
@@ -197,7 +231,10 @@
 
                     <div class="actions-wrap">
                         <button class="btn btn-primary" type="submit">Finalize import</button>
-                        <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Cancel</a>
+                        {% if reviewQueue is not null and reviewQueue.nextUrl is not null %}
+                            <button class="btn btn-secondary" type="submit" name="_continue" value="1">Finalize and open next</button>
+                        {% endif %}
+                        <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Cancel</a>
                     </div>
                 </form>
             </section>
@@ -219,6 +256,63 @@
                 <p class="text-block-title">Raw payload (debug)</p>
                 <pre class="preformatted-block">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
             </section>
+        {% endif %}
+
+        {% if job.status.value == 'needs_review' %}
+            <script>
+                (() => {
+                    const root = document.querySelector('[data-import-review-shortcuts]');
+                    if (!root || root.dataset.bound === '1') {
+                        return;
+                    }
+
+                    root.dataset.bound = '1';
+
+                    const isTypingTarget = (target) => target instanceof HTMLElement
+                        && (target.matches('input, textarea, select') || target.isContentEditable);
+
+                    const finalizeForm = document.getElementById('import-finalize-form');
+                    const reparseForm = document.getElementById('import-reparse-form');
+                    const previousUrl = root.dataset.previousUrl || '';
+                    const nextUrl = root.dataset.nextUrl || '';
+                    const abortController = new AbortController();
+
+                    document.addEventListener('keydown', (event) => {
+                        const typing = isTypingTarget(event.target);
+
+                        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                            event.preventDefault();
+                            finalizeForm?.requestSubmit();
+                            return;
+                        }
+
+                        if (typing) {
+                            return;
+                        }
+
+                        if (event.shiftKey && event.key.toLowerCase() === 'r') {
+                            event.preventDefault();
+                            reparseForm?.requestSubmit();
+                            return;
+                        }
+
+                        if (event.key.toLowerCase() === 'j' && nextUrl !== '') {
+                            event.preventDefault();
+                            window.location.assign(nextUrl);
+                            return;
+                        }
+
+                        if (event.key.toLowerCase() === 'k' && previousUrl !== '') {
+                            event.preventDefault();
+                            window.location.assign(previousUrl);
+                        }
+                    }, { signal: abortController.signal });
+
+                    document.addEventListener('turbo:before-cache', () => {
+                        abortController.abort();
+                    }, { once: true });
+                })();
+            </script>
         {% endif %}
     </main>
 {% endblock %}

@@ -232,6 +232,12 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/plans/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('Latest fuel snapshot', $content);
+        self::assertStringContainsString('Maintenance watch', $content);
+        self::assertStringContainsString('Quick attention point', $content);
+        self::assertStringContainsString('Recent fuel spend: 22.00 EUR', $content);
+        self::assertStringContainsString('/ui/analytics?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $content);
         self::assertStringContainsString('Vehicle Hub Station', $content);
         self::assertStringContainsString('Annual service', $content);
         self::assertStringContainsString('Tyre replacement', $content);

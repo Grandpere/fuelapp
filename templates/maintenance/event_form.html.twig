@@ -27,13 +27,14 @@
 {% endblock %}
 
 {% block body %}
+    {% set backToListUrl = backToListUrl is defined and backToListUrl is not empty ? backToListUrl : path('ui_maintenance_index') %}
     <main class="app-shell maintenance-form-page">
         <header class="maintenance-form-header">
             <div class="page-header">
                 <h1 class="page-title">{% if isEdit %}Edit maintenance event{% else %}Add maintenance event{% endif %}</h1>
                 <p class="muted section-lead">Record a maintenance operation with vehicle, timing, odometer and cost context.</p>
             </div>
-            <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}" data-turbo-frame="_top">Back</a>
+            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back</a>
         </header>
 
         <section class="card maintenance-form-card">
@@ -49,6 +50,7 @@
 
             <form method="post" action="" data-turbo-frame="_top" class="form-stack">
                 <input type="hidden" name="_token" value="{{ csrfToken }}">
+                <input type="hidden" name="_return_to" value="{{ backToListUrl }}">
 
                 <div class="form-grid-2">
                     <label class="label">
@@ -94,7 +96,7 @@
 
                 <div class="actions-wrap">
                     <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create event{% endif %}</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}" data-turbo-frame="_top">Cancel</a>
+                    <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Cancel</a>
                 </div>
             </form>
         </section>

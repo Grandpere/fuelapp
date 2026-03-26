@@ -218,6 +218,16 @@
 - [completed] Expose retry, fallback, duplicate-target, fingerprint, and timing metadata directly in the admin import detail flow.
 - [completed] Add/update functional coverage for fallback and failed import observability views.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] User-run functional suite validated (`make phpunit-functional`).
+
+# TODO - SP19-001 Front maintenance reminder rules CRUD
+
+## Plan
+- [completed] Add front-office create/edit/delete controllers for maintenance reminder rules with owner-scoped validation.
+- [in_progress] Surface reminder rules on the maintenance dashboard and wire the new form/delete actions.
+- [pending] Add/update functional coverage for rule create/edit/delete and dashboard rendering.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share any failures.
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
 # TODO - SP18-001 Vehicle-centered workflow polish

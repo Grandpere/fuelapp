@@ -329,6 +329,121 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
     }
 
+    public function testUserCanCreateEditAndDeleteReminderRuleFromFront(): void
+    {
+        $email = 'maintenance.ui.rules@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Rules Car');
+        $vehicle->setPlateNumber('UI-500-EE');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-05 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-05 10:00:00'));
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $createPage = $this->request('GET', '/ui/maintenance/rules/new?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $createPage->getStatusCode());
+        $createContent = (string) $createPage->getContent();
+        self::assertStringContainsString('option value="'.$vehicleId.'" selected', $createContent);
+        $createCsrf = $this->extractFormCsrf($createContent);
+
+        $createResponse = $this->request(
+            'POST',
+            '/ui/maintenance/rules/new',
+            [
+                'vehicleId' => $vehicleId,
+                'name' => 'Oil service',
+                'triggerMode' => ReminderRuleTriggerMode::WHICHEVER_FIRST->value,
+                'eventType' => MaintenanceEventType::SERVICE->value,
+                'intervalDays' => '180',
+                'intervalKilometers' => '12000',
+                '_token' => $createCsrf,
+            ],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_SEE_OTHER, $createResponse->getStatusCode());
+        self::assertSame('/ui/maintenance?vehicle_id='.$vehicleId, $createResponse->headers->get('Location'));
+
+        /** @var MaintenanceReminderRuleEntity|null $rule */
+        $rule = $this->em->getRepository(MaintenanceReminderRuleEntity::class)->findOneBy(['name' => 'Oil service']);
+        self::assertInstanceOf(MaintenanceReminderRuleEntity::class, $rule);
+        self::assertSame(ReminderRuleTriggerMode::WHICHEVER_FIRST, $rule->getTriggerMode());
+
+        $dashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
+        $dashboardContent = (string) $dashboard->getContent();
+        self::assertStringContainsString('Reminder rules', $dashboardContent);
+        self::assertStringContainsString('Oil service', $dashboardContent);
+        self::assertStringContainsString('Every 180 days', $dashboardContent);
+        self::assertStringContainsString('Every 12000 km', $dashboardContent);
+
+        $ruleId = $rule->getId()->toRfc4122();
+        $editPage = $this->request('GET', '/ui/maintenance/rules/'.$ruleId.'/edit', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
+        $editCsrf = $this->extractFormCsrf((string) $editPage->getContent());
+
+        $editResponse = $this->request(
+            'POST',
+            '/ui/maintenance/rules/'.$ruleId.'/edit',
+            [
+                'vehicleId' => $vehicleId,
+                'name' => 'Annual inspection',
+                'triggerMode' => ReminderRuleTriggerMode::DATE->value,
+                'eventType' => MaintenanceEventType::INSPECTION->value,
+                'intervalDays' => '365',
+                'intervalKilometers' => '',
+                '_token' => $editCsrf,
+            ],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_SEE_OTHER, $editResponse->getStatusCode());
+
+        $this->em->clear();
+
+        /** @var MaintenanceReminderRuleEntity|null $updatedRule */
+        $updatedRule = $this->em->getRepository(MaintenanceReminderRuleEntity::class)->find($ruleId);
+        self::assertInstanceOf(MaintenanceReminderRuleEntity::class, $updatedRule);
+        self::assertSame('Annual inspection', $updatedRule->getName());
+        self::assertSame(ReminderRuleTriggerMode::DATE, $updatedRule->getTriggerMode());
+        self::assertSame(365, $updatedRule->getIntervalDays());
+        self::assertNull($updatedRule->getIntervalKilometers());
+
+        $updatedDashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $updatedDashboard->getStatusCode());
+        $updatedDashboardContent = (string) $updatedDashboard->getContent();
+        self::assertStringContainsString('Annual inspection', $updatedDashboardContent);
+        self::assertStringNotContainsString('Oil service', $updatedDashboardContent);
+
+        $deleteToken = $this->extractDeleteToken($updatedDashboardContent, '/ui/maintenance/rules/'.$ruleId.'/delete');
+        $deleteResponse = $this->request(
+            'POST',
+            '/ui/maintenance/rules/'.$ruleId.'/delete',
+            ['_token' => $deleteToken],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_SEE_OTHER, $deleteResponse->getStatusCode());
+
+        $this->em->clear();
+        self::assertNull($this->em->getRepository(MaintenanceReminderRuleEntity::class)->find($ruleId));
+
+        $finalDashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $finalDashboard->getStatusCode());
+        self::assertStringContainsString('No reminder rule yet.', (string) $finalDashboard->getContent());
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server
@@ -393,6 +508,18 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertNotSame('', $csrfToken);
 
         return $csrfToken;
+    }
+
+    private function extractDeleteToken(string $content, string $actionPath): string
+    {
+        if (preg_match('/action="'.preg_quote($actionPath, '/').'"(?:(?!<\/form>).)*name="_token" value="([^"]+)"/s', $content, $matches)) {
+            $csrfToken = $matches[1];
+            self::assertNotSame('', $csrfToken);
+
+            return $csrfToken;
+        }
+
+        self::fail(sprintf('Delete token for "%s" not found.', $actionPath));
     }
 
     /** @return array<string, string> */

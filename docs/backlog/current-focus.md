@@ -1,18 +1,21 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 18 - Vehicle-centered product flow polish
+- Sprint 19 - Reminder rule ownership and maintenance completeness
 
 ## Current goal
-- Make the front-office day-to-day flow feel more vehicle-centered and actionable.
+- Let front-office users configure their own maintenance reminders, then close the remaining reminder and receipt completeness gaps.
 
 ## In progress
-- Next sprint to be re-prioritized
+- SP19-001 - Front maintenance reminder rules CRUD
 
 ## Next tickets (ordered)
-1. Microsoft OIDC remains deferred
+1. SP19-002 - Reminder explainability and empty-state guidance
+2. SP19-003 - Receipt metadata edit flow
+3. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 18 is fully delivered across vehicle hub, receipt detail usefulness, and reminder actionability.
 - Sprint 13 UX work is delivered and merged.
 - Sprint 14 is fully delivered across headers, asset-sovereignty baseline, and runtime hardening coverage.
 - Sprint 15 is delivered across import review, bulk-upload summary, and product-friction cleanup.

@@ -84,12 +84,14 @@ final class MaintenanceDashboardController extends AbstractController
 
         $ruleNames = [];
         $ruleDetails = [];
+        $reminderRules = [];
         foreach ($vehicles as $vehicle) {
             if (null !== $vehicleId && $vehicle->id()->toString() !== $vehicleId) {
                 continue;
             }
 
             foreach ($this->ruleRepository->allForOwnerAndVehicle($ownerId, $vehicle->id()->toString()) as $rule) {
+                $reminderRules[] = $rule;
                 $ruleNames[$rule->id()->toString()] = $rule->name();
                 $ruleDetails[$rule->id()->toString()] = [
                     'name' => $rule->name(),
@@ -113,6 +115,7 @@ final class MaintenanceDashboardController extends AbstractController
             'plannedCosts' => $plannedCosts,
             'upcomingPlans' => $upcomingPlans,
             'reminders' => $reminders,
+            'reminderRules' => $reminderRules,
             'ruleNames' => $ruleNames,
             'ruleDetails' => $ruleDetails,
             'variance' => $variance,

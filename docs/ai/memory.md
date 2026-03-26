@@ -488,3 +488,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: Symfony importmap rendered script entrypoints using `data:application/javascript`, but the CSP `script-src` directive did not allow `data:`, so the browser blocked the entire frontend bootstrap.
 - Fix: keep the CSP baseline compatible with importmap by allowing `data:` in `script-src`, then validate JS-critical flows such as Turbo frames, datepickers, and chart/theme switches.
 - Prevention: for Symfony importmap apps, never tighten `script-src` without explicitly checking how entrypoints are emitted in the browser.
+
+## 2026-03-26 - Realtime stream publishing must stay best-effort for receipt CRUD
+- Symptom: a front-office receipt create flow could return `500` in CI even though the form payload itself was valid.
+- Root cause: realtime Mercure/Twig publishing happened inline after persistence, so any transient stream/render failure could break the main CRUD response.
+- Fix: make `ReceiptStreamPublisher` swallow publish/render failures and log them as warnings; add a unit regression so Mercure issues cannot fail receipt creation/deletion flows.
+- Prevention: realtime/UI broadcast side effects should not be allowed to break the main transactional user flow unless explicitly required by product behavior.

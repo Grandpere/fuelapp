@@ -937,6 +937,26 @@ final class AdminBackofficeUiTest extends WebTestCase
         $receipt->addLine($receiptLine);
         $this->em->persist($receipt);
 
+        $receiptImport = new ImportJobEntity();
+        $receiptImport->setId(Uuid::v7());
+        $receiptImport->setOwner($owner);
+        $receiptImport->setStatus(ImportJobStatus::PROCESSED);
+        $receiptImport->setStorage('local');
+        $receiptImport->setFilePath('2026/03/02/admin-receipt-related.jpg');
+        $receiptImport->setOriginalFilename('admin-receipt-related.jpg');
+        $receiptImport->setMimeType('image/jpeg');
+        $receiptImport->setFileSizeBytes(64000);
+        $receiptImport->setFileChecksumSha256(str_repeat('q', 64));
+        $receiptImport->setErrorPayload(json_encode([
+            'status' => 'processed',
+            'finalizedReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $receiptImport->setCreatedAt(new DateTimeImmutable('2026-03-02 09:55:00'));
+        $receiptImport->setUpdatedAt(new DateTimeImmutable('2026-03-02 09:55:00'));
+        $receiptImport->setCompletedAt(new DateTimeImmutable('2026-03-02 09:55:00'));
+        $receiptImport->setRetentionUntil(new DateTimeImmutable('2026-04-02 09:55:00'));
+        $this->em->persist($receiptImport);
+
         $this->em->flush();
 
         $stationId = $station->getId()->toRfc4122();
@@ -944,6 +964,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $vehicleId = $vehicle->getId()->toRfc4122();
         $reminderId = $reminder->getId()->toRfc4122();
         $receiptId = $receipt->getId()->toRfc4122();
+        $receiptImportId = $receiptImport->getId()->toRfc4122();
         $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
 
         $stationEditPage = $this->request('GET', '/ui/admin/stations/'.$stationId.'/edit', [], [], $sessionCookie);
@@ -1031,20 +1052,41 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $reminderShow->getStatusCode());
         self::assertStringContainsString('Reminder detail rule', (string) $reminderShow->getContent());
 
-        $receiptShow = $this->request('GET', '/ui/admin/receipts/'.$receiptId, [], [], $sessionCookie);
-        self::assertSame(Response::HTTP_OK, $receiptShow->getStatusCode());
-        self::assertStringContainsString('Receipt Detail', (string) $receiptShow->getContent());
-        self::assertStringContainsString('diesel', (string) $receiptShow->getContent());
+        $receiptList = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptList->getStatusCode());
+        $receiptListContent = (string) $receiptList->getContent();
+        self::assertStringContainsString('System-wide receipt ledger', $receiptListContent);
+        self::assertStringContainsString('Vehicle', $receiptListContent);
+        self::assertStringContainsString('Station', $receiptListContent);
+        self::assertStringContainsString('/ui/admin/receipts/'.$receiptId.'/edit', $receiptListContent);
+        self::assertStringContainsString('return_to=', $receiptListContent);
 
-        $receiptEditPage = $this->request('GET', '/ui/admin/receipts/'.$receiptId.'/edit', [], [], $sessionCookie);
+        $receiptReturnTo = '/ui/admin/receipts?context=admin-support';
+        $receiptShow = $this->request('GET', '/ui/admin/receipts/'.$receiptId.'?return_to='.rawurlencode($receiptReturnTo), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptShow->getStatusCode());
+        $receiptShowContent = (string) $receiptShow->getContent();
+        self::assertStringContainsString('Receipt Detail', $receiptShowContent);
+        self::assertStringContainsString('diesel', $receiptShowContent);
+        self::assertStringContainsString('/ui/admin/vehicles/'.$vehicleId, $receiptShowContent);
+        self::assertStringContainsString('/ui/admin/imports/'.$receiptImportId, $receiptShowContent);
+        self::assertStringContainsString('Vehicle', $receiptShowContent);
+        self::assertStringContainsString('Station', $receiptShowContent);
+        self::assertStringContainsString('Related imports', $receiptShowContent);
+        self::assertStringContainsString('return_to=', $receiptShowContent);
+
+        $receiptEditPage = $this->request('GET', '/ui/admin/receipts/'.$receiptId.'/edit?return_to='.rawurlencode('/ui/admin/receipts?context=edit-flow'), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptEditPage->getStatusCode());
-        $receiptCsrf = $this->extractFormCsrf((string) $receiptEditPage->getContent());
+        $receiptEditContent = (string) $receiptEditPage->getContent();
+        self::assertStringContainsString('name="_return_to" value="/ui/admin/receipts?context=edit-flow"', $receiptEditContent);
+        self::assertStringContainsString('href="/ui/admin/receipts?context=edit-flow"', $receiptEditContent);
+        $receiptCsrf = $this->extractFormCsrf($receiptEditContent);
 
         $receiptEditResponse = $this->request(
             'POST',
             '/ui/admin/receipts/'.$receiptId.'/edit',
             [
                 '_token' => $receiptCsrf,
+                '_return_to' => '/ui/admin/receipts?context=edit-flow',
                 'lines' => [[
                     'fuelType' => 'sp95',
                     'quantityMilliLiters' => '12000',
@@ -1056,13 +1098,11 @@ final class AdminBackofficeUiTest extends WebTestCase
             $sessionCookie,
         );
         self::assertSame(Response::HTTP_SEE_OTHER, $receiptEditResponse->getStatusCode());
+        self::assertSame('/ui/admin/receipts?context=edit-flow', $receiptEditResponse->headers->get('Location'));
 
         $afterReceiptEdit = $this->request('GET', '/ui/admin/receipts/'.$receiptId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterReceiptEdit->getStatusCode());
         self::assertStringContainsString('sp95', (string) $afterReceiptEdit->getContent());
-
-        $receiptList = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
-        self::assertSame(Response::HTTP_OK, $receiptList->getStatusCode());
         $receiptDeleteToken = $this->extractDeleteCsrfForReceipt((string) $receiptList->getContent(), $receiptId);
 
         $receiptDeleteResponse = $this->request(

@@ -506,3 +506,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: analytics reads from the materialized `analytics_daily_fuel_kpis` projection, while receipt create/update/delete flows persisted directly to `receipts` without refreshing that projection.
 - Fix: trigger `ReceiptAnalyticsProjectionRefresher` directly from the receipt repository after every save/delete so metadata edits, line edits, creations, and deletions all stay visible in analytics immediately.
 - Prevention: when a UI mixes direct table reads and projection-backed screens, receipt mutations must update the projection at the same write boundary, not via optional follow-up commands.
+
+## 2026-03-28 - Functional UI tests should avoid exact raw URL assertions inside rendered HTML
+- Symptom: functional tests kept failing on harmless HTML rendering differences such as encoded query strings, escaped ampersands, or slightly different attribute serialization even when the UI behavior was correct.
+- Root cause: assertions were written against exact raw URLs inside rendered HTML (`/path?return_to=%2F...`) instead of testing the stable contract of the page.
+- Fix: when validating links in rendered HTML, prefer one of these patterns: check the route path separately, check the presence of `return_to=` or another key parameter separately, or compare against `htmlspecialchars(...)` only when the exact escaped output is genuinely the behavior under test.
+- Prevention: for BrowserKit/Twig functional tests, default to semantic assertions on route presence, visible action labels, and key parameters; only assert the full rendered URL when the encoding itself is the contract.

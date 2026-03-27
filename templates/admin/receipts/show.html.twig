@@ -5,8 +5,6 @@
 {% set admin_section = 'receipts' %}
 
 {% block admin_content %}
-    {% set requestedReturnTo = app.request.query.get('return_to') %}
-    {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_receipt_list') %}
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
@@ -14,7 +12,7 @@
                 <p class="muted">Inspect and control this receipt from back-office.</p>
             </div>
             <div class="admin-page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_edit', {id: receipt.id.toString()}) }}">Edit</a>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_edit', {id: receipt.id.toString(), return_to: app.request.requestUri}) }}">Edit</a>
                 <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_receipt_delete_' ~ receipt.id.toString()) }}">
                     <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
@@ -36,13 +34,33 @@
             <dt class="admin-dt">Station</dt>
             <dd class="admin-dd">
                 {% if station %}
-                    {{ station.name }} - {{ station.streetName }}, {{ station.postalCode }} {{ station.city }}
+                    <a href="{{ path('ui_admin_station_show', {id: station.id().toString(), return_to: backToListUrl}) }}">{{ station.name }}</a> - {{ station.streetName }}, {{ station.postalCode }} {{ station.city }}
+                {% else %}
+                    n/a
+                {% endif %}
+            </dd>
+            <dt class="admin-dt">Vehicle</dt>
+            <dd class="admin-dd">
+                {% if vehicle %}
+                    <a href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">{{ vehicle.name() }}</a>
                 {% else %}
                     n/a
                 {% endif %}
             </dd>
         </dl>
     </section>
+
+    {% if relatedImports is not empty %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Related imports</h3>
+            <p class="muted">These imports already point to this receipt, so support can jump back into the originating import flow when needed.</p>
+            <div class="actions-wrap admin-table-top">
+                {% for item in relatedImports %}
+                    <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.filename }} · {{ item.status }}</a>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 
     <section class="card admin-panel admin-section-spaced">
         <h3 class="section-title">Lines</h3>

@@ -20,6 +20,16 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP28-003 Admin maintenance overview usefulness pass
+
+## Plan
+- [completed] Review the current admin maintenance reminders/events screens and identify the highest-value support shortcuts.
+- [completed] Add vehicle context and clearer row-level actions on admin reminder/event lists.
+- [completed] Enrich the admin reminder detail with linked vehicle context and a practical next action.
+- [completed] Add/update admin functional coverage for the new maintenance overview shortcuts.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 ## Plan
 - [completed] Add front UI receipt lines edit flow (`/ui/receipts/{id}/edit`) with CSRF and owner-scoped access.
 - [completed] Add application/repository support for receipt updates and admin system-scope reads/deletes.

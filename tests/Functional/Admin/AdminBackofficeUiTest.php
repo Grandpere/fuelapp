@@ -247,13 +247,19 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $maintenanceEventsResponse = $this->request('GET', '/ui/admin/maintenance/events', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $maintenanceEventsResponse->getStatusCode());
-        self::assertStringContainsString('Maintenance Events', (string) $maintenanceEventsResponse->getContent());
-        self::assertStringContainsString('UI maintenance event', (string) $maintenanceEventsResponse->getContent());
+        $maintenanceEventsContent = (string) $maintenanceEventsResponse->getContent();
+        self::assertStringContainsString('Maintenance Events', $maintenanceEventsContent);
+        self::assertStringContainsString('UI maintenance event', $maintenanceEventsContent);
+        self::assertStringContainsString('UI Vehicle', $maintenanceEventsContent);
+        self::assertStringContainsString('Vehicle', $maintenanceEventsContent);
 
         $maintenanceRemindersResponse = $this->request('GET', '/ui/admin/maintenance/reminders', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $maintenanceRemindersResponse->getStatusCode());
-        self::assertStringContainsString('Maintenance Reminders', (string) $maintenanceRemindersResponse->getContent());
-        self::assertStringContainsString('UI rule', (string) $maintenanceRemindersResponse->getContent());
+        $maintenanceRemindersContent = (string) $maintenanceRemindersResponse->getContent();
+        self::assertStringContainsString('Maintenance Reminders', $maintenanceRemindersContent);
+        self::assertStringContainsString('UI rule', $maintenanceRemindersContent);
+        self::assertStringContainsString('UI Vehicle', $maintenanceRemindersContent);
+        self::assertStringContainsString('Due by date', $maintenanceRemindersContent);
 
         $receiptsResponse = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptsResponse->getStatusCode());
@@ -396,6 +402,67 @@ final class AdminBackofficeUiTest extends WebTestCase
         $escapedReturnTo = htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         self::assertStringContainsString('href="'.$escapedReturnTo.'"', $content);
         self::assertStringContainsString('name="_redirect" value="'.$escapedReturnTo.'"', $content);
+    }
+
+    public function testAdminMaintenanceReminderDetailShowsVehicleShortcutAndRelatedEventLink(): void
+    {
+        $adminEmail = 'ui.admin.reminder.shortcut@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.reminder.shortcut.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($owner);
+        $vehicle->setName('Reminder Shortcut Vehicle');
+        $vehicle->setPlateNumber('RMD-123-AA');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-11 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-11 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('Reminder Shortcut Rule');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::DATE);
+        $rule->setEventType(MaintenanceEventType::SERVICE);
+        $rule->setIntervalDays(180);
+        $rule->setIntervalKilometers(null);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-03-11 10:05:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-03-11 10:05:00'));
+        $this->em->persist($rule);
+
+        $reminder = new MaintenanceReminderEntity();
+        $reminder->setId(Uuid::v7());
+        $reminder->setOwner($owner);
+        $reminder->setVehicle($vehicle);
+        $reminder->setRule($rule);
+        $reminder->setDedupKey(hash('sha256', 'admin-reminder-shortcut'));
+        $reminder->setDueAtDate(new DateTimeImmutable('2026-03-30 00:00:00'));
+        $reminder->setDueAtOdometerKilometers(null);
+        $reminder->setDueByDate(true);
+        $reminder->setDueByOdometer(false);
+        $reminder->setCreatedAt(new DateTimeImmutable('2026-03-11 10:06:00'));
+        $this->em->persist($reminder);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $returnTo = '/ui/admin/maintenance/reminders?vehicle_id='.$vehicle->getId()->toRfc4122();
+
+        $detailResponse = $this->request(
+            'GET',
+            '/ui/admin/maintenance/reminders/'.$reminder->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo),
+            [],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $content = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Reminder Shortcut Vehicle', $content);
+        self::assertStringContainsString('/ui/admin/vehicles/'.$vehicle->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('/ui/admin/maintenance/events?vehicle_id='.$vehicle->getId()->toRfc4122(), $content);
     }
 
     public function testAdminCanToggleUserFlagsResetPasswordAndResendVerificationFromBackofficeUi(): void

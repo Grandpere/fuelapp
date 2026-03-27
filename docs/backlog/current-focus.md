@@ -4,10 +4,10 @@
 - Sprint 28 - Admin back-office parity
 
 ## Current goal
-- Continue the admin/back-office parity pass by moving from admin receipts toward the maintenance overview once the receipt support flow is navigable.
+- Sprint 28 admin/back-office parity is now fully delivered across imports, receipts, and maintenance support flows.
 
 ## In progress
-- SP28-002 is fully delivered across admin receipt shortcuts, related import continuity, and safer return-to-context behavior for support work.
+- Sprint 28 is now fully delivered.
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
@@ -16,6 +16,7 @@
 - Sprint 28 starts with admin import workflow parity because imports remain the highest-value support flow after the front-office passes.
 - SP28-001 is fully delivered across admin import triage shortcuts, dead-link suppression, and a collapsible admin shell for wider work tables.
 - SP28-002 is fully delivered across admin receipt list shortcuts, linked vehicle/station navigation, related import continuity, and safe edit return paths.
+- SP28-003 is fully delivered across better vehicle context, scanability, and support shortcuts on admin maintenance reminders and events.
 - SP27 is fully delivered across the final front consistency pass and is now merged.
 - Sprint 27 starts as the last front consistency pass before an admin/back-office shift.
 - SP27-001 is fully delivered across list-action normalization on vehicles and stations, plus a simpler vehicle table contract.

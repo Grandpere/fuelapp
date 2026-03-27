@@ -15,6 +15,7 @@ namespace App\Admin\UI\Web\Controller;
 
 use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,8 +26,10 @@ use ValueError;
 
 final class AdminMaintenanceEventListController extends AbstractController
 {
-    public function __construct(private readonly MaintenanceEventRepository $eventRepository)
-    {
+    public function __construct(
+        private readonly MaintenanceEventRepository $eventRepository,
+        private readonly VehicleRepository $vehicleRepository,
+    ) {
     }
 
     #[Route('/ui/admin/maintenance/events', name: 'ui_admin_maintenance_event_list', methods: ['GET'])]
@@ -56,7 +59,10 @@ final class AdminMaintenanceEventListController extends AbstractController
                 continue;
             }
 
-            $events[] = $event;
+            $events[] = [
+                'event' => $event,
+                'vehicle' => $this->vehicleRepository->get($event->vehicleId()),
+            ];
         }
 
         return $this->render('admin/maintenance/events/index.html.twig', [

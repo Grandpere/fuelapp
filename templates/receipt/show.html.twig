@@ -134,6 +134,26 @@
             </div>
         </section>
 
+        {% if listFlow %}
+            <section class="card show-card">
+                <div class="show-card-head">
+                    <h2 class="section-title">List flow</h2>
+                </div>
+                <p class="muted section-lead show-helper">Stay inside the current receipt batch without rebuilding the same filters.</p>
+                <div class="show-action-list">
+                    {% if listFlow.previousReceiptId %}
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: listFlow.previousReceiptId, return_to: listFlow.backToListUrl}) }}">Previous in list</a>
+                    {% endif %}
+                    {% if listFlow.nextReceiptId %}
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: listFlow.nextReceiptId, return_to: listFlow.backToListUrl}) }}">Next in list</a>
+                    {% endif %}
+                    <a class="btn btn-secondary btn-compact" href="{{ listFlow.backToListUrl }}">Back to filtered list</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: listFlow.backToListUrl}) }}">Edit details</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: listFlow.backToListUrl}) }}">Edit lines</a>
+                </div>
+            </section>
+        {% endif %}
+
         <section class="show-grid">
             <article class="card show-card">
                 <h2>Summary</h2>

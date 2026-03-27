@@ -5,3 +5,4 @@
 3. Keep the change inside the existing maintenance dashboard rather than adding another screen.
 4. Turn the front dashboard cards into faster drill-down points instead of a read-only summary.
 5. Reuse existing workflow screens and return paths rather than introducing a separate dashboard workflow layer.
+6. Smooth the receipt flows that follow the dashboard by reducing clicks from list rows and keeping filtered-list context while moving across receipt details.

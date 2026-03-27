@@ -5,7 +5,8 @@ Reduce ambiguity in the maintenance reminder lifecycle before continuing lighter
 
 ## Tickets
 1. `SP26-001` Dashboard drill-down polish
-2. `SP26-003` Maintenance reminder lifecycle clarity
+2. `SP26-002` Receipt list and detail bulk-flow polish
+3. `SP26-003` Maintenance reminder lifecycle clarity
 
 ## Scope notes
 - Start with maintenance because it still carries the highest mental load in front-office flows.

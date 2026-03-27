@@ -43,9 +43,11 @@
     {% if 'vat_rate_percent' in visibleColumns %}<td class="text-right">{{ receipt.vatRatePercent is not null ? receipt.vatRatePercent ~ '%' : '-' }}</td>{% endif %}
     {% if 'total_cents' in visibleColumns %}<td class="text-right"><strong>{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} €</strong></td>{% endif %}
     {% if 'vat_amount_cents' in visibleColumns %}<td class="text-right">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>{% endif %}
-    <td class="text-right">
-        <div class="action-row" data-row-link-ignore>
-            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id, return_to: redirect}) }}">View</a>
+    <td class="text-right action-cell">
+        <div class="receipt-row-actions" data-row-link-ignore>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id, return_to: redirect}) }}">Open</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id, return_to: redirect}) }}">Details</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id, return_to: redirect}) }}">Lines</a>
             <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id}) }}" onsubmit="return confirm('Delete this receipt?');">
                 <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id) }}">
                 <input type="hidden" name="_redirect" value="{{ redirect }}">

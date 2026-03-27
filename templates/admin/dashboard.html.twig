@@ -8,42 +8,133 @@
     <section class="card admin-panel">
         <div class="admin-page-header">
             <h2 class="page-title">Admin Dashboard</h2>
-            <p class="muted">Quick overview and navigation for operational actions.</p>
+            <p class="muted">Triage first, then drill straight into the support queue that needs attention.</p>
         </div>
 
         <div class="admin-metric-grid metric-grid-spaced">
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Stations</p>
-                <p class="admin-metric-value">{{ stationCount }}</p>
+                <p class="admin-metric-label">Failed imports</p>
+                <p class="admin-metric-value">{{ importMetrics['failed']|default(0) }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Needs review</p>
+                <p class="admin-metric-value">{{ importMetrics['needs_review']|default(0) }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Due reminders</p>
+                <p class="admin-metric-value">{{ dueReminderCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Receipts</p>
+                <p class="admin-metric-value">{{ receiptCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
                 <p class="admin-metric-label">Vehicles</p>
                 <p class="admin-metric-value">{{ vehicleCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Maintenance Events</p>
-                <p class="admin-metric-value">{{ maintenanceEventCount }}</p>
-            </article>
-            <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Maintenance Reminders</p>
-                <p class="admin-metric-value">{{ maintenanceReminderCount }}</p>
-            </article>
-            <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">API Docs</p>
-                <p class="admin-metric-value inline-meta">/api/docs</p>
+                <p class="admin-metric-label">Stations</p>
+                <p class="admin-metric-value">{{ stationCount }}</p>
             </article>
         </div>
     </section>
 
     <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Needs attention now</h3>
+        {% if attentionCards is not empty %}
+            <div class="admin-dashboard-columns">
+                {% for card in attentionCards %}
+                    <article class="card-subtle card-subtle-block admin-dashboard-item">
+                        <div class="admin-dashboard-item-head">
+                            <span class="pill status-pill status-{{ card.statusClass }}">{{ card.title }}</span>
+                            <strong class="admin-dashboard-item-value">{{ card.value }}</strong>
+                        </div>
+                        <p class="muted">{{ card.description }}</p>
+                        <a class="btn btn-secondary btn-compact" href="{{ card.url }}">{{ card.action }}</a>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">No import or maintenance triage queue is currently asking for immediate admin follow-up.</p>
+        {% endif %}
+    </section>
+
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Recent receipts</h3>
+        {% if recentReceipts is not empty %}
+            <div class="admin-dashboard-list">
+                {% for receipt in recentReceipts %}
+                    <article class="card-subtle card-subtle-block admin-dashboard-item">
+                        <div class="admin-dashboard-item-head">
+                            <strong>{{ receipt.issuedAt|date('Y-m-d H:i') }}</strong>
+                            <span class="muted">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</span>
+                        </div>
+                        <p class="muted compact-note">{{ receipt.id }}</p>
+                        <div class="compact-note">
+                            {% if receipt.vehicleId %}
+                                Vehicle: {{ vehicleNames[receipt.vehicleId]|default(receipt.vehicleId) }}
+                            {% else %}
+                                Vehicle: n/a
+                            {% endif %}
+                            ·
+                            {% if receipt.stationId %}
+                                Station: {{ stationNames[receipt.stationId]|default(receipt.stationId) }}
+                            {% else %}
+                                Station: n/a
+                            {% endif %}
+                        </div>
+                        <div class="action-row">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_show', {id: receipt.id, return_to: app.request.requestUri}) }}">Open</a>
+                            {% if receipt.vehicleId %}
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicleId, return_to: app.request.requestUri}) }}">Vehicle</a>
+                            {% endif %}
+                            {% if receipt.stationId %}
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: receipt.stationId, return_to: app.request.requestUri}) }}">Station</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">No receipts are available yet in the admin ledger.</p>
+        {% endif %}
+    </section>
+
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Import queue snapshot</h3>
+        {% if recentImports is not empty %}
+            <div class="admin-dashboard-list">
+                {% for job in recentImports %}
+                    <article class="card-subtle card-subtle-block admin-dashboard-item">
+                        <div class="admin-dashboard-item-head">
+                            <span class="pill status-pill status-{{ job.status }}">{{ job.status|replace({'_': ' '}) }}</span>
+                            <span class="muted">{{ job.createdAt|date('Y-m-d H:i') }}</span>
+                        </div>
+                        <strong>{{ job.file }}</strong>
+                        <p class="muted compact-note">{{ job.ownerId }}</p>
+                        <div class="action-row">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_show', {id: job.id, return_to: app.request.requestUri}) }}">{{ job.statusLabel }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: job.status}) }}">Queue</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">No imports have been recorded yet.</p>
+        {% endif %}
+    </section>
+
+    <section class="card admin-panel admin-section-spaced">
         <h3 class="section-title">Quick actions</h3>
         <ul class="admin-inline-list">
-            <li><a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Browse stations</a></li>
-            <li><a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a></li>
-            <li><a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Browse maintenance events</a></li>
-            <li><a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_list') }}">Browse maintenance reminders</a></li>
-            <li><a class="btn btn-secondary" href="{{ path('ui_admin_import_job_list') }}">Browse imports</a></li>
-            <li><a class="btn btn-secondary" href="/api/docs">Open API docs</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'failed'}) }}">Failed imports</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'needs_review'}) }}">Needs review</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Browse receipts</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Browse reminders</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">Browse stations</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list') }}">Browse events</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="/api/docs">Open API docs</a></li>
         </ul>
     </section>
 {% endblock %}

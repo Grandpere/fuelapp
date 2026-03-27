@@ -148,6 +148,23 @@ final class AdminBackofficeUiTest extends WebTestCase
         $job->setRetentionUntil(new DateTimeImmutable('2026-03-22 09:00:00'));
         $this->em->persist($job);
 
+        $failedJob = new ImportJobEntity();
+        $failedJob->setId(Uuid::v7());
+        $failedJob->setOwner($owner);
+        $failedJob->setStatus(ImportJobStatus::FAILED);
+        $failedJob->setStorage('local');
+        $failedJob->setFilePath('2026/02/22/ui-import-failed.pdf');
+        $failedJob->setOriginalFilename('ui-import-failed.pdf');
+        $failedJob->setMimeType('application/pdf');
+        $failedJob->setFileSizeBytes(2048);
+        $failedJob->setFileChecksumSha256(str_repeat('e', 64));
+        $failedJob->setErrorPayload(json_encode(['reason' => 'ocr_failed'], JSON_THROW_ON_ERROR));
+        $failedJob->setCreatedAt(new DateTimeImmutable('2026-02-22 09:30:00'));
+        $failedJob->setUpdatedAt(new DateTimeImmutable('2026-02-22 09:35:00'));
+        $failedJob->setFailedAt(new DateTimeImmutable('2026-02-22 09:35:00'));
+        $failedJob->setRetentionUntil(new DateTimeImmutable('2026-03-22 09:35:00'));
+        $this->em->persist($failedJob);
+
         $maintenanceEvent = new MaintenanceEventEntity();
         $maintenanceEvent->setId(Uuid::v7());
         $maintenanceEvent->setOwner($owner);
@@ -225,6 +242,15 @@ final class AdminBackofficeUiTest extends WebTestCase
         $dashboardResponse = $this->request('GET', '/ui/admin', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $dashboardResponse->getStatusCode());
         self::assertStringContainsString('Back-office', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Needs attention now', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Inspect failures', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Review imports', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Open reminders', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Recent receipts', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Import queue snapshot', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('ui-import.pdf', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('ui-import-failed.pdf', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString((string) $receipt->getId(), (string) $dashboardResponse->getContent());
 
         $stationsResponse = $this->request('GET', '/ui/admin/stations', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $stationsResponse->getStatusCode());

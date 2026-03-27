@@ -1,3 +1,12 @@
+# TODO - SP29-003 Admin dashboard triage pass
+
+## Plan
+- [completed] Reframe the admin dashboard around triage signals instead of only global totals.
+- [completed] Add recent receipt/import activity blocks with direct admin drill-downs.
+- [completed] Extend admin functional coverage for the dashboard contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 29 after the three commits.
+
 # TODO - Receipts Front/Admin Edition
 
 # TODO - SP28-001 Admin import workflow parity

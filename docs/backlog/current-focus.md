@@ -1,23 +1,30 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 28 - Admin back-office parity
+- Sprint 29 - Admin triage usefulness pass
 
 ## Current goal
-- Sprint 28 admin/back-office parity is now fully delivered across imports, receipts, and maintenance support flows.
+- Turn admin into a more useful support workspace, starting with a triage-friendly dashboard and stronger vehicle/station workflows.
 
 ## In progress
-- Sprint 28 is now fully delivered.
+- Sprint 29 is fully delivered across dashboard, vehicle, and station admin usefulness passes and is ready for PR review.
 
 ## Next tickets (ordered)
-1. Microsoft OIDC remains deferred
+1. `SP29-003` Admin dashboard triage pass
+2. `SP29-001` Admin vehicle workflow usefulness
+3. `SP29-002` Admin station workflow usefulness
+4. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 29 starts with an admin triage hub so support users can enter the new back-office parity flows from one practical dashboard.
+- SP29-003 is fully delivered across failed-import and needs-review signals, due reminder surfacing, recent receipts/import snapshots, and faster admin drill-downs.
+- SP29-001 is fully delivered across richer vehicle list context, direct receipts/maintenance shortcuts, recent vehicle receipts, and safer admin return paths.
+- SP29-002 is fully delivered across richer station list context, station-scoped receipt shortcuts, recent station receipts, and safer admin return paths.
 - Sprint 28 starts with admin import workflow parity because imports remain the highest-value support flow after the front-office passes.
 - SP28-001 is fully delivered across admin import triage shortcuts, dead-link suppression, and a collapsible admin shell for wider work tables.
 - SP28-002 is fully delivered across admin receipt list shortcuts, linked vehicle/station navigation, related import continuity, and safe edit return paths.
 - SP28-003 is fully delivered across better vehicle context, scanability, and support shortcuts on admin maintenance reminders and events.
-- SP27 is fully delivered across the final front consistency pass and is now merged.
+- Sprint 27 is fully delivered across the final front consistency pass and is now merged.
 - Sprint 27 starts as the last front consistency pass before an admin/back-office shift.
 - SP27-001 is fully delivered across list-action normalization on vehicles and stations, plus a simpler vehicle table contract.
 - SP27-002 is fully delivered across import terminal-state continuity, receipt-context shortcuts, and dead-link suppression when referenced records are gone.

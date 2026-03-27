@@ -54,7 +54,6 @@
                         <th>Name</th>
                         <th>Plate</th>
                         <th>Updated</th>
-                        <th>Workflow</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
@@ -75,10 +74,8 @@
                             <td class="action-cell-flex">
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>Receipts</a>
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>Maintenance</a>
-                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString}) }}" data-turbo-frame="receipt_form_frame" data-row-link-ignore>Add receipt</a>
-                            </td>
-                            <td class="action-cell-flex">
-                                <a class="btn btn-secondary" href="{{ vehicleShowUrl }}" data-row-link-ignore>Detail</a>
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>Add receipt</a>
+                                <a class="btn btn-secondary" href="{{ vehicleShowUrl }}" data-row-link-ignore>Open</a>
                                 <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString, return_to: vehicleListUrl}) }}" data-row-link-ignore>Edit</a>
                                 <form method="post" action="{{ path('ui_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('Delete this vehicle?');" data-row-link-ignore>
                                     <input type="hidden" name="_token" value="{{ csrf_token('vehicle_delete_' ~ vehicle.id.toString) }}">
@@ -88,7 +85,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="5" class="muted">No vehicle yet. Add your first one to start maintenance tracking.</td>
+                            <td colspan="4" class="muted">No vehicle yet. Add your first one to start maintenance tracking.</td>
                         </tr>
                     {% endfor %}
                     </tbody>

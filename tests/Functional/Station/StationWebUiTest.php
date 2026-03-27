@@ -172,10 +172,10 @@ final class StationWebUiTest extends WebTestCase
         $content = (string) $response->getContent();
 
         self::assertStringContainsString('Stations', $content);
-        self::assertStringContainsString('Tracked stations', $content);
         self::assertStringContainsString('North Station', $content);
         self::assertStringNotContainsString('Unused Station', $content);
-        self::assertStringContainsString('Accessible stations', $content);
+        self::assertStringNotContainsString('Tracked stations', $content);
+        self::assertStringNotContainsString('Accessible stations', $content);
         self::assertStringContainsString('/ui/stations/'.$stationA->getId()->toRfc4122(), $content);
         self::assertStringContainsString('/ui/receipts?station_id='.$stationA->getId()->toRfc4122(), $content);
         self::assertStringContainsString('/ui/analytics?station_id='.$stationA->getId()->toRfc4122(), $content);

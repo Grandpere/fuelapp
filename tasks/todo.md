@@ -670,3 +670,12 @@
 - [completed] Add/update functional coverage for the richer receipt list/detail flow contract.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP27-001 Front list consistency pass
+
+## Plan
+- [completed] Align vehicle and station list actions on direct navigation instead of inline receipt creation.
+- [completed] Simplify the stations list so it behaves like the other worklists instead of a mini-dashboard.
+- [completed] Add/update functional coverage for the aligned list interaction contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

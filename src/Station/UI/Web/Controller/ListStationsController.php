@@ -31,15 +31,12 @@ final class ListStationsController extends AbstractController
     public function __invoke(): Response
     {
         $rowsByStationId = [];
-        $totalReceiptCount = 0;
 
         foreach ($this->receiptRepository->all() as $receipt) {
             $stationId = $receipt->stationId()?->toString();
             if (null === $stationId) {
                 continue;
             }
-
-            ++$totalReceiptCount;
 
             if (!isset($rowsByStationId[$stationId])) {
                 $rowsByStationId[$stationId] = [
@@ -110,11 +107,6 @@ final class ListStationsController extends AbstractController
 
         return $this->render('station/index.html.twig', [
             'stationRows' => $stationRows,
-            'trackedStationCount' => count(array_filter(
-                $stationRows,
-                static fn (array $row): bool => $row['receiptCount'] > 0,
-            )),
-            'totalReceiptCount' => $totalReceiptCount,
         ]);
     }
 }

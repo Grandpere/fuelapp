@@ -1,22 +1,25 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 26 - Reminder lifecycle clarity and front workflow follow-through
+- Sprint 27 - Final front consistency pass before admin parity
 
 ## Current goal
-- Turn the clearer maintenance and import signals into faster follow-through from the newer front-office hubs.
+- Finish the last clearly valuable front-office consistency fixes before moving delivery effort toward admin/back-office parity.
 
 ## In progress
-- SP26-002 is focused on keeping receipt correction flows fast once users leave the dashboard or a filtered receipt list.
+- Sprint 27 continues with the remaining small front consistency fixes before the admin/back-office shift.
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 27 starts as the last front consistency pass before an admin/back-office shift.
+- SP27-001 is fully delivered across list-action normalization on vehicles and stations, plus a simpler vehicle table contract.
+- Sprint 26 is fully delivered across maintenance lifecycle clarity, dashboard drill-downs, and receipt list/detail follow-through.
+- SP26-002 is fully delivered across compact receipt list defaults, richer row shortcuts, and filtered-list continuity from receipt detail.
+- SP26-001 is fully delivered across richer dashboard drill-downs from urgent items, recent receipts, and import snapshots.
 - Sprint 26 starts with reminder lifecycle clarity because maintenance still carries the highest cognitive load despite the earlier dashboard and actionability passes.
 - SP26-003 is fully delivered across reminder lifecycle stages, clearer rule copy, and dashboard lifecycle counts.
-- SP26-001 is fully delivered across richer dashboard drill-downs from urgent items, recent receipts, and import snapshots.
-- SP26-002 is in progress to reduce click cost across receipt list rows, receipt detail, and filtered-list follow-through.
 - Sprint 25 is fully delivered across export reliability, import recovery shortcuts, and the new front dashboard hub.
 - Sprint 25 starts with receipt export reliability and share-friendly filenames; admin parity remains deferred unless operations need it later.
 - SP25-003 is fully delivered across the new front dashboard, quick follow-up signals, and topbar entry-point navigation.

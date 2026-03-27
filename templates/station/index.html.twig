@@ -22,29 +22,8 @@
             margin: 0.35rem 0 0;
         }
 
-        .stations-kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.75rem;
-        }
-
-        .stations-kpi-card,
         .stations-panel {
             padding: 1rem;
-        }
-
-        .stations-kpi-label {
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: var(--text-soft);
-        }
-
-        .stations-kpi-value {
-            margin-top: 0.3rem;
-            font-family: var(--font-display);
-            font-size: 1.18rem;
-            font-weight: 700;
         }
 
         .station-summary {
@@ -73,11 +52,6 @@
             font-size: 0.84rem;
         }
 
-        @media (max-width: 900px) {
-            .stations-kpi-grid {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 {% endblock %}
 
@@ -90,7 +64,7 @@
             </div>
             <div class="page-actions">
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Receipts</a>
-                <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}">Add receipt</a>
             </div>
         </section>
 
@@ -98,27 +72,12 @@
             <div class="flash">{{ message }}</div>
         {% endfor %}
 
-        <section class="stations-kpi-grid">
-            <article class="card-subtle stations-kpi-card">
-                <div class="stations-kpi-label">Tracked stations</div>
-                <div class="stations-kpi-value">{{ trackedStationCount }}</div>
-            </article>
-            <article class="card-subtle stations-kpi-card">
-                <div class="stations-kpi-label">Accessible stations</div>
-                <div class="stations-kpi-value">{{ stationRows|length }}</div>
-            </article>
-            <article class="card-subtle stations-kpi-card">
-                <div class="stations-kpi-label">Receipts linked</div>
-                <div class="stations-kpi-value">{{ totalReceiptCount }}</div>
-            </article>
-        </section>
-
         <section class="card stations-panel">
             {% if stationRows is empty %}
                 <div class="empty-state">
                     <p>No station is visible yet. Add or import a receipt with station details to start building this list.</p>
                     <div class="actions-wrap">
-                        <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Add first receipt</a>
+                        <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}">Add first receipt</a>
                         <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Open imports</a>
                     </div>
                 </div>
@@ -151,7 +110,6 @@
                                                     <strong>{{ row.name }}</strong>
                                                     <span class="muted">{{ row.streetName }}</span>
                                                 </div>
-                                                <span class="pill pill-energy" data-row-link-ignore>Tracked</span>
                                             </div>
                                             <div class="station-summary-meta">
                                                 <span>{{ row.postalCode }} {{ row.city }}</span>
@@ -178,7 +136,7 @@
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: row.id, return_to: path('ui_station_list')}) }}" data-row-link-ignore>Open</a>
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: row.id}) }}" data-row-link-ignore>Receipts</a>
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: row.id}) }}" data-row-link-ignore>Analytics</a>
-                                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: row.id}) }}" data-turbo-frame="receipt_form_frame" data-row-link-ignore>Add receipt</a>
+                                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: row.id}) }}" data-row-link-ignore>Add receipt</a>
                                     </td>
                                 </tr>
                             {% endfor %}

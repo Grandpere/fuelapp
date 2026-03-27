@@ -79,7 +79,7 @@
             {% if statusActions is not empty %}
                 <div class="actions-wrap">
                     {% for action in statusActions %}
-                        <a class="btn btn-{{ action.variant }}" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
+                        <a class="btn btn-{{ action.variant }} btn-compact" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
                     {% endfor %}
                 </div>
             {% endif %}
@@ -100,7 +100,7 @@
                 </ul>
                 <div class="actions-wrap">
                     {% for action in receiptContinuity.actions %}
-                        <a class="btn btn-{{ action.variant }}" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
+                        <a class="btn btn-{{ action.variant }} btn-compact" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
                     {% endfor %}
                 </div>
             </section>
@@ -115,10 +115,10 @@
                     </div>
                     <div class="actions-wrap">
                         {% if reviewQueue.previousUrl is not null %}
-                            <a class="btn btn-secondary" href="{{ reviewQueue.previousUrl }}" data-turbo-frame="_top">Previous review</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ reviewQueue.previousUrl }}" data-turbo-frame="_top">Previous review</a>
                         {% endif %}
                         {% if reviewQueue.nextUrl is not null %}
-                            <a class="btn btn-secondary" href="{{ reviewQueue.nextUrl }}" data-turbo-frame="_top">Next review</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ reviewQueue.nextUrl }}" data-turbo-frame="_top">Next review</a>
                         {% endif %}
                     </div>
                 </div>
@@ -172,9 +172,9 @@
                 <p class="muted section-lead">This import already created a receipt. You can open it directly instead of going back through the list.</p>
                 <div class="actions-wrap">
                     {% if resolvedFinalizedReceiptId is not null %}
-                        <a class="btn btn-primary" href="{{ path('ui_receipt_show', {id: resolvedFinalizedReceiptId}) }}" data-turbo-frame="_top">Open created receipt</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_show', {id: resolvedFinalizedReceiptId}) }}" data-turbo-frame="_top">Open created receipt</a>
                     {% endif %}
-                    <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Back to receipts</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Back to receipts</a>
                 </div>
             </section>
         {% elseif job.status.value == 'duplicate' %}
@@ -183,11 +183,11 @@
                 <p class="muted section-lead">This file matches an existing receipt or previously uploaded import. You can open the existing record directly from here.</p>
                 <div class="actions-wrap">
                     {% if resolvedDuplicateReceiptId is not null %}
-                        <a class="btn btn-primary" href="{{ path('ui_receipt_show', {id: resolvedDuplicateReceiptId}) }}" data-turbo-frame="_top">Open existing receipt</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_show', {id: resolvedDuplicateReceiptId}) }}" data-turbo-frame="_top">Open existing receipt</a>
                     {% elseif resolvedDuplicateOriginalImportId is not null %}
-                        <a class="btn btn-primary" href="{{ path('ui_import_show', {id: resolvedDuplicateOriginalImportId}) }}" data-turbo-frame="_top">{{ duplicateOfReceiptId is not null ? 'Open original import instead' : 'Open original import' }}</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_import_show', {id: resolvedDuplicateOriginalImportId}) }}" data-turbo-frame="_top">{{ duplicateOfReceiptId is not null ? 'Open original import instead' : 'Open original import' }}</a>
                     {% endif %}
-                    <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
                 </div>
             </section>
         {% endif %}

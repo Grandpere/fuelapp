@@ -160,7 +160,7 @@
                         </div>
                         <div class="actions-wrap">
                             {% for shortcut in followUpShortcuts %}
-                                <a class="btn btn-{{ shortcut.variant }}" href="{{ shortcut.url }}" data-turbo-frame="_top">{{ shortcut.label }}</a>
+                                <a class="btn btn-{{ shortcut.variant }} btn-compact" href="{{ shortcut.url }}" data-turbo-frame="_top">{{ shortcut.label }}</a>
                             {% endfor %}
                         </div>
                     </div>

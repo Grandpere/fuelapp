@@ -193,7 +193,7 @@ final class DashboardController extends AbstractController
             'recentImports' => $this->buildRecentImportCards(array_slice($imports, 0, 5)),
             'vehicleCount' => count($vehicles),
             'quickActions' => [
-                ['label' => 'Add receipt', 'url' => $this->generateUrl('ui_receipt_new'), 'variant' => 'primary', 'turboFrame' => 'receipt_form_frame'],
+                ['label' => 'Add receipt', 'url' => $this->generateUrl('ui_receipt_new'), 'variant' => 'primary'],
                 ['label' => 'Upload files', 'url' => $this->generateUrl('ui_import_index').'#import-upload-card', 'variant' => 'secondary'],
                 ['label' => 'Open maintenance', 'url' => $this->generateUrl('ui_maintenance_index'), 'variant' => 'secondary'],
                 ['label' => 'Open analytics', 'url' => $this->generateUrl('ui_analytics_dashboard'), 'variant' => 'secondary'],
@@ -222,7 +222,7 @@ final class DashboardController extends AbstractController
                         : sprintf('%d receipt%s tracked since %s.', $receiptsThisMonthCount, 1 === $receiptsThisMonthCount ? '' : 's', $monthStart->format('d/m/Y')),
                     'actions' => [
                         ['label' => 'Open month view', 'url' => $this->generateUrl('ui_receipt_index', ['issued_from' => $monthStart->format('Y-m-d')]), 'variant' => 'secondary'],
-                        ['label' => 'Add receipt', 'url' => $this->generateUrl('ui_receipt_new'), 'variant' => 'primary', 'turboFrame' => 'receipt_form_frame'],
+                        ['label' => 'Add receipt', 'url' => $this->generateUrl('ui_receipt_new'), 'variant' => 'primary'],
                     ],
                 ],
                 [

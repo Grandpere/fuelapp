@@ -180,6 +180,7 @@ final class StationWebUiTest extends WebTestCase
         self::assertStringContainsString('/ui/receipts?station_id='.$stationA->getId()->toRfc4122(), $content);
         self::assertStringContainsString('/ui/analytics?station_id='.$stationA->getId()->toRfc4122(), $content);
         self::assertStringContainsString('/ui/receipts/new?station_id='.$stationA->getId()->toRfc4122(), $content);
+        self::assertStringNotContainsString('receipt_form_frame', $content);
         self::assertStringContainsString('158900 km', $content);
     }
 

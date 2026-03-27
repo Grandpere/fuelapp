@@ -299,6 +299,7 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertStringContainsString('Plate TR-900-AA', $content);
         self::assertStringContainsString('View receipts', $content);
         self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringNotContainsString('receipt_form_frame', $content);
         self::assertStringContainsString('/ui/receipts?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
@@ -348,6 +349,7 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertStringContainsString('No maintenance event recorded for this vehicle yet.', $content);
         self::assertStringContainsString('No upcoming maintenance plan for this vehicle.', $content);
         self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringNotContainsString('receipt_form_frame', $content);
         self::assertStringContainsString('/ui/imports', $content);
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/plans/new?vehicle_id='.$vehicleId, $content);

@@ -688,3 +688,12 @@
 - [completed] Add/update functional coverage for the richer import detail handoff contract.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP27-003 Receipt entry navigation consistency pass
+
+## Plan
+- [completed] Remove the last `receipt_form_frame`-based receipt-entry shortcuts from dashboard, vehicle, station, and receipt empty-state screens.
+- [completed] Keep the visible actions the same while normalizing them to full-page receipt creation navigation.
+- [completed] Add/update functional coverage so the front hubs no longer regress toward mixed inline receipt entry.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

@@ -239,6 +239,15 @@
 - [completed] User-run functional suite validated (`make phpunit-functional`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP24-003 Front dashboard cohesion pass
+
+## Plan
+- [completed] Add actionable empty-state next steps on the main front vehicle, station, maintenance, and receipt hubs.
+- [completed] Keep the new shortcuts anchored to the current screen context instead of sending users to generic indexes only.
+- [completed] Add/update functional coverage for the new empty-state guidance across the touched front-office screens.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP18-001 Vehicle-centered workflow polish
 
 ## Plan

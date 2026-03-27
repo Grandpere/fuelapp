@@ -11,3 +11,6 @@ Smooth the remaining high-traffic front-office screens so filtering, queue follo
 ## Scope notes
 - Start with analytics because it remains one of the densest front-office screens.
 - Keep this sprint front-office first unless a concrete admin support need appears.
+
+## Status
+- Delivered

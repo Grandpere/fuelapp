@@ -239,7 +239,13 @@
                         <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add event</a>
                     </div>
                 {% else %}
-                    <div class="vehicle-empty">No maintenance signal yet for this vehicle.</div>
+                    <div class="vehicle-empty">
+                        <p>No maintenance signal yet for this vehicle.</p>
+                        <div class="actions-wrap">
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add first event</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add first plan</a>
+                        </div>
+                    </div>
                 {% endif %}
             </article>
 
@@ -256,7 +262,13 @@
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Vehicle timeline</a>
                     </div>
                 {% else %}
-                    <div class="vehicle-empty">Start by adding a receipt or maintenance event for this vehicle.</div>
+                    <div class="vehicle-empty">
+                        <p>Start by adding a receipt or maintenance event for this vehicle.</p>
+                        <div class="actions-wrap">
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add maintenance event</a>
+                        </div>
+                    </div>
                 {% endif %}
             </article>
         </section>
@@ -271,6 +283,10 @@
                 {% if receiptRows is empty %}
                     <div class="vehicle-empty">
                         <p>No receipt linked to this vehicle yet.</p>
+                        <div class="actions-wrap">
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add first receipt</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                        </div>
                     </div>
                 {% else %}
                     <div class="table-wrap table-min-740">
@@ -309,6 +325,10 @@
                     {% if recentMaintenanceEvents is empty %}
                         <div class="vehicle-empty">
                             <p>No maintenance event recorded for this vehicle yet.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add first event</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Plan maintenance</a>
+                            </div>
                         </div>
                     {% else %}
                         <div class="vehicle-list">
@@ -342,6 +362,10 @@
                     {% if upcomingMaintenancePlans is empty %}
                         <div class="vehicle-empty">
                             <p>No upcoming maintenance plan for this vehicle.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add first plan</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Open maintenance</a>
+                            </div>
                         </div>
                     {% else %}
                         <div class="vehicle-list">

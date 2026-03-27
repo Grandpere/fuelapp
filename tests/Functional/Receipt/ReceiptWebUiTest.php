@@ -629,6 +629,51 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('name="stationCity" value="Lille"', $createContent);
     }
 
+    public function testReceiptIndexEmptyStateOffersContextualNextSteps(): void
+    {
+        $email = 'receipt.ui.empty.shortcuts@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Empty Shortcut Car');
+        $vehicle->setPlateNumber('ES-100-AA');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-16 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-16 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Empty Shortcut Station');
+        $station->setStreetName('1 Empty Road');
+        $station->setPostalCode('67000');
+        $station->setCity('Strasbourg');
+        $this->em->persist($station);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $vehicleResponse = $this->request('GET', '/ui/receipts?vehicle_id='.$vehicleId);
+        self::assertSame(Response::HTTP_OK, $vehicleResponse->getStatusCode());
+        $vehicleContent = (string) $vehicleResponse->getContent();
+        self::assertStringContainsString('No receipt yet.', $vehicleContent);
+        self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $vehicleContent);
+        self::assertStringContainsString('/ui/imports', $vehicleContent);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $vehicleContent);
+
+        $stationId = $station->getId()->toRfc4122();
+        $stationResponse = $this->request('GET', '/ui/receipts?station_id='.$stationId);
+        self::assertSame(Response::HTTP_OK, $stationResponse->getStatusCode());
+        $stationContent = (string) $stationResponse->getContent();
+        self::assertStringContainsString('No receipt yet.', $stationContent);
+        self::assertStringContainsString('/ui/receipts/new?station_id='.$stationId, $stationContent);
+        self::assertStringContainsString('/ui/imports', $stationContent);
+        self::assertStringNotContainsString('/ui/stations/'.$stationId, $stationContent);
+    }
+
     public function testReceiptDetailKeepsReturnToContextFromFilteredList(): void
     {
         $email = 'receipt.ui.context@example.com';

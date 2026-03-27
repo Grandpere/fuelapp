@@ -168,7 +168,7 @@
                 <p class="muted section-lead">Plate {{ vehicle.plateNumber }}. Use this page as the quick hub for receipts and maintenance attached to this vehicle.</p>
             </div>
             <div class="vehicle-show-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">Add receipt</a>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">View receipts</a>
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Maintenance</a>
                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">Add plan</a>
@@ -265,7 +265,7 @@
                     <div class="vehicle-empty">
                         <p>Start by adding a receipt or maintenance event for this vehicle.</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">Add receipt</a>
                             <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add maintenance event</a>
                         </div>
                     </div>
@@ -284,7 +284,7 @@
                     <div class="vehicle-empty">
                         <p>No receipt linked to this vehicle yet.</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add first receipt</a>
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">Add first receipt</a>
                             <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
                         </div>
                     </div>

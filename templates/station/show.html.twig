@@ -136,7 +136,7 @@
                 <p class="muted section-lead">{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}. Use this page as the quick hub for receipts and analytics linked to this station.</p>
             </div>
             <div class="station-show-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">Add receipt</a>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">View receipts</a>
                 <a class="btn btn-primary" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Open analytics</a>
                 <a class="btn btn-secondary" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl})}) }}">Edit station</a>
@@ -191,7 +191,7 @@
                     <div class="station-empty">
                         <p>No receipt linked to this station yet.</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add first receipt</a>
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">Add first receipt</a>
                             <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
                         </div>
                     </div>
@@ -210,7 +210,7 @@
                     </div>
                 {% endif %}
                 <div class="actions-wrap">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">Add receipt</a>
                     <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">Receipt timeline</a>
                     <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Analytics</a>
                 </div>

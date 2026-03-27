@@ -679,6 +679,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $vehicleContent = (string) $vehicleResponse->getContent();
         self::assertStringContainsString('No receipt yet.', $vehicleContent);
         self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $vehicleContent);
+        self::assertStringNotContainsString('receipt_form_frame', $vehicleContent);
         self::assertStringContainsString('/ui/imports', $vehicleContent);
         self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $vehicleContent);
 
@@ -688,6 +689,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $stationContent = (string) $stationResponse->getContent();
         self::assertStringContainsString('No receipt yet.', $stationContent);
         self::assertStringContainsString('/ui/receipts/new?station_id='.$stationId, $stationContent);
+        self::assertStringNotContainsString('receipt_form_frame', $stationContent);
         self::assertStringContainsString('/ui/imports', $stationContent);
         self::assertStringNotContainsString('/ui/stations/'.$stationId, $stationContent);
     }

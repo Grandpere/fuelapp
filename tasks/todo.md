@@ -670,3 +670,30 @@
 - [completed] Add/update functional coverage for the richer receipt list/detail flow contract.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP27-001 Front list consistency pass
+
+## Plan
+- [completed] Align vehicle and station list actions on direct navigation instead of inline receipt creation.
+- [completed] Simplify the stations list so it behaves like the other worklists instead of a mini-dashboard.
+- [completed] Add/update functional coverage for the aligned list interaction contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP27-002 Import-to-receipt continuity pass
+
+## Plan
+- [completed] Add a lightweight continuity block on import detail when a processed or duplicate import already points to a receipt.
+- [completed] Expose direct shortcuts toward the linked receipt and nearby vehicle/station context when available.
+- [completed] Add/update functional coverage for the richer import detail handoff contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP27-003 Receipt entry navigation consistency pass
+
+## Plan
+- [completed] Remove the last `receipt_form_frame`-based receipt-entry shortcuts from dashboard, vehicle, station, and receipt empty-state screens.
+- [completed] Keep the visible actions the same while normalizing them to full-page receipt creation navigation.
+- [completed] Add/update functional coverage so the front hubs no longer regress toward mixed inline receipt entry.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

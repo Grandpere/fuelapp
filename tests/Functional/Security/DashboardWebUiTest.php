@@ -162,6 +162,8 @@ final class DashboardWebUiTest extends WebTestCase
         $content = (string) $this->client->getResponse()->getContent();
         self::assertStringContainsString('No urgent follow-up is waiting right now.', $content);
         self::assertStringContainsString('Add first receipt', $content);
+        self::assertStringContainsString('/ui/receipts/new', $content);
+        self::assertStringNotContainsString('receipt_form_frame', $content);
         self::assertStringContainsString('Upload first file', $content);
         self::assertStringContainsString('0 vehicles tracked so far.', $content);
         self::assertStringContainsString('Drill down by area', $content);

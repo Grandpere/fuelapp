@@ -16,7 +16,10 @@ namespace App\Import\UI\Web\Controller;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
+use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Shared\UI\Web\SafeReturnPathResolver;
+use App\Station\Application\Repository\StationRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,6 +31,9 @@ final class ImportJobShowWebController extends AbstractController
 {
     public function __construct(
         private readonly ImportJobRepository $importJobRepository,
+        private readonly ReceiptRepository $receiptRepository,
+        private readonly VehicleRepository $vehicleRepository,
+        private readonly StationRepository $stationRepository,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
@@ -45,6 +51,9 @@ final class ImportJobShowWebController extends AbstractController
         }
 
         $payloadData = $this->decodePayload($job->errorPayload());
+        $resolvedFinalizedReceiptId = $this->resolveExistingReceiptId($this->readStringValue($payloadData, 'finalizedReceiptId'));
+        $resolvedDuplicateReceiptId = $this->resolveExistingReceiptId($this->readStringValue($payloadData, 'duplicateOfReceiptId'));
+        $resolvedDuplicateOriginalImportId = $this->resolveExistingImportId($this->readStringValue($payloadData, 'duplicateOfImportJobId'));
         $creationPayload = $this->readCreationPayload($payloadData);
         $parsedDraft = $this->readParsedDraft($payloadData);
         $backToImportsUrl = $this->safeReturnPathResolver->resolve(
@@ -61,9 +70,13 @@ final class ImportJobShowWebController extends AbstractController
             'creationPayload' => $creationPayload,
             'parsedDraft' => $parsedDraft,
             'reviewLines' => $this->readLines($creationPayload, $parsedDraft),
+            'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
+            'resolvedDuplicateReceiptId' => $resolvedDuplicateReceiptId,
+            'resolvedDuplicateOriginalImportId' => $resolvedDuplicateOriginalImportId,
             'reviewQueue' => $this->buildReviewQueue($job, $backToImportsUrl),
             'statusSummary' => $this->buildStatusSummary($job, $payloadData),
             'statusActions' => $this->buildStatusActions($job, $backToImportsUrl, $payloadData),
+            'receiptContinuity' => $this->buildReceiptContinuity($payloadData),
         ]);
     }
 
@@ -353,7 +366,7 @@ final class ImportJobShowWebController extends AbstractController
 
         switch ($job->status()) {
             case ImportJobStatus::PROCESSED:
-                $receiptId = $this->readStringValue($payloadData, 'finalizedReceiptId');
+                $receiptId = $this->resolveExistingReceiptId($this->readStringValue($payloadData, 'finalizedReceiptId'));
                 if (null !== $receiptId) {
                     $actions[] = [
                         'label' => 'Open created receipt',
@@ -370,7 +383,8 @@ final class ImportJobShowWebController extends AbstractController
                 break;
 
             case ImportJobStatus::DUPLICATE:
-                $receiptId = $this->readStringValue($payloadData, 'duplicateOfReceiptId');
+                $rawReceiptId = $this->readStringValue($payloadData, 'duplicateOfReceiptId');
+                $receiptId = $this->resolveExistingReceiptId($rawReceiptId);
                 if (null !== $receiptId) {
                     $actions[] = [
                         'label' => 'Open existing receipt',
@@ -378,10 +392,10 @@ final class ImportJobShowWebController extends AbstractController
                         'variant' => 'primary',
                     ];
                 } else {
-                    $originalImportId = $this->readStringValue($payloadData, 'duplicateOfImportJobId');
+                    $originalImportId = $this->resolveExistingImportId($this->readStringValue($payloadData, 'duplicateOfImportJobId'));
                     if (null !== $originalImportId) {
                         $actions[] = [
-                            'label' => 'Open original import',
+                            'label' => null !== $rawReceiptId ? 'Open original import instead' : 'Open original import',
                             'url' => $this->generateUrl('ui_import_show', ['id' => $originalImportId, 'return_to' => $backToImportsUrl]),
                             'variant' => 'primary',
                         ];
@@ -427,6 +441,24 @@ final class ImportJobShowWebController extends AbstractController
         }
 
         return $actions;
+    }
+
+    private function resolveExistingReceiptId(?string $receiptId): ?string
+    {
+        if (null === $receiptId) {
+            return null;
+        }
+
+        return null === $this->receiptRepository->getForSystem($receiptId) ? null : $receiptId;
+    }
+
+    private function resolveExistingImportId(?string $importId): ?string
+    {
+        if (null === $importId) {
+            return null;
+        }
+
+        return null === $this->importJobRepository->get($importId) ? null : $importId;
     }
 
     /**
@@ -486,6 +518,75 @@ final class ImportJobShowWebController extends AbstractController
         }
 
         return sprintf('%s: %s', $label, $value);
+    }
+
+    /**
+     * @param array<string, mixed>|null $payloadData
+     *
+     * @return array{
+     *     title:string,
+     *     lead:string,
+     *     details:list<string>,
+     *     actions:list<array{label:string,url:string,variant:string}>
+     * }|null
+     */
+    private function buildReceiptContinuity(?array $payloadData): ?array
+    {
+        $receiptId = $this->readStringValue($payloadData, 'finalizedReceiptId')
+            ?? $this->readStringValue($payloadData, 'duplicateOfReceiptId');
+
+        if (null === $receiptId) {
+            return null;
+        }
+
+        $receipt = $this->receiptRepository->getForSystem($receiptId);
+        if (null === $receipt) {
+            return null;
+        }
+
+        $details = [
+            sprintf('Issued at: %s', $receipt->issuedAt()->format('d/m/Y H:i')),
+            sprintf('Total: %.2f EUR', $receipt->totalCents() / 100),
+        ];
+
+        $actions = [[
+            'label' => 'Open receipt',
+            'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId]),
+            'variant' => 'primary',
+        ]];
+
+        $vehicleId = $receipt->vehicleId()?->toString();
+        if (null !== $vehicleId) {
+            $vehicle = $this->vehicleRepository->get($vehicleId);
+            if (null !== $vehicle) {
+                $details[] = sprintf('Vehicle: %s', $vehicle->name());
+                $actions[] = [
+                    'label' => 'Open vehicle',
+                    'url' => $this->generateUrl('ui_vehicle_show', ['id' => $vehicleId]),
+                    'variant' => 'secondary',
+                ];
+            }
+        }
+
+        $stationId = $receipt->stationId()?->toString();
+        if (null !== $stationId) {
+            $station = $this->stationRepository->get($stationId);
+            if (null !== $station) {
+                $details[] = sprintf('Station: %s', $station->name());
+                $actions[] = [
+                    'label' => 'Open station',
+                    'url' => $this->generateUrl('ui_station_show', ['id' => $stationId]),
+                    'variant' => 'secondary',
+                ];
+            }
+        }
+
+        return [
+            'title' => 'Receipt continuity',
+            'lead' => 'This import is already linked to a real receipt, so you can continue from the receipt itself instead of staying in the import flow.',
+            'details' => $details,
+            'actions' => $actions,
+        ];
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

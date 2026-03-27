@@ -5,6 +5,7 @@ Finish the last clearly valuable front-office consistency fixes before shifting 
 
 ## Tickets
 1. `SP27-001` Front list consistency pass
+2. `SP27-002` Import-to-receipt continuity pass
 
 ## Scope notes
 - Keep the sprint pragmatic: only remove real front friction, not polish for polish's sake.

@@ -679,3 +679,12 @@
 - [completed] Add/update functional coverage for the aligned list interaction contract.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP27-002 Import-to-receipt continuity pass
+
+## Plan
+- [completed] Add a lightweight continuity block on import detail when a processed or duplicate import already points to a receipt.
+- [completed] Expose direct shortcuts toward the linked receipt and nearby vehicle/station context when available.
+- [completed] Add/update functional coverage for the richer import detail handoff contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

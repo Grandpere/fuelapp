@@ -15,6 +15,7 @@
 ## Notes
 - Sprint 27 starts as the last front consistency pass before an admin/back-office shift.
 - SP27-001 is fully delivered across list-action normalization on vehicles and stations, plus a simpler vehicle table contract.
+- SP27-002 is fully delivered across import terminal-state continuity, receipt-context shortcuts, and dead-link suppression when referenced records are gone.
 - Sprint 26 is fully delivered across maintenance lifecycle clarity, dashboard drill-downs, and receipt list/detail follow-through.
 - SP26-002 is fully delivered across compact receipt list defaults, richer row shortcuts, and filtered-list continuity from receipt detail.
 - SP26-001 is fully delivered across richer dashboard drill-downs from urgent items, recent receipts, and import snapshots.

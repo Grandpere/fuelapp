@@ -16,8 +16,10 @@ namespace App\Tests\Functional\Import;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Infrastructure\Persistence\Doctrine\Entity\ImportJobEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
+use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -779,13 +781,40 @@ final class ImportWebUiTest extends WebTestCase
         $password = 'test1234';
         $user = $this->createUser($email, $password);
 
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($user);
+        $vehicle->setName('Processed Car');
+        $vehicle->setPlateNumber('PR-001-AA');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-26 07:30:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-26 07:30:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Processed Station');
+        $station->setStreetName('10 Import Road');
+        $station->setPostalCode('75001');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
         $receipt = new ReceiptEntity();
         $receipt->setId(Uuid::v7());
         $receipt->setOwner($user);
+        $receipt->setVehicle($vehicle);
+        $receipt->setStation($station);
         $receipt->setIssuedAt(new DateTimeImmutable('2026-03-26 08:00:00'));
         $receipt->setTotalCents(4200);
         $receipt->setVatAmountCents(700);
         $this->em->persist($receipt);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(25000);
+        $line->setUnitPriceDeciCentsPerLiter(1680);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
 
         $job = new ImportJobEntity();
         $job->setId(Uuid::v7());
@@ -819,8 +848,14 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('What happened', $detailContent);
         self::assertStringContainsString('Receipt created successfully', $detailContent);
         self::assertStringContainsString('What you can do now', $detailContent);
+        self::assertStringContainsString('Receipt continuity', $detailContent);
+        self::assertStringContainsString('Vehicle: Processed Car', $detailContent);
+        self::assertStringContainsString('Station: Processed Station', $detailContent);
         self::assertStringContainsString('/ui/receipts/'.$receiptId, $detailContent);
         self::assertStringContainsString('Open created receipt', $detailContent);
+        self::assertStringContainsString('Open receipt', $detailContent);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicle->getId()->toRfc4122(), $detailContent);
+        self::assertStringContainsString('/ui/stations/'.$station->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('Upload another file', $detailContent);
         self::assertStringContainsString('/ui/imports#import-upload-card', $detailContent);
     }
@@ -907,6 +942,14 @@ final class ImportWebUiTest extends WebTestCase
         $receipt->setVatAmountCents(1191);
         $this->em->persist($receipt);
 
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(38000);
+        $line->setUnitPriceDeciCentsPerLiter(1881);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
         $job = new ImportJobEntity();
         $job->setId(Uuid::v7());
         $job->setOwner($user);
@@ -934,9 +977,102 @@ final class ImportWebUiTest extends WebTestCase
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('Duplicate import', $detailContent);
         self::assertStringContainsString('Duplicate already handled', $detailContent);
+        self::assertStringContainsString('Receipt continuity', $detailContent);
+        self::assertStringContainsString('Station: PETRO EST', $detailContent);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('Open existing receipt', $detailContent);
+        self::assertStringContainsString('Open receipt', $detailContent);
+        self::assertStringContainsString('/ui/stations/'.$station->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('Upload different file', $detailContent);
+    }
+
+    public function testDuplicateImportDetailDoesNotExposeMissingReceiptShortcut(): void
+    {
+        $email = 'import.web.duplicate.missing.receipt@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $originalJob = new ImportJobEntity();
+        $originalJob->setId(Uuid::v7());
+        $originalJob->setOwner($user);
+        $originalJob->setStatus(ImportJobStatus::PROCESSED);
+        $originalJob->setStorage('local');
+        $originalJob->setFilePath('2026/03/26/original-missing-receipt.jpg');
+        $originalJob->setOriginalFilename('original-missing-receipt.jpg');
+        $originalJob->setMimeType('image/jpeg');
+        $originalJob->setFileSizeBytes(64000);
+        $originalJob->setFileChecksumSha256(str_repeat('m', 64));
+        $originalJob->setErrorPayload('{"status":"processed"}');
+        $originalJob->setCreatedAt(new DateTimeImmutable('2026-03-26 09:00:00'));
+        $originalJob->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:00:00'));
+        $originalJob->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:00:00'));
+        $this->em->persist($originalJob);
+
+        $missingReceiptId = Uuid::v7()->toRfc4122();
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/duplicate-missing-receipt.jpg');
+        $job->setOriginalFilename('duplicate-missing-receipt.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('n', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfReceiptId' => $missingReceiptId,
+            'duplicateOfImportJobId' => $originalJob->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:05:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringNotContainsString('Open existing receipt', $detailContent);
+        self::assertStringContainsString('Open original import instead', $detailContent);
+    }
+
+    public function testDuplicateImportDetailDoesNotExposeMissingOriginalImportShortcut(): void
+    {
+        $email = 'import.web.duplicate.missing.original@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/duplicate-missing-original.jpg');
+        $job->setOriginalFilename('duplicate-missing-original.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('y', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfImportJobId' => Uuid::v7()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 09:05:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 09:05:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringNotContainsString('Open original import', $detailContent);
+        self::assertStringContainsString('Back to imports', $detailContent);
     }
 
     public function testFailedImportDetailExplainsNextSteps(): void

@@ -4,16 +4,17 @@
 - Sprint 25 - Export and follow-up workflow polish
 
 ## Current goal
-- Reduce export friction on high-frequency front-office workflows, starting with receipt CSV/XLSX reliability and file-sharing clarity.
+- Reduce friction on high-frequency front-office follow-up flows, starting with exports and import recovery shortcuts.
 
 ## In progress
-- SP25-001 - Receipt export and sharing workflow polish
+- SP25-002 - Front import recovery shortcuts
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
 
 ## Notes
 - Sprint 25 starts with receipt export reliability and share-friendly filenames; admin parity remains deferred unless operations need it later.
+- SP25-001 is fully delivered across disk-backed XLSX exports, share-friendly filenames, and clearer export scope guidance.
 - Sprint 24 is fully delivered across analytics filter polish, import follow-up shortcuts, and stronger empty-state cohesion on the main front-office hubs.
 - SP24-003 is fully delivered across actionable empty states on vehicle, station, maintenance, and receipt front-office pages.
 - SP24-002 is fully delivered across import status quick filters, list-level follow-up shortcuts, and clearer secondary row actions.

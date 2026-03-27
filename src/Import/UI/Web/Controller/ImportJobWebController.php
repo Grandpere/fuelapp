@@ -62,6 +62,7 @@ final class ImportJobWebController extends AbstractController
 
         $jobs = [];
         $returnTo = $request->getRequestUri();
+        $uploadUrl = $this->generateUrl('ui_import_index').'#import-upload-card';
         $statusFilter = $this->readStatusFilter($request);
         foreach ($this->importJobRepository->all() as $job) {
             $jobs[] = [
@@ -69,7 +70,7 @@ final class ImportJobWebController extends AbstractController
                 'canAutoFinalize' => $this->canAutoFinalize($job),
                 'summary' => $this->buildListSummary($job),
                 'primaryAction' => $this->buildPrimaryAction($job, $returnTo),
-                'secondaryAction' => $this->buildSecondaryAction($job, $returnTo),
+                'secondaryAction' => $this->buildSecondaryAction($job, $returnTo, $uploadUrl),
             ];
         }
 
@@ -79,7 +80,7 @@ final class ImportJobWebController extends AbstractController
         );
 
         $statusCounts = $this->buildStatusCounts($jobs);
-        $followUpShortcuts = $this->buildFollowUpShortcuts($jobs, $returnTo);
+        $followUpShortcuts = $this->buildFollowUpShortcuts($jobs, $returnTo, $uploadUrl);
 
         if (null !== $statusFilter) {
             $jobs = array_values(array_filter(
@@ -219,20 +220,20 @@ final class ImportJobWebController extends AbstractController
     /**
      * @return array{label:string,url:string,variant:string}|null
      */
-    private function buildSecondaryAction(ImportJob $job, string $returnTo): ?array
+    private function buildSecondaryAction(ImportJob $job, string $returnTo, string $uploadUrl): ?array
     {
         $detailUrl = $this->generateUrl('ui_import_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]);
 
         return match ($job->status()) {
             ImportJobStatus::PROCESSED,
             ImportJobStatus::DUPLICATE => [
-                'label' => 'Detail',
-                'url' => $detailUrl,
+                'label' => ImportJobStatus::DUPLICATE === $job->status() ? 'Upload another' : 'Detail',
+                'url' => ImportJobStatus::DUPLICATE === $job->status() ? $uploadUrl : $detailUrl,
                 'variant' => 'secondary',
             ],
             ImportJobStatus::FAILED => [
-                'label' => 'Inspect failure',
-                'url' => $detailUrl,
+                'label' => 'Re-upload',
+                'url' => $uploadUrl,
                 'variant' => 'secondary',
             ],
             default => null,
@@ -296,7 +297,7 @@ final class ImportJobWebController extends AbstractController
      *
      * @return list<array{label:string,url:string,variant:string}>
      */
-    private function buildFollowUpShortcuts(array $jobs, string $returnTo): array
+    private function buildFollowUpShortcuts(array $jobs, string $returnTo, string $uploadUrl): array
     {
         $shortcuts = [];
 
@@ -316,6 +317,11 @@ final class ImportJobWebController extends AbstractController
                 $shortcuts[] = [
                     'label' => 'Inspect latest failure',
                     'url' => $this->generateUrl('ui_import_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
+                    'variant' => 'secondary',
+                ];
+                $shortcuts[] = [
+                    'label' => 'Upload replacement',
+                    'url' => $uploadUrl,
                     'variant' => 'secondary',
                 ];
                 break;

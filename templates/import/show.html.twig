@@ -76,6 +76,13 @@
                     </ul>
                 </div>
             {% endif %}
+            {% if statusActions is not empty %}
+                <div class="actions-wrap">
+                    {% for action in statusActions %}
+                        <a class="btn btn-{{ action.variant }}" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </section>
 
         {% if reviewQueue is not null %}

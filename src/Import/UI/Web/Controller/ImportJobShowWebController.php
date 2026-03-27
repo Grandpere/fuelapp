@@ -55,6 +55,7 @@ final class ImportJobShowWebController extends AbstractController
         return $this->render('import/show.html.twig', [
             'job' => $job,
             'backToImportsUrl' => $backToImportsUrl,
+            'uploadShortcutUrl' => $this->generateUrl('ui_import_index').'#import-upload-card',
             'payloadData' => $payloadData,
             'text' => $this->readPayloadText($payloadData),
             'creationPayload' => $creationPayload,
@@ -62,6 +63,7 @@ final class ImportJobShowWebController extends AbstractController
             'reviewLines' => $this->readLines($creationPayload, $parsedDraft),
             'reviewQueue' => $this->buildReviewQueue($job, $backToImportsUrl),
             'statusSummary' => $this->buildStatusSummary($job, $payloadData),
+            'statusActions' => $this->buildStatusActions($job, $backToImportsUrl, $payloadData),
         ]);
     }
 
@@ -337,6 +339,94 @@ final class ImportJobShowWebController extends AbstractController
                 ],
             ],
         };
+    }
+
+    /**
+     * @param array<string, mixed>|null $payloadData
+     *
+     * @return list<array{label:string,url:string,variant:string}>
+     */
+    private function buildStatusActions(ImportJob $job, string $backToImportsUrl, ?array $payloadData): array
+    {
+        $actions = [];
+        $uploadUrl = $this->generateUrl('ui_import_index').'#import-upload-card';
+
+        switch ($job->status()) {
+            case ImportJobStatus::PROCESSED:
+                $receiptId = $this->readStringValue($payloadData, 'finalizedReceiptId');
+                if (null !== $receiptId) {
+                    $actions[] = [
+                        'label' => 'Open created receipt',
+                        'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId]),
+                        'variant' => 'primary',
+                    ];
+                }
+                $actions[] = [
+                    'label' => 'Upload another file',
+                    'url' => $uploadUrl,
+                    'variant' => 'secondary',
+                ];
+
+                break;
+
+            case ImportJobStatus::DUPLICATE:
+                $receiptId = $this->readStringValue($payloadData, 'duplicateOfReceiptId');
+                if (null !== $receiptId) {
+                    $actions[] = [
+                        'label' => 'Open existing receipt',
+                        'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId]),
+                        'variant' => 'primary',
+                    ];
+                } else {
+                    $originalImportId = $this->readStringValue($payloadData, 'duplicateOfImportJobId');
+                    if (null !== $originalImportId) {
+                        $actions[] = [
+                            'label' => 'Open original import',
+                            'url' => $this->generateUrl('ui_import_show', ['id' => $originalImportId, 'return_to' => $backToImportsUrl]),
+                            'variant' => 'primary',
+                        ];
+                    }
+                }
+                $actions[] = [
+                    'label' => 'Upload different file',
+                    'url' => $uploadUrl,
+                    'variant' => 'secondary',
+                ];
+
+                break;
+
+            case ImportJobStatus::FAILED:
+                $actions[] = [
+                    'label' => 'Upload replacement',
+                    'url' => $uploadUrl,
+                    'variant' => 'primary',
+                ];
+                $actions[] = [
+                    'label' => 'Back to imports',
+                    'url' => $backToImportsUrl,
+                    'variant' => 'secondary',
+                ];
+
+                break;
+
+            case ImportJobStatus::NEEDS_REVIEW:
+                $actions[] = [
+                    'label' => 'Upload replacement',
+                    'url' => $uploadUrl,
+                    'variant' => 'secondary',
+                ];
+
+                break;
+
+            default:
+                $actions[] = [
+                    'label' => 'Back to imports',
+                    'url' => $backToImportsUrl,
+                    'variant' => 'secondary',
+                ];
+        }
+
+        return $actions;
     }
 
     /**

@@ -257,6 +257,15 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP25-002 Front import recovery shortcuts
+
+## Plan
+- [completed] Add a direct upload anchor on the imports page and reuse it as the recovery target from list/detail actions.
+- [completed] Surface replacement-upload shortcuts for failed and duplicate imports, plus "upload another" shortcuts after resolved states.
+- [completed] Add/update functional coverage for the new list/detail recovery shortcuts.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP18-001 Vehicle-centered workflow polish
 
 ## Plan

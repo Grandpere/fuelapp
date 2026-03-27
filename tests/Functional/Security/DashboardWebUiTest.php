@@ -18,6 +18,7 @@ use App\Import\Infrastructure\Persistence\Doctrine\Entity\ImportJobEntity;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenancePlannedCostEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
+use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
@@ -91,6 +92,13 @@ final class DashboardWebUiTest extends WebTestCase
         $receipt->setTotalCents(5400);
         $receipt->setVatAmountCents(900);
         $receipt->setOdometerKilometers(124500);
+        $receiptLine = new ReceiptLineEntity();
+        $receiptLine->setId(Uuid::v7());
+        $receiptLine->setFuelType('diesel');
+        $receiptLine->setQuantityMilliLiters(32000);
+        $receiptLine->setUnitPriceDeciCentsPerLiter(1687);
+        $receiptLine->setVatRatePercent(20);
+        $receipt->addLine($receiptLine);
         $this->em->persist($receipt);
 
         $needsReview = $this->createImportJob($user, 'needs-review.jpg', ImportJobStatus::NEEDS_REVIEW, new DateTimeImmutable('2026-03-27 09:00:00'));
@@ -124,9 +132,16 @@ final class DashboardWebUiTest extends WebTestCase
         self::assertStringContainsString('Planned maintenance is coming up', $content);
         self::assertStringContainsString('Recent receipts', $content);
         self::assertStringContainsString('Fuel Corner', $content);
+        self::assertStringContainsString('Edit details', $content);
+        self::assertStringContainsString('Open vehicle', $content);
+        self::assertStringContainsString('Analytics', $content);
         self::assertStringContainsString('Import queue snapshot', $content);
         self::assertStringContainsString('needs-review.jpg', $content);
         self::assertStringContainsString('failed-upload.jpg', $content);
+        self::assertStringContainsString('Drill down by area', $content);
+        self::assertStringContainsString('Open follow-up now', $content);
+        self::assertStringContainsString('Edit next plan', $content);
+        self::assertStringContainsString('Open month view', $content);
         self::assertStringContainsString('/ui/imports?status=needs_review', $content);
         self::assertStringContainsString('/ui/imports?status=failed', $content);
         self::assertStringContainsString('/ui/maintenance/plans/'.$plan->getId()->toRfc4122().'/edit', $content);
@@ -149,6 +164,8 @@ final class DashboardWebUiTest extends WebTestCase
         self::assertStringContainsString('Add first receipt', $content);
         self::assertStringContainsString('Upload first file', $content);
         self::assertStringContainsString('0 vehicles tracked so far.', $content);
+        self::assertStringContainsString('Drill down by area', $content);
+        self::assertStringContainsString('Open month view', $content);
     }
 
     private function createUser(string $email, string $password): UserEntity

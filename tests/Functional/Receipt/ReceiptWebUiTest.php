@@ -553,6 +553,32 @@ final class ReceiptWebUiTest extends WebTestCase
         $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
         $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
         $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Shortcut Fuel');
+        $station->setStreetName('1 Shortcut Street');
+        $station->setPostalCode('75001');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setVehicle($vehicle);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-20 10:15:00'));
+        $receipt->setOdometerKilometers(100500);
+        $receipt->setTotalCents(2600);
+        $receipt->setVatAmountCents(433);
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(15000);
+        $line->setUnitPriceDeciCentsPerLiter(1733);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+        $this->em->persist($receipt);
         $this->em->flush();
 
         $this->loginWithUiForm($email, $password);
@@ -561,17 +587,14 @@ final class ReceiptWebUiTest extends WebTestCase
         $response = $this->request('GET', '/ui/receipts?vehicle_id='.$vehicleId);
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
-        self::assertStringContainsString('Vehicle shortcuts', $content);
         self::assertStringContainsString('Shortcut Car (SC-100-AA)', $content);
-        self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
-        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
-        self::assertStringContainsString('/ui/analytics?vehicle_id='.$vehicleId, $content);
-        self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('Vehicle:</strong> Shortcut Car (SC-100-AA)', $content);
         self::assertStringContainsString('Last 30 days', $content);
         self::assertStringContainsString('This month', $content);
         self::assertStringContainsString('Exports keep the current filters and visible columns.', $content);
+        self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122().'/edit-metadata', $content);
+        self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122().'/edit', $content);
     }
 
     public function testReceiptIndexShowsStationScopedShortcutsAndPrefilledCreateLink(): void
@@ -611,13 +634,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $response = $this->request('GET', '/ui/receipts?station_id='.$stationId);
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
-        self::assertStringContainsString('Station shortcuts', $content);
         self::assertStringContainsString('Shortcut Station - 12 Route Nord, 59000 Lille', $content);
-        self::assertStringContainsString('/ui/stations/'.$stationId, $content);
-        self::assertStringContainsString('/ui/analytics?station_id='.$stationId, $content);
-        self::assertStringContainsString('/ui/stations/'.$stationId.'/edit', $content);
-        self::assertStringContainsString('redirect=', $content);
-        self::assertStringContainsString('station_id', $content);
         self::assertStringContainsString('/ui/receipts/new?station_id='.$stationId, $content);
         self::assertStringContainsString('Station:</strong> Shortcut Station - 12 Route Nord, 59000 Lille', $content);
 
@@ -799,6 +816,54 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('Edit station', $content);
     }
 
+    public function testReceiptDetailCanNavigateWithinFilteredListContext(): void
+    {
+        $email = 'receipt.ui.detail.bulk@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Bulk Flow Car');
+        $vehicle->setPlateNumber('BF-100-AA');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-10 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Bulk Flow Station');
+        $station->setStreetName('9 Series Avenue');
+        $station->setPostalCode('75015');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receiptA = $this->createReceiptEntity($owner, $station, $vehicle, '2026-03-18 08:00:00', 2100, 350, 120100);
+        $receiptB = $this->createReceiptEntity($owner, $station, $vehicle, '2026-03-17 08:00:00', 2200, 367, 120250);
+        $receiptC = $this->createReceiptEntity($owner, $station, $vehicle, '2026-03-16 08:00:00', 2300, 383, 120400);
+        $this->em->persist($receiptA);
+        $this->em->persist($receiptB);
+        $this->em->persist($receiptC);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $returnTo = '/ui/receipts?vehicle_id='.$vehicleId.'&sort_by=date&sort_direction=desc&per_page=25';
+        $response = $this->request('GET', '/ui/receipts/'.$receiptB->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo));
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+
+        self::assertStringContainsString('List flow', $content);
+        self::assertStringContainsString('Previous in list', $content);
+        self::assertStringContainsString('Next in list', $content);
+        self::assertStringContainsString($receiptA->getId()->toRfc4122(), $content);
+        self::assertStringContainsString($receiptC->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('Back to filtered list', $content);
+        self::assertStringContainsString(htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), $content);
+    }
+
     public function testReceiptDetailHighlightsMissingContextCorrections(): void
     {
         $email = 'receipt.ui.detail.quickfix@example.com';
@@ -897,5 +962,35 @@ final class ReceiptWebUiTest extends WebTestCase
         $this->em->persist($user);
 
         return $user;
+    }
+
+    private function createReceiptEntity(
+        UserEntity $owner,
+        StationEntity $station,
+        ?VehicleEntity $vehicle,
+        string $issuedAt,
+        int $totalCents,
+        int $vatAmountCents,
+        ?int $odometerKilometers,
+    ): ReceiptEntity {
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setVehicle($vehicle);
+        $receipt->setIssuedAt(new DateTimeImmutable($issuedAt));
+        $receipt->setOdometerKilometers($odometerKilometers);
+        $receipt->setTotalCents($totalCents);
+        $receipt->setVatAmountCents($vatAmountCents);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(12000);
+        $line->setUnitPriceDeciCentsPerLiter(1750);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        return $receipt;
     }
 }

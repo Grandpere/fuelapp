@@ -643,3 +643,30 @@
 - [completed] Add/update functional coverage for the dashboard content and topbar navigation contract.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP26-003 Maintenance reminder lifecycle clarity
+
+## Plan
+- [completed] Add explicit lifecycle stages for reminder rules (`configured`, `watching`, `due soon`, `due now`) in the maintenance dashboard controller.
+- [completed] Render the lifecycle summary and per-rule stage badges directly in `/ui/maintenance`.
+- [completed] Add/update functional coverage for the clearer lifecycle copy and stage states.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP26-001 Dashboard drill-down polish
+
+## Plan
+- [completed] Rework `/ui/dashboard` so recent receipts and recent imports expose more contextual next-step actions.
+- [completed] Add a small dashboard "drill down by area" section that points directly to the right workflow hub.
+- [completed] Add/update dashboard functional coverage for the richer drill-down contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP26-002 Receipt list and detail bulk-flow polish
+
+## Plan
+- [completed] Add direct edit shortcuts on receipt list rows so repeated corrections do not always require opening the detail page first.
+- [completed] Add filtered-list follow-through on receipt detail with previous/next navigation inside the current list context.
+- [completed] Add/update functional coverage for the richer receipt list/detail flow contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

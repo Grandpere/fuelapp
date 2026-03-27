@@ -21,13 +21,6 @@
             margin: 0.35rem 0 0;
         }
 
-        .receipt-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.9fr);
-            gap: 1rem;
-            align-items: start;
-        }
-
         .panel {
             padding: 1rem;
         }
@@ -113,13 +106,6 @@
             margin-top: 0;
         }
 
-        .side-panel {
-            position: sticky;
-            top: 1rem;
-            display: grid;
-            gap: 0.8rem;
-        }
-
         .shortcut-row {
             display: flex;
             gap: 0.6rem;
@@ -143,30 +129,6 @@
             color: var(--text-primary);
         }
 
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.65rem;
-        }
-
-        .kpi-card {
-            padding: 0.85rem;
-        }
-
-        .kpi-label {
-            font-size: 0.74rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: var(--text-soft);
-        }
-
-        .kpi-value {
-            margin-top: 0.25rem;
-            font-weight: 700;
-            font-family: var(--font-display);
-            font-size: 1.02rem;
-        }
-
         .empty-state {
             margin-top: 0.8rem;
             padding: 0.85rem;
@@ -175,14 +137,10 @@
             color: var(--text-soft);
         }
 
-        @media (max-width: 1180px) {
-            .receipt-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .side-panel {
-                position: static;
-            }
+        .receipt-row-actions {
+            display: grid;
+            justify-items: end;
+            gap: 0.35rem;
         }
 
         @media (max-width: 900px) {
@@ -208,8 +166,8 @@
                 grid-template-columns: 1fr;
             }
 
-            .kpi-grid {
-                grid-template-columns: 1fr;
+            .receipt-row-actions {
+                justify-items: stretch;
             }
         }
     </style>
@@ -226,7 +184,7 @@
                 <h1 class="page-title">Fuel Receipts</h1>
                 <p class="muted">Track station spend, VAT and consumption in one operational view.</p>
             </div>
-            <a class="btn btn-primary" href="{{ path('ui_receipt_new', newReceiptParams) }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+            <a class="btn btn-primary" href="{{ path('ui_receipt_new', newReceiptParams) }}">Add receipt</a>
         </section>
 
         {% for message in app.flashes('success') %}
@@ -371,8 +329,7 @@
             </section>
         {% endif %}
 
-        <div class="receipt-grid">
-            <section class="card panel">
+        <section class="card panel">
                 <div class="table-wrap">
                     <table class="app-table">
                         <thead>
@@ -428,56 +385,6 @@
                         {% endif %}
                     </nav>
                 </div>
-            </section>
-
-            <aside class="side-panel">
-                <section class="card panel">
-                    <div class="kpi-grid">
-                        <article class="card-subtle kpi-card">
-                            <div class="kpi-label">Rows</div>
-                            <div class="kpi-value">{{ total }}</div>
-                        </article>
-                        <article class="card-subtle kpi-card">
-                            <div class="kpi-label">Page size</div>
-                            <div class="kpi-value">{{ perPage }}</div>
-                        </article>
-                    </div>
-                    <p class="muted receipt-note">Presets apply to both the table and CSV export.</p>
-                </section>
-
-                {% if selectedVehicle %}
-                    <section class="card panel">
-                        <h2 class="page-title receipt-inline-title">Vehicle shortcuts</h2>
-                        <p class="muted receipt-inline-lead">{{ selectedVehicle.label }}</p>
-                        <div class="actions-row">
-                            <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: selectedVehicle.id}) }}">Open vehicle</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', {vehicle_id: selectedVehicle.id}) }}">Maintenance</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard', {vehicle_id: selectedVehicle.id}) }}">Analytics</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new', {vehicle_id: selectedVehicle.id, return_to: app.request.uri}) }}">Add event</a>
-                        </div>
-                    </section>
-                {% endif %}
-
-                {% if selectedStation %}
-                    <section class="card panel">
-                        <h2 class="page-title receipt-inline-title">Station shortcuts</h2>
-                        <p class="muted receipt-inline-lead">{{ selectedStation.label }}</p>
-                        <div class="actions-row">
-                            <a class="btn btn-secondary" href="{{ path('ui_station_show', {id: selectedStation.id, return_to: app.request.uri}) }}">Open station</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard', {station_id: selectedStation.id}) }}">Analytics</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_station_edit', {id: selectedStation.id, redirect: app.request.uri}) }}">Edit station</a>
-                        </div>
-                    </section>
-                {% endif %}
-
-                <section class="card panel">
-                    <h2 class="page-title receipt-inline-title">New receipt</h2>
-                    <p class="muted receipt-inline-lead">Create it inline without leaving this page.</p>
-                    <turbo-frame id="receipt_form_frame">
-                        <a class="btn btn-primary" href="{{ path('ui_receipt_new', newReceiptParams) }}" data-turbo-frame="receipt_form_frame">Load form</a>
-                    </turbo-frame>
-                </section>
-            </aside>
-        </div>
+        </section>
     </main>
 {% endblock %}

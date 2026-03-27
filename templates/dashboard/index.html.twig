@@ -63,6 +63,12 @@
             font-size: 0.84rem;
         }
 
+        .dashboard-summary-hint {
+            color: var(--text-soft);
+            font-size: 0.78rem;
+            line-height: 1.4;
+        }
+
         .dashboard-grid {
             display: grid;
             grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.95fr);
@@ -125,6 +131,18 @@
             gap: 0.7rem;
         }
 
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        @media (max-width: 720px) {
+            .workflow-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 1040px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -165,6 +183,9 @@
                     <div class="dashboard-summary-label">{{ card.label }}</div>
                     <div class="dashboard-summary-value">{{ card.value }}</div>
                     <div class="dashboard-summary-meta">{{ card.meta }}</div>
+                    {% if card.hint is defined %}
+                        <div class="dashboard-summary-hint">{{ card.hint }}</div>
+                    {% endif %}
                 </a>
             {% endfor %}
         </section>
@@ -236,7 +257,9 @@
                                         {% if receipt.fuelType %}<span>{{ receipt.fuelType|upper }}</span>{% endif %}
                                     </div>
                                     <div class="actions-wrap">
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id, return_to: path('ui_dashboard')}) }}">Open receipt</a>
+                                        {% for action in receipt.actions %}
+                                            <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ action.url }}">{{ action.label }}</a>
+                                        {% endfor %}
                                     </div>
                                 </div>
                             {% endfor %}
@@ -271,7 +294,9 @@
                                     </div>
                                     <div class="dashboard-item-sub">Uploaded on {{ job.createdAt|date('d/m/Y H:i') }}</div>
                                     <div class="actions-wrap">
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString(), return_to: path('ui_dashboard')}) }}">Open import</a>
+                                        {% for action in job.actions %}
+                                            <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ action.url }}">{{ action.label }}</a>
+                                        {% endfor %}
                                     </div>
                                 </div>
                             {% endfor %}
@@ -282,26 +307,22 @@
                 <article class="card dashboard-panel">
                     <div class="section-header">
                         <div>
-                            <h2>Keep momentum</h2>
-                            <p class="section-lead muted">A compact overview of the main front-office hubs.</p>
+                            <h2>Drill down by area</h2>
+                            <p class="section-lead muted">Use the right hub directly instead of scanning each page from scratch.</p>
                         </div>
                     </div>
-                    <div class="dashboard-list">
-                        <div class="card-subtle dashboard-item">
-                            <div class="dashboard-item-title">Vehicles</div>
-                            <div class="dashboard-item-sub">{{ vehicleCount }} vehicle{% if vehicleCount != 1 %}s{% endif %} tracked so far.</div>
-                            <div class="actions-wrap">
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_list') }}">Open vehicles</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_list') }}">Open stations</a>
+                    <div class="workflow-grid">
+                        {% for card in workflowCards %}
+                            <div class="card-subtle dashboard-item">
+                                <div class="dashboard-item-title">{{ card.title }}</div>
+                                <div class="dashboard-item-sub">{{ card.detail }}</div>
+                                <div class="actions-wrap">
+                                    {% for action in card.actions %}
+                                        <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ action.url }}"{% if action.turboFrame is defined %} data-turbo-frame="{{ action.turboFrame }}"{% endif %}>{{ action.label }}</a>
+                                    {% endfor %}
+                                </div>
                             </div>
-                        </div>
-                        <div class="card-subtle dashboard-item">
-                            <div class="dashboard-item-title">Analytics</div>
-                            <div class="dashboard-item-sub">Use filters and exports once you need a scoped read across receipts.</div>
-                            <div class="actions-wrap">
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard') }}">Open analytics</a>
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
                 </article>
             </div>

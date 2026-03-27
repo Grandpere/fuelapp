@@ -34,19 +34,12 @@ final class ListReceiptsController extends AbstractController
 
     /** @var list<string> */
     private const DEFAULT_COLUMNS = [
-        'id',
         'issued_at',
         'station_name',
-        'station_street_name',
-        'station_postal_code',
-        'station_city',
         'odometer_kilometers',
         'fuel_type',
         'quantity_milli_liters',
-        'unit_price_deci_cents_per_liter',
-        'vat_rate_percent',
         'total_cents',
-        'vat_amount_cents',
     ];
 
     /** @var array<string, string> */
@@ -81,7 +74,21 @@ final class ListReceiptsController extends AbstractController
             'station_name',
             'total_cents',
         ],
-        self::PRESET_FULL => self::DEFAULT_COLUMNS,
+        self::PRESET_FULL => [
+            'id',
+            'issued_at',
+            'station_name',
+            'station_street_name',
+            'station_postal_code',
+            'station_city',
+            'odometer_kilometers',
+            'fuel_type',
+            'quantity_milli_liters',
+            'unit_price_deci_cents_per_liter',
+            'vat_rate_percent',
+            'total_cents',
+            'vat_amount_cents',
+        ],
         self::PRESET_EXPORT_ACCOUNTING => [
             'id',
             'issued_at',

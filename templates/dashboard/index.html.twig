@@ -1,0 +1,310 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .dashboard-page {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-header p {
+            margin: 0.35rem 0 0;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .dashboard-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .dashboard-summary-card {
+            padding: 0.95rem;
+            display: grid;
+            gap: 0.35rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .dashboard-summary-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-soft);
+        }
+
+        .dashboard-summary-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+        }
+
+        .dashboard-summary-meta {
+            color: var(--text-soft);
+            font-size: 0.84rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.95fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .dashboard-panel {
+            padding: 1rem;
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .dashboard-panel h2 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .dashboard-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .dashboard-item {
+            padding: 0.85rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .dashboard-item-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-item-title {
+            font-weight: 700;
+        }
+
+        .dashboard-item-sub,
+        .dashboard-item-meta {
+            color: var(--text-soft);
+            font-size: 0.84rem;
+        }
+
+        .dashboard-item-meta {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .dashboard-empty {
+            padding: 0.9rem;
+            border: 1px dashed var(--table-wrap-border);
+            border-radius: 10px;
+            color: var(--text-soft);
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        @media (max-width: 1040px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .dashboard-summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell dashboard-page">
+        <header class="dashboard-header">
+            <div>
+                <h1 class="page-title">Dashboard</h1>
+                <p class="muted section-lead">Start from the highest-friction follow-ups, then jump straight into the right screen.</p>
+            </div>
+            <div class="dashboard-actions">
+                {% for action in quickActions %}
+                    <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }}" href="{{ action.url }}"{% if action.turboFrame is defined %} data-turbo-frame="{{ action.turboFrame }}"{% endif %}>{{ action.label }}</a>
+                {% endfor %}
+            </div>
+        </header>
+
+        <section class="dashboard-summary-grid">
+            {% for card in summaryCards %}
+                <a class="card-subtle dashboard-summary-card" href="{{ card.url }}">
+                    <div class="dashboard-summary-label">{{ card.label }}</div>
+                    <div class="dashboard-summary-value">{{ card.value }}</div>
+                    <div class="dashboard-summary-meta">{{ card.meta }}</div>
+                </a>
+            {% endfor %}
+        </section>
+
+        <section class="dashboard-grid">
+            <div class="page-stack">
+                <article class="card dashboard-panel">
+                    <div class="section-header">
+                        <div>
+                            <h2>Needs attention now</h2>
+                            <p class="section-lead muted">The quickest next steps across imports and maintenance.</p>
+                        </div>
+                    </div>
+                    {% if attentionItems is empty %}
+                        <div class="dashboard-empty">
+                            <p>No urgent follow-up is waiting right now.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Add receipt</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index') }}">Open maintenance</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="dashboard-list">
+                            {% for item in attentionItems %}
+                                <div class="card-subtle dashboard-item">
+                                    <div class="dashboard-item-head">
+                                        <div class="dashboard-item-title">{{ item.title }}</div>
+                                    </div>
+                                    <div class="dashboard-item-sub">{{ item.detail }}</div>
+                                    <div class="actions-wrap">
+                                        {% for action in item.actions %}
+                                            <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ action.url }}">{{ action.label }}</a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </article>
+
+                <article class="card dashboard-panel">
+                    <div class="section-header">
+                        <div>
+                            <h2>Recent receipts</h2>
+                            <p class="section-lead muted">Keep an eye on the latest tracked fuel activity.</p>
+                        </div>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}">Open receipts</a>
+                    </div>
+                    {% if recentReceipts is empty %}
+                        <div class="dashboard-empty">
+                            <p>No receipt has been tracked yet.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new') }}" data-turbo-frame="receipt_form_frame">Add first receipt</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="dashboard-list">
+                            {% for receipt in recentReceipts %}
+                                <div class="card-subtle dashboard-item">
+                                    <div class="dashboard-item-head">
+                                        <div class="dashboard-item-title">{{ receipt.stationName ?? 'Unknown station' }}</div>
+                                        <span class="pill">{{ receipt.issuedAt|date('d/m/Y') }}</span>
+                                    </div>
+                                    <div class="dashboard-item-meta">
+                                        <span>{{ (receipt.totalCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                                        {% if receipt.odometerKilometers is not null %}<span>{{ receipt.odometerKilometers }} km</span>{% endif %}
+                                        {% if receipt.fuelType %}<span>{{ receipt.fuelType|upper }}</span>{% endif %}
+                                    </div>
+                                    <div class="actions-wrap">
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id, return_to: path('ui_dashboard')}) }}">Open receipt</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </article>
+            </div>
+
+            <div class="page-stack">
+                <article class="card dashboard-panel">
+                    <div class="section-header">
+                        <div>
+                            <h2>Import queue snapshot</h2>
+                            <p class="section-lead muted">The latest files and their current status.</p>
+                        </div>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                    </div>
+                    {% if recentImports is empty %}
+                        <div class="dashboard-empty">
+                            <p>No import file has been uploaded yet.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_import_index') }}#import-upload-card">Upload first file</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="dashboard-list">
+                            {% for job in recentImports %}
+                                <div class="card-subtle dashboard-item">
+                                    <div class="dashboard-item-head">
+                                        <div class="dashboard-item-title">{{ job.originalFilename }}</div>
+                                        <span class="pill status-pill status-{{ job.status.value }}">{{ job.status.value|replace({'_': ' '})|title }}</span>
+                                    </div>
+                                    <div class="dashboard-item-sub">Uploaded on {{ job.createdAt|date('d/m/Y H:i') }}</div>
+                                    <div class="actions-wrap">
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_show', {id: job.id.toString(), return_to: path('ui_dashboard')}) }}">Open import</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </article>
+
+                <article class="card dashboard-panel">
+                    <div class="section-header">
+                        <div>
+                            <h2>Keep momentum</h2>
+                            <p class="section-lead muted">A compact overview of the main front-office hubs.</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-list">
+                        <div class="card-subtle dashboard-item">
+                            <div class="dashboard-item-title">Vehicles</div>
+                            <div class="dashboard-item-sub">{{ vehicleCount }} vehicle{% if vehicleCount != 1 %}s{% endif %} tracked so far.</div>
+                            <div class="actions-wrap">
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_list') }}">Open vehicles</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_list') }}">Open stations</a>
+                            </div>
+                        </div>
+                        <div class="card-subtle dashboard-item">
+                            <div class="dashboard-item-title">Analytics</div>
+                            <div class="dashboard-item-sub">Use filters and exports once you need a scoped read across receipts.</div>
+                            <div class="actions-wrap">
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard') }}">Open analytics</a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </main>
+{% endblock %}

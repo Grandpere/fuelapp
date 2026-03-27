@@ -634,3 +634,12 @@
 - [completed] Add/update functional coverage for status filtering and new import follow-up shortcuts.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP25-003 Home/dashboard usefulness pass
+
+## Plan
+- [completed] Add a compact front dashboard route that surfaces urgent imports, maintenance follow-up, and recent receipts.
+- [completed] Wire the front topbar into the new dashboard instead of keeping it hidden behind deep links only.
+- [completed] Add/update functional coverage for the dashboard content and topbar navigation contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

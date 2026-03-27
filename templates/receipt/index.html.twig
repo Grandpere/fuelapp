@@ -331,6 +331,7 @@
                     <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams) }}">Export CSV</a>
                     <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams|merge({ format: 'xlsx' })) }}">Export XLSX</a>
                 </div>
+                <p class="muted receipt-note">Exports keep the current filters and visible columns. XLSX now uses the same scope with a share-friendly filename.</p>
 
                 <div class="shortcut-row">
                     {% for shortcut in dateShortcutLinks %}

@@ -105,11 +105,13 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         self::assertStringContainsString('generated_at,', $content);
         self::assertStringContainsString('filter_station_id,'.$stationA->getId()->toRfc4122(), $content);
         self::assertStringContainsString('filter_fuel_type,diesel', $content);
+        self::assertStringContainsString('columns_preset,full', $content);
         self::assertStringContainsString('receipt_id,issued_at,station_name', $content);
         self::assertStringContainsString('odometer_kilometers', $content);
         self::assertStringContainsString('123456', $content);
         self::assertStringContainsString('Station A', $content);
         self::assertStringNotContainsString('Station B', $content);
+        self::assertStringContainsString('receipts-export-2026-02-01-to-2026-02-28-diesel-station-filtered-', (string) $response->headers->get('Content-Disposition'));
     }
 
     public function testXlsxExportReturnsSpreadsheetDownload(): void
@@ -137,6 +139,7 @@ final class ExportReceiptsControllerTest extends KernelTestCase
             (string) $response->headers->get('Content-Type'),
         );
         self::assertStringContainsString('.xlsx', (string) $response->headers->get('Content-Disposition'));
+        self::assertStringContainsString('receipts-export-2026-02-01-to-2026-02-28-', (string) $response->headers->get('Content-Disposition'));
 
         $content = $this->responseContent($response);
         self::assertTrue(str_starts_with($content, 'PK'));

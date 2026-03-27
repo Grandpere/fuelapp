@@ -248,6 +248,15 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP25-001 Receipt export and sharing workflow polish
+
+## Plan
+- [completed] Harden the XLSX writer path so exports rely on temporary disk-backed output instead of only in-memory streaming.
+- [completed] Make exported filenames more share-friendly by reflecting the active date/filter scope.
+- [completed] Add/update functional coverage for export metadata, filenames, and front guidance copy on receipt/analytics screens.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP18-001 Vehicle-centered workflow polish
 
 ## Plan

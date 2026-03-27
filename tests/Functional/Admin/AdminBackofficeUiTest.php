@@ -247,13 +247,19 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $maintenanceEventsResponse = $this->request('GET', '/ui/admin/maintenance/events', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $maintenanceEventsResponse->getStatusCode());
-        self::assertStringContainsString('Maintenance Events', (string) $maintenanceEventsResponse->getContent());
-        self::assertStringContainsString('UI maintenance event', (string) $maintenanceEventsResponse->getContent());
+        $maintenanceEventsContent = (string) $maintenanceEventsResponse->getContent();
+        self::assertStringContainsString('Maintenance Events', $maintenanceEventsContent);
+        self::assertStringContainsString('UI maintenance event', $maintenanceEventsContent);
+        self::assertStringContainsString('UI Vehicle', $maintenanceEventsContent);
+        self::assertStringContainsString('Vehicle', $maintenanceEventsContent);
 
         $maintenanceRemindersResponse = $this->request('GET', '/ui/admin/maintenance/reminders', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $maintenanceRemindersResponse->getStatusCode());
-        self::assertStringContainsString('Maintenance Reminders', (string) $maintenanceRemindersResponse->getContent());
-        self::assertStringContainsString('UI rule', (string) $maintenanceRemindersResponse->getContent());
+        $maintenanceRemindersContent = (string) $maintenanceRemindersResponse->getContent();
+        self::assertStringContainsString('Maintenance Reminders', $maintenanceRemindersContent);
+        self::assertStringContainsString('UI rule', $maintenanceRemindersContent);
+        self::assertStringContainsString('UI Vehicle', $maintenanceRemindersContent);
+        self::assertStringContainsString('Due by date', $maintenanceRemindersContent);
 
         $receiptsResponse = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptsResponse->getStatusCode());
@@ -261,9 +267,15 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $importsResponse = $this->request('GET', '/ui/admin/imports', ['status' => 'needs_review'], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $importsResponse->getStatusCode());
-        self::assertStringContainsString('ui-import.pdf', (string) $importsResponse->getContent());
-        self::assertStringContainsString('needs_review', (string) $importsResponse->getContent());
-        self::assertStringContainsString('data-controller="row-link"', (string) $importsResponse->getContent());
+        $importsContent = (string) $importsResponse->getContent();
+        self::assertStringContainsString('data-admin-sidebar-toggle', $importsContent);
+        self::assertStringContainsString('aria-label="Hide admin menu"', $importsContent);
+        self::assertStringContainsString('ui-import.pdf', $importsContent);
+        self::assertStringContainsString('needs_review', $importsContent);
+        self::assertStringContainsString('data-controller="row-link"', $importsContent);
+        self::assertStringContainsString('Follow up now', $importsContent);
+        self::assertStringContainsString('Review next pending', $importsContent);
+        self::assertStringContainsString('Manual review needed', $importsContent);
 
         $securityResponse = $this->request('GET', '/ui/admin/security-activities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $securityResponse->getStatusCode());
@@ -390,6 +402,67 @@ final class AdminBackofficeUiTest extends WebTestCase
         $escapedReturnTo = htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         self::assertStringContainsString('href="'.$escapedReturnTo.'"', $content);
         self::assertStringContainsString('name="_redirect" value="'.$escapedReturnTo.'"', $content);
+    }
+
+    public function testAdminMaintenanceReminderDetailShowsVehicleShortcutAndRelatedEventLink(): void
+    {
+        $adminEmail = 'ui.admin.reminder.shortcut@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.reminder.shortcut.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($owner);
+        $vehicle->setName('Reminder Shortcut Vehicle');
+        $vehicle->setPlateNumber('RMD-123-AA');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-11 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-11 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('Reminder Shortcut Rule');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::DATE);
+        $rule->setEventType(MaintenanceEventType::SERVICE);
+        $rule->setIntervalDays(180);
+        $rule->setIntervalKilometers(null);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-03-11 10:05:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-03-11 10:05:00'));
+        $this->em->persist($rule);
+
+        $reminder = new MaintenanceReminderEntity();
+        $reminder->setId(Uuid::v7());
+        $reminder->setOwner($owner);
+        $reminder->setVehicle($vehicle);
+        $reminder->setRule($rule);
+        $reminder->setDedupKey(hash('sha256', 'admin-reminder-shortcut'));
+        $reminder->setDueAtDate(new DateTimeImmutable('2026-03-30 00:00:00'));
+        $reminder->setDueAtOdometerKilometers(null);
+        $reminder->setDueByDate(true);
+        $reminder->setDueByOdometer(false);
+        $reminder->setCreatedAt(new DateTimeImmutable('2026-03-11 10:06:00'));
+        $this->em->persist($reminder);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $returnTo = '/ui/admin/maintenance/reminders?vehicle_id='.$vehicle->getId()->toRfc4122();
+
+        $detailResponse = $this->request(
+            'GET',
+            '/ui/admin/maintenance/reminders/'.$reminder->getId()->toRfc4122().'?return_to='.rawurlencode($returnTo),
+            [],
+            [],
+            $sessionCookie,
+        );
+
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $content = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Reminder Shortcut Vehicle', $content);
+        self::assertStringContainsString('/ui/admin/vehicles/'.$vehicle->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('/ui/admin/maintenance/events?vehicle_id='.$vehicle->getId()->toRfc4122(), $content);
     }
 
     public function testAdminCanToggleUserFlagsResetPasswordAndResendVerificationFromBackofficeUi(): void
@@ -931,6 +1004,26 @@ final class AdminBackofficeUiTest extends WebTestCase
         $receipt->addLine($receiptLine);
         $this->em->persist($receipt);
 
+        $receiptImport = new ImportJobEntity();
+        $receiptImport->setId(Uuid::v7());
+        $receiptImport->setOwner($owner);
+        $receiptImport->setStatus(ImportJobStatus::PROCESSED);
+        $receiptImport->setStorage('local');
+        $receiptImport->setFilePath('2026/03/02/admin-receipt-related.jpg');
+        $receiptImport->setOriginalFilename('admin-receipt-related.jpg');
+        $receiptImport->setMimeType('image/jpeg');
+        $receiptImport->setFileSizeBytes(64000);
+        $receiptImport->setFileChecksumSha256(str_repeat('q', 64));
+        $receiptImport->setErrorPayload(json_encode([
+            'status' => 'processed',
+            'finalizedReceiptId' => $receipt->getId()->toRfc4122(),
+        ], JSON_THROW_ON_ERROR));
+        $receiptImport->setCreatedAt(new DateTimeImmutable('2026-03-02 09:55:00'));
+        $receiptImport->setUpdatedAt(new DateTimeImmutable('2026-03-02 09:55:00'));
+        $receiptImport->setCompletedAt(new DateTimeImmutable('2026-03-02 09:55:00'));
+        $receiptImport->setRetentionUntil(new DateTimeImmutable('2026-04-02 09:55:00'));
+        $this->em->persist($receiptImport);
+
         $this->em->flush();
 
         $stationId = $station->getId()->toRfc4122();
@@ -938,6 +1031,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $vehicleId = $vehicle->getId()->toRfc4122();
         $reminderId = $reminder->getId()->toRfc4122();
         $receiptId = $receipt->getId()->toRfc4122();
+        $receiptImportId = $receiptImport->getId()->toRfc4122();
         $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
 
         $stationEditPage = $this->request('GET', '/ui/admin/stations/'.$stationId.'/edit', [], [], $sessionCookie);
@@ -1025,20 +1119,41 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $reminderShow->getStatusCode());
         self::assertStringContainsString('Reminder detail rule', (string) $reminderShow->getContent());
 
-        $receiptShow = $this->request('GET', '/ui/admin/receipts/'.$receiptId, [], [], $sessionCookie);
-        self::assertSame(Response::HTTP_OK, $receiptShow->getStatusCode());
-        self::assertStringContainsString('Receipt Detail', (string) $receiptShow->getContent());
-        self::assertStringContainsString('diesel', (string) $receiptShow->getContent());
+        $receiptList = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptList->getStatusCode());
+        $receiptListContent = (string) $receiptList->getContent();
+        self::assertStringContainsString('System-wide receipt ledger', $receiptListContent);
+        self::assertStringContainsString('Vehicle', $receiptListContent);
+        self::assertStringContainsString('Station', $receiptListContent);
+        self::assertStringContainsString('/ui/admin/receipts/'.$receiptId.'/edit', $receiptListContent);
+        self::assertStringContainsString('return_to=', $receiptListContent);
 
-        $receiptEditPage = $this->request('GET', '/ui/admin/receipts/'.$receiptId.'/edit', [], [], $sessionCookie);
+        $receiptReturnTo = '/ui/admin/receipts?context=admin-support';
+        $receiptShow = $this->request('GET', '/ui/admin/receipts/'.$receiptId.'?return_to='.rawurlencode($receiptReturnTo), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptShow->getStatusCode());
+        $receiptShowContent = (string) $receiptShow->getContent();
+        self::assertStringContainsString('Receipt Detail', $receiptShowContent);
+        self::assertStringContainsString('diesel', $receiptShowContent);
+        self::assertStringContainsString('/ui/admin/vehicles/'.$vehicleId, $receiptShowContent);
+        self::assertStringContainsString('/ui/admin/imports/'.$receiptImportId, $receiptShowContent);
+        self::assertStringContainsString('Vehicle', $receiptShowContent);
+        self::assertStringContainsString('Station', $receiptShowContent);
+        self::assertStringContainsString('Related imports', $receiptShowContent);
+        self::assertStringContainsString('return_to=', $receiptShowContent);
+
+        $receiptEditPage = $this->request('GET', '/ui/admin/receipts/'.$receiptId.'/edit?return_to='.rawurlencode('/ui/admin/receipts?context=edit-flow'), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptEditPage->getStatusCode());
-        $receiptCsrf = $this->extractFormCsrf((string) $receiptEditPage->getContent());
+        $receiptEditContent = (string) $receiptEditPage->getContent();
+        self::assertStringContainsString('name="_return_to" value="/ui/admin/receipts?context=edit-flow"', $receiptEditContent);
+        self::assertStringContainsString('href="/ui/admin/receipts?context=edit-flow"', $receiptEditContent);
+        $receiptCsrf = $this->extractFormCsrf($receiptEditContent);
 
         $receiptEditResponse = $this->request(
             'POST',
             '/ui/admin/receipts/'.$receiptId.'/edit',
             [
                 '_token' => $receiptCsrf,
+                '_return_to' => '/ui/admin/receipts?context=edit-flow',
                 'lines' => [[
                     'fuelType' => 'sp95',
                     'quantityMilliLiters' => '12000',
@@ -1050,13 +1165,11 @@ final class AdminBackofficeUiTest extends WebTestCase
             $sessionCookie,
         );
         self::assertSame(Response::HTTP_SEE_OTHER, $receiptEditResponse->getStatusCode());
+        self::assertSame('/ui/admin/receipts?context=edit-flow', $receiptEditResponse->headers->get('Location'));
 
         $afterReceiptEdit = $this->request('GET', '/ui/admin/receipts/'.$receiptId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterReceiptEdit->getStatusCode());
         self::assertStringContainsString('sp95', (string) $afterReceiptEdit->getContent());
-
-        $receiptList = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
-        self::assertSame(Response::HTTP_OK, $receiptList->getStatusCode());
         $receiptDeleteToken = $this->extractDeleteCsrfForReceipt((string) $receiptList->getContent(), $receiptId);
 
         $receiptDeleteResponse = $this->request(
@@ -1087,6 +1200,15 @@ final class AdminBackofficeUiTest extends WebTestCase
         $receipt->setTotalCents(4200);
         $receipt->setVatAmountCents(700);
         $this->em->persist($receipt);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setReceipt($receipt);
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(25000);
+        $line->setUnitPriceDeciCentsPerLiter(1680);
+        $line->setVatRatePercent(20);
+        $this->em->persist($line);
 
         $job = new ImportJobEntity();
         $job->setId(Uuid::v7());
@@ -1201,6 +1323,15 @@ final class AdminBackofficeUiTest extends WebTestCase
         $receipt->setVatAmountCents(1191);
         $this->em->persist($receipt);
 
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setReceipt($receipt);
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(41000);
+        $line->setUnitPriceDeciCentsPerLiter(1743);
+        $line->setVatRatePercent(20);
+        $this->em->persist($line);
+
         $job = new ImportJobEntity();
         $job->setId(Uuid::v7());
         $job->setOwner($owner);
@@ -1229,6 +1360,50 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Duplicate import', $detailContent);
         self::assertStringContainsString('/ui/admin/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('Open existing receipt', $detailContent);
+    }
+
+    public function testAdminDuplicateImportDetailDoesNotShowDeadLinksWhenTargetsAreGone(): void
+    {
+        $adminEmail = 'ui.admin.import.duplicate.missing@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.duplicate.missing.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $missingReceiptId = Uuid::v7()->toRfc4122();
+        $missingImportId = Uuid::v7()->toRfc4122();
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-duplicate-missing.jpg');
+        $job->setOriginalFilename('admin-duplicate-missing.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('z', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfReceiptId' => $missingReceiptId,
+            'duplicateOfImportJobId' => $missingImportId,
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:50:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('The linked receipt or original import is no longer available.', $detailContent);
+        self::assertStringNotContainsString('Open existing receipt', $detailContent);
+        self::assertStringNotContainsString('Open original import', $detailContent);
+        self::assertStringNotContainsString('/ui/admin/receipts/'.$missingReceiptId, $detailContent);
+        self::assertStringNotContainsString('/ui/admin/imports/'.$missingImportId, $detailContent);
     }
 
     public function testAdminNeedsReviewImportDetailShowsTriageSummaryForOcrFallback(): void

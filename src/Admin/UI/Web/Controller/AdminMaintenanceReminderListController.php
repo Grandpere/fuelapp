@@ -15,6 +15,7 @@ namespace App\Admin\UI\Web\Controller;
 
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +28,7 @@ final class AdminMaintenanceReminderListController extends AbstractController
     public function __construct(
         private readonly MaintenanceReminderRepository $reminderRepository,
         private readonly MaintenanceReminderRuleRepository $ruleRepository,
+        private readonly VehicleRepository $vehicleRepository,
     ) {
     }
 
@@ -40,6 +42,11 @@ final class AdminMaintenanceReminderListController extends AbstractController
         $dueTo = $this->readDateFilter($request, 'due_to');
 
         $reminders = [];
+        $metrics = [
+            'date' => 0,
+            'odometer' => 0,
+            'both' => 0,
+        ];
         foreach ($this->reminderRepository->allForSystem() as $reminder) {
             if (null !== $ownerId && $reminder->ownerId() !== $ownerId) {
                 continue;
@@ -54,7 +61,15 @@ final class AdminMaintenanceReminderListController extends AbstractController
                 continue;
             }
 
-            $reminders[] = $reminder;
+            $triggerLabel = $this->buildTriggerLabel($reminder->dueByDate(), $reminder->dueByOdometer());
+            ++$metrics[$triggerLabel];
+
+            $vehicle = $this->vehicleRepository->get($reminder->vehicleId());
+            $reminders[] = [
+                'reminder' => $reminder,
+                'vehicle' => $vehicle,
+                'triggerLabel' => $triggerLabel,
+            ];
         }
 
         $ruleNames = [];
@@ -65,6 +80,7 @@ final class AdminMaintenanceReminderListController extends AbstractController
         return $this->render('admin/maintenance/reminders/index.html.twig', [
             'reminders' => $reminders,
             'ruleNames' => $ruleNames,
+            'metrics' => $metrics,
             'filters' => [
                 'ownerId' => $ownerId,
                 'vehicleId' => $vehicleId,
@@ -73,6 +89,16 @@ final class AdminMaintenanceReminderListController extends AbstractController
                 'dueTo' => $dueTo?->format('Y-m-d'),
             ],
         ]);
+    }
+
+    private function buildTriggerLabel(bool $dueByDate, bool $dueByOdometer): string
+    {
+        return match (true) {
+            $dueByDate && $dueByOdometer => 'both',
+            $dueByDate => 'date',
+            $dueByOdometer => 'odometer',
+            default => 'date',
+        };
     }
 
     private function matchesDueBy(bool $dueByDate, bool $dueByOdometer, string $dueBy): bool

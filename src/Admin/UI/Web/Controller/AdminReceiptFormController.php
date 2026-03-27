@@ -20,6 +20,7 @@ use App\Receipt\Application\Command\UpdateReceiptLinesHandler;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\Domain\Receipt;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -39,6 +40,7 @@ final class AdminReceiptFormController extends AbstractController
         private readonly UpdateReceiptLinesHandler $updateReceiptLinesHandler,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -53,6 +55,11 @@ final class AdminReceiptFormController extends AbstractController
         if (null === $receipt) {
             throw new NotFoundHttpException();
         }
+
+        $backToReceiptUrl = $this->safeReturnPathResolver->resolve(
+            $request->query->get('return_to') ?? $request->request->get('_return_to'),
+            $this->generateUrl('ui_admin_receipt_show', ['id' => $id]),
+        );
 
         $formLines = $this->receiptToFormLines($receipt);
         $errors = [];
@@ -116,7 +123,7 @@ final class AdminReceiptFormController extends AbstractController
 
                 $this->addFlash('success', 'Receipt updated.');
 
-                return new RedirectResponse($this->generateUrl('ui_admin_receipt_show', ['id' => $id]), Response::HTTP_SEE_OTHER);
+                return new RedirectResponse($backToReceiptUrl, Response::HTTP_SEE_OTHER);
             }
         }
 
@@ -126,6 +133,7 @@ final class AdminReceiptFormController extends AbstractController
             'errors' => $errors,
             'fuelTypes' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
             'csrfToken' => $this->csrfTokenManager->getToken('admin_receipt_form_'.$id)->getValue(),
+            'backToReceiptUrl' => $backToReceiptUrl,
         ]);
 
         if ([] !== $errors) {

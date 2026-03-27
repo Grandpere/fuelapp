@@ -15,9 +15,11 @@ namespace App\Admin\UI\Web\Controller;
 
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\ImportJob;
+use App\Receipt\Application\Repository\ReceiptRepository;
 use DateTimeImmutable;
 use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -25,12 +27,14 @@ use Symfony\Component\Uid\Uuid;
 
 final class AdminImportJobShowController extends AbstractController
 {
-    public function __construct(private readonly ImportJobRepository $importJobRepository)
-    {
+    public function __construct(
+        private readonly ImportJobRepository $importJobRepository,
+        private readonly ReceiptRepository $receiptRepository,
+    ) {
     }
 
     #[Route('/ui/admin/imports/{id}', name: 'ui_admin_import_job_show', requirements: ['id' => self::UUID_ROUTE_REQUIREMENT], methods: ['GET'])]
-    public function __invoke(string $id): Response
+    public function __invoke(string $id, Request $request): Response
     {
         if (!Uuid::isValid($id)) {
             throw new NotFoundHttpException();
@@ -42,12 +46,30 @@ final class AdminImportJobShowController extends AbstractController
         }
 
         $payloadData = $this->decodePayload($job->errorPayload());
+        $requestedReturnTo = $request->query->get('return_to');
+        $backToListUrl = is_string($requestedReturnTo) && '' !== trim($requestedReturnTo) && str_starts_with($requestedReturnTo, '/') && !str_starts_with($requestedReturnTo, '//')
+            ? $requestedReturnTo
+            : $this->generateUrl('ui_admin_import_job_list');
+        $resolvedFinalizedReceiptId = $this->resolveExistingReceiptId($this->readString($payloadData, 'finalizedReceiptId'));
+        $resolvedDuplicateReceiptId = $this->resolveExistingReceiptId($this->readString($payloadData, 'duplicateOfReceiptId'));
+        $resolvedDuplicateOriginalImportId = $this->resolveExistingImportId($this->readString($payloadData, 'duplicateOfImportJobId'));
 
         return $this->render('admin/imports/show.html.twig', [
             'job' => $job,
             'payload' => $job->errorPayload(),
             'payloadData' => $payloadData,
             'triageSummary' => $this->buildTriageSummary($job, $payloadData),
+            'backToListUrl' => $backToListUrl,
+            'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
+            'resolvedDuplicateReceiptId' => $resolvedDuplicateReceiptId,
+            'resolvedDuplicateOriginalImportId' => $resolvedDuplicateOriginalImportId,
+            'statusActions' => $this->buildStatusActions(
+                $job,
+                $backToListUrl,
+                $resolvedFinalizedReceiptId,
+                $resolvedDuplicateReceiptId,
+                $resolvedDuplicateOriginalImportId,
+            ),
         ]);
     }
 
@@ -185,9 +207,13 @@ final class AdminImportJobShowController extends AbstractController
         return sprintf('%ds', $remainingSeconds);
     }
 
-    /** @param array<string, mixed> $payloadData */
-    private function readString(array $payloadData, string $key): ?string
+    /** @param array<string, mixed>|null $payloadData */
+    private function readString(?array $payloadData, string $key): ?string
     {
+        if (null === $payloadData) {
+            return null;
+        }
+
         $value = $payloadData[$key] ?? null;
         if (!is_string($value)) {
             return null;
@@ -211,6 +237,79 @@ final class AdminImportJobShowController extends AbstractController
         }
 
         return null;
+    }
+
+    /**
+     * @return list<array{label:string,url:string,variant:string}>
+     */
+    private function buildStatusActions(
+        ImportJob $job,
+        string $backToListUrl,
+        ?string $resolvedFinalizedReceiptId,
+        ?string $resolvedDuplicateReceiptId,
+        ?string $resolvedDuplicateOriginalImportId,
+    ): array {
+        $actions = [];
+
+        if (null !== $resolvedFinalizedReceiptId) {
+            $actions[] = [
+                'label' => 'Open created receipt',
+                'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $resolvedFinalizedReceiptId]),
+                'variant' => 'primary',
+            ];
+        }
+
+        if (null !== $resolvedDuplicateReceiptId) {
+            $actions[] = [
+                'label' => 'Open existing receipt',
+                'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $resolvedDuplicateReceiptId]),
+                'variant' => 'primary',
+            ];
+        }
+
+        if (null !== $resolvedDuplicateOriginalImportId) {
+            $actions[] = [
+                'label' => 'Open original import',
+                'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $resolvedDuplicateOriginalImportId, 'return_to' => $backToListUrl]),
+                'variant' => 'secondary',
+            ];
+        }
+
+        if ('processed' === $job->status()->value && [] === $actions) {
+            $actions[] = [
+                'label' => 'Back to imports',
+                'url' => $backToListUrl,
+                'variant' => 'secondary',
+            ];
+        }
+
+        if ('duplicate' === $job->status()->value && [] === $actions) {
+            $actions[] = [
+                'label' => 'Back to imports',
+                'url' => $backToListUrl,
+                'variant' => 'secondary',
+            ];
+        }
+
+        return $actions;
+    }
+
+    private function resolveExistingReceiptId(?string $receiptId): ?string
+    {
+        if (null === $receiptId) {
+            return null;
+        }
+
+        return null === $this->receiptRepository->getForSystem($receiptId) ? null : $receiptId;
+    }
+
+    private function resolveExistingImportId(?string $importId): ?string
+    {
+        if (null === $importId) {
+            return null;
+        }
+
+        return null === $this->importJobRepository->getForSystem($importId) ? null : $importId;
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

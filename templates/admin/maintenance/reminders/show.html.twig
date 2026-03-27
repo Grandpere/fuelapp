@@ -5,8 +5,6 @@
 {% set admin_section = 'maintenance_reminders' %}
 
 {% block admin_content %}
-    {% set requestedReturnTo = app.request.query.get('return_to') %}
-    {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_maintenance_reminder_list') %}
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
@@ -28,7 +26,14 @@
             <dt class="admin-dt">Owner ID</dt>
             <dd class="admin-dd">{{ reminder.ownerId }}</dd>
             <dt class="admin-dt">Vehicle ID</dt>
-            <dd class="admin-dd">{{ reminder.vehicleId }}</dd>
+            <dd class="admin-dd">
+                {% if vehicle %}
+                    <a href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">{{ vehicle.name() }}</a>
+                    <span class="muted compact-note">({{ reminder.vehicleId }})</span>
+                {% else %}
+                    {{ reminder.vehicleId }}
+                {% endif %}
+            </dd>
             <dt class="admin-dt">Due date</dt>
             <dd class="admin-dd">{{ reminder.dueAtDate ? reminder.dueAtDate|date('Y-m-d') : 'n/a' }}</dd>
             <dt class="admin-dt">Due odometer</dt>
@@ -44,6 +49,7 @@
         </dl>
 
         <div class="admin-page-actions admin-detail-stack">
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: reminder.vehicleId}) }}">Open vehicle events</a>
             <a class="btn btn-secondary" href="/api/admin/maintenance/reminders/{{ reminder.id.toString }}">Open API resource</a>
         </div>
     </section>

@@ -12,6 +12,21 @@
             <p class="muted">Triggered reminder states produced by scheduler evaluation.</p>
         </div>
 
+        <div class="admin-metric-grid admin-table-top">
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Due by date</p>
+                <p class="admin-metric-value">{{ metrics.date|default(0) }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Due by odometer</p>
+                <p class="admin-metric-value">{{ metrics.odometer|default(0) }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Due by both</p>
+                <p class="admin-metric-value">{{ metrics.both|default(0) }}</p>
+            </article>
+        </div>
+
         <form method="get" action="{{ path('ui_admin_maintenance_reminder_list') }}" class="admin-filters-form">
             <div class="form-grid-2 admin-table-top">
                 <label class="label">
@@ -53,7 +68,7 @@
                     <th>Created</th>
                     <th>Rule</th>
                     <th>Owner ID</th>
-                    <th>Vehicle ID</th>
+                    <th>Vehicle</th>
                     <th>Due date</th>
                     <th>Due odometer</th>
                     <th>State</th>
@@ -66,21 +81,32 @@
                         class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
-                        data-row-link-url-value="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString, return_to: returnTo}) }}"
+                        data-row-link-url-value="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.reminder.id.toString, return_to: returnTo}) }}"
                         onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                     >
-                        <td>{{ reminder.createdAt|date('Y-m-d H:i') }}</td>
-                        <td>{{ ruleNames[reminder.ruleId] ?? reminder.ruleId }}</td>
-                        <td><code>{{ reminder.ownerId }}</code></td>
-                        <td><code>{{ reminder.vehicleId }}</code></td>
-                        <td>{{ reminder.dueAtDate ? reminder.dueAtDate|date('Y-m-d') : 'n/a' }}</td>
-                        <td>{{ reminder.dueAtOdometerKilometers ?? 'n/a' }}</td>
+                        <td>{{ reminder.reminder.createdAt|date('Y-m-d H:i') }}</td>
+                        <td>{{ ruleNames[reminder.reminder.ruleId] ?? reminder.reminder.ruleId }}</td>
+                        <td><code>{{ reminder.reminder.ownerId }}</code></td>
                         <td>
-                            {% if reminder.dueByDate %}<span class="pill pill-soft-warning">date</span>{% endif %}
-                            {% if reminder.dueByOdometer %}<span class="pill pill-soft-info">odometer</span>{% endif %}
+                            {% if reminder.vehicle %}
+                                <div>{{ reminder.vehicle.name() }}</div>
+                                <div class="muted compact-note"><code>{{ reminder.reminder.vehicleId }}</code></div>
+                            {% else %}
+                                <code>{{ reminder.reminder.vehicleId }}</code>
+                            {% endif %}
+                        </td>
+                        <td>{{ reminder.reminder.dueAtDate ? reminder.reminder.dueAtDate|date('Y-m-d') : 'n/a' }}</td>
+                        <td>{{ reminder.reminder.dueAtOdometerKilometers ?? 'n/a' }}</td>
+                        <td>
+                            <span class="pill {{ reminder.triggerLabel == 'both' ? 'pill-soft-warning' : (reminder.triggerLabel == 'odometer' ? 'pill-soft-info' : 'pill-soft-warning') }}">{{ reminder.triggerLabel }}</span>
                         </td>
                         <td>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Detail</a>
+                            <div class="action-row" data-row-link-ignore>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.reminder.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
+                                {% if reminder.vehicle %}
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: reminder.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                 {% else %}

@@ -1,5 +1,35 @@
 # TODO - Receipts Front/Admin Edition
 
+# TODO - SP28-001 Admin import workflow parity
+
+## Plan
+- [completed] Review the current admin import list/detail flow and identify the missing parity that matters for support triage.
+- [completed] Add list-level shortcuts, status pivots, and safer follow-up cues on `/ui/admin/imports`.
+- [completed] Tighten the admin import detail flow so receipt/original-import links are shown only when the target still exists.
+- [completed] Add/update admin functional coverage for the new list/detail parity behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP28-002 Admin receipt workflow shortcuts
+
+## Plan
+- [completed] Review the current admin receipt list/detail/edit flow and identify the highest-value linked-record shortcuts.
+- [completed] Add list-level shortcuts toward linked vehicle/station context and align the row interaction contract.
+- [completed] Enrich the admin receipt detail/edit flow with related import shortcuts and safe return-to-context behavior.
+- [completed] Add/update admin functional coverage for the new receipt shortcuts and return-path behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP28-003 Admin maintenance overview usefulness pass
+
+## Plan
+- [completed] Review the current admin maintenance reminders/events screens and identify the highest-value support shortcuts.
+- [completed] Add vehicle context and clearer row-level actions on admin reminder/event lists.
+- [completed] Enrich the admin reminder detail with linked vehicle context and a practical next action.
+- [completed] Add/update admin functional coverage for the new maintenance overview shortcuts.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 ## Plan
 - [completed] Add front UI receipt lines edit flow (`/ui/receipts/{id}/edit`) with CSRF and owner-scoped access.
 - [completed] Add application/repository support for receipt updates and admin system-scope reads/deletes.

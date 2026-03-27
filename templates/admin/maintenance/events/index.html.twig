@@ -53,7 +53,7 @@
                     <th>Occurred</th>
                     <th>Type</th>
                     <th>Owner ID</th>
-                    <th>Vehicle ID</th>
+                    <th>Vehicle</th>
                     <th>Cost</th>
                     <th>Odometer</th>
                     <th>Description</th>
@@ -66,29 +66,39 @@
                         class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
-                        data-row-link-url-value="{{ path('ui_admin_maintenance_event_show', {id: event.id.toString, return_to: returnTo}) }}"
+                        data-row-link-url-value="{{ path('ui_admin_maintenance_event_show', {id: event.event.id.toString, return_to: returnTo}) }}"
                         onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                     >
-                        <td>{{ event.occurredAt|date('Y-m-d H:i') }}</td>
-                        <td><span class="pill pill-energy">{{ event.eventType.value }}</span></td>
-                        <td><code>{{ event.ownerId }}</code></td>
-                        <td><code>{{ event.vehicleId }}</code></td>
+                        <td>{{ event.event.occurredAt|date('Y-m-d H:i') }}</td>
+                        <td><span class="pill pill-energy">{{ event.event.eventType.value }}</span></td>
+                        <td><code>{{ event.event.ownerId }}</code></td>
                         <td>
-                            {% if event.totalCostCents is not null %}
-                                {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}
+                            {% if event.vehicle %}
+                                <div>{{ event.vehicle.name() }}</div>
+                                <div class="muted compact-note"><code>{{ event.event.vehicleId }}</code></div>
+                            {% else %}
+                                <code>{{ event.event.vehicleId }}</code>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.event.totalCostCents is not null %}
+                                {{ (event.event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.event.currencyCode }}
                             {% else %}
                                 <span class="muted">n/a</span>
                             {% endif %}
                         </td>
-                        <td>{{ event.odometerKilometers ?? 'n/a' }}</td>
-                        <td>{{ event.description ?? 'n/a' }}</td>
+                        <td>{{ event.event.odometerKilometers ?? 'n/a' }}</td>
+                        <td>{{ event.event.description ?? 'n/a' }}</td>
                         <td class="action-cell-flex" data-row-link-ignore>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_show', {id: event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Detail</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString}) }}" data-turbo-frame="_top">Edit</a>
-                            <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this maintenance event?');">
-                                <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.id.toString) }}">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_show', {id: event.event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_edit', {id: event.event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Edit</a>
+                            {% if event.vehicle %}
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: event.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
+                            {% endif %}
+                            <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.event.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this maintenance event?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.event.id.toString) }}">
                                 <input type="hidden" name="_redirect" value="{{ returnTo }}">
-                                <button class="btn btn-danger" type="submit">Delete</button>
+                                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                             </form>
                         </td>
                     </tr>

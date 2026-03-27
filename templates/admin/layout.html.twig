@@ -10,6 +10,11 @@
             display: grid;
             gap: 1rem;
             grid-template-columns: 260px minmax(0, 1fr);
+            position: relative;
+        }
+
+        .admin-shell[data-admin-sidebar-collapsed='true'] {
+            grid-template-columns: minmax(0, 1fr);
         }
 
         .admin-sidebar {
@@ -17,6 +22,64 @@
             position: sticky;
             top: 1rem;
             height: fit-content;
+        }
+
+        .admin-shell[data-admin-sidebar-collapsed='true'] .admin-sidebar {
+            display: none;
+        }
+
+        .admin-sidebar-toggle-shell {
+            display: none;
+        }
+
+        .admin-shell[data-admin-sidebar-collapsed='true'] .admin-sidebar-toggle-shell {
+            display: block;
+            position: sticky;
+            top: 1rem;
+            align-self: start;
+            z-index: 5;
+        }
+
+        .admin-sidebar-toggle {
+            min-width: 0;
+            width: 2.2rem;
+            height: 2.2rem;
+            padding: 0;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            line-height: 1;
+        }
+
+        .admin-sidebar-collapsed-rail {
+            width: 3.2rem;
+            padding: 0.6rem 0.5rem;
+            display: grid;
+            justify-items: center;
+            gap: 0.5rem;
+        }
+
+        .admin-sidebar-collapsed-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            font-weight: 700;
+        }
+
+        .admin-sidebar-head {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .admin-sidebar-title-block {
+            min-width: 0;
         }
 
         .admin-title {
@@ -184,6 +247,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .admin-sidebar-toggle-shell {
+                display: none;
+            }
+
             .admin-sidebar {
                 position: static;
             }
@@ -213,10 +280,40 @@
 {% endblock %}
 
 {% block body %}
-    <div class="admin-shell">
+    <div class="admin-shell" data-admin-shell>
+        <div class="admin-sidebar-toggle-shell">
+            <div class="card admin-sidebar-collapsed-rail">
+                <button
+                    class="btn btn-secondary btn-compact admin-sidebar-toggle"
+                    type="button"
+                    data-admin-sidebar-toggle
+                    aria-expanded="false"
+                    aria-label="Show admin menu"
+                    title="Show admin menu"
+                >
+                    <span aria-hidden="true">▶</span>
+                </button>
+                <span class="admin-sidebar-collapsed-label">Admin</span>
+            </div>
+        </div>
+
         <aside class="admin-sidebar card" aria-label="Navigation admin">
-            <h1 class="admin-title">Back-office</h1>
-            <p class="admin-subtitle">Operations and system management</p>
+            <div class="admin-sidebar-head">
+                <div class="admin-sidebar-title-block">
+                    <h1 class="admin-title">Back-office</h1>
+                    <p class="admin-subtitle">Operations and system management</p>
+                </div>
+                <button
+                    class="btn btn-secondary btn-compact admin-sidebar-toggle"
+                    type="button"
+                    data-admin-sidebar-toggle
+                    aria-expanded="true"
+                    aria-label="Hide admin menu"
+                    title="Hide admin menu"
+                >
+                    <span aria-hidden="true">◀</span>
+                </button>
+            </div>
             <div class="admin-sidebar-actions">
                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}">Back to app</a>
             </div>
@@ -246,4 +343,48 @@
             {% block admin_content %}{% endblock %}
         </main>
     </div>
+
+    <script>
+        (function () {
+            const storageKey = 'fuelapp.adminSidebarCollapsed';
+            const shell = document.querySelector('[data-admin-shell]');
+            const toggles = Array.from(document.querySelectorAll('[data-admin-sidebar-toggle]'));
+
+            if (!shell || toggles.length === 0) {
+                return;
+            }
+
+            const syncState = (collapsed) => {
+                shell.dataset.adminSidebarCollapsed = collapsed ? 'true' : 'false';
+                toggles.forEach((toggle) => {
+                    toggle.innerHTML = '<span aria-hidden="true">' + (collapsed ? '▶' : '◀') + '</span>';
+                    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                    toggle.setAttribute('aria-label', collapsed ? 'Show admin menu' : 'Hide admin menu');
+                    toggle.setAttribute('title', collapsed ? 'Show admin menu' : 'Hide admin menu');
+                });
+            };
+
+            let collapsed = false;
+
+            try {
+                collapsed = window.localStorage.getItem(storageKey) === 'true';
+            } catch (error) {
+                collapsed = false;
+            }
+
+            syncState(collapsed);
+
+            toggles.forEach((toggle) => {
+                toggle.addEventListener('click', () => {
+                    collapsed = !collapsed;
+                    syncState(collapsed);
+
+                    try {
+                        window.localStorage.setItem(storageKey, collapsed ? 'true' : 'false');
+                    } catch (error) {
+                    }
+                });
+            });
+        }());
+    </script>
 {% endblock %}

@@ -652,3 +652,12 @@
 - [completed] Add/update functional coverage for the clearer lifecycle copy and stage states.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP26-001 Dashboard drill-down polish
+
+## Plan
+- [completed] Rework `/ui/dashboard` so recent receipts and recent imports expose more contextual next-step actions.
+- [completed] Add a small dashboard "drill down by area" section that points directly to the right workflow hub.
+- [completed] Add/update dashboard functional coverage for the richer drill-down contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

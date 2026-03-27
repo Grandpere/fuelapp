@@ -238,6 +238,7 @@
                     font-size: 1rem;
                     letter-spacing: 0.03em;
                     color: var(--brand-text);
+                    text-decoration: none;
                 }
 
                 .topbar-right {
@@ -874,9 +875,10 @@
         {% if app.user %}
             {% set currentRoute = app.request.attributes.get('_route')|default('') %}
             <header class="topbar">
-                <div class="topbar-brand">FuelApp</div>
+                <a class="topbar-brand" href="{{ path('ui_dashboard') }}">FuelApp</a>
                 <div class="topbar-right">
                     <nav class="topbar-nav">
+                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_dashboard' ? 'is-active' : '' }}" href="{{ path('ui_dashboard') }}">Dashboard</a>
                         <a class="topbar-nav-link {{ currentRoute starts with 'ui_receipt_' ? 'is-active' : '' }}" href="{{ path('ui_receipt_index') }}">Receipts</a>
                         <a class="topbar-nav-link {{ currentRoute starts with 'ui_import_' ? 'is-active' : '' }}" href="{{ path('ui_import_index') }}">Import</a>
                         <a class="topbar-nav-link {{ currentRoute starts with 'ui_vehicle_' ? 'is-active' : '' }}" href="{{ path('ui_vehicle_list') }}">Vehicles</a>

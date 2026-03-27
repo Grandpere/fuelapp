@@ -293,7 +293,9 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('Needs review: 1', $content);
         self::assertStringContainsString('Review next pending', $content);
         self::assertStringContainsString('Inspect latest failure', $content);
-        self::assertStringContainsString('Inspect failure', $content);
+        self::assertStringContainsString('Upload replacement', $content);
+        self::assertStringContainsString('/ui/imports#import-upload-card', $content);
+        self::assertStringContainsString('Re-upload', $content);
         self::assertStringContainsString('Detail', $content);
 
         $failedOnlyResponse = $this->request('GET', '/ui/imports?status=failed', [], [], $sessionCookie);
@@ -819,6 +821,8 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('What you can do now', $detailContent);
         self::assertStringContainsString('/ui/receipts/'.$receiptId, $detailContent);
         self::assertStringContainsString('Open created receipt', $detailContent);
+        self::assertStringContainsString('Upload another file', $detailContent);
+        self::assertStringContainsString('/ui/imports#import-upload-card', $detailContent);
     }
 
     public function testDuplicateImportDetailShowsShortcutToOriginalImport(): void
@@ -876,6 +880,8 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('What you can do now', $detailContent);
         self::assertStringContainsString('/ui/imports/'.$originalJobId, $detailContent);
         self::assertStringContainsString('Open original import', $detailContent);
+        self::assertStringContainsString('Upload different file', $detailContent);
+        self::assertStringContainsString('/ui/imports#import-upload-card', $detailContent);
     }
 
     public function testDuplicateImportDetailCanShortcutToExistingReceipt(): void
@@ -930,6 +936,7 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('Duplicate already handled', $detailContent);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('Open existing receipt', $detailContent);
+        self::assertStringContainsString('Upload different file', $detailContent);
     }
 
     public function testFailedImportDetailExplainsNextSteps(): void
@@ -965,6 +972,8 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('Import processing stopped', $detailContent);
         self::assertStringContainsString('Fallback reason: provider unavailable', $detailContent);
         self::assertStringContainsString('What you can do now', $detailContent);
+        self::assertStringContainsString('Upload replacement', $detailContent);
+        self::assertStringContainsString('/ui/imports#import-upload-card', $detailContent);
     }
 
     public function testUserCanReparseNeedsReviewImportFromUi(): void

@@ -74,6 +74,7 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         $receiptsResponse = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptsResponse->getStatusCode());
         $receiptsContent = (string) $receiptsResponse->getContent();
+        self::assertStringContainsString('>Dashboard<', $receiptsContent);
         self::assertStringContainsString('>Contact<', $receiptsContent);
         self::assertStringNotContainsString('>Back-office<', $receiptsContent);
 
@@ -94,6 +95,7 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         $receiptsResponse = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptsResponse->getStatusCode());
         $content = (string) $receiptsResponse->getContent();
+        self::assertStringContainsString('>Dashboard<', $content);
         self::assertStringContainsString('>Contact<', $content);
         self::assertStringContainsString('>Back-office<', $content);
     }

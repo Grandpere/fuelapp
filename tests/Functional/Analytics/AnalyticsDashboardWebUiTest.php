@@ -174,6 +174,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('fuel_type=diesel', $stationFuelContent);
         self::assertStringContainsString('Fuel: DIESEL', $stationFuelContent);
         self::assertStringContainsString('/ui/stations/'.$stationA->getId()->toRfc4122(), $stationFuelContent);
+        self::assertStringContainsString('Exports keep the current analytics scope so shared files match the dashboard you are looking at.', $content);
 
         self::assertStringContainsString('data-chart-key="cost"', $content);
         self::assertStringContainsString('data-chart-key="fuel-price"', $content);

@@ -571,6 +571,7 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('Vehicle:</strong> Shortcut Car (SC-100-AA)', $content);
         self::assertStringContainsString('Last 30 days', $content);
         self::assertStringContainsString('This month', $content);
+        self::assertStringContainsString('Exports keep the current filters and visible columns.', $content);
     }
 
     public function testReceiptIndexShowsStationScopedShortcutsAndPrefilledCreateLink(): void

@@ -132,6 +132,7 @@ final class ExportReceiptsController extends AbstractController
             $stationId,
             $issuedFrom,
             $issuedTo,
+            $columnsPreset ?? $this->detectPreset($columns),
             $sortBy,
             $sortDirection,
             $fuelType,
@@ -144,7 +145,14 @@ final class ExportReceiptsController extends AbstractController
             $format,
         );
 
-        $filenameBase = sprintf('receipts-export-%s', $generatedAt->format('Ymd-His'));
+        $filenameBase = $this->buildFilenameBase(
+            $generatedAt,
+            $vehicleId,
+            $stationId,
+            $issuedFrom,
+            $issuedTo,
+            $fuelType,
+        );
 
         if (self::FORMAT_XLSX === $format) {
             return $this->xlsxResponse(
@@ -307,50 +315,81 @@ final class ExportReceiptsController extends AbstractController
             $vatRatePercent,
         ): void {
             $spreadsheet = new Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-            $sheet->setTitle('Receipts export');
+            $tempDirectory = sys_get_temp_dir();
+            $tempFile = tempnam($tempDirectory, 'fuelapp-xlsx-');
+            if (false === $tempFile) {
+                throw new RuntimeException('Cannot create temporary XLSX file.');
+            }
 
-            $rowIndex = 1;
-            foreach ($metadataRows as [$key, $value]) {
-                $sheet->setCellValue(sprintf('A%d', $rowIndex), $key);
-                $sheet->setCellValue(sprintf('B%d', $rowIndex), $value);
+            try {
+                $sheet = $spreadsheet->getActiveSheet();
+                $sheet->setTitle('Receipts export');
+
+                $rowIndex = 1;
+                foreach ($metadataRows as [$key, $value]) {
+                    $sheet->setCellValue(sprintf('A%d', $rowIndex), $key);
+                    $sheet->setCellValue(sprintf('B%d', $rowIndex), $value);
+                    ++$rowIndex;
+                }
                 ++$rowIndex;
-            }
-            ++$rowIndex;
 
-            $columnIndex = 1;
-            foreach ($columns as $column) {
-                $sheet->setCellValue([$columnIndex, $rowIndex], self::COLUMN_LABELS[$column]);
-                ++$columnIndex;
-            }
-            ++$rowIndex;
-
-            foreach ($this->iterateRowsForExport(
-                $vehicleId,
-                $stationId,
-                $issuedFrom,
-                $issuedTo,
-                $sortBy,
-                $sortDirection,
-                $fuelType,
-                $quantityMilliLitersMin,
-                $quantityMilliLitersMax,
-                $unitPriceDeciCentsPerLiterMin,
-                $unitPriceDeciCentsPerLiterMax,
-                $vatRatePercent,
-            ) as $row) {
                 $columnIndex = 1;
                 foreach ($columns as $column) {
-                    $sheet->setCellValue([$columnIndex, $rowIndex], $this->mapColumnValue($column, $row));
+                    $sheet->setCellValue([$columnIndex, $rowIndex], self::COLUMN_LABELS[$column]);
                     ++$columnIndex;
                 }
                 ++$rowIndex;
-            }
 
-            $writer = new Xlsx($spreadsheet);
-            $writer->save('php://output');
-            $spreadsheet->disconnectWorksheets();
-            unset($spreadsheet);
+                foreach ($this->iterateRowsForExport(
+                    $vehicleId,
+                    $stationId,
+                    $issuedFrom,
+                    $issuedTo,
+                    $sortBy,
+                    $sortDirection,
+                    $fuelType,
+                    $quantityMilliLitersMin,
+                    $quantityMilliLitersMax,
+                    $unitPriceDeciCentsPerLiterMin,
+                    $unitPriceDeciCentsPerLiterMax,
+                    $vatRatePercent,
+                ) as $row) {
+                    $columnIndex = 1;
+                    foreach ($columns as $column) {
+                        $sheet->setCellValue([$columnIndex, $rowIndex], $this->mapColumnValue($column, $row));
+                        ++$columnIndex;
+                    }
+                    ++$rowIndex;
+                }
+
+                $writer = new Xlsx($spreadsheet);
+                $writer->setPreCalculateFormulas(false);
+                $writer->setUseDiskCaching(true, $tempDirectory);
+                $writer->save($tempFile);
+
+                $stream = fopen($tempFile, 'rb');
+                if (false === $stream) {
+                    throw new RuntimeException('Cannot read temporary XLSX file.');
+                }
+
+                while (!feof($stream)) {
+                    $chunk = fread($stream, 8192);
+                    if (false === $chunk) {
+                        break;
+                    }
+
+                    echo $chunk;
+                }
+
+                fclose($stream);
+            } finally {
+                $spreadsheet->disconnectWorksheets();
+                unset($spreadsheet);
+
+                if (is_file($tempFile)) {
+                    @unlink($tempFile);
+                }
+            }
         });
 
         $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -370,6 +409,7 @@ final class ExportReceiptsController extends AbstractController
         ?string $stationId,
         ?DateTimeImmutable $issuedFrom,
         ?DateTimeImmutable $issuedTo,
+        string $columnsPreset,
         string $sortBy,
         string $sortDirection,
         ?string $fuelType,
@@ -389,6 +429,7 @@ final class ExportReceiptsController extends AbstractController
             ['filter_issued_from', $issuedFrom?->format('Y-m-d') ?? ''],
             ['filter_issued_to', $issuedTo?->format('Y-m-d') ?? ''],
             ['filter_fuel_type', $fuelType ?? ''],
+            ['columns_preset', $columnsPreset],
             ['filter_quantity_min', null === $quantityMilliLitersMin ? '' : (string) $quantityMilliLitersMin],
             ['filter_quantity_max', null === $quantityMilliLitersMax ? '' : (string) $quantityMilliLitersMax],
             ['filter_unit_price_min', null === $unitPriceDeciCentsPerLiterMin ? '' : (string) $unitPriceDeciCentsPerLiterMin],
@@ -398,6 +439,41 @@ final class ExportReceiptsController extends AbstractController
             ['sort_direction', $sortDirection],
             ['columns', implode(',', $columns)],
         ];
+    }
+
+    private function buildFilenameBase(
+        DateTimeImmutable $generatedAt,
+        ?string $vehicleId,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        ?string $fuelType,
+    ): string {
+        $tokens = ['receipts-export'];
+
+        if ($issuedFrom instanceof DateTimeImmutable && $issuedTo instanceof DateTimeImmutable) {
+            $tokens[] = sprintf('%s-to-%s', $issuedFrom->format('Y-m-d'), $issuedTo->format('Y-m-d'));
+        } elseif ($issuedFrom instanceof DateTimeImmutable) {
+            $tokens[] = sprintf('from-%s', $issuedFrom->format('Y-m-d'));
+        } elseif ($issuedTo instanceof DateTimeImmutable) {
+            $tokens[] = sprintf('until-%s', $issuedTo->format('Y-m-d'));
+        }
+
+        if (is_string($fuelType) && '' !== $fuelType) {
+            $tokens[] = strtolower($fuelType);
+        }
+
+        if (is_string($vehicleId) && '' !== $vehicleId) {
+            $tokens[] = 'vehicle-filtered';
+        }
+
+        if (is_string($stationId) && '' !== $stationId) {
+            $tokens[] = 'station-filtered';
+        }
+
+        $tokens[] = $generatedAt->format('Ymd-His');
+
+        return implode('-', $tokens);
     }
 
     /**
@@ -619,6 +695,20 @@ final class ExportReceiptsController extends AbstractController
         }
 
         return $this->parseColumns($columnsValue);
+    }
+
+    /**
+     * @param list<string> $columns
+     */
+    private function detectPreset(array $columns): string
+    {
+        foreach (self::PRESET_COLUMNS as $preset => $presetColumns) {
+            if ($columns === $presetColumns) {
+                return $preset;
+            }
+        }
+
+        return self::PRESET_FULL;
     }
 
     private function parseFormat(mixed $value): string

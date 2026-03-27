@@ -248,6 +248,24 @@
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP25-001 Receipt export and sharing workflow polish
+
+## Plan
+- [completed] Harden the XLSX writer path so exports rely on temporary disk-backed output instead of only in-memory streaming.
+- [completed] Make exported filenames more share-friendly by reflecting the active date/filter scope.
+- [completed] Add/update functional coverage for export metadata, filenames, and front guidance copy on receipt/analytics screens.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP25-002 Front import recovery shortcuts
+
+## Plan
+- [completed] Add a direct upload anchor on the imports page and reuse it as the recovery target from list/detail actions.
+- [completed] Surface replacement-upload shortcuts for failed and duplicate imports, plus "upload another" shortcuts after resolved states.
+- [completed] Add/update functional coverage for the new list/detail recovery shortcuts.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP18-001 Vehicle-centered workflow polish
 
 ## Plan
@@ -614,5 +632,14 @@
 - [completed] Add status quick filters and list-level follow-up shortcuts on `/ui/imports`.
 - [completed] Expose secondary row actions when the main next step is not the only useful follow-up.
 - [completed] Add/update functional coverage for status filtering and new import follow-up shortcuts.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP25-003 Home/dashboard usefulness pass
+
+## Plan
+- [completed] Add a compact front dashboard route that surfaces urgent imports, maintenance follow-up, and recent receipts.
+- [completed] Wire the front topbar into the new dashboard instead of keeping it hidden behind deep links only.
+- [completed] Add/update functional coverage for the dashboard content and topbar navigation contract.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.

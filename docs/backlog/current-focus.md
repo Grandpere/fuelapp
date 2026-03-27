@@ -1,18 +1,22 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 24 - Front finishing pass
+- Sprint 25 - Export and follow-up workflow polish
 
 ## Current goal
-- Smooth the remaining high-traffic front-office screens so filtering and cross-screen navigation feel faster and more obvious.
+- Reduce friction on high-frequency front-office follow-up flows, starting with exports, import recovery shortcuts, and a more useful overview dashboard.
 
 ## In progress
-- No active ticket right now. Sprint 24 is fully delivered.
+- None. Sprint 25 is fully delivered.
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 25 starts with receipt export reliability and share-friendly filenames; admin parity remains deferred unless operations need it later.
+- SP25-003 is fully delivered across the new front dashboard, quick follow-up signals, and topbar entry-point navigation.
+- SP25-002 is fully delivered across import recovery shortcuts on both the queue and detail pages.
+- SP25-001 is fully delivered across disk-backed XLSX exports, share-friendly filenames, and clearer export scope guidance.
 - Sprint 24 is fully delivered across analytics filter polish, import follow-up shortcuts, and stronger empty-state cohesion on the main front-office hubs.
 - SP24-003 is fully delivered across actionable empty states on vehicle, station, maintenance, and receipt front-office pages.
 - SP24-002 is fully delivered across import status quick filters, list-level follow-up shortcuts, and clearer secondary row actions.

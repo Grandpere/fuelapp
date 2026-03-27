@@ -60,7 +60,7 @@
             </div>
         </header>
 
-        <section class="card section-card">
+        <section id="import-upload-card" class="card section-card">
             <form method="post" enctype="multipart/form-data" data-turbo-frame="_top" class="form-stack content-narrow">
                 <input type="hidden" name="_token" value="{{ csrf_token('ui_import_upload') }}">
                 <label class="label">
@@ -156,6 +156,7 @@
                                     Jump straight to the next import that needs attention.
                                 {% endif %}
                             </p>
+                            <p class="muted section-lead">If an import looks unrecoverable, jump back to the upload box and send a replacement file right away.</p>
                         </div>
                         <div class="actions-wrap">
                             {% for shortcut in followUpShortcuts %}

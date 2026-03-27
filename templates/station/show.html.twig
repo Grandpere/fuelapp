@@ -188,7 +188,13 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="station-empty">No receipt linked to this station yet.</div>
+                    <div class="station-empty">
+                        <p>No receipt linked to this station yet.</p>
+                        <div class="actions-wrap">
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}" data-turbo-frame="receipt_form_frame">Add first receipt</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                        </div>
+                    </div>
                 {% endif %}
             </section>
 

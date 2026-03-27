@@ -19,6 +19,28 @@
             color: var(--text-soft);
             font-size: 0.82rem;
         }
+
+        .import-quick-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .import-quick-filters .pill {
+            text-decoration: none;
+        }
+
+        .import-follow-up {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .import-follow-up .actions-wrap {
+            margin-top: 0;
+        }
     </style>
 {% endblock %}
 
@@ -109,6 +131,41 @@
                     <p class="muted section-lead">Track OCR progress, review incomplete imports, and remove stale uploads.</p>
                 </div>
             </div>
+
+            <div class="form-stack">
+                <div class="import-quick-filters">
+                    {% for filter in statusQuickFilters %}
+                        <a
+                            class="pill {{ filter.isActive ? 'pill-date' : '' }}"
+                            href="{{ filter.url }}"
+                            data-turbo-frame="_top"
+                        >
+                            {{ filter.label }}: {{ filter.count }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                {% if followUpShortcuts|length > 0 %}
+                    <div class="card section-card import-follow-up">
+                        <div>
+                            <p class="text-block-title">Follow up now</p>
+                            <p class="muted section-lead">
+                                {% if statusFilter %}
+                                    Filtered on <strong>{{ statusLabels[statusFilter] ?? statusFilter }}</strong>.
+                                {% else %}
+                                    Jump straight to the next import that needs attention.
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="actions-wrap">
+                            {% for shortcut in followUpShortcuts %}
+                                <a class="btn btn-{{ shortcut.variant }}" href="{{ shortcut.url }}" data-turbo-frame="_top">{{ shortcut.label }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
             <div class="table-wrap">
                 <table class="app-table">
                     <thead>
@@ -154,6 +211,9 @@
                                 <td class="action-cell">
                                     <div class="action-row" data-row-link-ignore>
                                         <a class="btn btn-{{ row.primaryAction.variant }} btn-compact" href="{{ row.primaryAction.url }}" data-turbo-frame="_top">{{ row.primaryAction.label }}</a>
+                                        {% if row.secondaryAction %}
+                                            <a class="btn btn-{{ row.secondaryAction.variant }} btn-compact" href="{{ row.secondaryAction.url }}" data-turbo-frame="_top">{{ row.secondaryAction.label }}</a>
+                                        {% endif %}
                                         <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
                                             <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
                                             <input type="hidden" name="_redirect" value="{{ returnTo }}">

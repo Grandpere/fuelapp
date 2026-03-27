@@ -13,12 +13,15 @@ declare(strict_types=1);
 
 namespace App\Analytics\UI\Web\Controller;
 
+use App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher;
 use App\Analytics\Application\Kpi\AnalyticsKpiReader;
+use App\Analytics\Application\Kpi\FuelDashboardSnapshotKpi;
 use App\Analytics\Application\Kpi\MonthlyComparedCostKpi;
 use App\Analytics\Application\Kpi\MonthlyConsumptionKpi;
 use App\Analytics\Application\Kpi\MonthlyCostKpi;
 use App\Analytics\Application\Kpi\MonthlyFuelPriceKpi;
 use App\Analytics\Application\Kpi\VisitedStationPointKpi;
+use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Station\Application\Repository\StationRepository;
@@ -35,6 +38,8 @@ final class AnalyticsDashboardController extends AbstractController
 {
     public function __construct(
         private readonly AnalyticsKpiReader $kpiReader,
+        private readonly ReceiptRepository $receiptRepository,
+        private readonly ReceiptAnalyticsProjectionRefresher $receiptAnalyticsProjectionRefresher,
         private readonly VehicleRepository $vehicleRepository,
         private readonly StationRepository $stationRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
@@ -54,17 +59,36 @@ final class AnalyticsDashboardController extends AbstractController
         $vehicleId = $this->readVehicleFilter($request, $ownerId);
         $stationId = $this->readStationFilter($request);
         $fuelType = $this->readFuelTypeFilter($request);
-        $fuelSnapshot = $this->kpiReader->readFuelDashboardSnapshot($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        [
+            'fuelSnapshot' => $fuelSnapshot,
+            'comparedCostPerMonth' => $comparedCostPerMonth,
+            'visitedStations' => $visitedStations,
+        ] = $this->readDashboardData($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+
         $costPerMonth = $fuelSnapshot->costPerMonth;
         $consumptionPerMonth = $fuelSnapshot->consumptionPerMonth;
         $averagePrice = $fuelSnapshot->averagePrice;
         $fuelPricePerMonth = $fuelSnapshot->fuelPricePerMonth;
-        $comparedCostPerMonth = $this->kpiReader->readComparedCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
-        $visitedStations = $this->kpiReader->readVisitedStations($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $vehicleOptions = $this->vehicleOptions($ownerId);
+        $stationOptions = $this->stationOptions();
+        $analyticsQueryParams = [
+            'from' => $from?->format('Y-m-d'),
+            'to' => $to?->format('Y-m-d'),
+            'vehicle_id' => $vehicleId,
+            'station_id' => $stationId,
+            'fuel_type' => $fuelType,
+        ];
+        $receiptQueryParams = [
+            'vehicle_id' => $vehicleId,
+            'station_id' => $stationId,
+            'fuel_type' => $fuelType,
+            'issued_from' => $from?->format('Y-m-d'),
+            'issued_to' => $to?->format('Y-m-d'),
+        ];
 
         return $this->render('analytics/index.html.twig', [
-            'vehicleOptions' => $this->vehicleOptions($ownerId),
-            'stationOptions' => $this->stationOptions(),
+            'vehicleOptions' => $vehicleOptions,
+            'stationOptions' => $stationOptions,
             'fuelTypeChoices' => array_map(static fn (FuelType $case): string => $case->value, FuelType::cases()),
             'vehicleFilter' => $vehicleId,
             'stationFilter' => $stationId,
@@ -82,6 +106,12 @@ final class AnalyticsDashboardController extends AbstractController
             'averagePriceDeciCentsPerLiter' => $averagePrice->averagePriceDeciCentsPerLiter,
             'visitedStations' => $visitedStations,
             'stationMapPoints' => $this->stationMapPoints($visitedStations),
+            'dateShortcuts' => $this->dateShortcuts($analyticsQueryParams),
+            'activeFilterBadges' => $this->activeFilterBadges($vehicleOptions, $stationOptions, $vehicleId, $stationId, $fuelType, $from, $to),
+            'selectedVehicleLabel' => null !== $vehicleId ? ($vehicleOptions[$vehicleId] ?? null) : null,
+            'selectedStationLabel' => $this->selectedStationLabel($stationOptions, $stationId),
+            'analyticsQueryParams' => $analyticsQueryParams,
+            'receiptQueryParams' => $receiptQueryParams,
             'exportQueryParams' => [
                 'vehicle_id' => $vehicleId,
                 'issued_from' => $from?->format('Y-m-d'),
@@ -90,6 +120,60 @@ final class AnalyticsDashboardController extends AbstractController
                 'fuel_type' => $fuelType,
             ],
         ]);
+    }
+
+    /**
+     * @return array{
+     *     fuelSnapshot: FuelDashboardSnapshotKpi,
+     *     comparedCostPerMonth: list<MonthlyComparedCostKpi>,
+     *     visitedStations: list<VisitedStationPointKpi>
+     * }
+     */
+    private function readDashboardData(
+        string $ownerId,
+        ?string $vehicleId,
+        ?string $stationId,
+        ?string $fuelType,
+        ?DateTimeImmutable $from,
+        ?DateTimeImmutable $to,
+    ): array {
+        $fuelSnapshot = $this->kpiReader->readFuelDashboardSnapshot($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $comparedCostPerMonth = $this->kpiReader->readComparedCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        $visitedStations = $this->kpiReader->readVisitedStations($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+
+        if ($this->shouldRefreshProjection($fuelSnapshot, $vehicleId, $stationId, $fuelType, $from, $to)) {
+            $this->receiptAnalyticsProjectionRefresher->refresh();
+            $fuelSnapshot = $this->kpiReader->readFuelDashboardSnapshot($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+            $comparedCostPerMonth = $this->kpiReader->readComparedCostPerMonth($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+            $visitedStations = $this->kpiReader->readVisitedStations($ownerId, $vehicleId, $stationId, $fuelType, $from, $to);
+        }
+
+        return [
+            'fuelSnapshot' => $fuelSnapshot,
+            'comparedCostPerMonth' => $comparedCostPerMonth,
+            'visitedStations' => $visitedStations,
+        ];
+    }
+
+    private function shouldRefreshProjection(
+        FuelDashboardSnapshotKpi $fuelSnapshot,
+        ?string $vehicleId,
+        ?string $stationId,
+        ?string $fuelType,
+        ?DateTimeImmutable $from,
+        ?DateTimeImmutable $to,
+    ): bool {
+        if ($fuelSnapshot->averagePrice->totalCostCents > 0 || $fuelSnapshot->averagePrice->totalQuantityMilliLiters > 0) {
+            return false;
+        }
+
+        return $this->receiptRepository->countFiltered(
+            $vehicleId,
+            $stationId,
+            $from,
+            $to,
+            $fuelType,
+        ) > 0;
     }
 
     /** @return array<string, string> */
@@ -282,6 +366,102 @@ final class AnalyticsDashboardController extends AbstractController
         }
 
         return $points;
+    }
+
+    /** @param array<string, ?string> $baseParams
+     * @return list<array{label:string,params:array<string, ?string>,isActive:bool}>
+     */
+    private function dateShortcuts(array $baseParams): array
+    {
+        $today = new DateTimeImmutable('today');
+        $thisMonthStart = $today->modify('first day of this month');
+        $thisMonthEnd = $today->modify('last day of this month');
+
+        $shortcuts = [
+            [
+                'label' => 'Last 30 days',
+                'params' => array_merge($baseParams, [
+                    'from' => $today->modify('-29 days')->format('Y-m-d'),
+                    'to' => $today->format('Y-m-d'),
+                ]),
+                'isActive' => false,
+            ],
+            [
+                'label' => 'Last 90 days',
+                'params' => array_merge($baseParams, [
+                    'from' => $today->modify('-89 days')->format('Y-m-d'),
+                    'to' => $today->format('Y-m-d'),
+                ]),
+                'isActive' => false,
+            ],
+            [
+                'label' => 'This month',
+                'params' => array_merge($baseParams, [
+                    'from' => $thisMonthStart->format('Y-m-d'),
+                    'to' => $thisMonthEnd->format('Y-m-d'),
+                ]),
+                'isActive' => false,
+            ],
+        ];
+
+        foreach ($shortcuts as &$shortcut) {
+            $shortcut['isActive'] = ($baseParams['from'] ?? null) === $shortcut['params']['from']
+                && ($baseParams['to'] ?? null) === $shortcut['params']['to'];
+        }
+
+        return $shortcuts;
+    }
+
+    /**
+     * @param array<string, string>               $vehicleOptions
+     * @param list<array{id:string,label:string}> $stationOptions
+     *
+     * @return list<string>
+     */
+    private function activeFilterBadges(array $vehicleOptions, array $stationOptions, ?string $vehicleId, ?string $stationId, ?string $fuelType, ?DateTimeImmutable $from, ?DateTimeImmutable $to): array
+    {
+        $badges = [];
+
+        if (null !== $from || null !== $to) {
+            $badges[] = sprintf(
+                'Period: %s -> %s',
+                $from?->format('d/m/Y') ?? 'start',
+                $to?->format('d/m/Y') ?? 'today',
+            );
+        }
+
+        if (null !== $vehicleId && isset($vehicleOptions[$vehicleId])) {
+            $badges[] = 'Vehicle: '.$vehicleOptions[$vehicleId];
+        }
+
+        $stationLabel = $this->selectedStationLabel($stationOptions, $stationId);
+        if (null !== $stationLabel) {
+            $badges[] = 'Station: '.$stationLabel;
+        }
+
+        if (null !== $fuelType) {
+            $badges[] = 'Fuel: '.strtoupper($fuelType);
+        }
+
+        return $badges;
+    }
+
+    /**
+     * @param list<array{id:string,label:string}> $stationOptions
+     */
+    private function selectedStationLabel(array $stationOptions, ?string $stationId): ?string
+    {
+        if (null === $stationId) {
+            return null;
+        }
+
+        foreach ($stationOptions as $option) {
+            if ($option['id'] === $stationId) {
+                return $option['label'];
+            }
+        }
+
+        return null;
     }
 
     /**

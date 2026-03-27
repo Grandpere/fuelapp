@@ -565,6 +565,33 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('No triggered reminder yet. Your rules are being tracked, but none is due right now.', $content);
     }
 
+    public function testVehicleFilteredMaintenanceEmptyStatesLinkBackToVehicle(): void
+    {
+        $email = 'maintenance.ui.empty.vehicle@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Empty Maintenance Car');
+        $vehicle->setPlateNumber('UI-800-HH');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-08 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-08 10:00:00'));
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $vehicleId = $vehicle->getId()->toRfc4122();
+
+        $response = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('No maintenance event yet.', $content);
+        self::assertStringContainsString('No reminder rule yet.', $content);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server

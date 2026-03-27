@@ -35,6 +35,24 @@
             flex-wrap: wrap;
         }
 
+        .analytics-shortcuts {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .analytics-active-filters {
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+
+        .analytics-context-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
         .analytics-filters {
             padding: 1rem;
             display: grid;
@@ -516,6 +534,11 @@
         </section>
 
         <section class="card analytics-filters">
+            <div class="analytics-shortcuts">
+                {% for shortcut in dateShortcuts %}
+                    <a class="btn {{ shortcut.isActive ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ path('ui_analytics_dashboard', shortcut.params) }}">{{ shortcut.label }}</a>
+                {% endfor %}
+            </div>
             <form class="analytics-filters-form" method="get" action="{{ path('ui_analytics_dashboard') }}">
                 <label class="label">
                     From
@@ -557,6 +580,25 @@
                     <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard') }}">Reset</a>
                 </div>
             </form>
+            {% if activeFilterBadges is not empty %}
+                <div class="analytics-active-filters">
+                    {% for badge in activeFilterBadges %}
+                        <span class="pill pill-date">{{ badge }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="analytics-context-actions">
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', receiptQueryParams) }}">Open matching receipts</a>
+                {% if selectedVehicleLabel and vehicleFilter %}
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicleFilter}) }}">Open vehicle maintenance</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">Open vehicle</a>
+                {% else %}
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index') }}">Open maintenance</a>
+                {% endif %}
+                {% if selectedStationLabel and stationFilter %}
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: stationFilter, return_to: path('ui_analytics_dashboard', analyticsQueryParams)}) }}">Open station</a>
+                {% endif %}
+            </div>
         </section>
 
         <section class="kpi-grid">

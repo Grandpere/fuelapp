@@ -316,6 +316,41 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertStringContainsString('125400 km', $content);
     }
 
+    public function testVehicleDetailEmptyStatesExposeUsefulNextSteps(): void
+    {
+        $email = 'vehicle.ui.empty@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new \App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Empty Car');
+        $vehicle->setPlateNumber('EM-100-AA');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-12 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-12 10:00:00'));
+        $this->em->persist($vehicle);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $vehicleId = $vehicle->getId()->toRfc4122();
+
+        $response = $this->request('GET', '/ui/vehicles/'.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('No maintenance signal yet for this vehicle.', $content);
+        self::assertStringContainsString('Start by adding a receipt or maintenance event for this vehicle.', $content);
+        self::assertStringContainsString('No receipt linked to this vehicle yet.', $content);
+        self::assertStringContainsString('No maintenance event recorded for this vehicle yet.', $content);
+        self::assertStringContainsString('No upcoming maintenance plan for this vehicle.', $content);
+        self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/imports', $content);
+        self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance/plans/new?vehicle_id='.$vehicleId, $content);
+        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
+    }
+
     /**
      * @param array<string, string|int|float|bool|null> $parameters
      * @param array<string, string>                     $server

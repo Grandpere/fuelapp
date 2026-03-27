@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Maintenance\Application;
 
+use App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher;
 use App\Maintenance\Application\Message\EvaluateMaintenanceRemindersMessage;
 use App\Maintenance\Application\MessageHandler\EvaluateMaintenanceRemindersMessageHandler;
 use App\Maintenance\Application\Notification\MaintenanceReminderNotifier;
@@ -46,6 +47,7 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
     private EntityManagerInterface $em;
     private VehicleRepository $vehicleRepository;
     private UserPasswordHasherInterface $passwordHasher;
+    private ReceiptAnalyticsProjectionRefresher $receiptAnalyticsProjectionRefresher;
 
     protected function setUp(): void
     {
@@ -68,6 +70,12 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
             throw new RuntimeException('Password hasher service not found.');
         }
         $this->passwordHasher = $passwordHasher;
+
+        $receiptAnalyticsProjectionRefresher = self::getContainer()->get(ReceiptAnalyticsProjectionRefresher::class);
+        if (!$receiptAnalyticsProjectionRefresher instanceof ReceiptAnalyticsProjectionRefresher) {
+            throw new RuntimeException('ReceiptAnalyticsProjectionRefresher service not found.');
+        }
+        $this->receiptAnalyticsProjectionRefresher = $receiptAnalyticsProjectionRefresher;
 
         $this->em->getConnection()->executeStatement('TRUNCATE TABLE maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, users RESTART IDENTITY CASCADE');
     }
@@ -98,7 +106,7 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
         $ruleRepository->save($rule);
 
         $eventRepository = new DoctrineMaintenanceEventRepository($this->em);
-        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage());
+        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage(), $this->receiptAnalyticsProjectionRefresher);
         $reminderRepository = new DoctrineMaintenanceReminderRepository($this->em);
         $calculator = new ReminderDueCalculator($ruleRepository, $eventRepository);
         $odometerResolver = new EventAndReceiptCurrentOdometerResolver($eventRepository, $receiptRepository);
@@ -136,7 +144,7 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
 
         $ruleRepository = new DoctrineMaintenanceReminderRuleRepository($this->em);
         $eventRepository = new DoctrineMaintenanceEventRepository($this->em);
-        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage());
+        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage(), $this->receiptAnalyticsProjectionRefresher);
         $reminderRepository = new DoctrineMaintenanceReminderRepository($this->em);
 
         $rule = MaintenanceReminderRule::create(
@@ -198,7 +206,7 @@ final class EvaluateMaintenanceRemindersMessageHandlerIntegrationTest extends Ke
 
         $ruleRepository = new DoctrineMaintenanceReminderRuleRepository($this->em);
         $eventRepository = new DoctrineMaintenanceEventRepository($this->em);
-        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage());
+        $receiptRepository = new DoctrineReceiptRepository($this->em, new TokenStorage(), $this->receiptAnalyticsProjectionRefresher);
         $reminderRepository = new DoctrineMaintenanceReminderRepository($this->em);
 
         $rule = MaintenanceReminderRule::create(

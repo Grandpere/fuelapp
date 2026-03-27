@@ -401,7 +401,19 @@
                 </div>
 
                 {% if receipts is empty %}
-                    <p id="receipts-empty" class="empty-state">No receipt yet.</p>
+                    <div id="receipts-empty" class="empty-state">
+                        <p>No receipt yet.</p>
+                        <div class="actions-wrap">
+                            <a class="btn btn-primary" href="{{ path('ui_receipt_new', newReceiptParams) }}" data-turbo-frame="receipt_form_frame">Add first receipt</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Open imports</a>
+                            {% if selectedVehicle %}
+                                <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: selectedVehicle.id}) }}">Open vehicle</a>
+                            {% endif %}
+                            {% if selectedStation %}
+                                <a class="btn btn-secondary" href="{{ path('ui_station_show', {id: selectedStation.id, return_to: app.request.uri}) }}">Open station</a>
+                            {% endif %}
+                        </div>
+                    </div>
                 {% endif %}
 
                 <div class="summary">

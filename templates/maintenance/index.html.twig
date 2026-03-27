@@ -308,12 +308,15 @@
             <article class="card panel">
                 <h2>Timeline events</h2>
                 {% if events is empty %}
-                    <div class="empty-state">
-                        <p>No maintenance event yet.</p>
-                        <div class="actions-wrap">
-                            <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add first event</a>
+                        <div class="empty-state">
+                            <p>No maintenance event yet.</p>
+                            <div class="actions-wrap">
+                                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add first event</a>
+                                {% if vehicleFilter %}
+                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">Open vehicle</a>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
                 {% else %}
                     <div class="timeline-list">
                         {% for event in events %}
@@ -356,6 +359,9 @@
                             <p>No upcoming planned cost.</p>
                             <div class="actions-wrap">
                                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add first plan</a>
+                                {% if vehicleFilter %}
+                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">Open vehicle</a>
+                                {% endif %}
                             </div>
                         </div>
                     {% else %}
@@ -401,6 +407,9 @@
                             <p>No reminder rule yet. Add one to start generating due reminders from time or mileage.</p>
                             <div class="actions-wrap">
                                 <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add first rule</a>
+                                {% if vehicleFilter %}
+                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">Open vehicle</a>
+                                {% endif %}
                             </div>
                         </div>
                     {% else %}

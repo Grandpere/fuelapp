@@ -239,6 +239,15 @@
 - [completed] User-run functional suite validated (`make phpunit-functional`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
 
+# TODO - SP24-003 Front dashboard cohesion pass
+
+## Plan
+- [completed] Add actionable empty-state next steps on the main front vehicle, station, maintenance, and receipt hubs.
+- [completed] Keep the new shortcuts anchored to the current screen context instead of sending users to generic indexes only.
+- [completed] Add/update functional coverage for the new empty-state guidance across the touched front-office screens.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
 # TODO - SP18-001 Vehicle-centered workflow polish
 
 ## Plan
@@ -586,5 +595,24 @@
 - [completed] Keep vehicle create/edit flows anchored to a safe `return_to` instead of always dropping back to the generic list.
 - [completed] Add the most useful front-office shortcuts directly from `/ui/vehicles` rows.
 - [completed] Add/update functional coverage for the new vehicle list/form workflow behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP24-001 Analytics filter workflow polish
+
+## Plan
+- [completed] Add quick date-range shortcuts and an active-filter summary to `/ui/analytics`.
+- [completed] Add direct next-step links that respect the current analytics context.
+- [completed] Add a projection self-heal pass when analytics filters hit stale KPI rows after late receipt edits.
+- [completed] Add/update functional coverage for the new analytics filter workflow behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP24-002 Import list follow-up shortcuts
+
+## Plan
+- [completed] Add status quick filters and list-level follow-up shortcuts on `/ui/imports`.
+- [completed] Expose secondary row actions when the main next step is not the only useful follow-up.
+- [completed] Add/update functional coverage for status filtering and new import follow-up shortcuts.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.

@@ -1,20 +1,23 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 23 - Front maintenance scanability
+- Sprint 24 - Front finishing pass
 
 ## Current goal
-- Make the maintenance dashboard easier to scan so urgent work, near-term plans, and recently handled items stand out immediately.
+- Smooth the remaining high-traffic front-office screens so filtering and cross-screen navigation feel faster and more obvious.
 
 ## In progress
-- SP23-001 - Vehicle form and list workflow polish
+- No active ticket right now. Sprint 24 is fully delivered.
 
 ## Next tickets (ordered)
-1. Next Sprint 23 front-office follow-up to be decided after vehicle polish
-2. Microsoft OIDC remains deferred
-3. Sprint 23 review/PR prep once all three tickets are closed
+1. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 24 is fully delivered across analytics filter polish, import follow-up shortcuts, and stronger empty-state cohesion on the main front-office hubs.
+- SP24-003 is fully delivered across actionable empty states on vehicle, station, maintenance, and receipt front-office pages.
+- SP24-002 is fully delivered across import status quick filters, list-level follow-up shortcuts, and clearer secondary row actions.
+- SP24-001 is fully delivered across analytics shortcuts, active-filter summaries, context actions, and stale projection recovery after late receipt corrections.
+- Sprint 23 is fully delivered across maintenance scanability, station list productivity, and vehicle list/form workflow polish.
 - SP23-002 is fully delivered across the new front station list and direct station shortcuts.
 - SP23-003 is fully delivered across maintenance dashboard scan signals and quick urgency cues.
 - Sprint 22 is fully delivered across import confidence signals, vehicle edit shortcuts, and receipt quick corrections.

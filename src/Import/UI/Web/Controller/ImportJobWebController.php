@@ -62,12 +62,14 @@ final class ImportJobWebController extends AbstractController
 
         $jobs = [];
         $returnTo = $request->getRequestUri();
+        $statusFilter = $this->readStatusFilter($request);
         foreach ($this->importJobRepository->all() as $job) {
             $jobs[] = [
                 'job' => $job,
                 'canAutoFinalize' => $this->canAutoFinalize($job),
                 'summary' => $this->buildListSummary($job),
                 'primaryAction' => $this->buildPrimaryAction($job, $returnTo),
+                'secondaryAction' => $this->buildSecondaryAction($job, $returnTo),
             ];
         }
 
@@ -76,8 +78,21 @@ final class ImportJobWebController extends AbstractController
             static fn (array $a, array $b): int => $b['job']->createdAt()->getTimestamp() <=> $a['job']->createdAt()->getTimestamp(),
         );
 
+        $statusCounts = $this->buildStatusCounts($jobs);
+        $followUpShortcuts = $this->buildFollowUpShortcuts($jobs, $returnTo);
+
+        if (null !== $statusFilter) {
+            $jobs = array_values(array_filter(
+                $jobs,
+                static fn (array $row): bool => $row['job']->status()->value === $statusFilter,
+            ));
+        }
+
         return $this->render('import/index.html.twig', [
             'jobs' => $jobs,
+            'statusFilter' => $statusFilter,
+            'statusQuickFilters' => $this->buildStatusQuickFilters($statusCounts, $statusFilter),
+            'followUpShortcuts' => $followUpShortcuts,
             'statusLabels' => [
                 'queued' => 'Queued',
                 'processing' => 'Processing',
@@ -87,6 +102,27 @@ final class ImportJobWebController extends AbstractController
                 'duplicate' => 'Duplicate',
             ],
         ]);
+    }
+
+    private function readStatusFilter(Request $request): ?string
+    {
+        $raw = $request->query->get('status');
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $value = trim((string) $raw);
+        if ('' === $value) {
+            return null;
+        }
+
+        foreach (ImportJobStatus::cases() as $status) {
+            if ($status->value === $value) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -178,6 +214,115 @@ final class ImportJobWebController extends AbstractController
             'url' => $detailUrl,
             'variant' => 'secondary',
         ];
+    }
+
+    /**
+     * @return array{label:string,url:string,variant:string}|null
+     */
+    private function buildSecondaryAction(ImportJob $job, string $returnTo): ?array
+    {
+        $detailUrl = $this->generateUrl('ui_import_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]);
+
+        return match ($job->status()) {
+            ImportJobStatus::PROCESSED,
+            ImportJobStatus::DUPLICATE => [
+                'label' => 'Detail',
+                'url' => $detailUrl,
+                'variant' => 'secondary',
+            ],
+            ImportJobStatus::FAILED => [
+                'label' => 'Inspect failure',
+                'url' => $detailUrl,
+                'variant' => 'secondary',
+            ],
+            default => null,
+        };
+    }
+
+    /**
+     * @param list<array{job:ImportJob,canAutoFinalize:bool,summary:array{headline:string,detail:string},primaryAction:array{label:string,url:string,variant:string},secondaryAction:array{label:string,url:string,variant:string}|null}> $jobs
+     *
+     * @return array<string,int>
+     */
+    private function buildStatusCounts(array $jobs): array
+    {
+        $counts = ['all' => count($jobs)];
+        foreach (ImportJobStatus::cases() as $status) {
+            $counts[$status->value] = 0;
+        }
+
+        foreach ($jobs as $row) {
+            ++$counts[$row['job']->status()->value];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * @param array<string,int> $statusCounts
+     *
+     * @return list<array{label:string,count:int,url:string,isActive:bool}>
+     */
+    private function buildStatusQuickFilters(array $statusCounts, ?string $statusFilter): array
+    {
+        $filters = [[
+            'label' => 'All',
+            'count' => $statusCounts['all'] ?? 0,
+            'url' => $this->generateUrl('ui_import_index'),
+            'isActive' => null === $statusFilter,
+        ]];
+
+        foreach (ImportJobStatus::cases() as $status) {
+            $filters[] = [
+                'label' => match ($status) {
+                    ImportJobStatus::NEEDS_REVIEW => 'Needs review',
+                    ImportJobStatus::PROCESSED => 'Processed',
+                    ImportJobStatus::PROCESSING => 'Processing',
+                    ImportJobStatus::QUEUED => 'Queued',
+                    ImportJobStatus::FAILED => 'Failed',
+                    ImportJobStatus::DUPLICATE => 'Duplicate',
+                },
+                'count' => $statusCounts[$status->value] ?? 0,
+                'url' => $this->generateUrl('ui_import_index', ['status' => $status->value]),
+                'isActive' => $statusFilter === $status->value,
+            ];
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @param list<array{job:ImportJob,canAutoFinalize:bool,summary:array{headline:string,detail:string},primaryAction:array{label:string,url:string,variant:string},secondaryAction:array{label:string,url:string,variant:string}|null}> $jobs
+     *
+     * @return list<array{label:string,url:string,variant:string}>
+     */
+    private function buildFollowUpShortcuts(array $jobs, string $returnTo): array
+    {
+        $shortcuts = [];
+
+        foreach ($jobs as $row) {
+            if (ImportJobStatus::NEEDS_REVIEW === $row['job']->status()) {
+                $shortcuts[] = [
+                    'label' => 'Review next pending',
+                    'url' => $this->generateUrl('ui_import_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
+                    'variant' => 'primary',
+                ];
+                break;
+            }
+        }
+
+        foreach ($jobs as $row) {
+            if (ImportJobStatus::FAILED === $row['job']->status()) {
+                $shortcuts[] = [
+                    'label' => 'Inspect latest failure',
+                    'url' => $this->generateUrl('ui_import_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
+                    'variant' => 'secondary',
+                ];
+                break;
+            }
+        }
+
+        return $shortcuts;
     }
 
     /**

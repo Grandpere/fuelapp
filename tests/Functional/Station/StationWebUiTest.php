@@ -103,6 +103,28 @@ final class StationWebUiTest extends WebTestCase
         self::assertStringContainsString('145200 km', $content);
     }
 
+    public function testStationDetailRequiresAccessibleStationForFrontUsers(): void
+    {
+        $email = 'station.ui.empty@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Empty Station');
+        $station->setStreetName('8 Rue Vide');
+        $station->setPostalCode('44000');
+        $station->setCity('Nantes');
+        $this->em->persist($station);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $stationId = $station->getId()->toRfc4122();
+        $response = $this->request('GET', '/ui/stations/'.$stationId);
+        self::assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode());
+    }
+
     public function testStationListActsAsProductiveFrontIndex(): void
     {
         $email = 'station.ui.index@example.com';

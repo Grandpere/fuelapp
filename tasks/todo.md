@@ -588,3 +588,13 @@
 - [completed] Add/update functional coverage for the new vehicle list/form workflow behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP24-001 Analytics filter workflow polish
+
+## Plan
+- [completed] Add quick date-range shortcuts and an active-filter summary to `/ui/analytics`.
+- [completed] Add direct next-step links that respect the current analytics context.
+- [completed] Add a projection self-heal pass when analytics filters hit stale KPI rows after late receipt edits.
+- [completed] Add/update functional coverage for the new analytics filter workflow behavior.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

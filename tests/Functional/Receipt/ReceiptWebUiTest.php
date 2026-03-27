@@ -55,7 +55,7 @@ final class ReceiptWebUiTest extends WebTestCase
         }
         $this->passwordHasher = $passwordHasher;
 
-        $this->em->getConnection()->executeStatement('TRUNCATE TABLE maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
+        $this->em->getConnection()->executeStatement('TRUNCATE TABLE analytics_projection_states, analytics_daily_fuel_kpis, maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
     }
 
     public function testUserCanEditReceiptLinesFromUi(): void
@@ -219,6 +219,81 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame($stationB->getId()->toRfc4122(), $updated->getStation()?->getId()->toRfc4122());
         self::assertSame(121500, $updated->getOdometerKilometers());
         self::assertSame('2026-03-05 12:45', $updated->getIssuedAt()->format('Y-m-d H:i'));
+    }
+
+    public function testReceiptMetadataEditRefreshesAnalyticsProjection(): void
+    {
+        $email = 'receipt.ui.analytics.metadata@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Projection Car');
+        $vehicle->setPlateNumber('PJ-100-AA');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-01 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Projection Station');
+        $station->setStreetName('1 Projection St');
+        $station->setPostalCode('75001');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-03 11:00:00'));
+        $receipt->setOdometerKilometers(120000);
+        $receipt->setTotalCents(1800);
+        $receipt->setVatAmountCents(300);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(10000);
+        $line->setUnitPriceDeciCentsPerLiter(1800);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $receiptId = $receipt->getId()->toRfc4122();
+        $vehicleId = $vehicle->getId()->toRfc4122();
+        $this->loginWithUiForm($email, $password);
+
+        $editPage = $this->request('GET', '/ui/receipts/'.$receiptId.'/edit-metadata');
+        self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
+        $csrf = $this->extractFormCsrf((string) $editPage->getContent());
+
+        $editResponse = $this->request(
+            'POST',
+            '/ui/receipts/'.$receiptId.'/edit-metadata',
+            [
+                '_token' => $csrf,
+                'issuedAt' => '2026-03-03T11:00',
+                'vehicleId' => $vehicleId,
+                'stationId' => $station->getId()->toRfc4122(),
+                'odometerKilometers' => '120000',
+            ],
+        );
+        self::assertSame(Response::HTTP_SEE_OTHER, $editResponse->getStatusCode());
+
+        $analyticsResponse = $this->request(
+            'GET',
+            '/ui/analytics?vehicle_id='.$vehicleId.'&from=2026-03-01&to=2026-03-31',
+        );
+        self::assertSame(Response::HTTP_OK, $analyticsResponse->getStatusCode());
+        $content = (string) $analyticsResponse->getContent();
+        self::assertStringContainsString('Projection Car (PJ-100-AA)', $content);
+        self::assertStringContainsString('18.00 EUR', $content);
+        self::assertStringContainsString('10.00 L', $content);
     }
 
     public function testReceiptMetadataEditDoesNotExposeForeignVehicles(): void

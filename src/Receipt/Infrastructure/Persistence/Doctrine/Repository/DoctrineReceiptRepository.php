@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Receipt\Infrastructure\Persistence\Doctrine\Repository;
 
+use App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher;
 use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateCandidate;
 use App\Receipt\Application\DuplicateDetection\ReceiptDuplicateLookup;
 use App\Receipt\Application\Repository\ReceiptRepository;
@@ -42,6 +43,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository, Rec
     public function __construct(
         private EntityManagerInterface $em,
         private TokenStorageInterface $tokenStorage,
+        private ReceiptAnalyticsProjectionRefresher $receiptAnalyticsProjectionRefresher,
     ) {
     }
 
@@ -112,6 +114,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository, Rec
 
         $this->em->persist($entity);
         $this->em->flush();
+        $this->receiptAnalyticsProjectionRefresher->refresh();
     }
 
     public function get(string $id): ?Receipt
@@ -161,6 +164,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository, Rec
 
         $this->em->remove($entity);
         $this->em->flush();
+        $this->receiptAnalyticsProjectionRefresher->refresh();
     }
 
     public function deleteForSystem(string $id): void
@@ -176,6 +180,7 @@ final readonly class DoctrineReceiptRepository implements ReceiptRepository, Rec
 
         $this->em->remove($entity);
         $this->em->flush();
+        $this->receiptAnalyticsProjectionRefresher->refresh();
     }
 
     public function all(): iterable

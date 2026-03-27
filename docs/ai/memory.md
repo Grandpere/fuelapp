@@ -500,3 +500,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: realtime Mercure/Twig publishing happened inline after persistence, so any transient stream/render failure could break the main CRUD response.
 - Fix: make `ReceiptStreamPublisher` swallow publish/render failures and log them as warnings; add a unit regression so Mercure issues cannot fail receipt creation/deletion flows.
 - Prevention: realtime/UI broadcast side effects should not be allowed to break the main transactional user flow unless explicitly required by product behavior.
+
+## 2026-03-27 - Receipt corrections must refresh the analytics projection immediately
+- Symptom: a receipt re-linked to a vehicle from `Edit details` appeared in `/ui/receipts` filters and in `Open matching receipts`, but the analytics vehicle filter still ignored it.
+- Root cause: analytics reads from the materialized `analytics_daily_fuel_kpis` projection, while receipt create/update/delete flows persisted directly to `receipts` without refreshing that projection.
+- Fix: trigger `ReceiptAnalyticsProjectionRefresher` directly from the receipt repository after every save/delete so metadata edits, line edits, creations, and deletions all stay visible in analytics immediately.
+- Prevention: when a UI mixes direct table reads and projection-backed screens, receipt mutations must update the projection at the same write boundary, not via optional follow-up commands.

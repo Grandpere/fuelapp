@@ -114,6 +114,13 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
 
         $content = (string) $response->getContent();
         self::assertStringContainsString('Analytics Dashboard', $content);
+        self::assertStringContainsString('Last 30 days', $content);
+        self::assertStringContainsString('Last 90 days', $content);
+        self::assertStringContainsString('This month', $content);
+        self::assertStringContainsString('Period:', $content);
+        self::assertStringContainsString('01/01/2026', $content);
+        self::assertStringContainsString('28/02/2026', $content);
+        self::assertStringContainsString('/ui/receipts?issued_from=2026-01-01&amp;issued_to=2026-02-28', $content);
         self::assertStringContainsString('Total cost', $content);
         self::assertStringContainsString('620.00 EUR', $content);
         self::assertStringContainsString('35.00 L', $content);
@@ -145,6 +152,9 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('15.00 L', $vehicleContent);
         self::assertStringContainsString('18.667 EUR/L', $vehicleContent);
         self::assertStringContainsString('vehicle_id='.$vehicle->getId()->toRfc4122(), $vehicleContent);
+        self::assertStringContainsString('Vehicle: Trend Car (TR-100-AA)', $vehicleContent);
+        self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicle->getId()->toRfc4122(), $vehicleContent);
+        self::assertStringContainsString('/ui/vehicles/'.$vehicle->getId()->toRfc4122(), $vehicleContent);
 
         $stationFuelResponse = $this->request(
             'GET',
@@ -162,6 +172,8 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('All fuel types', $stationFuelContent);
         self::assertStringContainsString('station_id='.$stationA->getId()->toRfc4122(), $stationFuelContent);
         self::assertStringContainsString('fuel_type=diesel', $stationFuelContent);
+        self::assertStringContainsString('Fuel: DIESEL', $stationFuelContent);
+        self::assertStringContainsString('/ui/stations/'.$stationA->getId()->toRfc4122(), $stationFuelContent);
 
         self::assertStringContainsString('data-chart-key="cost"', $content);
         self::assertStringContainsString('data-chart-key="fuel-price"', $content);
@@ -175,6 +187,50 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('data-chart-runtime-state="idle"', $content);
         self::assertStringContainsString('data-chart-view="bars"', $content);
         self::assertStringContainsString('analytics.chartView.cost', $content);
+    }
+
+    public function testAnalyticsDashboardSelfHealsStaleVehicleProjection(): void
+    {
+        $owner = $this->createUser('analytics.web.stale@example.com', 'test1234', ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setOwner($owner);
+        $vehicle->setName('Late Linked Car');
+        $vehicle->setPlateNumber('LL-100-AA');
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-01-01 10:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-01-01 10:00:00'));
+        $this->em->persist($vehicle);
+
+        $station = $this->createStation('Late Link Station', '3 Repair Rd', '31000', 'Toulouse');
+        $this->em->flush();
+
+        $this->createReceipt($owner, null, $station, new DateTimeImmutable('2026-02-20 10:00:00'), [
+            ['diesel', 28640, 1551, 20],
+        ]);
+        $this->em->flush();
+
+        $this->projectionRefresher->refresh();
+
+        $receipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy(['owner' => $owner]);
+        self::assertInstanceOf(ReceiptEntity::class, $receipt);
+        $receipt->setVehicle($vehicle);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm('analytics.web.stale@example.com', 'test1234');
+        $response = $this->request(
+            'GET',
+            '/ui/analytics?vehicle_id='.$vehicle->getId()->toRfc4122().'&from=2026-02-01&to=2026-02-28',
+            [],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('Late Linked Car (LL-100-AA)', $content);
+        self::assertStringContainsString('44.42 EUR', $content);
+        self::assertStringContainsString('28.64 L', $content);
     }
 
     /**

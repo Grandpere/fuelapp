@@ -114,6 +114,8 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('Attention now', (string) $response->getContent());
         self::assertStringContainsString('Due soon', (string) $response->getContent());
         self::assertStringContainsString('Recently handled', (string) $response->getContent());
+        self::assertStringContainsString('Configured', (string) $response->getContent());
+        self::assertStringContainsString('Watching', (string) $response->getContent());
         self::assertStringContainsString('Add first event', (string) $response->getContent());
         self::assertStringContainsString('Add first plan', (string) $response->getContent());
     }
@@ -330,6 +332,8 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('Trigger: WHICHEVER FIRST', $content);
         self::assertStringContainsString('every 180 days', $content);
         self::assertStringContainsString('every 12000 km', $content);
+        self::assertStringContainsString('Due now', $content);
+        self::assertStringContainsString('A triggered reminder is ready for follow-up.', $content);
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId.'&amp;event_type=service', $content);
         self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
@@ -468,6 +472,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertStringContainsString('Oil service', $dashboardContent);
         self::assertStringContainsString('Every 180 days', $dashboardContent);
         self::assertStringContainsString('Every 12000 km', $dashboardContent);
+        self::assertStringContainsString('Configured', $dashboardContent);
 
         $ruleId = $rule->getId()->toRfc4122();
         $editPage = $this->request('GET', '/ui/maintenance/rules/'.$ruleId.'/edit', [], [], $sessionCookie);
@@ -561,6 +566,8 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
         $content = (string) $dashboard->getContent();
         self::assertStringContainsString('Brake inspection', $content);
+        self::assertStringContainsString('Configured', $content);
+        self::assertStringContainsString('Waiting for odometer data before mileage-based tracking can start.', $content);
         self::assertStringContainsString('Waiting for odometer data from a receipt or maintenance event to evaluate this rule.', $content);
         self::assertStringContainsString('No triggered reminder yet. Your rules are being tracked, but none is due right now.', $content);
     }

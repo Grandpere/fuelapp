@@ -40,6 +40,12 @@
             gap: 0.75rem;
         }
 
+        .lifecycle-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
         .kpi {
             padding: 0.95rem;
         }
@@ -58,6 +64,11 @@
         .scan-copy {
             color: var(--text-soft);
             font-size: 0.88rem;
+        }
+
+        .lifecycle-copy {
+            color: var(--text-soft);
+            font-size: 0.82rem;
         }
 
         .kpi-label {
@@ -214,6 +225,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .lifecycle-grid {
+                grid-template-columns: 1fr;
+            }
+
             .inline-filter {
                 flex-direction: column;
                 align-items: stretch;
@@ -300,6 +315,29 @@
                     <div class="scan-copy">
                         Maintenance event{% if recentEventCount > 1 %}s{% endif %} logged in the last 30 days.
                     </div>
+                </article>
+            </div>
+
+            <div class="lifecycle-grid">
+                <article class="card-subtle scan-card">
+                    <div class="kpi-label">Configured</div>
+                    <div class="kpi-value">{{ configuredRuleCount }}</div>
+                    <div class="lifecycle-copy">Rules waiting for a first event or enough data to start tracking cleanly.</div>
+                </article>
+                <article class="card-subtle scan-card">
+                    <div class="kpi-label">Watching</div>
+                    <div class="kpi-value">{{ watchingRuleCount }}</div>
+                    <div class="lifecycle-copy">Rules currently active and tracking the next due point.</div>
+                </article>
+                <article class="card-subtle scan-card {% if dueSoonRuleCount > 0 %}is-alert{% endif %}">
+                    <div class="kpi-label">Due soon</div>
+                    <div class="kpi-value">{{ dueSoonRuleCount }}</div>
+                    <div class="lifecycle-copy">Rules getting close to their next due date or mileage threshold.</div>
+                </article>
+                <article class="card-subtle scan-card {% if dueRuleCount > 0 %}is-alert{% endif %}">
+                    <div class="kpi-label">Due now</div>
+                    <div class="kpi-value">{{ dueRuleCount }}</div>
+                    <div class="lifecycle-copy">Rules that have already crossed the threshold and should create follow-up work.</div>
                 </article>
             </div>
         </section>
@@ -421,13 +459,17 @@
                                         <span class="muted">{{ vehicleOptions[rule.vehicleId] ?? rule.vehicleId }}</span>
                                     </div>
                                     {% set insight = ruleInsights[rule.id.toString] ?? null %}
+                                    {% set lifecycle = ruleLifecycle[rule.id.toString] ?? null %}
                                     <div class="item-meta">
                                         <span>Trigger: {{ rule.triggerMode.value|replace({'_': ' '})|upper }}</span>
                                         {% if rule.intervalDays is not null %}<span>Every {{ rule.intervalDays }} day{% if rule.intervalDays > 1 %}s{% endif %}</span>{% endif %}
                                         {% if rule.intervalKilometers is not null %}<span>Every {{ rule.intervalKilometers }} km</span>{% endif %}
                                         {% if rule.eventType is not null %}<span>Suggested event: {{ rule.eventType.value|upper }}</span>{% endif %}
-                                        {% if insight and insight.isDue %}<span class="pill pill-reminder-due">Due now</span>{% endif %}
+                                        {% if lifecycle %}<span class="pill {{ lifecycle.badgeClass }}">{{ lifecycle.label }}</span>{% endif %}
                                     </div>
+                                    {% if lifecycle and lifecycle.detail %}
+                                        <div class="item-sub">{{ lifecycle.detail }}</div>
+                                    {% endif %}
                                     {% if insight and insight.message %}
                                         <div class="item-sub">{{ insight.message }}</div>
                                     {% endif %}

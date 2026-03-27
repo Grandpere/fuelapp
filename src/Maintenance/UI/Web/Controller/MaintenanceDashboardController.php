@@ -21,6 +21,7 @@ use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Application\Repository\MaintenancePlannedCostRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository;
+use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
 use App\Maintenance\Domain\MaintenanceReminderRule;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Vehicle\Application\Repository\VehicleRepository;
@@ -100,7 +101,11 @@ final class MaintenanceDashboardController extends AbstractController
         $reminderStates = [];
         $currentOdometers = [];
         $ruleInsights = [];
+        $ruleLifecycle = [];
         $dueRuleCount = 0;
+        $watchingRuleCount = 0;
+        $dueSoonRuleCount = 0;
+        $configuredRuleCount = 0;
         foreach ($vehicles as $vehicle) {
             if (null !== $vehicleId && $vehicle->id()->toString() !== $vehicleId) {
                 continue;
@@ -132,6 +137,26 @@ final class MaintenanceDashboardController extends AbstractController
             foreach ($this->ruleRepository->allForOwnerAndVehicle($ownerId, $vehicle->id()->toString()) as $rule) {
                 $state = $reminderStates[$rule->id()->toString()] ?? null;
                 $ruleInsights[$rule->id()->toString()] = $this->buildRuleInsight($rule, $state, $resolvedOdometer);
+                $ruleLifecycle[$rule->id()->toString()] = $this->buildRuleLifecycle($rule, $state, $resolvedOdometer, $today);
+
+                $stage = $ruleLifecycle[$rule->id()->toString()]['stage'];
+                if ('due_now' === $stage) {
+                    continue;
+                }
+
+                if ('due_soon' === $stage) {
+                    ++$dueSoonRuleCount;
+
+                    continue;
+                }
+
+                if ('watching' === $stage) {
+                    ++$watchingRuleCount;
+
+                    continue;
+                }
+
+                ++$configuredRuleCount;
             }
         }
 
@@ -160,7 +185,11 @@ final class MaintenanceDashboardController extends AbstractController
             'reminderStates' => $reminderStates,
             'currentOdometers' => $currentOdometers,
             'ruleInsights' => $ruleInsights,
+            'ruleLifecycle' => $ruleLifecycle,
             'dueRuleCount' => $dueRuleCount,
+            'watchingRuleCount' => $watchingRuleCount,
+            'dueSoonRuleCount' => $dueSoonRuleCount,
+            'configuredRuleCount' => $configuredRuleCount,
             'variance' => $variance,
             'monthStart' => $monthStart,
             'monthEnd' => $monthEnd,
@@ -272,6 +301,77 @@ final class MaintenanceDashboardController extends AbstractController
             'message' => $message,
             'lastEventSummary' => $lastEventSummary,
             'isDue' => $state->isDue,
+        ];
+    }
+
+    /** @return array{stage:string,label:string,badgeClass:string,detail:?string} */
+    private function buildRuleLifecycle(MaintenanceReminderRule $rule, ?ReminderDueState $state, ?int $currentOdometer, DateTimeImmutable $today): array
+    {
+        if (!$state instanceof ReminderDueState) {
+            return [
+                'stage' => 'configured',
+                'label' => 'Configured',
+                'badgeClass' => 'pill-maintenance-later',
+                'detail' => 'Waiting for the first evaluation pass for this rule.',
+            ];
+        }
+
+        if ($state->isDue) {
+            return [
+                'stage' => 'due_now',
+                'label' => 'Due now',
+                'badgeClass' => 'pill-reminder-due',
+                'detail' => 'A triggered reminder is ready for follow-up.',
+            ];
+        }
+
+        if (ReminderRuleTriggerMode::ODOMETER === $rule->triggerMode() && null === $currentOdometer) {
+            return [
+                'stage' => 'configured',
+                'label' => 'Configured',
+                'badgeClass' => 'pill-maintenance-later',
+                'detail' => 'Waiting for odometer data before mileage-based tracking can start.',
+            ];
+        }
+
+        if (null === $state->lastEventOccurredAt) {
+            return [
+                'stage' => 'configured',
+                'label' => 'Configured',
+                'badgeClass' => 'pill-maintenance-later',
+                'detail' => 'No matching maintenance event has been logged yet.',
+            ];
+        }
+
+        if (null !== $state->dueAtDate) {
+            $daysUntilDue = (int) $today->diff($state->dueAtDate)->format('%r%a');
+            if ($daysUntilDue >= 0 && $daysUntilDue <= 14) {
+                return [
+                    'stage' => 'due_soon',
+                    'label' => 'Due soon',
+                    'badgeClass' => 'pill-maintenance-soon',
+                    'detail' => sprintf('Next due on %s.', $state->dueAtDate->format('d/m/Y')),
+                ];
+            }
+        }
+
+        if (null !== $state->dueAtOdometerKilometers && null !== $currentOdometer) {
+            $remainingKilometers = $state->dueAtOdometerKilometers - $currentOdometer;
+            if ($remainingKilometers >= 0 && $remainingKilometers <= 1000) {
+                return [
+                    'stage' => 'due_soon',
+                    'label' => 'Due soon',
+                    'badgeClass' => 'pill-maintenance-soon',
+                    'detail' => sprintf('Next due at %d km. Current estimate: %d km.', $state->dueAtOdometerKilometers, $currentOdometer),
+                ];
+            }
+        }
+
+        return [
+            'stage' => 'watching',
+            'label' => 'Watching',
+            'badgeClass' => 'pill-soft-info',
+            'detail' => 'The rule is active and being tracked, but it is not close to due yet.',
         ];
     }
 }

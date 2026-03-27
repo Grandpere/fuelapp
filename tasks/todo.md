@@ -643,3 +643,12 @@
 - [completed] Add/update functional coverage for the dashboard content and topbar navigation contract.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP26-003 Maintenance reminder lifecycle clarity
+
+## Plan
+- [completed] Add explicit lifecycle stages for reminder rules (`configured`, `watching`, `due soon`, `due now`) in the maintenance dashboard controller.
+- [completed] Render the lifecycle summary and per-rule stage badges directly in `/ui/maintenance`.
+- [completed] Add/update functional coverage for the clearer lifecycle copy and stage states.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

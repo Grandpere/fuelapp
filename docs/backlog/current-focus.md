@@ -1,18 +1,21 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 25 - Export and follow-up workflow polish
+- Sprint 26 - Reminder lifecycle clarity and front workflow follow-through
 
 ## Current goal
-- Reduce friction on high-frequency front-office follow-up flows, starting with exports, import recovery shortcuts, and a more useful overview dashboard.
+- Reduce the remaining ambiguity on maintenance reminder lifecycle states before polishing the newer front-office hubs further.
 
 ## In progress
-- None. Sprint 25 is fully delivered.
+- None yet beyond SP26-003. Sprint 26 has started cleanly.
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
 
 ## Notes
+- Sprint 26 starts with reminder lifecycle clarity because maintenance still carries the highest cognitive load despite the earlier dashboard and actionability passes.
+- SP26-003 is fully delivered across reminder lifecycle stages, clearer rule copy, and dashboard lifecycle counts.
+- Sprint 25 is fully delivered across export reliability, import recovery shortcuts, and the new front dashboard hub.
 - Sprint 25 starts with receipt export reliability and share-friendly filenames; admin parity remains deferred unless operations need it later.
 - SP25-003 is fully delivered across the new front dashboard, quick follow-up signals, and topbar entry-point navigation.
 - SP25-002 is fully delivered across import recovery shortcuts on both the queue and detail pages.

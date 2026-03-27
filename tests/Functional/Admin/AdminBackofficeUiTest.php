@@ -261,9 +261,15 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $importsResponse = $this->request('GET', '/ui/admin/imports', ['status' => 'needs_review'], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $importsResponse->getStatusCode());
-        self::assertStringContainsString('ui-import.pdf', (string) $importsResponse->getContent());
-        self::assertStringContainsString('needs_review', (string) $importsResponse->getContent());
-        self::assertStringContainsString('data-controller="row-link"', (string) $importsResponse->getContent());
+        $importsContent = (string) $importsResponse->getContent();
+        self::assertStringContainsString('data-admin-sidebar-toggle', $importsContent);
+        self::assertStringContainsString('aria-label="Hide admin menu"', $importsContent);
+        self::assertStringContainsString('ui-import.pdf', $importsContent);
+        self::assertStringContainsString('needs_review', $importsContent);
+        self::assertStringContainsString('data-controller="row-link"', $importsContent);
+        self::assertStringContainsString('Follow up now', $importsContent);
+        self::assertStringContainsString('Review next pending', $importsContent);
+        self::assertStringContainsString('Manual review needed', $importsContent);
 
         $securityResponse = $this->request('GET', '/ui/admin/security-activities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $securityResponse->getStatusCode());
@@ -1088,6 +1094,15 @@ final class AdminBackofficeUiTest extends WebTestCase
         $receipt->setVatAmountCents(700);
         $this->em->persist($receipt);
 
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setReceipt($receipt);
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(25000);
+        $line->setUnitPriceDeciCentsPerLiter(1680);
+        $line->setVatRatePercent(20);
+        $this->em->persist($line);
+
         $job = new ImportJobEntity();
         $job->setId(Uuid::v7());
         $job->setOwner($owner);
@@ -1201,6 +1216,15 @@ final class AdminBackofficeUiTest extends WebTestCase
         $receipt->setVatAmountCents(1191);
         $this->em->persist($receipt);
 
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setReceipt($receipt);
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(41000);
+        $line->setUnitPriceDeciCentsPerLiter(1743);
+        $line->setVatRatePercent(20);
+        $this->em->persist($line);
+
         $job = new ImportJobEntity();
         $job->setId(Uuid::v7());
         $job->setOwner($owner);
@@ -1229,6 +1253,50 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Duplicate import', $detailContent);
         self::assertStringContainsString('/ui/admin/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('Open existing receipt', $detailContent);
+    }
+
+    public function testAdminDuplicateImportDetailDoesNotShowDeadLinksWhenTargetsAreGone(): void
+    {
+        $adminEmail = 'ui.admin.import.duplicate.missing@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.import.duplicate.missing.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $missingReceiptId = Uuid::v7()->toRfc4122();
+        $missingImportId = Uuid::v7()->toRfc4122();
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::DUPLICATE);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/26/admin-duplicate-missing.jpg');
+        $job->setOriginalFilename('admin-duplicate-missing.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('z', 64));
+        $job->setErrorPayload(json_encode([
+            'status' => 'duplicate',
+            'duplicateOfReceiptId' => $missingReceiptId,
+            'duplicateOfImportJobId' => $missingImportId,
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setCompletedAt(new DateTimeImmutable('2026-03-26 10:50:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-26 10:50:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('The linked receipt or original import is no longer available.', $detailContent);
+        self::assertStringNotContainsString('Open existing receipt', $detailContent);
+        self::assertStringNotContainsString('Open original import', $detailContent);
+        self::assertStringNotContainsString('/ui/admin/receipts/'.$missingReceiptId, $detailContent);
+        self::assertStringNotContainsString('/ui/admin/imports/'.$missingImportId, $detailContent);
     }
 
     public function testAdminNeedsReviewImportDetailShowsTriageSummaryForOcrFallback(): void

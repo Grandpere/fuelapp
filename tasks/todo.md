@@ -1,5 +1,15 @@
 # TODO - Receipts Front/Admin Edition
 
+# TODO - SP28-001 Admin import workflow parity
+
+## Plan
+- [completed] Review the current admin import list/detail flow and identify the missing parity that matters for support triage.
+- [in_progress] Add list-level shortcuts, status pivots, and safer follow-up cues on `/ui/admin/imports`.
+- [pending] Tighten the admin import detail flow so receipt/original-import links are shown only when the target still exists.
+- [pending] Add/update admin functional coverage for the new list/detail parity behavior.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Ask user to run `make phpunit-functional` and share failures if any.
+
 ## Plan
 - [completed] Add front UI receipt lines edit flow (`/ui/receipts/{id}/edit`) with CSRF and owner-scoped access.
 - [completed] Add application/repository support for receipt updates and admin system-scope reads/deletes.

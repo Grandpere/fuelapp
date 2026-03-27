@@ -16,7 +16,9 @@ namespace App\Admin\UI\Web\Controller;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
+use App\Receipt\Application\Repository\ReceiptRepository;
 use DateTimeImmutable;
+use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,8 +26,10 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class AdminImportJobListController extends AbstractController
 {
-    public function __construct(private readonly ImportJobRepository $importJobRepository)
-    {
+    public function __construct(
+        private readonly ImportJobRepository $importJobRepository,
+        private readonly ReceiptRepository $receiptRepository,
+    ) {
     }
 
     #[Route('/ui/admin/imports', name: 'ui_admin_import_job_list', methods: ['GET'])]
@@ -38,7 +42,7 @@ final class AdminImportJobListController extends AbstractController
         $createdFrom = $this->readDateFilter($request, 'createdFrom');
         $createdTo = $this->readDateFilter($request, 'createdTo');
 
-        $jobs = [];
+        $rows = [];
         $metrics = [
             ImportJobStatus::QUEUED->value => 0,
             ImportJobStatus::PROCESSING->value => 0,
@@ -75,22 +79,265 @@ final class AdminImportJobListController extends AbstractController
                 continue;
             }
 
-            $jobs[] = $job;
+            $rows[] = $this->buildListRow($job, $request->getRequestUri());
         }
 
+        usort(
+            $rows,
+            static fn (array $left, array $right): int => $right['job']->createdAt()->getTimestamp() <=> $left['job']->createdAt()->getTimestamp(),
+        );
+
+        $statusFilter = $status?->value;
+
         return $this->render('admin/imports/index.html.twig', [
-            'jobs' => $jobs,
+            'jobs' => $rows,
             'metrics' => $metrics,
             'filters' => [
-                'status' => $status?->value,
+                'status' => $statusFilter,
                 'ownerId' => $ownerId,
                 'source' => $source,
                 'q' => $query,
                 'createdFrom' => $createdFrom?->format('Y-m-d'),
                 'createdTo' => $createdTo?->format('Y-m-d'),
             ],
+            'statusQuickFilters' => $this->buildStatusQuickFilters($request, $metrics, $statusFilter),
+            'followUpShortcuts' => $this->buildFollowUpShortcuts($rows, $request->getRequestUri()),
             'statusOptions' => array_map(static fn (ImportJobStatus $jobStatus): string => $jobStatus->value, ImportJobStatus::cases()),
         ]);
+    }
+
+    /**
+     * @return array{
+     *     job:ImportJob,
+     *     summary:array{headline:string,detail:string},
+     *     primaryAction:array{label:string,url:string,variant:string},
+     *     secondaryAction:array{label:string,url:string,variant:string}|null
+     * }
+     */
+    private function buildListRow(ImportJob $job, string $returnTo): array
+    {
+        $payload = $this->decodePayload($job->errorPayload());
+
+        return [
+            'job' => $job,
+            'summary' => $this->buildListSummary($job, $payload),
+            'primaryAction' => $this->buildPrimaryAction($job, $payload, $returnTo),
+            'secondaryAction' => $this->buildSecondaryAction($job, $payload, $returnTo),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     *
+     * @return array{headline:string,detail:string}
+     */
+    private function buildListSummary(ImportJob $job, ?array $payload): array
+    {
+        return match ($job->status()) {
+            ImportJobStatus::QUEUED => [
+                'headline' => 'Waiting in queue',
+                'detail' => 'Still queued before OCR starts.',
+            ],
+            ImportJobStatus::PROCESSING => [
+                'headline' => 'OCR running',
+                'detail' => 'The file is still being processed.',
+            ],
+            ImportJobStatus::NEEDS_REVIEW => [
+                'headline' => 'Manual review needed',
+                'detail' => $this->readNeedsReviewDetail($payload),
+            ],
+            ImportJobStatus::FAILED => [
+                'headline' => 'Processing failed',
+                'detail' => $this->readFailedDetail($payload, $job->errorPayload()),
+            ],
+            ImportJobStatus::PROCESSED => [
+                'headline' => 'Receipt already created',
+                'detail' => null !== $this->resolveExistingReceiptId($this->readStringValue($payload, 'finalizedReceiptId'))
+                    ? 'You can jump straight to the created receipt.'
+                    : 'Processing completed, but the linked receipt is no longer available.',
+            ],
+            ImportJobStatus::DUPLICATE => [
+                'headline' => 'Duplicate already handled',
+                'detail' => $this->readDuplicateDetail($payload),
+            ],
+        };
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     *
+     * @return array{label:string,url:string,variant:string}
+     */
+    private function buildPrimaryAction(ImportJob $job, ?array $payload, string $returnTo): array
+    {
+        $detailUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]);
+
+        return match ($job->status()) {
+            ImportJobStatus::NEEDS_REVIEW => [
+                'label' => 'Review',
+                'url' => $detailUrl,
+                'variant' => 'primary',
+            ],
+            ImportJobStatus::FAILED => [
+                'label' => 'Inspect failure',
+                'url' => $detailUrl,
+                'variant' => 'secondary',
+            ],
+            ImportJobStatus::PROCESSED => null !== ($receiptId = $this->resolveExistingReceiptId($this->readStringValue($payload, 'finalizedReceiptId')))
+                ? [
+                    'label' => 'Open receipt',
+                    'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $receiptId]),
+                    'variant' => 'secondary',
+                ]
+                : [
+                    'label' => 'Detail',
+                    'url' => $detailUrl,
+                    'variant' => 'secondary',
+                ],
+            ImportJobStatus::DUPLICATE => $this->buildDuplicatePrimaryAction($payload, $returnTo, $detailUrl),
+            default => [
+                'label' => 'Detail',
+                'url' => $detailUrl,
+                'variant' => 'secondary',
+            ],
+        };
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     *
+     * @return array{label:string,url:string,variant:string}
+     */
+    private function buildDuplicatePrimaryAction(?array $payload, string $returnTo, string $detailUrl): array
+    {
+        $receiptId = $this->resolveExistingReceiptId($this->readStringValue($payload, 'duplicateOfReceiptId'));
+        if (null !== $receiptId) {
+            return [
+                'label' => 'Open receipt',
+                'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $receiptId]),
+                'variant' => 'secondary',
+            ];
+        }
+
+        $importId = $this->resolveExistingImportId($this->readStringValue($payload, 'duplicateOfImportJobId'));
+        if (null !== $importId) {
+            return [
+                'label' => 'Open original',
+                'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $importId, 'return_to' => $returnTo]),
+                'variant' => 'secondary',
+            ];
+        }
+
+        return [
+            'label' => 'Detail',
+            'url' => $detailUrl,
+            'variant' => 'secondary',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     *
+     * @return array{label:string,url:string,variant:string}|null
+     */
+    private function buildSecondaryAction(ImportJob $job, ?array $payload, string $returnTo): ?array
+    {
+        $detailUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]);
+
+        return match ($job->status()) {
+            ImportJobStatus::PROCESSED,
+            ImportJobStatus::DUPLICATE => [
+                'label' => 'Detail',
+                'url' => $detailUrl,
+                'variant' => 'secondary',
+            ],
+            ImportJobStatus::FAILED => [
+                'label' => 'Detail',
+                'url' => $detailUrl,
+                'variant' => 'secondary',
+            ],
+            default => null,
+        };
+    }
+
+    /**
+     * @param array<string,int> $metrics
+     *
+     * @return list<array{label:string,count:int,url:string,isActive:bool}>
+     */
+    private function buildStatusQuickFilters(Request $request, array $metrics, ?string $statusFilter): array
+    {
+        $query = $request->query->all();
+        unset($query['status']);
+
+        $allCount = 0;
+        foreach (ImportJobStatus::cases() as $status) {
+            $allCount += $metrics[$status->value] ?? 0;
+        }
+
+        $filters = [[
+            'label' => 'All',
+            'count' => $allCount,
+            'url' => $this->generateUrl('ui_admin_import_job_list', $query),
+            'isActive' => null === $statusFilter,
+        ]];
+
+        foreach (ImportJobStatus::cases() as $status) {
+            $filters[] = [
+                'label' => match ($status) {
+                    ImportJobStatus::NEEDS_REVIEW => 'Needs review',
+                    ImportJobStatus::PROCESSED => 'Processed',
+                    ImportJobStatus::PROCESSING => 'Processing',
+                    ImportJobStatus::QUEUED => 'Queued',
+                    ImportJobStatus::FAILED => 'Failed',
+                    ImportJobStatus::DUPLICATE => 'Duplicate',
+                },
+                'count' => $metrics[$status->value] ?? 0,
+                'url' => $this->generateUrl('ui_admin_import_job_list', [...$query, 'status' => $status->value]),
+                'isActive' => $statusFilter === $status->value,
+            ];
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @param list<array{
+     *     job:ImportJob,
+     *     summary:array{headline:string,detail:string},
+     *     primaryAction:array{label:string,url:string,variant:string},
+     *     secondaryAction:array{label:string,url:string,variant:string}|null
+     * }> $rows
+     *
+     * @return list<array{label:string,url:string,variant:string}>
+     */
+    private function buildFollowUpShortcuts(array $rows, string $returnTo): array
+    {
+        $shortcuts = [];
+
+        foreach ($rows as $row) {
+            if (ImportJobStatus::NEEDS_REVIEW === $row['job']->status()) {
+                $shortcuts[] = [
+                    'label' => 'Review next pending',
+                    'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
+                    'variant' => 'primary',
+                ];
+                break;
+            }
+        }
+
+        foreach ($rows as $row) {
+            if (ImportJobStatus::FAILED === $row['job']->status()) {
+                $shortcuts[] = [
+                    'label' => 'Inspect latest failure',
+                    'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
+                    'variant' => 'secondary',
+                ];
+                break;
+            }
+        }
+
+        return $shortcuts;
     }
 
     private function matchesQuery(ImportJob $job, string $query): bool
@@ -149,5 +396,134 @@ final class AdminImportJobListController extends AbstractController
         }
 
         return $parsed;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function decodePayload(?string $payload): ?array
+    {
+        if (null === $payload || '' === trim($payload)) {
+            return null;
+        }
+
+        try {
+            $decoded = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return null;
+        }
+
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $decoded */
+        return $decoded;
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     */
+    private function readStringValue(?array $payload, string $key): ?string
+    {
+        if (null === $payload) {
+            return null;
+        }
+
+        $value = $payload[$key] ?? null;
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return '' === $trimmed ? null : $trimmed;
+    }
+
+    private function resolveExistingReceiptId(?string $receiptId): ?string
+    {
+        if (null === $receiptId) {
+            return null;
+        }
+
+        return null === $this->receiptRepository->getForSystem($receiptId) ? null : $receiptId;
+    }
+
+    private function resolveExistingImportId(?string $importId): ?string
+    {
+        if (null === $importId) {
+            return null;
+        }
+
+        return null === $this->importJobRepository->getForSystem($importId) ? null : $importId;
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     */
+    private function readNeedsReviewDetail(?array $payload): string
+    {
+        $fallbackReason = $this->readStringValue($payload, 'fallbackReason');
+        if (null !== $fallbackReason) {
+            return sprintf('Fallback: %s.', $fallbackReason);
+        }
+
+        $parsedDraft = $payload['parsedDraft'] ?? null;
+        if (!is_array($parsedDraft)) {
+            return 'Open the detail page to review and finalize the extracted values.';
+        }
+
+        $issues = $parsedDraft['issues'] ?? null;
+        if (!is_array($issues) || [] === $issues) {
+            return 'Open the detail page to review and finalize the extracted values.';
+        }
+
+        $normalized = [];
+        foreach ($issues as $issue) {
+            if (!is_string($issue) || '' === trim($issue)) {
+                continue;
+            }
+
+            $normalized[] = str_replace('_', ' ', trim($issue));
+        }
+
+        if ([] === $normalized) {
+            return 'Open the detail page to review and finalize the extracted values.';
+        }
+
+        return sprintf('Check: %s.', implode(', ', $normalized));
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     */
+    private function readDuplicateDetail(?array $payload): string
+    {
+        if (null !== $this->resolveExistingReceiptId($this->readStringValue($payload, 'duplicateOfReceiptId'))) {
+            return 'Matches an existing receipt that can still be opened.';
+        }
+
+        if (null !== $this->resolveExistingImportId($this->readStringValue($payload, 'duplicateOfImportJobId'))) {
+            return 'Matches an older import that still exists.';
+        }
+
+        return 'The duplicate target no longer exists, so use detail for triage or cleanup.';
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     */
+    private function readFailedDetail(?array $payload, ?string $rawPayload): string
+    {
+        $fallbackReason = $this->readStringValue($payload, 'fallbackReason');
+        if (null !== $fallbackReason) {
+            return sprintf('Reason: %s.', $fallbackReason);
+        }
+
+        if (is_string($rawPayload) && '' !== trim($rawPayload) && null === $payload) {
+            return trim($rawPayload);
+        }
+
+        return 'Open detail to inspect the failure payload and retry options.';
     }
 }

@@ -28,6 +28,27 @@
                 <p class="admin-metric-value">{{ (metrics['queued']|default(0)) + (metrics['processing']|default(0)) }}</p>
             </article>
         </div>
+
+        <div class="actions-wrap admin-table-top">
+            {% for filter in statusQuickFilters %}
+                <a class="btn {{ filter.isActive ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ filter.url }}">
+                    {{ filter.label }} ({{ filter.count }})
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if followUpShortcuts is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <p class="text-block-title">Follow up now</p>
+                <div class="actions-wrap">
+                    {% for shortcut in followUpShortcuts %}
+                        <a class="btn {{ shortcut.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ shortcut.url }}">
+                            {{ shortcut.label }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
     </section>
 
     <section class="card admin-panel admin-section-spaced">
@@ -78,6 +99,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Status</th>
+                    <th>Signal</th>
                     <th>Owner ID</th>
                     <th>File</th>
                     <th>Source</th>
@@ -92,28 +114,35 @@
                         class="table-row row-link"
                         data-controller="row-link"
                         data-action="click->row-link#navigate"
-                        data-row-link-url-value="{{ path('ui_admin_import_job_show', {id: job.id.toString, return_to: returnTo}) }}"
+                        data-row-link-url-value="{{ path('ui_admin_import_job_show', {id: job.job.id.toString, return_to: returnTo}) }}"
                         onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                     >
-                        <td>{{ job.id.toString }}</td>
+                        <td>{{ job.job.id.toString }}</td>
                         <td>
-                            <span class="pill status-pill status-{{ job.status.value }}">
-                                {{ job.status.value }}
+                            <span class="pill status-pill status-{{ job.job.status.value }}">
+                                {{ job.job.status.value }}
                             </span>
                         </td>
-                        <td>{{ job.ownerId }}</td>
                         <td>
-                            <div>{{ job.originalFilename }}</div>
-                            <div class="muted compact-note">{{ job.mimeType }} · {{ job.fileSizeBytes }} bytes</div>
+                            <strong>{{ job.summary.headline }}</strong>
+                            <div class="muted compact-note">{{ job.summary.detail }}</div>
                         </td>
-                        <td>{{ job.storage }}</td>
-                        <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
-                        <td>{{ job.updatedAt|date('Y-m-d H:i:s') }}</td>
+                        <td>{{ job.job.ownerId }}</td>
+                        <td>
+                            <div>{{ job.job.originalFilename }}</div>
+                            <div class="muted compact-note">{{ job.job.mimeType }} · {{ job.job.fileSizeBytes }} bytes</div>
+                        </td>
+                        <td>{{ job.job.storage }}</td>
+                        <td>{{ job.job.createdAt|date('Y-m-d H:i:s') }}</td>
+                        <td>{{ job.job.updatedAt|date('Y-m-d H:i:s') }}</td>
                         <td>
                             <div class="action-row" data-row-link-ignore>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_show', {id: job.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Detail</a>
-                                <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
+                                <a class="btn {{ job.primaryAction.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ job.primaryAction.url }}" data-turbo-frame="_top">{{ job.primaryAction.label }}</a>
+                                {% if job.secondaryAction is not null %}
+                                    <a class="btn btn-secondary btn-compact" href="{{ job.secondaryAction.url }}" data-turbo-frame="_top">{{ job.secondaryAction.label }}</a>
+                                {% endif %}
+                                <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.job.id.toString) }}">
                                     <input type="hidden" name="_redirect" value="{{ returnTo }}">
                                     <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                                 </form>
@@ -122,7 +151,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="8" class="muted">No import jobs match current filters.</td>
+                        <td colspan="9" class="muted">No import jobs match current filters.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

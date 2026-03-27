@@ -7,13 +7,13 @@
 - Smooth the remaining high-traffic front-office screens so filtering and cross-screen navigation feel faster and more obvious.
 
 ## In progress
-- SP24-002 - Import list follow-up shortcuts
+- SP24-003 - Front dashboard cohesion pass
 
 ## Next tickets (ordered)
-1. SP24-003 - Front dashboard cohesion pass
-2. Microsoft OIDC remains deferred
+1. Microsoft OIDC remains deferred
 
 ## Notes
+- SP24-002 is fully delivered across import status quick filters, list-level follow-up shortcuts, and clearer secondary row actions.
 - SP24-001 is fully delivered across analytics shortcuts, active-filter summaries, context actions, and stale projection recovery after late receipt corrections.
 - Sprint 23 is fully delivered across maintenance scanability, station list productivity, and vehicle list/form workflow polish.
 - SP23-002 is fully delivered across the new front station list and direct station shortcuts.

@@ -256,6 +256,24 @@ final class ImportWebUiTest extends WebTestCase
         $failed->setRetentionUntil(new DateTimeImmutable('2026-04-27 08:10:00'));
         $this->em->persist($failed);
 
+        $needsReview = new ImportJobEntity();
+        $needsReview->setId(Uuid::v7());
+        $needsReview->setOwner($user);
+        $needsReview->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $needsReview->setStorage('local');
+        $needsReview->setFilePath('2026/03/27/review-list.jpg');
+        $needsReview->setOriginalFilename('review-list.jpg');
+        $needsReview->setMimeType('image/jpeg');
+        $needsReview->setFileSizeBytes(64000);
+        $needsReview->setFileChecksumSha256(str_repeat('r', 64));
+        $needsReview->setErrorPayload(json_encode([
+            'fallbackReason' => 'manual review required',
+        ], JSON_THROW_ON_ERROR));
+        $needsReview->setCreatedAt(new DateTimeImmutable('2026-03-27 08:15:00'));
+        $needsReview->setUpdatedAt(new DateTimeImmutable('2026-03-27 08:15:00'));
+        $needsReview->setRetentionUntil(new DateTimeImmutable('2026-04-27 08:15:00'));
+        $this->em->persist($needsReview);
+
         $this->em->flush();
 
         $sessionCookie = $this->loginWithUiForm($email, $password);
@@ -269,6 +287,21 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('Processing stopped', $content);
         self::assertStringContainsString('Reason: provider unavailable.', $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('All: 4', $content);
+        self::assertStringContainsString('Processed: 1', $content);
+        self::assertStringContainsString('Failed: 1', $content);
+        self::assertStringContainsString('Needs review: 1', $content);
+        self::assertStringContainsString('Review next pending', $content);
+        self::assertStringContainsString('Inspect latest failure', $content);
+        self::assertStringContainsString('Inspect failure', $content);
+        self::assertStringContainsString('Detail', $content);
+
+        $failedOnlyResponse = $this->request('GET', '/ui/imports?status=failed', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $failedOnlyResponse->getStatusCode());
+        $failedOnlyContent = (string) $failedOnlyResponse->getContent();
+        self::assertStringContainsString('Filtered on <strong>Failed</strong>.', $failedOnlyContent);
+        self::assertStringContainsString('failed-list.jpg', $failedOnlyContent);
+        self::assertStringNotContainsString('processed-list.jpg', $failedOnlyContent);
     }
 
     public function testUserSeesStructuredBulkUploadSummaryFromUi(): void

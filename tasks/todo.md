@@ -598,3 +598,12 @@
 - [completed] Add/update functional coverage for the new analytics filter workflow behavior.
 - [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [completed] Ask user to run `make phpunit-functional` and share failures if any.
+
+# TODO - SP24-002 Import list follow-up shortcuts
+
+## Plan
+- [completed] Add status quick filters and list-level follow-up shortcuts on `/ui/imports`.
+- [completed] Expose secondary row actions when the main next step is not the only useful follow-up.
+- [completed] Add/update functional coverage for status filtering and new import follow-up shortcuts.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Ask user to run `make phpunit-functional` and share failures if any.

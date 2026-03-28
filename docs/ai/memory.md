@@ -530,3 +530,15 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the response layer did not reuse Symfony's normal binary-file delivery even though the XLSX artifact already existed on disk.
 - Fix: generate the XLSX into a temp file, return a `BinaryFileResponse`, and keep functional validation bounded to the ZIP magic prefix instead of full buffering.
 - Prevention: when an export already materializes a complete file on disk, prefer `BinaryFileResponse` to custom streaming closures.
+
+## 2026-03-28 - API login should not expose disabled-account state
+- Symptom: `/api/login` returned `403 Account disabled.` for inactive users while invalid credentials returned `401 Invalid credentials.`, which made account-state enumeration trivial.
+- Root cause: the password login endpoint exposed a different public response for disabled accounts even though both cases represent a failed authentication from the caller's perspective.
+- Fix: `ApiLoginController` now returns the same `401 Invalid credentials.` response for invalid passwords and inactive accounts, while keeping the exact failure reason in admin audit metadata.
+- Prevention: public authentication endpoints should collapse user-facing failure messages unless exposing account state is an explicit product requirement.
+
+## 2026-03-28 - Session target-path redirects need the same safe-path guard as return_to
+- Symptom: `LoginFormAuthenticator` redirected directly to the target path stored in the session after authentication success.
+- Root cause: post-login redirects reused Symfony's stored target path without passing it through the app's `SafeReturnPathResolver`, unlike the rest of the UI flows that already validate `return_to`.
+- Fix: `LoginFormAuthenticator` now resolves the stored target path through `SafeReturnPathResolver` and falls back to the receipt list when the stored value is malformed or external.
+- Prevention: any session-backed post-auth redirect should be treated like a `return_to` parameter and validated through the same safe-path guard.

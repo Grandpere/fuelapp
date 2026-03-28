@@ -276,6 +276,33 @@ final class SecurityBoundariesTest extends KernelTestCase
         self::assertStringContainsString('Account disabled.', (string) $response->getContent());
     }
 
+    public function testDisabledUserApiLoginDoesNotExposeAccountStatus(): void
+    {
+        $email = 'disabled.api.login@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+        $user->setIsActive(false);
+        $this->em->flush();
+
+        $response = $this->request(
+            'POST',
+            '/api/login',
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['email' => $email, 'password' => $password], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+        self::assertStringContainsString('Invalid credentials.', (string) $response->getContent());
+        self::assertStringNotContainsString('Account disabled.', (string) $response->getContent());
+
+        $entry = $this->em->getRepository(AdminAuditLogEntity::class)->findOneBy(
+            ['action' => 'security.login.failure'],
+            ['createdAt' => 'DESC'],
+        );
+        self::assertInstanceOf(AdminAuditLogEntity::class, $entry);
+        self::assertSame('Account disabled.', $entry->getMetadata()['reason'] ?? null);
+    }
+
     public function testAnonymousUserIsRedirectedOnAdminUiPrefix(): void
     {
         $response = $this->request('GET', '/ui/admin');

@@ -30,6 +30,7 @@ final class ApiLoginController extends AbstractController
     private const int AUDIT_TARGET_ID_MAX_LENGTH = 120;
     private const int RATE_LIMITER_KEY_MAX_LENGTH = 200;
     private const int MAX_LOGIN_JSON_BODY_BYTES = 4096;
+    private const string INVALID_CREDENTIALS_MESSAGE = 'Invalid credentials.';
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -76,14 +77,14 @@ final class ApiLoginController extends AbstractController
         /** @var UserEntity|null $user */
         $user = $this->em->getRepository(UserEntity::class)->findOneBy(['email' => $normalizedEmail]);
         if (null === $user || !$this->passwordHasher->isPasswordValid($user, $password)) {
-            $this->recordLoginFailure($normalizedEmail, 'Invalid credentials.');
+            $this->recordLoginFailure($normalizedEmail, self::INVALID_CREDENTIALS_MESSAGE);
 
-            return $this->json(['message' => 'Invalid credentials.'], Response::HTTP_UNAUTHORIZED);
+            return $this->invalidCredentialsResponse();
         }
         if (!$user->isActive()) {
             $this->recordLoginFailure($normalizedEmail, 'Account disabled.');
 
-            return $this->json(['message' => 'Account disabled.'], Response::HTTP_FORBIDDEN);
+            return $this->invalidCredentialsResponse();
         }
 
         $token = $this->jwtTokenManager->create($user);
@@ -147,5 +148,10 @@ final class ApiLoginController extends AbstractController
         $rawKey = sprintf('api-login:%s|%s', $normalizedEmail, $ip);
 
         return mb_substr($rawKey, 0, self::RATE_LIMITER_KEY_MAX_LENGTH);
+    }
+
+    private function invalidCredentialsResponse(): JsonResponse
+    {
+        return $this->json(['message' => self::INVALID_CREDENTIALS_MESSAGE], Response::HTTP_UNAUTHORIZED);
     }
 }

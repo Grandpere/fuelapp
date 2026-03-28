@@ -10,10 +10,10 @@
 # TODO - SP37-002 Security hardening pass
 
 ## Plan
-- [pending] Review sensitive auth, import, and admin mutation flows with a security lens.
-- [pending] Apply the smallest concrete hardening changes that improve safety without product churn.
-- [pending] Update security-relevant tests and project memory for the hardened behavior.
-- [pending] Run targeted syntax/Twig validation for the touched security work.
+- [completed] Review sensitive auth, import, and admin mutation flows with a security lens.
+- [completed] Apply the smallest concrete hardening changes that improve safety without product churn.
+- [completed] Update security-relevant tests and project memory for the hardened behavior.
+- [completed] Run targeted syntax/Twig validation for the touched security work.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
 
 # TODO - SP37-003 Observability support pass

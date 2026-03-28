@@ -1436,6 +1436,72 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Open original import', $detailContent);
     }
 
+    public function testAdminStationListAndDetailExposeReceiptShortcuts(): void
+    {
+        $adminEmail = 'ui.admin.station.shortcuts@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.station.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Garage Station Vehicle');
+        $vehicle->setPlateNumber('GA-290-ST');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-28 08:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-28 08:00:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Garage Support Station');
+        $station->setStreetName('22 Queue Street');
+        $station->setPostalCode('69002');
+        $station->setCity('Lyon');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setVehicle($vehicle);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-28 07:45:00'));
+        $receipt->setTotalCents(7100);
+        $receipt->setVatAmountCents(1183);
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('sp98');
+        $line->setQuantityMilliLiters(5000);
+        $line->setUnitPriceDeciCentsPerLiter(1420);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $stationId = $station->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $listResponse = $this->request('GET', '/ui/admin/stations', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('Garage Support Station', $listContent);
+        self::assertStringContainsString('1 receipt', $listContent);
+        self::assertStringContainsString('Receipts', $listContent);
+
+        $detailResponse = $this->request('GET', '/ui/admin/stations/'.$stationId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Support shortcuts', $detailContent);
+        self::assertStringContainsString('Open receipts', $detailContent);
+        self::assertStringContainsString('Recent receipts', $detailContent);
+        self::assertStringContainsString('Garage Station Vehicle', $detailContent);
+
+        $filteredReceiptsResponse = $this->request('GET', '/ui/admin/receipts?station_id='.$stationId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $filteredReceiptsResponse->getStatusCode());
+        self::assertStringContainsString('Context filter active', (string) $filteredReceiptsResponse->getContent());
+        self::assertStringContainsString('Station:', (string) $filteredReceiptsResponse->getContent());
+    }
+
     public function testAdminDuplicateImportDetailCanShortcutToExistingReceipt(): void
     {
         $adminEmail = 'ui.admin.import.duplicate.receipt@example.com';

@@ -1,3 +1,12 @@
+# TODO - SP29-002 Admin station workflow usefulness
+
+## Plan
+- [completed] Enrich the admin station list with receipt and linked-vehicle context.
+- [completed] Add direct station shortcuts into station-scoped receipt follow-up.
+- [completed] Make the admin station detail page useful for support follow-up with recent receipts and safe return paths.
+- [completed] Extend admin functional coverage for the new station workflow contract.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 29 after the three commits.
+
 # TODO - SP29-001 Admin vehicle workflow usefulness
 
 ## Plan

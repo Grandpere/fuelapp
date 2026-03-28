@@ -23,6 +23,7 @@
 
         <form method="post" action="" class="form-stack content-narrow admin-detail-stack">
             <input type="hidden" name="_token" value="{{ csrfToken }}">
+            <input type="hidden" name="_return_to" value="{{ returnTo }}">
             <label class="label">
                 Name
                 <input class="input" type="text" name="name" value="{{ formData.name }}" required>
@@ -42,7 +43,7 @@
 
             <div class="actions-wrap">
                 <button class="btn btn-primary" type="submit">Save changes</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Back to list</a>
+                <a class="btn btn-secondary" href="{{ returnTo }}">Back</a>
             </div>
         </form>
     </section>

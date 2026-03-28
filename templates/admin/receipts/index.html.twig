@@ -12,12 +12,16 @@
             <p class="muted">System-wide receipt ledger with full back-office controls.</p>
         </div>
 
-        {% if filters.vehicleId %}
+        {% if filters.vehicleId or filters.stationId %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Vehicle filter active</strong>
-                        <p class="muted compact-note">{{ filters.vehicleId }}</p>
+                        <strong>Context filter active</strong>
+                        <p class="muted compact-note">
+                            {% if filters.vehicleId %}Vehicle: {{ filters.vehicleId }}{% endif %}
+                            {% if filters.vehicleId and filters.stationId %} · {% endif %}
+                            {% if filters.stationId %}Station: {{ filters.stationId }}{% endif %}
+                        </p>
                     </div>
                     <div class="admin-page-actions">
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Reset</a>

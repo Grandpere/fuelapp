@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Admin\UI\Web\Controller;
 
 use App\Admin\Application\Audit\AdminAuditTrail;
+use App\Import\Application\Repository\ImportJobRepository;
 use App\Receipt\Application\Command\CreateReceiptLineCommand;
 use App\Receipt\Application\Command\UpdateReceiptLinesCommand;
 use App\Receipt\Application\Command\UpdateReceiptLinesHandler;
@@ -21,6 +22,8 @@ use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\Domain\Receipt;
 use App\Shared\UI\Web\SafeReturnPathResolver;
+use App\Station\Application\Repository\StationRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,6 +44,9 @@ final class AdminReceiptFormController extends AbstractController
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly VehicleRepository $vehicleRepository,
+        private readonly StationRepository $stationRepository,
+        private readonly ImportJobRepository $importJobRepository,
     ) {
     }
 
@@ -60,6 +66,11 @@ final class AdminReceiptFormController extends AbstractController
             $request->query->get('return_to') ?? $request->request->get('_return_to'),
             $this->generateUrl('ui_admin_receipt_show', ['id' => $id]),
         );
+        $vehicleId = $receipt->vehicleId()?->toString();
+        $stationId = $receipt->stationId()?->toString();
+        $vehicle = null !== $vehicleId ? $this->vehicleRepository->get($vehicleId) : null;
+        $station = null !== $stationId ? $this->stationRepository->getForSystem($stationId) : null;
+        $relatedImports = $this->findRelatedImports($id, $backToReceiptUrl);
 
         $formLines = $this->receiptToFormLines($receipt);
         $errors = [];
@@ -134,6 +145,10 @@ final class AdminReceiptFormController extends AbstractController
             'fuelTypes' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
             'csrfToken' => $this->csrfTokenManager->getToken('admin_receipt_form_'.$id)->getValue(),
             'backToReceiptUrl' => $backToReceiptUrl,
+            'vehicle' => $vehicle,
+            'station' => $station,
+            'relatedImports' => $relatedImports,
+            'supportShortcuts' => $this->buildSupportShortcuts($vehicleId, $stationId, $backToReceiptUrl, $relatedImports),
         ]);
 
         if ([] !== $errors) {
@@ -231,5 +246,90 @@ final class AdminReceiptFormController extends AbstractController
             'vatAmountCents' => $receipt->vatAmountCents(),
             'lines' => $lines,
         ];
+    }
+
+    /**
+     * @return list<array{jobId:string,status:string,filename:string,url:string}>
+     */
+    private function findRelatedImports(string $receiptId, string $returnTo): array
+    {
+        $matches = [];
+
+        foreach ($this->importJobRepository->allForSystem() as $job) {
+            $payload = $job->errorPayload();
+            if (null === $payload || '' === trim($payload)) {
+                continue;
+            }
+
+            $decoded = json_decode($payload, true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+
+            $finalizedReceiptId = $decoded['finalizedReceiptId'] ?? null;
+            $duplicateOfReceiptId = $decoded['duplicateOfReceiptId'] ?? null;
+            if ($finalizedReceiptId !== $receiptId && $duplicateOfReceiptId !== $receiptId) {
+                continue;
+            }
+
+            $matches[] = [
+                'jobId' => $job->id()->toString(),
+                'status' => $job->status()->value,
+                'filename' => $job->originalFilename(),
+                'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]),
+            ];
+        }
+
+        usort(
+            $matches,
+            static fn (array $left, array $right): int => strcmp($right['jobId'], $left['jobId']),
+        );
+
+        return $matches;
+    }
+
+    /**
+     * @param list<array{jobId:string,status:string,filename:string,url:string}> $relatedImports
+     *
+     * @return list<array{label:string,url:string}>
+     */
+    private function buildSupportShortcuts(?string $vehicleId, ?string $stationId, string $backToReceiptUrl, array $relatedImports): array
+    {
+        $shortcuts = [[
+            'label' => 'Back to receipt',
+            'url' => $backToReceiptUrl,
+        ]];
+
+        if (null !== $vehicleId) {
+            $shortcuts[] = [
+                'label' => 'Open vehicle',
+                'url' => $this->generateUrl('ui_admin_vehicle_show', ['id' => $vehicleId, 'return_to' => $backToReceiptUrl]),
+            ];
+            $shortcuts[] = [
+                'label' => 'Vehicle receipts',
+                'url' => $this->generateUrl('ui_admin_receipt_list', ['vehicle_id' => $vehicleId]),
+            ];
+        }
+
+        if (null !== $stationId) {
+            $shortcuts[] = [
+                'label' => 'Open station',
+                'url' => $this->generateUrl('ui_admin_station_show', ['id' => $stationId, 'return_to' => $backToReceiptUrl]),
+            ];
+            $shortcuts[] = [
+                'label' => 'Station receipts',
+                'url' => $this->generateUrl('ui_admin_receipt_list', ['station_id' => $stationId]),
+            ];
+        }
+
+        foreach ($relatedImports as $relatedImport) {
+            $shortcuts[] = [
+                'label' => 'Open related import',
+                'url' => $relatedImport['url'],
+            ];
+            break;
+        }
+
+        return $shortcuts;
     }
 }

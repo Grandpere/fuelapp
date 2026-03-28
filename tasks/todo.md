@@ -1,26 +1,26 @@
-# TODO - SP31-003 Admin shell polish
+# TODO - SP32-001 Admin receipt editing continuity
 
 ## Plan
-- [completed] Review the remaining admin shell friction around width, headers, and repeated action placement.
-- [completed] Apply the smallest layout and shell changes that materially improve support comfort.
-- [completed] Update admin functional coverage only where the shell contract changes.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 31 after the three commits.
+- [completed] Review the current admin receipt list, detail, and edit flow for missing support continuity and follow-up shortcuts.
+- [completed] Add the smallest useful continuity improvements across receipt, import, vehicle, station, and context-filtered admin lists.
+- [completed] Update admin functional coverage for the touched receipt support flow.
+- [completed] Run targeted syntax/Twig validation for the touched receipt admin flow.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 32 after the three commits.
 
-# TODO - SP31-001 Admin maintenance actionability pass
-
-## Plan
-- [completed] Review the admin maintenance reminder, rule, plan, and event screens for missing support actions.
-- [completed] Add the highest-value action shortcuts and clearer next-step cues.
-- [completed] Update admin functional coverage for the touched maintenance workflows.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 31 after the three commits.
-
-# TODO - SP31-002 Admin import recovery completeness
+# TODO - SP32-003 Admin dashboard signal quality
 
 ## Plan
-- [completed] Review the current admin import recovery flow and identify the missing context-preserving actions.
-- [completed] Keep retry, reparse, and finalize flows anchored to the current support context and sharpen their next-step guidance.
-- [completed] Update admin functional coverage for the recovery contract.
-- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 31 after the three commits.
+- [pending] Review the admin dashboard cards and lists for weak prioritization, missing next steps, and noisy signals.
+- [pending] Improve the dashboard with clearer urgency grouping and better drill-down actions without broad redesign.
+- [pending] Update admin functional coverage for the touched dashboard contract.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 32 after the three commits.
+
+# TODO - SP32-002 Admin user/account support pass
+
+## Plan
+- [pending] Review the admin user management list for the most repetitive support actions and missing account-state context.
+- [pending] Add the highest-value support shortcuts and clearer account-state signals while keeping the UI compact.
+- [pending] Update admin/API functional coverage for the touched account support contract.
+- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 32 after the three commits.

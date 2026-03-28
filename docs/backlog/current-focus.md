@@ -1,22 +1,23 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 31 - Admin actionability and shell polish
+- Sprint 32 - Admin support continuity and signal quality
 
 ## Current goal
-- Turn the improved admin parity screens into faster support workspaces by completing import recovery, making maintenance more actionable, and smoothing the shared admin shell.
+- Make the admin workspace faster for support by tightening receipt continuity, sharpening dashboard signals, and improving account-management ergonomics.
 
 ## In progress
-- Sprint 31 is fully implemented across the three scoped commits and is waiting for the single grouped validation pass.
+- Sprint 32 has started with receipt continuity as the first implementation slice, followed by dashboard signal quality and account-support polish.
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
 
 ## Notes
-- Sprint 31 follows Sprint 30 and stays focused on admin usefulness before any broader redesign work.
-- SP31-002 is fully delivered across admin retry, reparse, and finalize flows that now preserve support context and sharper recovery guidance.
-- SP31-001 is fully delivered across maintenance reminder and event shortcuts, clearer rule context, and faster support follow-up actions.
-- SP31-003 is fully delivered across a cleaner collapsed admin rail, more stable shell spacing, and a bit more horizontal room for dense support screens.
+- Sprint 32 follows Sprint 31 and stays focused on admin usefulness before any broader redesign work.
+- SP32-001 targets smoother receipt editing and safer support continuity across linked import, vehicle, station, and filtered receipt lists.
+- SP32-003 will refine admin dashboard urgency and drill-down quality now that the main support queues are already exposed.
+- SP32-002 will finish the sprint with a compact but practical pass on admin account-management ergonomics.
+- Sprint 31 is fully delivered across import recovery, maintenance actionability, and admin shell polish and is merged.
 - Sprint 30 is fully delivered across admin maintenance continuity, import/receipt navigation, and list consistency and is merged.
 - Sprint 29 is fully delivered across admin dashboard, vehicle, and station usefulness passes and is merged.
 - Microsoft OIDC remains deferred unless product priority changes.

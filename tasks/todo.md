@@ -19,8 +19,8 @@
 # TODO - SP33-002 Admin import triage detail polish
 
 ## Plan
-- [pending] Review the current admin import detail screen for unclear cause summaries, weak next-step cues, and missing linked-record shortcuts.
-- [pending] Sharpen the import detail triage view so the probable cause and next useful action are easier to spot.
-- [pending] Update admin functional coverage for the touched import detail contract.
-- [pending] Run targeted syntax/Twig validation for the touched import triage flow.
+- [completed] Review the current admin import detail screen for unclear cause summaries, weak next-step cues, and missing linked-record shortcuts.
+- [completed] Sharpen the import detail triage view so the probable cause and next useful action are easier to spot.
+- [completed] Update admin functional coverage for the touched import detail contract.
+- [completed] Run targeted syntax/Twig validation for the touched import triage flow.
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 33 after the three commits.

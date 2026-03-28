@@ -1815,10 +1815,13 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('Triage summary', $detailContent);
+        self::assertStringContainsString('Triage readout', $detailContent);
         self::assertStringContainsString('Retry count at terminal state', $detailContent);
         self::assertStringContainsString('ocr_provider_retryable_exhausted', $detailContent);
         self::assertStringContainsString('Detected issues', $detailContent);
         self::assertStringContainsString('2', $detailContent);
+        self::assertStringContainsString('Review the parsed payload and finalize the receipt', $detailContent);
+        self::assertStringContainsString('Current fallback strategy: manual review.', $detailContent);
     }
 
     public function testAdminFailedImportDetailShowsTriageSummaryFromRawFailurePayload(): void
@@ -1853,10 +1856,12 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('Triage summary', $detailContent);
+        self::assertStringContainsString('Triage readout', $detailContent);
         self::assertStringContainsString('Terminal detail', $detailContent);
         self::assertStringContainsString('ocr_provider_permanent: provider quota exceeded', $detailContent);
         self::assertStringContainsString('OCR retry count', $detailContent);
         self::assertStringContainsString('2', $detailContent);
+        self::assertStringContainsString('Inspect the failure, then retry only if the underlying provider or input issue has been addressed.', $detailContent);
     }
 
     /**

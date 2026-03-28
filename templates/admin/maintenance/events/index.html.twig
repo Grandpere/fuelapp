@@ -112,6 +112,7 @@
                             <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_edit', {id: event.event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Edit</a>
                             {% if event.vehicle %}
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: event.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: event.vehicle.id().toString()}) }}" data-turbo-frame="_top">Reminders</a>
                             {% endif %}
                             <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.event.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this maintenance event?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.event.id.toString) }}">

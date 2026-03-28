@@ -10,10 +10,10 @@
 # TODO - SP31-001 Admin maintenance actionability pass
 
 ## Plan
-- [pending] Review the admin maintenance reminder, rule, plan, and event screens for missing support actions.
-- [pending] Add the highest-value action shortcuts and clearer next-step cues.
-- [pending] Update admin functional coverage for the touched maintenance workflows.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Review the admin maintenance reminder, rule, plan, and event screens for missing support actions.
+- [completed] Add the highest-value action shortcuts and clearer next-step cues.
+- [completed] Update admin functional coverage for the touched maintenance workflows.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 31 after the three commits.
 
 # TODO - SP31-002 Admin import recovery completeness

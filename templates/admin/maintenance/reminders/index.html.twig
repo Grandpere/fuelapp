@@ -103,7 +103,13 @@
                         onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                     >
                         <td>{{ reminder.reminder.createdAt|date('Y-m-d H:i') }}</td>
-                        <td>{{ ruleNames[reminder.reminder.ruleId] ?? reminder.reminder.ruleId }}</td>
+                        {% set ruleSummary = ruleSummaries[reminder.reminder.ruleId] ?? null %}
+                        <td>
+                            <div>{{ ruleSummary.name ?? reminder.reminder.ruleId }}</div>
+                            {% if ruleSummary is not null and ruleSummary.eventType is not empty %}
+                                <div class="muted compact-note">{{ ruleSummary.eventType|upper }}</div>
+                            {% endif %}
+                        </td>
                         <td><code>{{ reminder.reminder.ownerId }}</code></td>
                         <td>
                             {% if reminder.vehicle %}
@@ -123,6 +129,7 @@
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.reminder.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
                                 {% if reminder.vehicle %}
                                     <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: reminder.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: reminder.vehicle.id().toString(), event_type: ruleSummary is not null and ruleSummary.eventType is not empty ? ruleSummary.eventType : null}) }}" data-turbo-frame="_top">Events</a>
                                 {% endif %}
                             </div>
                         </td>

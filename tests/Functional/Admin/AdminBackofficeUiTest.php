@@ -634,9 +634,14 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $listResponse = $this->request('GET', '/ui/admin/identities?q=ui-owner-subject-001', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
-        self::assertStringContainsString('ui-owner-subject-001', (string) $listResponse->getContent());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('ui-owner-subject-001', $listContent);
+        self::assertStringContainsString('Active filters', $listContent);
+        self::assertStringContainsString('User', $listContent);
+        self::assertStringContainsString('Security', $listContent);
+        self::assertStringContainsString('Audit', $listContent);
 
-        $relinkToken = $this->extractIdentityRelinkCsrf((string) $listResponse->getContent(), $identityId);
+        $relinkToken = $this->extractIdentityRelinkCsrf($listContent, $identityId);
         $relinkResponse = $this->request(
             'POST',
             '/ui/admin/identities/'.$identityId.'/relink',
@@ -651,9 +656,14 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $afterRelink = $this->request('GET', '/ui/admin/identities?user_id='.$ownerBId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterRelink->getStatusCode());
-        self::assertStringContainsString('ui.identity.owner.b@example.com', (string) $afterRelink->getContent());
+        $afterRelinkContent = (string) $afterRelink->getContent();
+        self::assertStringContainsString('ui.identity.owner.b@example.com', $afterRelinkContent);
+        self::assertStringContainsString('Account recovery continuity', $afterRelinkContent);
+        self::assertStringContainsString('Open user', $afterRelinkContent);
+        self::assertStringContainsString('User security', $afterRelinkContent);
+        self::assertStringContainsString('User audit', $afterRelinkContent);
 
-        $deleteToken = $this->extractIdentityDeleteCsrf((string) $afterRelink->getContent(), $identityId);
+        $deleteToken = $this->extractIdentityDeleteCsrf($afterRelinkContent, $identityId);
         $deleteResponse = $this->request(
             'POST',
             '/ui/admin/identities/'.$identityId.'/delete',

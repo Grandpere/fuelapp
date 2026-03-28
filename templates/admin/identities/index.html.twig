@@ -11,6 +11,40 @@
             <p class="muted">Manage linked social/OIDC identities and reassign ownership when needed.</p>
         </div>
 
+        {% if supportShortcuts is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Account recovery continuity</strong>
+                        <p class="muted compact-note">Stay anchored to the same user while moving between identities, security activity, and audit history.</p>
+                    </div>
+                    <div class="actions-wrap">
+                        {% for item in supportShortcuts %}
+                            <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if activeFilterSummary is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Active filters</strong>
+                        <p class="muted compact-note">
+                            {% for item in activeFilterSummary %}
+                                {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
+                            {% endfor %}
+                        </p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_identity_list') }}">Reset</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <form method="get" action="{{ path('ui_admin_identity_list') }}" class="admin-filter-grid-4 admin-table-top">
             <label class="label">
                 Search
@@ -44,26 +78,31 @@
                 <tbody>
                 {% for identity in identities %}
                     <tr>
-                        <td>{{ identity.provider }}</td>
-                        <td><code>{{ identity.subject }}</code></td>
-                        <td>{{ identity.email ?? 'n/a' }}</td>
+                        <td>{{ identity.record.provider }}</td>
+                        <td><code>{{ identity.record.subject }}</code></td>
+                        <td>{{ identity.record.email ?? 'n/a' }}</td>
                         <td>
-                            <div>{{ identity.userEmail }}</div>
-                            <small class="muted">{{ identity.userId }}</small>
+                            <div>{{ identity.record.userEmail }}</div>
+                            <small class="muted">{{ identity.record.userId }}</small>
                         </td>
                         <td class="stack-sm">
-                            <form method="post" action="{{ path('ui_admin_identity_relink', {id: identity.id}) }}" class="admin-form-actions" data-turbo-frame="_top">
-                                <input type="hidden" name="_token" value="{{ csrf_token('admin_identity_relink_' ~ identity.id) }}">
+                            <div class="actions-wrap">
+                                <a class="btn btn-secondary btn-compact" href="{{ identity.userListUrl }}">User</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ identity.securityUrl }}">Security</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ identity.auditUrl }}">Audit</a>
+                            </div>
+                            <form method="post" action="{{ path('ui_admin_identity_relink', {id: identity.record.id}) }}" class="admin-form-actions" data-turbo-frame="_top">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_identity_relink_' ~ identity.record.id) }}">
                                 <select class="select" name="user_id">
                                     {% for user in users %}
-                                        <option value="{{ user.id }}" {% if user.id == identity.userId %}selected{% endif %}>{{ user.email }}</option>
+                                        <option value="{{ user.id }}" {% if user.id == identity.record.userId %}selected{% endif %}>{{ user.email }}</option>
                                     {% endfor %}
                                 </select>
-                                <button class="btn btn-secondary" type="submit">Relink</button>
+                                <button class="btn btn-secondary btn-compact" type="submit">Relink</button>
                             </form>
-                            <form method="post" action="{{ path('ui_admin_identity_delete', {id: identity.id}) }}" data-turbo-frame="_top">
-                                <input type="hidden" name="_token" value="{{ csrf_token('admin_identity_delete_' ~ identity.id) }}">
-                                <button class="btn btn-danger" type="submit">Delete</button>
+                            <form method="post" action="{{ path('ui_admin_identity_delete', {id: identity.record.id}) }}" data-turbo-frame="_top">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_identity_delete_' ~ identity.record.id) }}">
+                                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                             </form>
                         </td>
                     </tr>

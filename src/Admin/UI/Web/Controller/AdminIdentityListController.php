@@ -35,14 +35,26 @@ final class AdminIdentityListController extends AbstractController
         $provider = $this->readStringFilter($request, 'provider');
         $userId = $this->readStringFilter($request, 'user_id');
 
+        $identities = [];
+        foreach ($this->identityManager->listIdentities($q, $provider, $userId) as $identity) {
+            $identities[] = [
+                'record' => $identity,
+                'userListUrl' => $this->generateUrl('ui_admin_user_list', ['q' => $identity->userEmail]),
+                'securityUrl' => $this->generateUrl('ui_admin_security_activity_list', ['actorId' => $identity->userId]),
+                'auditUrl' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $identity->userId]),
+            ];
+        }
+
         return $this->render('admin/identities/index.html.twig', [
-            'identities' => $this->identityManager->listIdentities($q, $provider, $userId),
+            'identities' => $identities,
             'users' => $this->userManager->listUsers(),
             'filters' => [
                 'q' => $q ?? '',
                 'provider' => $provider ?? '',
                 'user_id' => $userId ?? '',
             ],
+            'activeFilterSummary' => $this->buildActiveFilterSummary($q, $provider, $userId),
+            'supportShortcuts' => $this->buildSupportShortcuts($userId),
         ]);
     }
 
@@ -56,5 +68,55 @@ final class AdminIdentityListController extends AbstractController
         $trimmed = trim((string) $value);
 
         return '' === $trimmed ? null : $trimmed;
+    }
+
+    /**
+     * @return list<array{label:string,value:string}>
+     */
+    private function buildActiveFilterSummary(?string $q, ?string $provider, ?string $userId): array
+    {
+        $summary = [];
+
+        if (null !== $q) {
+            $summary[] = ['label' => 'Search', 'value' => $q];
+        }
+        if (null !== $provider) {
+            $summary[] = ['label' => 'Provider', 'value' => $provider];
+        }
+        if (null !== $userId) {
+            $summary[] = ['label' => 'User', 'value' => $userId];
+        }
+
+        return $summary;
+    }
+
+    /**
+     * @return list<array{label:string,url:string}>
+     */
+    private function buildSupportShortcuts(?string $userId): array
+    {
+        if (null === $userId) {
+            return [];
+        }
+
+        $user = $this->userManager->getUser($userId);
+        if (null === $user) {
+            return [];
+        }
+
+        return [
+            [
+                'label' => 'Open user',
+                'url' => $this->generateUrl('ui_admin_user_list', ['q' => $user->email]),
+            ],
+            [
+                'label' => 'User security',
+                'url' => $this->generateUrl('ui_admin_security_activity_list', ['actorId' => $userId]),
+            ],
+            [
+                'label' => 'User audit',
+                'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $userId]),
+            ],
+        ];
     }
 }

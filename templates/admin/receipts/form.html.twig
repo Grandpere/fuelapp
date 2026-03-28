@@ -11,6 +11,24 @@
             <p class="muted">Adjust receipt lines and recompute totals.</p>
         </div>
 
+        <div class="card-subtle card-subtle-block admin-detail-stack">
+            <div class="compact-note">
+                {% if vehicle %}
+                    Vehicle: {{ vehicle.name() }}
+                {% else %}
+                    Vehicle: n/a
+                {% endif %}
+                ·
+                {% if station %}
+                    Station: {{ station.name() }}
+                {% else %}
+                    Station: n/a
+                {% endif %}
+                ·
+                Lines: {{ receipt.lines|length }}
+            </div>
+        </div>
+
         {% if errors is not empty %}
             <div class="flash flash-error admin-detail-stack">
                 <ul class="flash-list">
@@ -59,4 +77,26 @@
             </div>
         </form>
     </section>
+
+    {% if supportShortcuts is not empty %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Support continuity</h3>
+            <div class="actions-wrap admin-table-top">
+                {% for item in supportShortcuts %}
+                    <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
+    {% if relatedImports is not empty %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Related imports</h3>
+            <div class="actions-wrap admin-table-top">
+                {% for item in relatedImports %}
+                    <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.filename }} · {{ item.status }}</a>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}

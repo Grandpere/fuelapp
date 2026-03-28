@@ -50,7 +50,10 @@
                             <strong class="admin-dashboard-item-value">{{ card.value }}</strong>
                         </div>
                         <p class="muted">{{ card.description }}</p>
-                        <a class="btn btn-secondary btn-compact" href="{{ card.url }}">{{ card.action }}</a>
+                        <div class="action-row">
+                            <a class="btn btn-secondary btn-compact" href="{{ card.url }}">{{ card.action }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ card.secondaryUrl }}">{{ card.secondaryAction }}</a>
+                        </div>
                     </article>
                 {% endfor %}
             </div>
@@ -84,12 +87,16 @@
                             {% endif %}
                         </div>
                         <div class="action-row">
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_show', {id: receipt.id, return_to: app.request.requestUri}) }}">Open</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ receipt.showUrl }}">Open</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ receipt.editUrl }}">Edit</a>
                             {% if receipt.vehicleId %}
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicleId, return_to: app.request.requestUri}) }}">Vehicle</a>
                             {% endif %}
                             {% if receipt.stationId %}
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: receipt.stationId, return_to: app.request.requestUri}) }}">Station</a>
+                            {% endif %}
+                            {% if receipt.importUrl %}
+                                <a class="btn btn-secondary btn-compact" href="{{ receipt.importUrl }}">Import</a>
                             {% endif %}
                         </div>
                     </article>
@@ -113,8 +120,8 @@
                         <strong>{{ job.file }}</strong>
                         <p class="muted compact-note">{{ job.ownerId }}</p>
                         <div class="action-row">
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_show', {id: job.id, return_to: app.request.requestUri}) }}">{{ job.statusLabel }}</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: job.status}) }}">Queue</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ job.primaryUrl }}">{{ job.primaryLabel }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ job.secondaryUrl }}">{{ job.secondaryLabel }}</a>
                         </div>
                     </article>
                 {% endfor %}

@@ -11,6 +11,58 @@
             <p class="muted">Filter users, activate/deactivate accounts, and manage admin access.</p>
         </div>
 
+        <div class="admin-metric-grid metric-grid-spaced admin-table-top">
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Inactive accounts</p>
+                <p class="admin-metric-value">{{ metrics.inactive }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Unverified emails</p>
+                <p class="admin-metric-value">{{ metrics.unverified }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Missing identities</p>
+                <p class="admin-metric-value">{{ metrics.withoutIdentity }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Admins</p>
+                <p class="admin-metric-value">{{ metrics.admins }}</p>
+            </article>
+        </div>
+
+        <div class="card-subtle card-subtle-block admin-table-top">
+            <div class="admin-page-head">
+                <div class="admin-page-header">
+                    <strong>Needs attention now</strong>
+                    <p class="muted compact-note">Jump straight to the account slice that usually needs support action first.</p>
+                </div>
+                <div class="actions-wrap">
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {verification: 'unverified'}) }}">Unverified</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {is_active: '0'}) }}">Inactive</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {has_identity: '0'}) }}">Missing identities</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {role: 'admin'}) }}">Admins</a>
+                </div>
+            </div>
+        </div>
+
+        {% if activeFilterSummary is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Active filters</strong>
+                        <p class="muted compact-note">
+                            {% for item in activeFilterSummary %}
+                                {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
+                            {% endfor %}
+                        </p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list') }}">Reset</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <form method="get" action="{{ path('ui_admin_user_list') }}" class="admin-filter-grid-4 admin-table-top">
             <label class="label">
                 Search
@@ -30,6 +82,22 @@
                     <option value="" {% if filters.is_active == '' %}selected{% endif %}>All</option>
                     <option value="1" {% if filters.is_active == '1' %}selected{% endif %}>Active</option>
                     <option value="0" {% if filters.is_active == '0' %}selected{% endif %}>Inactive</option>
+                </select>
+            </label>
+            <label class="label">
+                Verification
+                <select class="select" name="verification">
+                    <option value="" {% if filters.verification == '' %}selected{% endif %}>All</option>
+                    <option value="verified" {% if filters.verification == 'verified' %}selected{% endif %}>Verified</option>
+                    <option value="unverified" {% if filters.verification == 'unverified' %}selected{% endif %}>Unverified</option>
+                </select>
+            </label>
+            <label class="label">
+                Identities
+                <select class="select" name="has_identity">
+                    <option value="" {% if filters.has_identity == '' %}selected{% endif %}>All</option>
+                    <option value="1" {% if filters.has_identity == '1' %}selected{% endif %}>Linked</option>
+                    <option value="0" {% if filters.has_identity == '0' %}selected{% endif %}>Missing</option>
                 </select>
             </label>
             <div class="admin-form-actions">
@@ -69,30 +137,33 @@
                         <td class="action-cell-flex">
                             <form method="post" action="{{ path('ui_admin_user_toggle_active', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_active_' ~ user.id) }}">
-                                <button class="btn {{ user.isActive ? 'btn-danger' : 'btn-secondary' }}" type="submit">
+                                <button class="btn {{ user.isActive ? 'btn-danger' : 'btn-secondary' }} btn-compact" type="submit">
                                     {{ user.isActive ? 'Deactivate' : 'Activate' }}
                                 </button>
                             </form>
                             <form method="post" action="{{ path('ui_admin_user_toggle_admin', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_admin_' ~ user.id) }}">
-                                <button class="btn btn-secondary" type="submit">
+                                <button class="btn btn-secondary btn-compact" type="submit">
                                     {{ user.isAdmin ? 'Remove admin' : 'Make admin' }}
                                 </button>
                             </form>
                             <form method="post" action="{{ path('ui_admin_user_toggle_verification', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_verification_' ~ user.id) }}">
-                                <button class="btn btn-secondary" type="submit">
+                                <button class="btn btn-secondary btn-compact" type="submit">
                                     {{ user.isEmailVerified ? 'Mark unverified' : 'Mark verified' }}
                                 </button>
                             </form>
                             <form method="post" action="{{ path('ui_admin_user_resend_verification', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_resend_verification_' ~ user.id) }}">
-                                <button class="btn btn-secondary" type="submit">Resend verification</button>
+                                <button class="btn btn-secondary btn-compact" type="submit">Resend verification</button>
                             </form>
                             <form method="post" action="{{ path('ui_admin_user_reset_password', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_reset_password_' ~ user.id) }}">
-                                <button class="btn btn-danger" type="submit">Reset password</button>
+                                <button class="btn btn-danger btn-compact" type="submit">Reset password</button>
                             </form>
+                            <a class="btn btn-secondary btn-compact" href="{{ user.identitiesUrl }}">Identities</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ user.securityUrl }}">Security</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ user.auditUrl }}">Audit</a>
                         </td>
                     </tr>
                 {% else %}

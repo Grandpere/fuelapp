@@ -24,3 +24,11 @@
 - [completed] Update the most relevant tests and project memory for the new observability contract.
 - [completed] Run targeted syntax/Twig validation for the touched observability work.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
+
+# TODO - Security audit follow-up
+
+## Plan
+- [completed] Review the OIDC account-linking flow from the full-project auth audit.
+- [completed] Require an explicitly verified email claim before linking an existing local account by OIDC email match.
+- [completed] Add integration coverage for the unverified-email regression and record the rule in project memory.
+- [pending] Ask for the user-run functional suite after the hardening fix.

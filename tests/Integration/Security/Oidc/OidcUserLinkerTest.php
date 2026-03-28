@@ -58,7 +58,7 @@ final class OidcUserLinkerTest extends KernelTestCase
 
     public function testResolveUserCreatesLocalUserAndIdentityWhenMissing(): void
     {
-        $user = $this->linker->resolveUser('auth0', 'sub-1', 'john@example.com');
+        $user = $this->linker->resolveUser('auth0', 'sub-1', 'john@example.com', true);
 
         self::assertSame('john@example.com', $user->getEmail());
 
@@ -81,7 +81,7 @@ final class OidcUserLinkerTest extends KernelTestCase
         $this->em->persist($existing);
         $this->em->flush();
 
-        $resolved = $this->linker->resolveUser('auth0', 'sub-2', 'existing@example.com');
+        $resolved = $this->linker->resolveUser('auth0', 'sub-2', 'existing@example.com', true);
 
         self::assertSame($existing->getId()->toRfc4122(), $resolved->getId()->toRfc4122());
     }
@@ -104,8 +104,24 @@ final class OidcUserLinkerTest extends KernelTestCase
         $this->em->persist($identity);
         $this->em->flush();
 
-        $resolved = $this->linker->resolveUser('auth0', 'sub-3', 'other@example.com');
+        $resolved = $this->linker->resolveUser('auth0', 'sub-3', 'other@example.com', false);
 
         self::assertSame($existing->getId()->toRfc4122(), $resolved->getId()->toRfc4122());
+    }
+
+    public function testResolveUserDoesNotLinkExistingUserWhenEmailClaimIsUnverified(): void
+    {
+        $existing = new UserEntity();
+        $existing->setId(Uuid::v7());
+        $existing->setEmail('existing@example.com');
+        $existing->setRoles(['ROLE_USER']);
+        $existing->setPassword($this->passwordHasher->hashPassword($existing, 'test1234'));
+        $this->em->persist($existing);
+        $this->em->flush();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('OIDC account is not linkable: email claim is not verified.');
+
+        $this->linker->resolveUser('auth0', 'sub-4', 'existing@example.com', false);
     }
 }

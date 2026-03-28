@@ -74,6 +74,7 @@ final class OidcCallbackController extends AbstractController
                 $config->name,
                 $claims['sub'],
                 $claims['email'],
+                $claims['email_verified'],
             );
         } catch (RuntimeException) {
             $this->addFlash('error', 'OIDC login failed. Please contact support if the issue persists.');

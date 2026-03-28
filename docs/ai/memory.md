@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-28 - OIDC email claims are not trustworthy unless explicitly verified
+- Symptom: OIDC login could link an external identity to an existing local user on email match alone.
+- Root cause: the linker trusted `email` without requiring an explicit `email_verified=true` claim from the provider.
+- Fix: propagate `email_verified` through the OIDC claim flow and refuse email-based linking to existing local users unless the claim is explicitly verified.
+- Prevention: for OIDC/SAML-style identity linking, never treat a bare email claim as proof of account ownership; require the provider's verified-email signal (or equivalent trusted identity proof) before attaching to an existing local account.
+
 ## 2026-03-26 - Front receipt metadata forms must not use system-wide vehicle lists
 - Symptom: the new receipt metadata edit form exposed vehicles owned by other users in its dropdown.
 - Root cause: `VehicleRepository::all()` is system-wide and the controller reused it without explicit owner filtering.

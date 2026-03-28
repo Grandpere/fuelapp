@@ -4,17 +4,20 @@
     {{ parent() }}
     <style>
         .admin-shell {
-            max-width: 1360px;
+            --admin-sidebar-width: 260px;
+            --admin-sidebar-rail-width: 3.4rem;
+            max-width: 1520px;
             margin: 0 auto;
-            padding: 1rem;
+            padding: 1rem 1rem 2rem;
             display: grid;
             gap: 1rem;
-            grid-template-columns: 260px minmax(0, 1fr);
+            grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
             position: relative;
+            align-items: start;
         }
 
         .admin-shell[data-admin-sidebar-collapsed='true'] {
-            grid-template-columns: minmax(0, 1fr);
+            grid-template-columns: var(--admin-sidebar-rail-width) minmax(0, 1fr);
         }
 
         .admin-sidebar {
@@ -54,11 +57,12 @@
         }
 
         .admin-sidebar-collapsed-rail {
-            width: 3.2rem;
+            width: var(--admin-sidebar-rail-width);
             padding: 0.6rem 0.5rem;
             display: grid;
             justify-items: center;
             gap: 0.5rem;
+            height: fit-content;
         }
 
         .admin-sidebar-collapsed-label {
@@ -126,6 +130,9 @@
 
         .admin-main {
             min-width: 0;
+            display: grid;
+            gap: 1rem;
+            align-content: start;
         }
 
         .admin-panel {

@@ -16,6 +16,7 @@ namespace App\Admin\UI\Web\Controller;
 use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Review\ImportJobPayloadReparser;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -29,6 +30,7 @@ final class AdminImportJobReparseController extends AbstractController
         private readonly ImportJobRepository $importJobRepository,
         private readonly ImportJobPayloadReparser $importJobPayloadReparser,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -39,10 +41,16 @@ final class AdminImportJobReparseController extends AbstractController
             throw $this->createNotFoundException();
         }
 
+        $fallbackRedirect = $this->generateUrl('ui_admin_import_job_show', ['id' => $id]);
+        $redirectTarget = $this->safeReturnPathResolver->resolve(
+            $request->request->get('_redirect'),
+            $fallbackRedirect,
+        );
+
         if (!$this->isCsrfTokenValid('admin_import_reparse_'.$id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Invalid CSRF token.');
 
-            return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
+            return new RedirectResponse($redirectTarget);
         }
 
         $job = $this->importJobRepository->getForSystem($id);
@@ -64,7 +72,7 @@ final class AdminImportJobReparseController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
+        return new RedirectResponse($redirectTarget);
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

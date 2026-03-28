@@ -18,6 +18,7 @@ use App\Import\Application\Command\FinalizeImportJobCommand;
 use App\Import\Application\Command\FinalizeImportJobHandler;
 use App\Receipt\Application\Command\CreateReceiptLineCommand;
 use App\Receipt\Domain\Enum\FuelType;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,6 +33,7 @@ final class AdminImportJobFinalizeController extends AbstractController
     public function __construct(
         private readonly FinalizeImportJobHandler $finalizeImportJobHandler,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -42,10 +44,16 @@ final class AdminImportJobFinalizeController extends AbstractController
             throw $this->createNotFoundException();
         }
 
+        $fallbackRedirect = $this->generateUrl('ui_admin_import_job_show', ['id' => $id]);
+        $redirectTarget = $this->safeReturnPathResolver->resolve(
+            $request->request->get('_redirect'),
+            $fallbackRedirect,
+        );
+
         if (!$this->isCsrfTokenValid('admin_import_finalize_'.$id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Invalid CSRF token.');
 
-            return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
+            return new RedirectResponse($redirectTarget);
         }
 
         try {
@@ -77,7 +85,7 @@ final class AdminImportJobFinalizeController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
+        return new RedirectResponse($redirectTarget);
     }
 
     private function toNullableString(mixed $value): ?string

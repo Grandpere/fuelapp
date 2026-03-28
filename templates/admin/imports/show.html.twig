@@ -83,6 +83,7 @@
             {% if job.status.value == 'needs_review' %}
                 <form method="post" action="{{ path('ui_admin_import_job_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_import_reparse_' ~ job.id.toString) }}">
+                    <input type="hidden" name="_redirect" value="{{ app.request.requestUri }}">
                     <button class="btn btn-secondary" type="submit">Reparse</button>
                 </form>
             {% endif %}
@@ -176,9 +177,10 @@
     {% if job.status.value == 'failed' %}
         <section class="card admin-panel admin-section-spaced">
             <h3 class="section-title">Retry Failed Job</h3>
-            <p class="muted">Queue this failed import job for async reprocessing.</p>
+            <p class="muted">Queue this failed import job for async reprocessing, then come straight back here to continue the investigation.</p>
             <form method="post" action="{{ path('ui_admin_import_job_retry', {id: job.id.toString}) }}" data-turbo-frame="_top">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_retry_' ~ job.id.toString) }}">
+                <input type="hidden" name="_redirect" value="{{ app.request.requestUri }}">
                 <button class="btn btn-primary btn-compact" type="submit">Retry job</button>
             </form>
         </section>
@@ -187,10 +189,11 @@
     {% if job.status.value == 'needs_review' %}
         <section class="card admin-panel admin-section-spaced">
             <h3 class="section-title">Fix And Finalize</h3>
-            <p class="muted">Optional corrections can be provided before finalization. Leave fields empty to use payload values.</p>
+            <p class="muted">Optional corrections can be provided before finalization. Leave fields empty to use payload values and stay anchored to this queue context after submit.</p>
 
             <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="form-stack">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_finalize_' ~ job.id.toString) }}">
+                <input type="hidden" name="_redirect" value="{{ app.request.requestUri }}">
 
                 <div class="form-grid-2">
                     <label class="label">

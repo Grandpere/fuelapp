@@ -1,32 +1,22 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 30 - Admin continuity and consistency pass
+- Sprint 31 - Admin actionability and shell polish
 
 ## Current goal
-- Turn the new admin parity screens into smoother support workflows by tightening maintenance continuity, import/receipt navigation, and list consistency.
+- Turn the improved admin parity screens into faster support workspaces by completing import recovery, making maintenance more actionable, and smoothing the shared admin shell.
 
 ## In progress
-- Sprint 30 is fully implemented across the three scoped commits and is waiting for the single grouped validation pass.
+- Sprint 31 is fully implemented across the three scoped commits and is waiting for the single grouped validation pass.
 
 ## Next tickets (ordered)
-1. `SP30-001` Admin maintenance detail continuity
-2. `SP30-002` Admin import and receipt cross-navigation polish
-3. `SP30-003` Admin list density and consistency pass
-4. Microsoft OIDC remains deferred
+1. Microsoft OIDC remains deferred
 
 ## Notes
-- Sprint 30 follows Sprint 29 and stays on the admin side to convert the recent parity gains into smoother support continuity.
-- SP30-001 is fully delivered across reminder/event support shortcuts, safer event return paths, and maintenance-detail continuity.
-- SP30-002 is fully delivered across import-to-receipt continuity shortcuts and richer receipt-to-vehicle/station/import support navigation.
-- SP30-003 is fully delivered across clearer active-filter summaries and tighter density consistency on the main admin list screens.
+- Sprint 31 follows Sprint 30 and stays focused on admin usefulness before any broader redesign work.
+- SP31-002 is fully delivered across admin retry, reparse, and finalize flows that now preserve support context and sharper recovery guidance.
+- SP31-001 is fully delivered across maintenance reminder and event shortcuts, clearer rule context, and faster support follow-up actions.
+- SP31-003 is fully delivered across a cleaner collapsed admin rail, more stable shell spacing, and a bit more horizontal room for dense support screens.
+- Sprint 30 is fully delivered across admin maintenance continuity, import/receipt navigation, and list consistency and is merged.
 - Sprint 29 is fully delivered across admin dashboard, vehicle, and station usefulness passes and is merged.
-- SP29-003 is fully delivered across failed-import and needs-review signals, due reminder surfacing, recent receipts/import snapshots, and faster admin drill-downs.
-- SP29-001 is fully delivered across richer vehicle list context, direct receipts/maintenance shortcuts, recent vehicle receipts, and safer admin return paths.
-- SP29-002 is fully delivered across richer station list context, station-scoped receipt shortcuts, recent station receipts, and safer admin return paths.
-- Sprint 28 starts with admin import workflow parity because imports remain the highest-value support flow after the front-office passes.
-- SP28-001 is fully delivered across admin import triage shortcuts, dead-link suppression, and a collapsible admin shell for wider work tables.
-- SP28-002 is fully delivered across admin receipt list shortcuts, linked vehicle/station navigation, related import continuity, and safe edit return paths.
-- SP28-003 is fully delivered across better vehicle context, scanability, and support shortcuts on admin maintenance reminders and events.
-- Sprint 27 is fully delivered across the final front consistency pass and is now merged.
 - Microsoft OIDC remains deferred unless product priority changes.

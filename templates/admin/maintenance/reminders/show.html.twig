@@ -23,6 +23,12 @@
             <dd class="admin-dd">{{ ruleName }}</dd>
             <dt class="admin-dt">Rule ID</dt>
             <dd class="admin-dd">{{ reminder.ruleId }}</dd>
+            <dt class="admin-dt">Trigger mode</dt>
+            <dd class="admin-dd">{{ ruleSummary.triggerMode ?? 'n/a' }}</dd>
+            <dt class="admin-dt">Event type</dt>
+            <dd class="admin-dd">{{ ruleSummary.eventType ?? 'n/a' }}</dd>
+            <dt class="admin-dt">Cadence</dt>
+            <dd class="admin-dd">{{ ruleSummary.cadence ?? 'n/a' }}</dd>
             <dt class="admin-dt">Owner ID</dt>
             <dd class="admin-dd">{{ reminder.ownerId }}</dd>
             <dt class="admin-dt">Vehicle ID</dt>
@@ -53,6 +59,7 @@
                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">Open vehicle</a>
                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: vehicle.id().toString()}) }}">Open vehicle receipts</a>
                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: vehicle.id().toString()}) }}">Open vehicle reminders</a>
+                <a class="btn btn-secondary btn-compact" href="{{ matchingEventsUrl }}">Open matching events</a>
             {% endif %}
             <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: reminder.vehicleId}) }}">Open vehicle events</a>
             <a class="btn btn-secondary" href="/api/admin/maintenance/reminders/{{ reminder.id.toString }}">Open API resource</a>

@@ -16,6 +16,7 @@ namespace App\Admin\UI\Web\Controller;
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository;
 use App\Maintenance\Domain\MaintenanceReminder;
+use App\Maintenance\Domain\MaintenanceReminderRule;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -52,11 +53,8 @@ final class AdminMaintenanceReminderShowController extends AbstractController
             throw new NotFoundHttpException();
         }
 
-        $ruleName = $reminder->ruleId();
         $rule = $this->ruleRepository->get($reminder->ruleId());
-        if (null !== $rule) {
-            $ruleName = $rule->name();
-        }
+        $ruleName = $rule?->name() ?? $reminder->ruleId();
 
         $vehicle = $this->vehicleRepository->get($reminder->vehicleId());
         $requestedReturnTo = $request->query->get('return_to');
@@ -69,7 +67,57 @@ final class AdminMaintenanceReminderShowController extends AbstractController
             'ruleName' => $ruleName,
             'vehicle' => $vehicle,
             'backToListUrl' => $backToListUrl,
+            'ruleSummary' => $this->buildRuleSummary($rule),
+            'matchingEventsUrl' => $this->buildMatchingEventsUrl($reminder->vehicleId(), $rule),
         ]);
+    }
+
+    /** @return array{triggerMode:?string,eventType:?string,cadence:?string} */
+    private function buildRuleSummary(?MaintenanceReminderRule $rule): array
+    {
+        if (!$rule instanceof MaintenanceReminderRule) {
+            return [
+                'triggerMode' => null,
+                'eventType' => null,
+                'cadence' => null,
+            ];
+        }
+
+        return [
+            'triggerMode' => $rule->triggerMode()->value,
+            'eventType' => $rule->eventType()?->value,
+            'cadence' => $this->formatCadence($rule),
+        ];
+    }
+
+    private function buildMatchingEventsUrl(string $vehicleId, ?MaintenanceReminderRule $rule): string
+    {
+        $parameters = [
+            'vehicle_id' => $vehicleId,
+        ];
+
+        if ($rule instanceof MaintenanceReminderRule && null !== $rule->eventType()) {
+            $parameters['event_type'] = $rule->eventType()->value;
+        }
+
+        return $this->generateUrl('ui_admin_maintenance_event_list', $parameters);
+    }
+
+    private function formatCadence(MaintenanceReminderRule $rule): ?string
+    {
+        $days = $rule->intervalDays();
+        $kilometers = $rule->intervalKilometers();
+
+        return match ($rule->triggerMode()->value) {
+            'date' => null === $days ? null : sprintf('Every %d day%s', $days, 1 === $days ? '' : 's'),
+            'odometer' => null === $kilometers ? null : sprintf('Every %d km', $kilometers),
+            default => match (true) {
+                null !== $days && null !== $kilometers => sprintf('Every %d day%s or %d km', $days, 1 === $days ? '' : 's', $kilometers),
+                null !== $days => sprintf('Every %d day%s', $days, 1 === $days ? '' : 's'),
+                null !== $kilometers => sprintf('Every %d km', $kilometers),
+                default => null,
+            },
+        };
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F\\-]{36}';

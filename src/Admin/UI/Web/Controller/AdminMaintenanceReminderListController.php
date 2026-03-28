@@ -72,14 +72,17 @@ final class AdminMaintenanceReminderListController extends AbstractController
             ];
         }
 
-        $ruleNames = [];
+        $ruleSummaries = [];
         foreach ($this->ruleRepository->allForSystem() as $rule) {
-            $ruleNames[$rule->id()->toString()] = $rule->name();
+            $ruleSummaries[$rule->id()->toString()] = [
+                'name' => $rule->name(),
+                'eventType' => $rule->eventType()?->value,
+            ];
         }
 
         return $this->render('admin/maintenance/reminders/index.html.twig', [
             'reminders' => $reminders,
-            'ruleNames' => $ruleNames,
+            'ruleSummaries' => $ruleSummaries,
             'metrics' => $metrics,
             'filters' => [
                 'ownerId' => $ownerId,

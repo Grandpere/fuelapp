@@ -1377,7 +1377,8 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $filteredReceiptsResponse = $this->request('GET', '/ui/admin/receipts?vehicle_id='.$vehicleId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $filteredReceiptsResponse->getStatusCode());
-        self::assertStringContainsString('Vehicle filter active', (string) $filteredReceiptsResponse->getContent());
+        self::assertStringContainsString('Context filter active', (string) $filteredReceiptsResponse->getContent());
+        self::assertStringContainsString('Vehicle:', (string) $filteredReceiptsResponse->getContent());
     }
 
     public function testAdminDuplicateImportDetailShowsShortcutToOriginalImport(): void

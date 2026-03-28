@@ -47,6 +47,15 @@
                     </select>
                 </label>
                 <label class="label">
+                    Event type
+                    <select class="select" name="event_type">
+                        <option value="">All</option>
+                        {% for eventType in eventTypeOptions %}
+                            <option value="{{ eventType }}" {% if filters.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
                     Due from
                     <input class="input" type="text" name="due_from" data-datepicker="date" value="{{ filters.dueFrom }}" autocomplete="off">
                 </label>
@@ -74,6 +83,22 @@
                     </div>
                     <div class="admin-page-actions">
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Reset</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if contextVehicle %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Support toolkit</strong>
+                        <p class="muted compact-note">Anchored on {{ contextVehicle.name() }} so we can move between reminders, events, receipts, and the vehicle dossier without losing context.</p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: contextVehicle.id().toString(), return_to: returnTo}) }}">Vehicle</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: contextVehicle.id().toString()}) }}">Receipts</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: contextVehicle.id().toString(), event_type: filters.eventType}) }}">Events</a>
                     </div>
                 </div>
             </div>
@@ -129,6 +154,7 @@
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.reminder.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
                                 {% if reminder.vehicle %}
                                     <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: reminder.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: reminder.vehicle.id().toString()}) }}" data-turbo-frame="_top">Receipts</a>
                                     <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: reminder.vehicle.id().toString(), event_type: ruleSummary is not null and ruleSummary.eventType is not empty ? ruleSummary.eventType : null}) }}" data-turbo-frame="_top">Events</a>
                                 {% endif %}
                             </div>

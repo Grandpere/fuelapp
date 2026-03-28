@@ -64,6 +64,22 @@
             </div>
         {% endif %}
 
+        {% if filters.vehicleId %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Support toolkit</strong>
+                        <p class="muted compact-note">This event queue is scoped to one vehicle so we can pivot directly into reminders, receipts, and the vehicle dossier.</p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: filters.vehicleId, return_to: returnTo}) }}">Vehicle</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: filters.vehicleId}) }}">Receipts</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: filters.vehicleId, event_type: filters.eventType}) }}">Reminders</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <div class="table-wrap admin-table-top table-min-1040">
             <table class="app-table">
                 <thead>
@@ -112,7 +128,8 @@
                             <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_edit', {id: event.event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Edit</a>
                             {% if event.vehicle %}
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: event.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: event.vehicle.id().toString()}) }}" data-turbo-frame="_top">Reminders</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: event.vehicle.id().toString()}) }}" data-turbo-frame="_top">Receipts</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: event.vehicle.id().toString(), event_type: event.event.eventType.value}) }}" data-turbo-frame="_top">Reminders</a>
                             {% endif %}
                             <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.event.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this maintenance event?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.event.id.toString) }}">

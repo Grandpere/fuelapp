@@ -1,26 +1,26 @@
-# TODO - SP33-001 Admin identity and account recovery continuity
+# TODO - SP34-001 Admin maintenance support toolkit
 
 ## Plan
-- [completed] Review the current admin users, identities, security, and audit screens for the missing continuity needed during account recovery work.
-- [completed] Add the smallest useful cross-navigation and support context improvements across account, identity, and recovery flows.
-- [completed] Update admin functional coverage for the touched continuity contract.
-- [completed] Run targeted syntax/Twig validation for the touched account-recovery flow.
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 33 after the three commits.
+- [completed] Review the current admin maintenance reminders, events, and linked support paths for the biggest remaining investigation gaps.
+- [completed] Add the smallest useful toolkit improvements across reminders, rules, events, vehicles, and receipts.
+- [completed] Update admin functional coverage for the touched maintenance support contract.
+- [completed] Run targeted syntax/Twig validation for the touched maintenance flow.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 34 after the three commits.
 
-# TODO - SP33-003 Admin audit/security usefulness pass
-
-## Plan
-- [completed] Review the audit and security screens for repetitive investigation steps, weak filters, and missing support shortcuts.
-- [completed] Improve the highest-value filters and drill-down actions without turning the sprint into a full redesign.
-- [completed] Update admin functional coverage for the touched audit/security contract.
-- [completed] Run targeted syntax/Twig validation for the touched audit/security flow.
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 33 after the three commits.
-
-# TODO - SP33-002 Admin import triage detail polish
+# TODO - SP34-002 Admin import queue decision speed
 
 ## Plan
-- [completed] Review the current admin import detail screen for unclear cause summaries, weak next-step cues, and missing linked-record shortcuts.
-- [completed] Sharpen the import detail triage view so the probable cause and next useful action are easier to spot.
-- [completed] Update admin functional coverage for the touched import detail contract.
-- [completed] Run targeted syntax/Twig validation for the touched import triage flow.
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 33 after the three commits.
+- [in_progress] Review the admin import queue for the slowest decision points around status, probable cause, and next action.
+- [pending] Improve queue scanability and next-step cues without bloating the list.
+- [pending] Update admin functional coverage for the touched import queue contract.
+- [pending] Run targeted syntax/Twig validation for the touched import queue flow.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 34 after the three commits.
+
+# TODO - SP34-003 Admin support hub consolidation
+
+## Plan
+- [pending] Review the admin dashboard and top-level support entry points for missing links to the new admin tooling.
+- [pending] Consolidate the support hub so the right queues and investigation shortcuts are easier to reach from one place.
+- [pending] Update admin functional coverage for the touched dashboard/support-hub contract.
+- [pending] Run targeted syntax/Twig validation for the touched support-hub flow.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 34 after the three commits.

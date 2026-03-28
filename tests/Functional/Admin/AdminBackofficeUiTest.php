@@ -1210,8 +1210,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('/ui/admin/vehicles/'.$vehicleId, $eventShowContent);
         self::assertStringContainsString('/ui/admin/receipts?vehicle_id='.$vehicleId, $eventShowContent);
         self::assertStringContainsString('/ui/admin/maintenance/reminders?vehicle_id='.$vehicleId, $eventShowContent);
+        self::assertStringContainsString('event_type=service', $eventShowContent);
         self::assertStringContainsString('/ui/admin/maintenance/events?vehicle_id='.$vehicleId, $eventShowContent);
         self::assertStringContainsString('Open matching reminders', $eventShowContent);
+        self::assertStringContainsString('Support continuity', $eventShowContent);
         self::assertStringContainsString('return_to=', $eventShowContent);
 
         $eventEditPage = $this->request('GET', '/ui/admin/maintenance/events/'.$eventId.'/edit?return_to='.rawurlencode($eventReturnTo), [], [], $sessionCookie);
@@ -1248,6 +1250,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $eventListContent = (string) $eventList->getContent();
         self::assertStringContainsString('Updated maintenance event', $eventListContent);
         self::assertStringContainsString('Reminders', $eventListContent);
+        self::assertStringContainsString('Receipts', $eventListContent);
         $eventDeleteCsrf = $this->extractDeleteCsrfForMaintenanceEvent((string) $eventList->getContent(), $eventId);
 
         $eventDeleteResponse = $this->request(
@@ -1272,8 +1275,11 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Cadence', $reminderShowContent);
         self::assertStringContainsString('Every 365 days', $reminderShowContent);
         self::assertStringContainsString('Open matching events', $reminderShowContent);
+        self::assertStringContainsString('Open similar reminders', $reminderShowContent);
+        self::assertStringContainsString('/ui/admin/receipts?vehicle_id=', $reminderShowContent);
         self::assertStringContainsString('/ui/admin/maintenance/events?vehicle_id=', $reminderShowContent);
         self::assertStringContainsString('event_type=service', $reminderShowContent);
+        self::assertStringContainsString('Support continuity', $reminderShowContent);
 
         $receiptList = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptList->getStatusCode());

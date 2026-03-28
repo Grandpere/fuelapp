@@ -45,6 +45,22 @@
             </div>
         </div>
 
+        {% if supportShortcuts is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Account triage speed</strong>
+                        <p class="muted compact-note">Open the next fragile account directly instead of scanning the entire table first.</p>
+                    </div>
+                    <div class="actions-wrap">
+                        {% for item in supportShortcuts %}
+                            <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         {% if activeFilterSummary is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
@@ -111,6 +127,7 @@
                 <thead>
                 <tr>
                     <th>Email</th>
+                    <th>Signal</th>
                     <th>Status</th>
                     <th>Email Verification</th>
                     <th>Roles</th>
@@ -122,6 +139,10 @@
                 {% for user in users %}
                     <tr>
                         <td>{{ user.email }}</td>
+                        <td>
+                            <strong>{{ user.signal.headline }}</strong>
+                            <div class="muted compact-note">{{ user.signal.detail }}</div>
+                        </td>
                         <td>
                             <span class="pill {{ user.isActive ? 'pill-soft-success' : 'pill-soft-danger' }}">
                                 {{ user.isActive ? 'active' : 'inactive' }}
@@ -168,7 +189,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="6" class="muted">No users found.</td>
+                        <td colspan="7" class="muted">No users found.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

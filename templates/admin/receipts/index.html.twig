@@ -12,6 +12,76 @@
             <p class="muted">System-wide receipt ledger with full back-office controls.</p>
         </div>
 
+        <div class="admin-metric-grid admin-table-top">
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Total receipts</p>
+                <p class="admin-metric-value">{{ metrics.total }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Vehicle linked</p>
+                <p class="admin-metric-value">{{ metrics.withVehicle }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Station linked</p>
+                <p class="admin-metric-value">{{ metrics.withStation }}</p>
+            </article>
+        </div>
+
+        {% if supportShortcuts is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Support shortcuts</strong>
+                        <p class="muted compact-note">Jump to the freshest receipt dossier instead of scanning the whole ledger first.</p>
+                    </div>
+                    <div class="actions-wrap">
+                        {% for shortcut in supportShortcuts %}
+                            <a class="btn btn-secondary btn-compact" href="{{ shortcut.url }}">{{ shortcut.label }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <form method="get" action="{{ path('ui_admin_receipt_list') }}" class="admin-filters-form admin-table-top">
+            <div class="form-grid-2">
+                <label class="label">
+                    Search
+                    <input class="input" type="text" name="q" value="{{ filters.q ?? '' }}" placeholder="receipt id, vehicle, station">
+                </label>
+                <label class="label">
+                    Vehicle
+                    <select class="select" name="vehicle_id">
+                        <option value="">All vehicles</option>
+                        {% for vehicle in vehicleOptions %}
+                            <option value="{{ vehicle.id }}" {{ filters.vehicleId == vehicle.id ? 'selected' : '' }}>{{ vehicle.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
+                    Station
+                    <select class="select" name="station_id">
+                        <option value="">All stations</option>
+                        {% for station in stationOptions %}
+                            <option value="{{ station.id }}" {{ filters.stationId == station.id ? 'selected' : '' }}>{{ station.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="label">
+                    Issued from
+                    <input class="input" type="text" name="issued_from" value="{{ filters.issuedFrom ?? '' }}" data-datepicker="date" autocomplete="off">
+                </label>
+                <label class="label">
+                    Issued to
+                    <input class="input" type="text" name="issued_to" value="{{ filters.issuedTo ?? '' }}" data-datepicker="date" autocomplete="off">
+                </label>
+            </div>
+            <div class="actions-wrap">
+                <button class="btn btn-primary" type="submit">Apply filters</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_list') }}">Reset</a>
+            </div>
+        </form>
+
         {% if activeFilterSummary is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">

@@ -12,12 +12,67 @@
             <p class="muted">Global station registry with direct follow-up into linked receipts.</p>
         </div>
 
+        {% if supportShortcuts is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Queue shortcuts</strong>
+                        <p class="muted compact-note">Jump into the next station queue that likely needs follow-up.</p>
+                    </div>
+                    <div class="actions-wrap">
+                        {% for item in supportShortcuts %}
+                            <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if activeFilterSummary is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Active filters</strong>
+                        <p class="muted compact-note">
+                            {% for item in activeFilterSummary %}
+                                {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
+                            {% endfor %}
+                        </p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">Reset</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <form method="get" action="{{ path('ui_admin_station_list') }}" class="admin-filter-grid-3 admin-table-top">
+            <label class="label">
+                Search
+                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="Name, street, city">
+            </label>
+            <label class="label">
+                Geocoding
+                <select class="select" name="geocoding_status">
+                    <option value="">All statuses</option>
+                    {% for status in geocodingOptions %}
+                        <option value="{{ status }}" {% if filters.geocoding_status == status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="admin-form-actions">
+                <button class="btn btn-primary" type="submit">Apply</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Reset</a>
+            </div>
+        </form>
+
         <div class="table-wrap admin-table-top table-min-1040">
             <table class="app-table table-min-1040">
                 <thead>
                 <tr>
                     <th>Name</th>
                     <th>Address</th>
+                    <th>Signal</th>
                     <th>Geocoding</th>
                     <th>Receipt activity</th>
                     <th>Linked vehicles</th>
@@ -36,6 +91,10 @@
                     >
                         <td>{{ station.name }}</td>
                         <td>{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}</td>
+                        <td>
+                            <div>{{ row.signal.headline }}</div>
+                            <div class="muted compact-note">{{ row.signal.detail }}</div>
+                        </td>
                         <td><span class="pill pill-energy">{{ station.geocodingStatus.value }}</span></td>
                         <td>
                             <div>{{ row.receiptCount }} receipt{{ row.receiptCount == 1 ? '' : 's' }}</div>
@@ -61,7 +120,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="6" class="muted">No stations found.</td>
+                        <td colspan="7" class="muted">No stations found.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

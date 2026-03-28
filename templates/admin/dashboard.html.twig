@@ -164,8 +164,33 @@
 
             <article class="card-subtle card-subtle-block admin-dashboard-item">
                 <div class="admin-dashboard-item-head">
+                    <strong>Vehicle queues</strong>
+                    <span class="muted compact-note">{{ supportSignals.vehicleDueCount }} due now · {{ supportSignals.vehiclesWithoutReceipts }} without receipts</span>
+                </div>
+                <p class="muted">Use the vehicle queue when support needs the next maintenance-heavy or still-unlinked vehicle dossier.</p>
+                <div class="action-row">
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Due reminders</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Receipt queue</a>
+                </div>
+            </article>
+
+            <article class="card-subtle card-subtle-block admin-dashboard-item">
+                <div class="admin-dashboard-item-head">
+                    <strong>Station queues</strong>
+                    <span class="muted compact-note">{{ supportSignals.stationsWithoutReceipts }} without receipts · {{ supportSignals.pendingStationCount }} pending geocoding</span>
+                </div>
+                <p class="muted">Use the station queue to resolve address quality and receipt-linking gaps before they spill into support follow-up.</p>
+                <div class="action-row">
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">Browse stations</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Receipt queue</a>
+                </div>
+            </article>
+
+            <article class="card-subtle card-subtle-block admin-dashboard-item">
+                <div class="admin-dashboard-item-head">
                     <strong>Account recovery</strong>
-                    <span class="muted compact-note">Users, identities, security activity, and audit stay one click away.</span>
+                    <span class="muted compact-note">{{ supportSignals.missingIdentityCount }} missing identities · {{ supportSignals.unverifiedUserCount }} unverified users</span>
                 </div>
                 <p class="muted">Use the support investigation screens together when a login, verification, or account-state problem needs a full timeline.</p>
                 <div class="action-row">

@@ -12,13 +12,68 @@
             <p class="muted">System-wide fleet view with direct follow-up into receipts and maintenance.</p>
         </div>
 
+        {% if supportShortcuts is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Queue shortcuts</strong>
+                        <p class="muted compact-note">Jump straight into the next vehicle queue that likely needs support attention.</p>
+                    </div>
+                    <div class="actions-wrap">
+                        {% for item in supportShortcuts %}
+                            <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if activeFilterSummary is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Active filters</strong>
+                        <p class="muted compact-note">
+                            {% for item in activeFilterSummary %}
+                                {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
+                            {% endfor %}
+                        </p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">Reset</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <form method="get" action="{{ path('ui_admin_vehicle_list') }}" class="admin-filter-grid-3 admin-table-top">
+            <label class="label">
+                Search
+                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="Name, plate, owner email">
+            </label>
+            <label class="label">
+                Owner
+                <select class="select" name="ownerId">
+                    <option value="">All owners</option>
+                    {% for owner in ownerOptions %}
+                        <option value="{{ owner.id }}" {% if filters.ownerId == owner.id %}selected{% endif %}>{{ owner.label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="admin-form-actions">
+                <button class="btn btn-primary" type="submit">Apply</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Reset</a>
+            </div>
+        </form>
+
         <div class="table-wrap admin-table-top table-min-980">
             <table class="app-table table-min-980">
                 <thead>
                 <tr>
                     <th>Name</th>
                     <th>Plate</th>
-                    <th>Owner ID</th>
+                    <th>Owner</th>
+                    <th>Signal</th>
                     <th>Receipts</th>
                     <th>Maintenance</th>
                     <th>Updated</th>
@@ -37,7 +92,16 @@
                     >
                         <td>{{ vehicle.name }}</td>
                         <td>{{ vehicle.plateNumber }}</td>
-                        <td>{{ vehicle.ownerId ?? 'n/a' }}</td>
+                        <td>
+                            {% if row.ownerEmail %}
+                                <div>{{ row.ownerEmail }}</div>
+                            {% endif %}
+                            <div class="muted compact-note">{{ vehicle.ownerId }}</div>
+                        </td>
+                        <td>
+                            <div>{{ row.signal.headline }}</div>
+                            <div class="muted compact-note">{{ row.signal.detail }}</div>
+                        </td>
                         <td>
                             <div>{{ row.receiptCount }} receipt{{ row.receiptCount == 1 ? '' : 's' }}</div>
                             <div class="muted compact-note">
@@ -67,7 +131,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="7" class="muted">No vehicles found.</td>
+                        <td colspan="8" class="muted">No vehicles found.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

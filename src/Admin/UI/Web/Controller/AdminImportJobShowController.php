@@ -66,6 +66,7 @@ final class AdminImportJobShowController extends AbstractController
             'triageSummary' => $this->buildTriageSummary($job, $payloadData),
             'triageReadout' => $this->buildTriageReadout($job, $payloadData),
             'backToListUrl' => $backToListUrl,
+            'currentImportUrl' => $currentImportUrl,
             'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
             'resolvedDuplicateReceiptId' => $resolvedDuplicateReceiptId,
             'resolvedDuplicateOriginalImportId' => $resolvedDuplicateOriginalImportId,

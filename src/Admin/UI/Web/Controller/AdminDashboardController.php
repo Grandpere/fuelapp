@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\User\AdminUserManager;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
@@ -37,6 +38,7 @@ final class AdminDashboardController extends AbstractController
         private readonly MaintenanceReminderRepository $maintenanceReminderRepository,
         private readonly ImportJobRepository $importJobRepository,
         private readonly ReceiptRepository $receiptRepository,
+        private readonly AdminUserManager $userManager,
     ) {
     }
 
@@ -46,13 +48,21 @@ final class AdminDashboardController extends AbstractController
     {
         $dashboardUrl = $this->generateUrl('ui_admin_dashboard');
         $stationNames = [];
+        $stationRows = [];
+        $pendingStationCount = 0;
         foreach ($this->stationRepository->allForSystem() as $station) {
             $stationNames[$station->id()->toString()] = $station->name();
+            $stationRows[] = $station;
+            if ('success' !== $station->geocodingStatus()->value) {
+                ++$pendingStationCount;
+            }
         }
 
         $vehicleNames = [];
+        $vehicles = [];
         foreach ($this->vehicleRepository->all() as $vehicle) {
             $vehicleNames[$vehicle->id()->toString()] = $vehicle->name();
+            $vehicles[] = $vehicle;
         }
 
         $importMetrics = [
@@ -82,9 +92,17 @@ final class AdminDashboardController extends AbstractController
 
         $receiptCount = 0;
         $allReceipts = [];
+        $receiptVehicleIds = [];
+        $receiptStationIds = [];
         foreach ($this->receiptRepository->allForSystem() as $receipt) {
             ++$receiptCount;
             $allReceipts[] = $receipt;
+            if (null !== $receipt->vehicleId()) {
+                $receiptVehicleIds[$receipt->vehicleId()->toString()] = true;
+            }
+            if (null !== $receipt->stationId()) {
+                $receiptStationIds[$receipt->stationId()->toString()] = true;
+            }
         }
 
         usort(
@@ -104,12 +122,45 @@ final class AdminDashboardController extends AbstractController
         $maintenanceReminderCount = 0;
         $dueReminderCount = 0;
         $dueReminders = [];
+        $dueVehicleIds = [];
         foreach ($this->maintenanceReminderRepository->allForSystem() as $reminder) {
             ++$maintenanceReminderCount;
 
             if ($reminder->dueByDate() || $reminder->dueByOdometer()) {
                 ++$dueReminderCount;
                 $dueReminders[] = $reminder;
+                $dueVehicleIds[$reminder->vehicleId()] = true;
+            }
+        }
+
+        $vehiclesWithoutReceipts = 0;
+        foreach ($vehicles as $vehicle) {
+            if (!isset($receiptVehicleIds[$vehicle->id()->toString()])) {
+                ++$vehiclesWithoutReceipts;
+            }
+        }
+
+        $stationsWithoutReceipts = 0;
+        foreach ($stationRows as $station) {
+            if (!isset($receiptStationIds[$station->id()->toString()])) {
+                ++$stationsWithoutReceipts;
+            }
+        }
+
+        $userMetrics = [
+            'missingIdentity' => 0,
+            'unverified' => 0,
+        ];
+        $nextMissingIdentityUserId = null;
+        $nextUnverifiedUserId = null;
+        foreach ($this->userManager->listUsers() as $user) {
+            if (0 === $user->identityCount) {
+                ++$userMetrics['missingIdentity'];
+                $nextMissingIdentityUserId ??= $user->id;
+            }
+            if (!$user->isEmailVerified()) {
+                ++$userMetrics['unverified'];
+                $nextUnverifiedUserId ??= $user->id;
             }
         }
 
@@ -156,6 +207,30 @@ final class AdminDashboardController extends AbstractController
             ];
         }
 
+        if ($userMetrics['missingIdentity'] > 0 && null !== $nextMissingIdentityUserId) {
+            $attentionCards[] = [
+                'title' => 'Missing identities',
+                'value' => $userMetrics['missingIdentity'],
+                'description' => 'Account recovery will stall until the affected identity links are understood.',
+                'url' => $this->generateUrl('ui_admin_identity_list', ['user_id' => $nextMissingIdentityUserId]),
+                'action' => 'Open next missing identity',
+                'secondaryUrl' => $this->generateUrl('ui_admin_user_list', ['has_identity' => '0']),
+                'secondaryAction' => 'Open queue',
+                'statusClass' => 'queued',
+            ];
+        } elseif ($userMetrics['unverified'] > 0 && null !== $nextUnverifiedUserId) {
+            $attentionCards[] = [
+                'title' => 'Unverified accounts',
+                'value' => $userMetrics['unverified'],
+                'description' => 'Verification issues still block support outcomes for active users.',
+                'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $nextUnverifiedUserId]),
+                'action' => 'Open next unverified account',
+                'secondaryUrl' => $this->generateUrl('ui_admin_user_list', ['verification' => 'unverified']),
+                'secondaryAction' => 'Open queue',
+                'statusClass' => 'processing',
+            ];
+        }
+
         return $this->render('admin/dashboard.html.twig', [
             'stationCount' => \count($stationNames),
             'vehicleCount' => \count($vehicleNames),
@@ -169,6 +244,14 @@ final class AdminDashboardController extends AbstractController
             'recentReceipts' => $recentReceipts,
             'vehicleNames' => $vehicleNames,
             'stationNames' => $stationNames,
+            'supportSignals' => [
+                'vehicleDueCount' => \count($dueVehicleIds),
+                'vehiclesWithoutReceipts' => $vehiclesWithoutReceipts,
+                'stationsWithoutReceipts' => $stationsWithoutReceipts,
+                'pendingStationCount' => $pendingStationCount,
+                'missingIdentityCount' => $userMetrics['missingIdentity'],
+                'unverifiedUserCount' => $userMetrics['unverified'],
+            ],
         ]);
     }
 

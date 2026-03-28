@@ -243,14 +243,17 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $dashboardResponse->getStatusCode());
         self::assertStringContainsString('Back-office', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Needs attention now', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Inspect failures', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Review imports', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Open reminders', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Open next failure', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Open next review', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Open next due reminder', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Open queue', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Recent receipts', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Import queue snapshot', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('ui-import.pdf', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('ui-import-failed.pdf', (string) $dashboardResponse->getContent());
         self::assertStringContainsString((string) $receipt->getId(), (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Edit', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Import', (string) $dashboardResponse->getContent());
 
         $stationsResponse = $this->request('GET', '/ui/admin/stations', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $stationsResponse->getStatusCode());

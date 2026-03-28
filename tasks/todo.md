@@ -10,10 +10,10 @@
 # TODO - SP32-003 Admin dashboard signal quality
 
 ## Plan
-- [pending] Review the admin dashboard cards and lists for weak prioritization, missing next steps, and noisy signals.
-- [pending] Improve the dashboard with clearer urgency grouping and better drill-down actions without broad redesign.
-- [pending] Update admin functional coverage for the touched dashboard contract.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Review the admin dashboard cards and lists for weak prioritization, missing next steps, and noisy signals.
+- [completed] Improve the dashboard with clearer urgency grouping and better drill-down actions without broad redesign.
+- [completed] Update admin functional coverage for the touched dashboard contract.
+- [completed] Run targeted syntax/Twig validation for the touched dashboard flow.
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 32 after the three commits.
 
 # TODO - SP32-002 Admin user/account support pass

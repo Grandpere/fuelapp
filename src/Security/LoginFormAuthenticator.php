@@ -38,7 +38,8 @@ final class LoginFormAuthenticator extends AbstractAuthenticator implements Auth
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
-    ) {}
+    ) {
+    }
 
     public function supports(Request $request): bool
     {

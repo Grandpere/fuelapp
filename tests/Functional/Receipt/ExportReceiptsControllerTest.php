@@ -23,9 +23,9 @@ use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
@@ -288,6 +288,10 @@ final class ExportReceiptsControllerTest extends KernelTestCase
 
     private function responsePrefix(Response $response, int $length): string
     {
+        if ($length < 1) {
+            throw new RuntimeException('The binary prefix length must be positive.');
+        }
+
         if ($response instanceof BinaryFileResponse) {
             $file = $response->getFile();
             $handle = fopen($file->getPathname(), 'rb');

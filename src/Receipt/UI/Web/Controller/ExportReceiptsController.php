@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
 final class ExportReceiptsController extends AbstractController
 {
@@ -396,7 +397,7 @@ final class ExportReceiptsController extends AbstractController
             $writer->setPreCalculateFormulas(false);
             $writer->setUseDiskCaching(true, $tempDirectory);
             $writer->save($tempFile);
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             if (is_file($tempFile)) {
                 @unlink($tempFile);
             }

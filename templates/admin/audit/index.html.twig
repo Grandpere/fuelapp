@@ -12,6 +12,40 @@
         </div>
     </section>
 
+    {% if supportShortcuts is not empty %}
+        <section class="card admin-panel admin-section-spaced">
+            <div class="admin-page-head">
+                <div class="admin-page-header">
+                    <strong>Investigation continuity</strong>
+                    <p class="muted compact-note">Keep the same actor or correlation in view while moving between user, identity, security, and audit screens.</p>
+                </div>
+                <div class="actions-wrap">
+                    {% for item in supportShortcuts %}
+                        <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
+    {% if activeFilterSummary is not empty %}
+        <section class="card admin-panel admin-section-spaced">
+            <div class="admin-page-head">
+                <div class="admin-page-header">
+                    <strong>Active filters</strong>
+                    <p class="muted compact-note">
+                        {% for item in activeFilterSummary %}
+                            {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
+                        {% endfor %}
+                    </p>
+                </div>
+                <div class="admin-page-actions">
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list') }}">Reset</a>
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
     <section class="card admin-panel admin-section-spaced">
         <h3 class="section-title">Filters</h3>
         <form method="get" class="admin-filters-form">
@@ -63,36 +97,48 @@
                     <th>Target</th>
                     <th>Correlation ID</th>
                     <th>Diff Summary</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 {% for entry in entries %}
                     <tr class="table-row">
-                        <td>{{ entry.createdAt|date('Y-m-d H:i:s') }}</td>
-                        <td>{{ entry.action }}</td>
+                        <td>{{ entry.entry.createdAt|date('Y-m-d H:i:s') }}</td>
+                        <td>{{ entry.entry.action }}</td>
                         <td>
-                            <div>{{ entry.actorEmail ?? 'n/a' }}</div>
-                            <div class="muted inline-meta">{{ entry.actorId ?? 'n/a' }}</div>
+                            <div>{{ entry.entry.actorEmail ?? 'n/a' }}</div>
+                            <div class="muted inline-meta">{{ entry.entry.actorId ?? 'n/a' }}</div>
                         </td>
                         <td>
-                            <div>{{ entry.targetType }}</div>
-                            <div class="muted inline-meta">{{ entry.targetId }}</div>
+                            <div>{{ entry.entry.targetType }}</div>
+                            <div class="muted inline-meta">{{ entry.entry.targetId }}</div>
                         </td>
-                        <td>{{ entry.correlationId }}</td>
+                        <td>{{ entry.entry.correlationId }}</td>
                         <td>
-                            {% if entry.diffSummary is not empty %}
+                            {% if entry.entry.diffSummary is not empty %}
                                 <details>
                                     <summary>view</summary>
-                                    <pre class="preformatted-block">{{ entry.diffSummary|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                                    <pre class="preformatted-block">{{ entry.entry.diffSummary|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
                                 </details>
                             {% else %}
                                 <span class="muted">n/a</span>
                             {% endif %}
                         </td>
+                        <td class="action-cell-flex">
+                            {% if entry.userUrl %}
+                                <a class="btn btn-secondary btn-compact" href="{{ entry.userUrl }}">User</a>
+                            {% endif %}
+                            {% if entry.securityUrl %}
+                                <a class="btn btn-secondary btn-compact" href="{{ entry.securityUrl }}">Security</a>
+                            {% endif %}
+                            {% if entry.correlationUrl %}
+                                <a class="btn btn-secondary btn-compact" href="{{ entry.correlationUrl }}">Correlation</a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="6" class="muted">No audit entries found.</td>
+                        <td colspan="7" class="muted">No audit entries found.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

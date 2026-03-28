@@ -1,26 +1,26 @@
-# TODO - SP32-001 Admin receipt editing continuity
+# TODO - SP33-001 Admin identity and account recovery continuity
 
 ## Plan
-- [completed] Review the current admin receipt list, detail, and edit flow for missing support continuity and follow-up shortcuts.
-- [completed] Add the smallest useful continuity improvements across receipt, import, vehicle, station, and context-filtered admin lists.
-- [completed] Update admin functional coverage for the touched receipt support flow.
-- [completed] Run targeted syntax/Twig validation for the touched receipt admin flow.
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 32 after the three commits.
+- [completed] Review the current admin users, identities, security, and audit screens for the missing continuity needed during account recovery work.
+- [completed] Add the smallest useful cross-navigation and support context improvements across account, identity, and recovery flows.
+- [completed] Update admin functional coverage for the touched continuity contract.
+- [completed] Run targeted syntax/Twig validation for the touched account-recovery flow.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 33 after the three commits.
 
-# TODO - SP32-003 Admin dashboard signal quality
-
-## Plan
-- [completed] Review the admin dashboard cards and lists for weak prioritization, missing next steps, and noisy signals.
-- [completed] Improve the dashboard with clearer urgency grouping and better drill-down actions without broad redesign.
-- [completed] Update admin functional coverage for the touched dashboard contract.
-- [completed] Run targeted syntax/Twig validation for the touched dashboard flow.
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 32 after the three commits.
-
-# TODO - SP32-002 Admin user/account support pass
+# TODO - SP33-003 Admin audit/security usefulness pass
 
 ## Plan
-- [completed] Review the admin user management list for the most repetitive support actions and missing account-state context.
-- [completed] Add the highest-value support shortcuts and clearer account-state signals while keeping the UI compact.
-- [completed] Update admin/API functional coverage for the touched account support contract.
-- [completed] Run targeted syntax/Twig validation for the touched account-support flow.
-- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 32 after the three commits.
+- [completed] Review the audit and security screens for repetitive investigation steps, weak filters, and missing support shortcuts.
+- [completed] Improve the highest-value filters and drill-down actions without turning the sprint into a full redesign.
+- [completed] Update admin functional coverage for the touched audit/security contract.
+- [completed] Run targeted syntax/Twig validation for the touched audit/security flow.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 33 after the three commits.
+
+# TODO - SP33-002 Admin import triage detail polish
+
+## Plan
+- [completed] Review the current admin import detail screen for unclear cause summaries, weak next-step cues, and missing linked-record shortcuts.
+- [completed] Sharpen the import detail triage view so the probable cause and next useful action are easier to spot.
+- [completed] Update admin functional coverage for the touched import detail contract.
+- [completed] Run targeted syntax/Twig validation for the touched import triage flow.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 33 after the three commits.

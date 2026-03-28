@@ -64,6 +64,7 @@ final class AdminImportJobShowController extends AbstractController
             'payload' => $job->errorPayload(),
             'payloadData' => $payloadData,
             'triageSummary' => $this->buildTriageSummary($job, $payloadData),
+            'triageReadout' => $this->buildTriageReadout($job, $payloadData),
             'backToListUrl' => $backToListUrl,
             'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
             'resolvedDuplicateReceiptId' => $resolvedDuplicateReceiptId,
@@ -214,6 +215,54 @@ final class AdminImportJobShowController extends AbstractController
         }
 
         return sprintf('%ds', $remainingSeconds);
+    }
+
+    /**
+     * @param array<string, mixed>|null $payloadData
+     *
+     * @return array{probableCause:string,nextAction:string,operatorNote:?string}
+     */
+    private function buildTriageReadout(ImportJob $job, ?array $payloadData): array
+    {
+        $status = $job->status()->value;
+        $fallbackReason = $this->readString($payloadData, 'fallbackReason');
+        $fallbackStrategy = $this->readString($payloadData, 'fallbackStrategy');
+        $reason = $this->readString($payloadData, 'reason');
+        $rawPayload = $job->errorPayload();
+
+        return match ($status) {
+            'needs_review' => [
+                'probableCause' => $fallbackReason ?? $reason ?? 'OCR or parsing left the import in manual review.',
+                'nextAction' => 'Review the parsed payload and finalize the receipt once the missing fields look trustworthy.',
+                'operatorNote' => null !== $fallbackStrategy
+                    ? sprintf('Current fallback strategy: %s.', str_replace('_', ' ', $fallbackStrategy))
+                    : 'Manual review remains the next path from this state.',
+            ],
+            'failed' => [
+                'probableCause' => is_string($rawPayload) && '' !== trim($rawPayload)
+                    ? trim($rawPayload)
+                    : 'The import failed without a decoded payload.',
+                'nextAction' => 'Inspect the failure, then retry only if the underlying provider or input issue has been addressed.',
+                'operatorNote' => $job->ocrRetryCount() > 0
+                    ? sprintf('This job already consumed %d OCR retries.', $job->ocrRetryCount())
+                    : null,
+            ],
+            'duplicate' => [
+                'probableCause' => $reason ?? 'The import matched an existing receipt or a previously uploaded import.',
+                'nextAction' => 'Open the linked receipt or original import to confirm the duplicate before taking further action.',
+                'operatorNote' => null,
+            ],
+            'processed' => [
+                'probableCause' => 'The import already created a receipt successfully.',
+                'nextAction' => 'Open the created receipt if support needs to continue on the resulting business record.',
+                'operatorNote' => null,
+            ],
+            default => [
+                'probableCause' => sprintf('The import is currently in %s state.', $status),
+                'nextAction' => 'Open the current queue or detail flow and continue with the state-specific next step.',
+                'operatorNote' => null,
+            ],
+        };
     }
 
     /** @param array<string, mixed>|null $payloadData */

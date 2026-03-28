@@ -62,6 +62,20 @@
             </div>
         {% endif %}
 
+        <div class="card-subtle card-subtle-block admin-table-top">
+            <p class="text-block-title">Triage readout</p>
+            <dl class="admin-dl">
+                <dt class="admin-dt">Probable cause</dt>
+                <dd class="admin-dd">{{ triageReadout.probableCause }}</dd>
+                <dt class="admin-dt">Next best action</dt>
+                <dd class="admin-dd">{{ triageReadout.nextAction }}</dd>
+                {% if triageReadout.operatorNote is not null %}
+                    <dt class="admin-dt">Operator note</dt>
+                    <dd class="admin-dd">{{ triageReadout.operatorNote }}</dd>
+                {% endif %}
+            </dl>
+        </div>
+
         {% if payloadData is not null %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <p class="text-block-title">Decoded payload</p>

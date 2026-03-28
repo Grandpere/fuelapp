@@ -634,9 +634,14 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $listResponse = $this->request('GET', '/ui/admin/identities?q=ui-owner-subject-001', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
-        self::assertStringContainsString('ui-owner-subject-001', (string) $listResponse->getContent());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('ui-owner-subject-001', $listContent);
+        self::assertStringContainsString('Active filters', $listContent);
+        self::assertStringContainsString('User', $listContent);
+        self::assertStringContainsString('Security', $listContent);
+        self::assertStringContainsString('Audit', $listContent);
 
-        $relinkToken = $this->extractIdentityRelinkCsrf((string) $listResponse->getContent(), $identityId);
+        $relinkToken = $this->extractIdentityRelinkCsrf($listContent, $identityId);
         $relinkResponse = $this->request(
             'POST',
             '/ui/admin/identities/'.$identityId.'/relink',
@@ -651,9 +656,14 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $afterRelink = $this->request('GET', '/ui/admin/identities?user_id='.$ownerBId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterRelink->getStatusCode());
-        self::assertStringContainsString('ui.identity.owner.b@example.com', (string) $afterRelink->getContent());
+        $afterRelinkContent = (string) $afterRelink->getContent();
+        self::assertStringContainsString('ui.identity.owner.b@example.com', $afterRelinkContent);
+        self::assertStringContainsString('Account recovery continuity', $afterRelinkContent);
+        self::assertStringContainsString('Open user', $afterRelinkContent);
+        self::assertStringContainsString('User security', $afterRelinkContent);
+        self::assertStringContainsString('User audit', $afterRelinkContent);
 
-        $deleteToken = $this->extractIdentityDeleteCsrf((string) $afterRelink->getContent(), $identityId);
+        $deleteToken = $this->extractIdentityDeleteCsrf($afterRelinkContent, $identityId);
         $deleteResponse = $this->request(
             'POST',
             '/ui/admin/identities/'.$identityId.'/delete',
@@ -698,8 +708,14 @@ final class AdminBackofficeUiTest extends WebTestCase
             $sessionCookie,
         );
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
-        self::assertStringContainsString('security.login.failure', (string) $response->getContent());
-        self::assertStringContainsString('corr-ui-security-001', (string) $response->getContent());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('security.login.failure', $content);
+        self::assertStringContainsString('corr-ui-security-001', $content);
+        self::assertStringContainsString('Investigation continuity', $content);
+        self::assertStringContainsString('Active filters', $content);
+        self::assertStringContainsString('Open user', $content);
+        self::assertStringContainsString('User audit', $content);
+        self::assertStringContainsString('Audit', $content);
     }
 
     public function testAdminCanDeleteImportJobFromBackofficeUi(): void
@@ -1799,10 +1815,13 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('Triage summary', $detailContent);
+        self::assertStringContainsString('Triage readout', $detailContent);
         self::assertStringContainsString('Retry count at terminal state', $detailContent);
         self::assertStringContainsString('ocr_provider_retryable_exhausted', $detailContent);
         self::assertStringContainsString('Detected issues', $detailContent);
         self::assertStringContainsString('2', $detailContent);
+        self::assertStringContainsString('Review the parsed payload and finalize the receipt', $detailContent);
+        self::assertStringContainsString('Current fallback strategy: manual review.', $detailContent);
     }
 
     public function testAdminFailedImportDetailShowsTriageSummaryFromRawFailurePayload(): void
@@ -1837,10 +1856,12 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('Triage summary', $detailContent);
+        self::assertStringContainsString('Triage readout', $detailContent);
         self::assertStringContainsString('Terminal detail', $detailContent);
         self::assertStringContainsString('ocr_provider_permanent: provider quota exceeded', $detailContent);
         self::assertStringContainsString('OCR retry count', $detailContent);
         self::assertStringContainsString('2', $detailContent);
+        self::assertStringContainsString('Inspect the failure, then retry only if the underlying provider or input issue has been addressed.', $detailContent);
     }
 
     /**

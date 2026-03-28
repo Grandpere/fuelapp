@@ -9,22 +9,25 @@
     <section class="card admin-panel">
         <div class="admin-page-header">
             <h2 class="page-title">Vehicles</h2>
-            <p class="muted">Global vehicle list used to attach receipts to an owner fleet. Creation stays in user flow.</p>
+            <p class="muted">System-wide fleet view with direct follow-up into receipts and maintenance.</p>
         </div>
 
-        <div class="table-wrap admin-table-top table-min-780">
-            <table class="app-table table-min-780">
+        <div class="table-wrap admin-table-top table-min-980">
+            <table class="app-table table-min-980">
                 <thead>
                 <tr>
                     <th>Name</th>
                     <th>Plate</th>
                     <th>Owner ID</th>
+                    <th>Receipts</th>
+                    <th>Maintenance</th>
                     <th>Updated</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                {% for vehicle in vehicles %}
+                {% for row in vehicleRows %}
+                    {% set vehicle = row.vehicle %}
                     <tr
                         class="table-row row-link"
                         data-controller="row-link"
@@ -35,20 +38,36 @@
                         <td>{{ vehicle.name }}</td>
                         <td>{{ vehicle.plateNumber }}</td>
                         <td>{{ vehicle.ownerId ?? 'n/a' }}</td>
+                        <td>
+                            <div>{{ row.receiptCount }} receipt{{ row.receiptCount == 1 ? '' : 's' }}</div>
+                            <div class="muted compact-note">
+                                {% if row.lastReceiptAt %}
+                                    Last: {{ row.lastReceiptAt|date('Y-m-d H:i') }}
+                                {% else %}
+                                    No receipt yet
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div>{{ row.eventCount }} event{{ row.eventCount == 1 ? '' : 's' }}</div>
+                            <div class="muted compact-note">{{ row.dueReminderCount }} due reminder{{ row.dueReminderCount == 1 ? '' : 's' }}</div>
+                        </td>
                         <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
                         <td class="action-cell-flex" data-row-link-ignore>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Detail</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString}) }}" data-turbo-frame="_top">Edit</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: vehicle.id.toString}) }}" data-turbo-frame="_top">Receipts</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: vehicle.id.toString}) }}" data-turbo-frame="_top">Maintenance</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Edit</a>
                             <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this vehicle?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_vehicle_delete_' ~ vehicle.id.toString) }}">
                                 <input type="hidden" name="_redirect" value="{{ returnTo }}">
-                                <button class="btn btn-danger" type="submit">Delete</button>
+                                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                             </form>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="5" class="muted">No vehicles found.</td>
+                        <td colspan="7" class="muted">No vehicles found.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

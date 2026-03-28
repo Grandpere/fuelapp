@@ -1,3 +1,30 @@
+# TODO - SP29-002 Admin station workflow usefulness
+
+## Plan
+- [completed] Enrich the admin station list with receipt and linked-vehicle context.
+- [completed] Add direct station shortcuts into station-scoped receipt follow-up.
+- [completed] Make the admin station detail page useful for support follow-up with recent receipts and safe return paths.
+- [completed] Extend admin functional coverage for the new station workflow contract.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 29 after the three commits.
+
+# TODO - SP29-001 Admin vehicle workflow usefulness
+
+## Plan
+- [completed] Enrich the admin vehicle list with receipt and maintenance context.
+- [completed] Add direct admin vehicle shortcuts into vehicle-scoped receipts and maintenance flows.
+- [completed] Make the admin vehicle detail page a support hub with recent receipts and safe return paths.
+- [completed] Extend admin functional coverage for the new vehicle workflow contract.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 29 after the three commits.
+
+# TODO - SP29-003 Admin dashboard triage pass
+
+## Plan
+- [completed] Reframe the admin dashboard around triage signals instead of only global totals.
+- [completed] Add recent receipt/import activity blocks with direct admin drill-downs.
+- [completed] Extend admin functional coverage for the dashboard contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 29 after the three commits.
+
 # TODO - Receipts Front/Admin Edition
 
 # TODO - SP28-001 Admin import workflow parity

@@ -7,21 +7,37 @@
 {% block admin_content %}
     {% set requestedReturnTo = app.request.query.get('return_to') %}
     {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_station_list') %}
+    {% set currentStationUrl = path('ui_admin_station_show', {id: station.id.toString, return_to: backToListUrl}) %}
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
                 <h2 class="page-title">Station Detail</h2>
-                <p class="muted">Back-office detail view with direct mutation actions.</p>
+                <p class="muted">Admin support view with direct access to linked receipt activity.</p>
             </div>
             <div class="admin-page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_admin_station_edit', {id: station.id.toString}) }}">Edit station</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_edit', {id: station.id.toString, return_to: currentStationUrl}) }}">Edit station</a>
                 <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
                     <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
-                    <button class="btn btn-danger" type="submit">Delete</button>
+                    <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                 </form>
-                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back to list</a>
+                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}">Back to list</a>
             </div>
+        </div>
+
+        <div class="admin-metric-grid admin-table-top">
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Receipts</p>
+                <p class="admin-metric-value">{{ receiptCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Linked vehicles</p>
+                <p class="admin-metric-value">{{ linkedVehicleCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Geocoding</p>
+                <p class="admin-metric-value" style="font-size: 1.25rem;">{{ station.geocodingStatus.value }}</p>
+            </article>
         </div>
 
         <dl class="admin-dl admin-detail-stack">
@@ -35,8 +51,6 @@
             <dd class="admin-dd">{{ station.postalCode }}</dd>
             <dt class="admin-dt">City</dt>
             <dd class="admin-dd">{{ station.city }}</dd>
-            <dt class="admin-dt">Geocoding status</dt>
-            <dd class="admin-dd">{{ station.geocodingStatus.value }}</dd>
             <dt class="admin-dt">Coordinates</dt>
             <dd class="admin-dd">
                 {% if station.latitudeMicroDegrees is not null and station.longitudeMicroDegrees is not null %}
@@ -48,9 +62,45 @@
             <dt class="admin-dt">Last geocoding error</dt>
             <dd class="admin-dd">{{ station.geocodingLastError ?? 'n/a' }}</dd>
         </dl>
+    </section>
 
-        <div class="admin-page-actions admin-detail-stack">
-            <a class="btn btn-secondary" href="/api/admin/stations/{{ station.id.toString }}">Open API resource</a>
-        </div>
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Support shortcuts</h3>
+        <ul class="admin-inline-list">
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {station_id: station.id.toString}) }}">Open receipts</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="/api/admin/stations/{{ station.id.toString }}">Open API resource</a></li>
+        </ul>
+    </section>
+
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Recent receipts</h3>
+        {% if recentReceipts is not empty %}
+            <div class="admin-dashboard-list">
+                {% for receipt in recentReceipts %}
+                    <article class="card-subtle card-subtle-block admin-dashboard-item">
+                        <div class="admin-dashboard-item-head">
+                            <strong>{{ receipt.issuedAt|date('Y-m-d H:i') }}</strong>
+                            <span class="muted">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</span>
+                        </div>
+                        <p class="muted compact-note">{{ receipt.id.toString }}</p>
+                        <div class="compact-note">
+                            {% if receipt.vehicleId %}
+                                Vehicle: {{ vehicleNames[receipt.vehicleId.toString] ?? receipt.vehicleId.toString }}
+                            {% else %}
+                                Vehicle: n/a
+                            {% endif %}
+                        </div>
+                        <div class="action-row">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_show', {id: receipt.id.toString, return_to: currentStationUrl}) }}">Open</a>
+                            {% if receipt.vehicleId %}
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicleId.toString, return_to: currentStationUrl}) }}">Vehicle</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">No receipt is linked to this station yet.</p>
+        {% endif %}
     </section>
 {% endblock %}

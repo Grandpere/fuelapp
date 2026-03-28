@@ -9,22 +9,24 @@
     <section class="card admin-panel">
         <div class="admin-page-header">
             <h2 class="page-title">Stations</h2>
-            <p class="muted">Global station registry used for receipt matching and geocoding.</p>
+            <p class="muted">Global station registry with direct follow-up into linked receipts.</p>
         </div>
 
-        <div class="table-wrap admin-table-top table-min-820">
-            <table class="app-table table-min-820">
+        <div class="table-wrap admin-table-top table-min-1040">
+            <table class="app-table table-min-1040">
                 <thead>
                 <tr>
                     <th>Name</th>
                     <th>Address</th>
                     <th>Geocoding</th>
-                    <th>Coordinates</th>
+                    <th>Receipt activity</th>
+                    <th>Linked vehicles</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                {% for station in stations %}
+                {% for row in stationRows %}
+                    {% set station = row.station %}
                     <tr
                         class="table-row row-link"
                         data-controller="row-link"
@@ -36,25 +38,30 @@
                         <td>{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}</td>
                         <td><span class="pill pill-energy">{{ station.geocodingStatus.value }}</span></td>
                         <td>
-                            {% if station.latitudeMicroDegrees is not null and station.longitudeMicroDegrees is not null %}
-                                {{ station.latitudeMicroDegrees }} / {{ station.longitudeMicroDegrees }}
-                            {% else %}
-                                <span class="muted">n/a</span>
-                            {% endif %}
+                            <div>{{ row.receiptCount }} receipt{{ row.receiptCount == 1 ? '' : 's' }}</div>
+                            <div class="muted compact-note">
+                                {% if row.lastReceiptAt %}
+                                    Last: {{ row.lastReceiptAt|date('Y-m-d H:i') }}
+                                {% else %}
+                                    No receipt yet
+                                {% endif %}
+                            </div>
                         </td>
+                        <td>{{ row.linkedVehicleCount }}</td>
                         <td class="action-cell-flex" data-row-link-ignore>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_station_show', {id: station.id.toString, return_to: returnTo}) }}">Detail</a>
-                            <a class="btn btn-secondary" href="{{ path('ui_admin_station_edit', {id: station.id.toString}) }}">Edit</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: station.id.toString, return_to: returnTo}) }}">Open</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {station_id: station.id.toString}) }}">Receipts</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_edit', {id: station.id.toString, return_to: returnTo}) }}">Edit</a>
                             <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
                                 <input type="hidden" name="_redirect" value="{{ returnTo }}">
-                                <button class="btn btn-danger" type="submit">Delete</button>
+                                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                             </form>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="5" class="muted">No stations found.</td>
+                        <td colspan="6" class="muted">No stations found.</td>
                     </tr>
                 {% endfor %}
                 </tbody>

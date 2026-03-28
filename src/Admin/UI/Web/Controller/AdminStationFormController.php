@@ -50,6 +50,10 @@ final class AdminStationFormController extends AbstractController
             throw new NotFoundHttpException();
         }
 
+        $returnTo = $this->resolveReturnTo(
+            $request->query->get('return_to'),
+            $this->generateUrl('ui_admin_station_list'),
+        );
         $formData = [
             'name' => $station->name(),
             'streetName' => $station->streetName(),
@@ -119,7 +123,10 @@ final class AdminStationFormController extends AbstractController
 
                 $this->addFlash('success', 'Station updated.');
 
-                return new RedirectResponse($this->generateUrl('ui_admin_station_list'), Response::HTTP_SEE_OTHER);
+                return new RedirectResponse(
+                    $this->resolveReturnTo($request->request->get('_return_to'), $returnTo),
+                    Response::HTTP_SEE_OTHER,
+                );
             }
         }
 
@@ -128,6 +135,7 @@ final class AdminStationFormController extends AbstractController
             'formData' => $formData,
             'errors' => $errors,
             'csrfToken' => $this->csrfTokenManager->getToken('admin_station_form')->getValue(),
+            'returnTo' => $returnTo,
         ]);
 
         if ([] !== $errors) {
@@ -135,5 +143,23 @@ final class AdminStationFormController extends AbstractController
         }
 
         return $response;
+    }
+
+    private function resolveReturnTo(mixed $value, string $fallback): string
+    {
+        if (!is_scalar($value)) {
+            return $fallback;
+        }
+
+        $candidate = trim((string) $value);
+        if ('' === $candidate) {
+            return $fallback;
+        }
+
+        if (!str_starts_with($candidate, '/') || str_starts_with($candidate, '//')) {
+            return $fallback;
+        }
+
+        return $candidate;
     }
 }

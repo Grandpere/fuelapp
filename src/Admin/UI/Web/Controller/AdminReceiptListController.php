@@ -20,6 +20,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Uid\Uuid;
 
 final class AdminReceiptListController extends AbstractController
 {
@@ -33,10 +34,20 @@ final class AdminReceiptListController extends AbstractController
     #[Route('/ui/admin/receipts', name: 'ui_admin_receipt_list', methods: ['GET'])]
     public function __invoke(Request $request): Response
     {
+        $vehicleId = $this->readUuidFilter($request, 'vehicle_id');
+        $stationId = $this->readUuidFilter($request, 'station_id');
+
         $receipts = [];
         $returnTo = $request->getRequestUri();
 
         foreach ($this->receiptRepository->allForSystem() as $receipt) {
+            if (null !== $vehicleId && $receipt->vehicleId()?->toString() !== $vehicleId) {
+                continue;
+            }
+            if (null !== $stationId && $receipt->stationId()?->toString() !== $stationId) {
+                continue;
+            }
+
             $vehicle = null;
             if (null !== $receipt->vehicleId()) {
                 $vehicle = $this->vehicleRepository->get($receipt->vehicleId()->toString());
@@ -58,6 +69,25 @@ final class AdminReceiptListController extends AbstractController
 
         return $this->render('admin/receipts/index.html.twig', [
             'receipts' => $receipts,
+            'filters' => [
+                'vehicleId' => $vehicleId,
+                'stationId' => $stationId,
+            ],
         ]);
+    }
+
+    private function readUuidFilter(Request $request, string $name): ?string
+    {
+        $value = $request->query->get($name);
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $trimmed = trim((string) $value);
+        if ('' === $trimmed || !Uuid::isValid($trimmed)) {
+            return null;
+        }
+
+        return $trimmed;
     }
 }

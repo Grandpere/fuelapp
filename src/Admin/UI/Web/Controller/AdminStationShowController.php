@@ -13,7 +13,9 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Station\Application\Repository\StationRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -22,8 +24,11 @@ use Symfony\Component\Uid\Uuid;
 
 final class AdminStationShowController extends AbstractController
 {
-    public function __construct(private readonly StationRepository $stationRepository)
-    {
+    public function __construct(
+        private readonly StationRepository $stationRepository,
+        private readonly ReceiptRepository $receiptRepository,
+        private readonly VehicleRepository $vehicleRepository,
+    ) {
     }
 
     #[Route('/ui/admin/stations/{id}', name: 'ui_admin_station_show', requirements: ['id' => self::UUID_ROUTE_REQUIREMENT], methods: ['GET'])]
@@ -38,8 +43,40 @@ final class AdminStationShowController extends AbstractController
             throw new NotFoundHttpException();
         }
 
+        $vehicleNames = [];
+        foreach ($this->vehicleRepository->all() as $vehicle) {
+            $vehicleNames[$vehicle->id()->toString()] = $vehicle->name();
+        }
+
+        $recentReceipts = [];
+        $receiptCount = 0;
+        $linkedVehicleIds = [];
+        foreach ($this->receiptRepository->allForSystem() as $receipt) {
+            if ($receipt->stationId()?->toString() !== $id) {
+                continue;
+            }
+
+            ++$receiptCount;
+            $recentReceipts[] = $receipt;
+
+            $vehicleId = $receipt->vehicleId()?->toString();
+            if (null !== $vehicleId) {
+                $linkedVehicleIds[$vehicleId] = true;
+            }
+        }
+
+        usort(
+            $recentReceipts,
+            static fn ($left, $right): int => $right->issuedAt() <=> $left->issuedAt(),
+        );
+        $recentReceipts = array_slice($recentReceipts, 0, 5);
+
         return $this->render('admin/stations/show.html.twig', [
             'station' => $station,
+            'recentReceipts' => $recentReceipts,
+            'vehicleNames' => $vehicleNames,
+            'receiptCount' => $receiptCount,
+            'linkedVehicleCount' => \count($linkedVehicleIds),
         ]);
     }
 

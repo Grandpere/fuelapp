@@ -88,7 +88,42 @@ final class AdminMaintenanceReminderListController extends AbstractController
                 'dueFrom' => $dueFrom?->format('Y-m-d'),
                 'dueTo' => $dueTo?->format('Y-m-d'),
             ],
+            'activeFilterSummary' => $this->buildActiveFilterSummary($ownerId, $vehicleId, $dueBy, $dueFrom, $dueTo),
         ]);
+    }
+
+    /**
+     * @return list<array{label:string,value:string}>
+     */
+    private function buildActiveFilterSummary(?string $ownerId, ?string $vehicleId, ?string $dueBy, ?DateTimeImmutable $dueFrom, ?DateTimeImmutable $dueTo): array
+    {
+        $summary = [];
+
+        if (null !== $ownerId) {
+            $summary[] = ['label' => 'Owner', 'value' => $ownerId];
+        }
+
+        if (null !== $vehicleId) {
+            $vehicle = $this->vehicleRepository->get($vehicleId);
+            $summary[] = [
+                'label' => 'Vehicle',
+                'value' => null !== $vehicle ? sprintf('%s (%s)', $vehicle->name(), $vehicleId) : $vehicleId,
+            ];
+        }
+
+        if (null !== $dueBy) {
+            $summary[] = ['label' => 'Due by', 'value' => $dueBy];
+        }
+
+        if (null !== $dueFrom) {
+            $summary[] = ['label' => 'Due from', 'value' => $dueFrom->format('Y-m-d')];
+        }
+
+        if (null !== $dueTo) {
+            $summary[] = ['label' => 'Due to', 'value' => $dueTo->format('Y-m-d')];
+        }
+
+        return $summary;
     }
 
     private function buildTriggerLabel(bool $dueByDate, bool $dueByOdometer): string

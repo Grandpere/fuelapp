@@ -61,6 +61,24 @@
             </div>
         </form>
 
+        {% if activeFilterSummary is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Active filters</strong>
+                        <p class="muted compact-note">
+                            {% for item in activeFilterSummary %}
+                                {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
+                            {% endfor %}
+                        </p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Reset</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <div class="table-wrap admin-table-top table-min-1020">
             <table class="app-table">
                 <thead>

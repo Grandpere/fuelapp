@@ -302,6 +302,8 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Follow up now', $importsContent);
         self::assertStringContainsString('Review next pending', $importsContent);
         self::assertStringContainsString('Manual review needed', $importsContent);
+        self::assertStringContainsString('Active filters', $importsContent);
+        self::assertStringContainsString('Status: needs_review', $importsContent);
 
         $securityResponse = $this->request('GET', '/ui/admin/security-activities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $securityResponse->getStatusCode());
@@ -491,6 +493,12 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('/ui/admin/receipts?vehicle_id='.$vehicle->getId()->toRfc4122(), $content);
         self::assertStringContainsString('/ui/admin/maintenance/reminders?vehicle_id='.$vehicle->getId()->toRfc4122(), $content);
         self::assertStringContainsString('/ui/admin/maintenance/events?vehicle_id='.$vehicle->getId()->toRfc4122(), $content);
+
+        $filteredListResponse = $this->request('GET', $returnTo, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $filteredListResponse->getStatusCode());
+        $filteredListContent = (string) $filteredListResponse->getContent();
+        self::assertStringContainsString('Active filters', $filteredListContent);
+        self::assertStringContainsString('Vehicle: Reminder Shortcut Vehicle', $filteredListContent);
     }
 
     public function testAdminCanToggleUserFlagsResetPasswordAndResendVerificationFromBackofficeUi(): void

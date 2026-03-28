@@ -1,10 +1,10 @@
 # TODO - SP30-003 Admin list density and consistency pass
 
 ## Plan
-- [pending] Review the main admin list screens and pick the highest-value density/consistency mismatches.
-- [pending] Align action labels, compactness, and context cues across the touched admin lists.
-- [pending] Update admin functional coverage for the consistency contract where needed.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Review the main admin list screens and pick the highest-value density/consistency mismatches.
+- [completed] Align action labels, compactness, and context cues across the touched admin lists.
+- [completed] Update admin functional coverage for the consistency contract where needed.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 30 after the three commits.
 
 # TODO - SP30-002 Admin import and receipt cross-navigation polish

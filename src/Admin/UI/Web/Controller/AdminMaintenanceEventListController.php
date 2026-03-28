@@ -74,8 +74,43 @@ final class AdminMaintenanceEventListController extends AbstractController
                 'occurredFrom' => $occurredFrom?->format('Y-m-d'),
                 'occurredTo' => $occurredTo?->format('Y-m-d'),
             ],
+            'activeFilterSummary' => $this->buildActiveFilterSummary($ownerId, $vehicleId, $eventType, $occurredFrom, $occurredTo),
             'eventTypeOptions' => array_map(static fn (MaintenanceEventType $type): string => $type->value, MaintenanceEventType::cases()),
         ]);
+    }
+
+    /**
+     * @return list<array{label:string,value:string}>
+     */
+    private function buildActiveFilterSummary(?string $ownerId, ?string $vehicleId, ?MaintenanceEventType $eventType, ?DateTimeImmutable $occurredFrom, ?DateTimeImmutable $occurredTo): array
+    {
+        $summary = [];
+
+        if (null !== $ownerId) {
+            $summary[] = ['label' => 'Owner', 'value' => $ownerId];
+        }
+
+        if (null !== $vehicleId) {
+            $vehicle = $this->vehicleRepository->get($vehicleId);
+            $summary[] = [
+                'label' => 'Vehicle',
+                'value' => null !== $vehicle ? sprintf('%s (%s)', $vehicle->name(), $vehicleId) : $vehicleId,
+            ];
+        }
+
+        if (null !== $eventType) {
+            $summary[] = ['label' => 'Event type', 'value' => $eventType->value];
+        }
+
+        if (null !== $occurredFrom) {
+            $summary[] = ['label' => 'Occurred from', 'value' => $occurredFrom->format('Y-m-d')];
+        }
+
+        if (null !== $occurredTo) {
+            $summary[] = ['label' => 'Occurred to', 'value' => $occurredTo->format('Y-m-d')];
+        }
+
+        return $summary;
     }
 
     private function readUuidFilter(Request $request, string $name): ?string

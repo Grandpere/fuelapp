@@ -7,7 +7,7 @@
 - Turn the new admin parity screens into smoother support workflows by tightening maintenance continuity, import/receipt navigation, and list consistency.
 
 ## In progress
-- Sprint 30 has started and is being implemented as three scoped commits before one grouped validation pass.
+- Sprint 30 is fully implemented across the three scoped commits and is waiting for the single grouped validation pass.
 
 ## Next tickets (ordered)
 1. `SP30-001` Admin maintenance detail continuity
@@ -19,7 +19,7 @@
 - Sprint 30 follows Sprint 29 and stays on the admin side to convert the recent parity gains into smoother support continuity.
 - SP30-001 is fully delivered across reminder/event support shortcuts, safer event return paths, and maintenance-detail continuity.
 - SP30-002 is fully delivered across import-to-receipt continuity shortcuts and richer receipt-to-vehicle/station/import support navigation.
-- SP30-003 will close the sprint with a pragmatic admin list consistency pass across density, labels, and action placement.
+- SP30-003 is fully delivered across clearer active-filter summaries and tighter density consistency on the main admin list screens.
 - Sprint 29 is fully delivered across admin dashboard, vehicle, and station usefulness passes and is merged.
 - SP29-003 is fully delivered across failed-import and needs-review signals, due reminder surfacing, recent receipts/import snapshots, and faster admin drill-downs.
 - SP29-001 is fully delivered across richer vehicle list context, direct receipts/maintenance shortcuts, recent vehicle receipts, and safer admin return paths.

@@ -108,12 +108,13 @@ final class AdminApiManagementTest extends KernelTestCase
     public function testAdminCanFilterAndManageUserStatusRoleVerificationAndResetPassword(): void
     {
         $token = $this->createAdminAndLogin('admin.users@example.com');
-        $user = $this->createUser('managed.user@example.com', 'test1234', ['ROLE_USER']);
+        $managedEmail = 'managed.user.'.Uuid::v7()->toRfc4122().'@example.com';
+        $user = $this->createUser($managedEmail, 'test1234', ['ROLE_USER']);
         $this->em->flush();
 
         $listResponse = $this->request(
             'GET',
-            '/api/admin/users?q=managed.user&role=user&isActive=true',
+            '/api/admin/users?q='.rawurlencode($managedEmail).'&role=user&isActive=true',
             ['HTTP_AUTHORIZATION' => sprintf('Bearer %s', $token)],
         );
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
@@ -139,7 +140,7 @@ final class AdminApiManagementTest extends KernelTestCase
             'POST',
             '/api/login',
             ['CONTENT_TYPE' => 'application/json'],
-            json_encode(['email' => 'managed.user@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
+            json_encode(['email' => $managedEmail, 'password' => 'test1234'], JSON_THROW_ON_ERROR),
         );
         self::assertSame(Response::HTTP_FORBIDDEN, $disabledLogin->getStatusCode());
 
@@ -200,7 +201,7 @@ final class AdminApiManagementTest extends KernelTestCase
             'POST',
             '/api/login',
             ['CONTENT_TYPE' => 'application/json'],
-            json_encode(['email' => 'managed.user@example.com', 'password' => $temporaryPassword], JSON_THROW_ON_ERROR),
+            json_encode(['email' => $managedEmail, 'password' => $temporaryPassword], JSON_THROW_ON_ERROR),
         );
         self::assertSame(Response::HTTP_OK, $loginWithTemporaryPassword->getStatusCode());
 

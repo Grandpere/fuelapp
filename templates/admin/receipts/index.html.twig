@@ -12,15 +12,15 @@
             <p class="muted">System-wide receipt ledger with full back-office controls.</p>
         </div>
 
-        {% if filters.vehicleId or filters.stationId %}
+        {% if activeFilterSummary is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
                         <strong>Context filter active</strong>
                         <p class="muted compact-note">
-                            {% if filters.vehicleId %}Vehicle: {{ filters.vehicleId }}{% endif %}
-                            {% if filters.vehicleId and filters.stationId %} · {% endif %}
-                            {% if filters.stationId %}Station: {{ filters.stationId }}{% endif %}
+                            {% for item in activeFilterSummary %}
+                                {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
+                            {% endfor %}
                         </p>
                     </div>
                     <div class="admin-page-actions">
@@ -70,7 +70,7 @@
                         <td class="text-right">{{ (receipt.receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</td>
                         <td class="text-right">{{ (receipt.receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</td>
                         <td>
-                            <div class="action-row" data-row-link-ignore>
+                            <div class="action-cell-flex" data-row-link-ignore>
                                 <a class="btn btn-secondary btn-compact" href="{{ receipt.showUrl }}">Open</a>
                                 <a class="btn btn-secondary btn-compact" href="{{ receipt.editUrl }}">Edit</a>
                                 {% if receipt.vehicle %}

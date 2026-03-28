@@ -37,6 +37,24 @@
             {% endfor %}
         </div>
 
+        {% if activeFilterSummary is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Active filters</strong>
+                        <p class="muted compact-note">
+                            {% for item in activeFilterSummary %}
+                                {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
+                            {% endfor %}
+                        </p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list') }}">Reset</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         {% if followUpShortcuts is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <p class="text-block-title">Follow up now</p>
@@ -136,7 +154,7 @@
                         <td>{{ job.job.createdAt|date('Y-m-d H:i:s') }}</td>
                         <td>{{ job.job.updatedAt|date('Y-m-d H:i:s') }}</td>
                         <td>
-                            <div class="action-row" data-row-link-ignore>
+                            <div class="action-cell-flex" data-row-link-ignore>
                                 <a class="btn {{ job.primaryAction.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ job.primaryAction.url }}" data-turbo-frame="_top">{{ job.primaryAction.label }}</a>
                                 {% if job.secondaryAction is not null %}
                                     <a class="btn btn-secondary btn-compact" href="{{ job.secondaryAction.url }}" data-turbo-frame="_top">{{ job.secondaryAction.label }}</a>

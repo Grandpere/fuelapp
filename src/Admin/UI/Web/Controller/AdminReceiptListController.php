@@ -73,7 +73,34 @@ final class AdminReceiptListController extends AbstractController
                 'vehicleId' => $vehicleId,
                 'stationId' => $stationId,
             ],
+            'activeFilterSummary' => $this->buildActiveFilterSummary($vehicleId, $stationId),
         ]);
+    }
+
+    /**
+     * @return list<array{label:string,value:string}>
+     */
+    private function buildActiveFilterSummary(?string $vehicleId, ?string $stationId): array
+    {
+        $summary = [];
+
+        if (null !== $vehicleId) {
+            $vehicle = $this->vehicleRepository->get($vehicleId);
+            $summary[] = [
+                'label' => 'Vehicle',
+                'value' => null !== $vehicle ? sprintf('%s (%s)', $vehicle->name(), $vehicleId) : $vehicleId,
+            ];
+        }
+
+        if (null !== $stationId) {
+            $station = $this->stationRepository->getForSystem($stationId);
+            $summary[] = [
+                'label' => 'Station',
+                'value' => null !== $station ? sprintf('%s (%s)', $station->name(), $stationId) : $stationId,
+            ];
+        }
+
+        return $summary;
     }
 
     private function readUuidFilter(Request $request, string $name): ?string

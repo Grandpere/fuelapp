@@ -55,6 +55,12 @@ final class AdminMaintenanceEventFormController extends AbstractController
 
         $formData = $this->formDataFromEvent($event);
         $errors = [];
+        $requestedReturnTo = $request->isMethod('POST')
+            ? $request->request->get('_return_to')
+            : $request->query->get('return_to');
+        $backToListUrl = is_string($requestedReturnTo) && '' !== trim($requestedReturnTo) && str_starts_with($requestedReturnTo, '/') && !str_starts_with($requestedReturnTo, '//')
+            ? $requestedReturnTo
+            : $this->generateUrl('ui_admin_maintenance_event_list');
 
         if ($request->isMethod('POST')) {
             $formData = $this->extractFormData($request);
@@ -85,7 +91,7 @@ final class AdminMaintenanceEventFormController extends AbstractController
 
                 $this->addFlash('success', 'Maintenance event updated.');
 
-                return new RedirectResponse($this->generateUrl('ui_admin_maintenance_event_list'), Response::HTTP_SEE_OTHER);
+                return new RedirectResponse($backToListUrl, Response::HTTP_SEE_OTHER);
             }
         }
 
@@ -101,6 +107,7 @@ final class AdminMaintenanceEventFormController extends AbstractController
             'vehicleOptions' => $vehicleOptions,
             'eventTypes' => array_map(static fn (MaintenanceEventType $type): string => $type->value, MaintenanceEventType::cases()),
             'csrfToken' => $this->csrfTokenManager->getToken('admin_maintenance_event_form')->getValue(),
+            'backToListUrl' => $backToListUrl,
         ]);
 
         if ([] !== $errors) {

@@ -100,6 +100,7 @@ final class AdminImportJobListController extends AbstractController
                 'createdFrom' => $createdFrom?->format('Y-m-d'),
                 'createdTo' => $createdTo?->format('Y-m-d'),
             ],
+            'activeFilterSummary' => $this->buildActiveFilterSummary($statusFilter, $ownerId, $source, $query, $createdFrom, $createdTo),
             'statusQuickFilters' => $this->buildStatusQuickFilters($request, $metrics, $statusFilter),
             'followUpShortcuts' => $this->buildFollowUpShortcuts($rows, $request->getRequestUri()),
             'statusOptions' => array_map(static fn (ImportJobStatus $jobStatus): string => $jobStatus->value, ImportJobStatus::cases()),
@@ -258,6 +259,40 @@ final class AdminImportJobListController extends AbstractController
             ],
             default => null,
         };
+    }
+
+    /**
+     * @return list<array{label:string,value:string}>
+     */
+    private function buildActiveFilterSummary(?string $status, ?string $ownerId, ?string $source, ?string $query, ?DateTimeImmutable $createdFrom, ?DateTimeImmutable $createdTo): array
+    {
+        $summary = [];
+
+        if (null !== $status) {
+            $summary[] = ['label' => 'Status', 'value' => $status];
+        }
+
+        if (null !== $ownerId) {
+            $summary[] = ['label' => 'Owner', 'value' => $ownerId];
+        }
+
+        if (null !== $source) {
+            $summary[] = ['label' => 'Source', 'value' => $source];
+        }
+
+        if (null !== $query) {
+            $summary[] = ['label' => 'Search', 'value' => $query];
+        }
+
+        if (null !== $createdFrom) {
+            $summary[] = ['label' => 'Created from', 'value' => $createdFrom->format('Y-m-d')];
+        }
+
+        if (null !== $createdTo) {
+            $summary[] = ['label' => 'Created to', 'value' => $createdTo->format('Y-m-d')];
+        }
+
+        return $summary;
     }
 
     /**

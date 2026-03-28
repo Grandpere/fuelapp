@@ -23,6 +23,7 @@
 
         <form method="post" action="" data-turbo-frame="_top" class="form-stack page-medium admin-detail-stack">
             <input type="hidden" name="_token" value="{{ csrfToken }}">
+            <input type="hidden" name="_return_to" value="{{ backToListUrl }}">
             <div class="form-grid-2">
                 <label class="label">
                     Vehicle
@@ -65,7 +66,7 @@
 
             <div class="actions-wrap">
                 <button class="btn btn-primary" type="submit">Save changes</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}" data-turbo-frame="_top">Back to list</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to list</a>
             </div>
         </form>
     </section>

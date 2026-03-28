@@ -1292,7 +1292,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Support continuity', $receiptEditContent);
         self::assertStringContainsString('Back to receipt', $receiptEditContent);
         self::assertStringContainsString('Open vehicle', $receiptEditContent);
-        self::assertStringContainsString('Station receipts', $receiptEditContent);
+        self::assertStringContainsString('Station:', $receiptEditContent);
         self::assertStringContainsString('Open related import', $receiptEditContent);
         $receiptCsrf = $this->extractFormCsrf($receiptEditContent);
 

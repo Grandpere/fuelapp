@@ -14,8 +14,8 @@ declare(strict_types=1);
 namespace App\Admin\UI\Web\Controller;
 
 use App\Import\Application\Repository\ImportJobRepository;
-use App\Import\Domain\ImportJob;
 use App\Import\Domain\Enum\ImportJobStatus;
+use App\Import\Domain\ImportJob;
 use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Maintenance\Domain\MaintenanceReminder;
@@ -23,6 +23,7 @@ use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Receipt;
 use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
+use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -203,7 +204,7 @@ final class AdminDashboardController extends AbstractController
      *   statusLabel:string,
      *   file:string,
      *   ownerId:string,
-     *   createdAt:\DateTimeImmutable,
+     *   createdAt:DateTimeImmutable,
      *   primaryUrl:string,
      *   primaryLabel:string,
      *   secondaryUrl:string,
@@ -263,7 +264,7 @@ final class AdminDashboardController extends AbstractController
     /**
      * @return array{
      *   id:string,
-     *   issuedAt:\DateTimeImmutable,
+     *   issuedAt:DateTimeImmutable,
      *   totalCents:int,
      *   vehicleId:?string,
      *   stationId:?string,
@@ -313,8 +314,18 @@ final class AdminDashboardController extends AbstractController
         }
 
         $decoded = json_decode($payload, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
 
-        return is_array($decoded) ? $decoded : [];
+        $normalized = [];
+        foreach ($decoded as $key => $value) {
+            if (is_string($key)) {
+                $normalized[$key] = $value;
+            }
+        }
+
+        return $normalized;
     }
 
     /**

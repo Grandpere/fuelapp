@@ -518,3 +518,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the UI action correctly re-queued the job, but the functional environment could process the async retry quickly enough that the persisted status changed again before the test reloaded the entity.
 - Fix: assert the stable user-facing contract of the UI flow (redirect target, preserved queue context, action availability) and only allow transient persisted statuses that can legitimately occur immediately after dispatch.
 - Prevention: for BrowserKit tests that trigger Messenger-backed admin actions, do not assert a single intermediate domain state unless the test fully controls async processing timing.
+
+## 2026-03-28 - Streamed XLSX functional tests should not buffer the full binary payload
+- Symptom: `ExportReceiptsControllerTest::testXlsxExportReturnsSpreadsheetDownload` intermittently crashed with `Allowed memory size ... exhausted` inside `zipstream-php`.
+- Root cause: the functional test buffered the whole streamed XLSX response body in memory just to check the ZIP magic prefix, recreating the same pressure the export flow was designed to avoid.
+- Fix: stop reading the full XLSX stream in the functional test and assert the stable download contract through HTTP status and headers.
+- Prevention: for streamed binary downloads, BrowserKit-style tests should avoid full in-memory buffering unless the binary payload itself is the behavior under test.

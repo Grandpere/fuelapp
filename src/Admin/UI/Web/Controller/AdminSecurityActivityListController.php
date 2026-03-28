@@ -53,6 +53,7 @@ final class AdminSecurityActivityListController extends AbstractController
 
         return $this->render('admin/security/index.html.twig', [
             'entries' => $entries,
+            'actorOptions' => $this->buildActorOptions(),
             'filters' => [
                 'action' => $action ?? '',
                 'actorId' => $actorId ?? '',
@@ -99,7 +100,8 @@ final class AdminSecurityActivityListController extends AbstractController
             $summary[] = ['label' => 'Action', 'value' => $action];
         }
         if (null !== $actorId) {
-            $summary[] = ['label' => 'Actor', 'value' => $actorId];
+            $user = $this->userManager->getUser($actorId);
+            $summary[] = ['label' => 'Actor', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $actorId) : $actorId];
         }
         if ($from instanceof DateTimeImmutable) {
             $summary[] = ['label' => 'From', 'value' => $from->format('Y-m-d')];
@@ -139,5 +141,21 @@ final class AdminSecurityActivityListController extends AbstractController
                 'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $actorId]),
             ],
         ];
+    }
+
+    /**
+     * @return list<array{id:string,label:string}>
+     */
+    private function buildActorOptions(): array
+    {
+        $options = [];
+        foreach ($this->userManager->listUsers() as $user) {
+            $options[] = [
+                'id' => $user->id,
+                'label' => $user->email,
+            ];
+        }
+
+        return $options;
     }
 }

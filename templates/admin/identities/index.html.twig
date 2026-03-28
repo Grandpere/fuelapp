@@ -55,8 +55,13 @@
                 <input class="input" type="text" name="provider" value="{{ filters.provider }}" placeholder="google, auth0...">
             </label>
             <label class="label">
-                User id
-                <input class="input" type="text" name="user_id" value="{{ filters.user_id }}" placeholder="UUID">
+                User
+                <select class="select" name="user_id">
+                    <option value="">All users</option>
+                    {% for user in userOptions %}
+                        <option value="{{ user.id }}" {% if filters.user_id == user.id %}selected{% endif %}>{{ user.label }}</option>
+                    {% endfor %}
+                </select>
             </label>
             <div class="admin-form-actions">
                 <button class="btn btn-primary" type="submit">Apply</button>

@@ -30,12 +30,22 @@
         <form method="get" action="{{ path('ui_admin_maintenance_reminder_list') }}" class="admin-filters-form">
             <div class="form-grid-2 admin-table-top">
                 <label class="label">
-                    Owner ID
-                    <input class="input" type="text" name="owner_id" value="{{ filters.ownerId }}" placeholder="UUID v7">
+                    Owner
+                    <select class="select" name="owner_id">
+                        <option value="">All owners</option>
+                        {% for owner in ownerOptions %}
+                            <option value="{{ owner.id }}" {% if filters.ownerId == owner.id %}selected{% endif %}>{{ owner.label }}</option>
+                        {% endfor %}
+                    </select>
                 </label>
                 <label class="label">
-                    Vehicle ID
-                    <input class="input" type="text" name="vehicle_id" value="{{ filters.vehicleId }}" placeholder="UUID v7">
+                    Vehicle
+                    <select class="select" name="vehicle_id">
+                        <option value="">All vehicles</option>
+                        {% for vehicle in vehicleOptions %}
+                            <option value="{{ vehicle.id }}" {% if filters.vehicleId == vehicle.id %}selected{% endif %}>{{ vehicle.label }}</option>
+                        {% endfor %}
+                    </select>
                 </label>
                 <label class="label">
                     Due by

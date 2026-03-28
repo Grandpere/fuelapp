@@ -140,9 +140,6 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         );
         self::assertStringContainsString('.xlsx', (string) $response->headers->get('Content-Disposition'));
         self::assertStringContainsString('receipts-export-2026-02-01-to-2026-02-28-', (string) $response->headers->get('Content-Disposition'));
-
-        $content = $this->responseContent($response);
-        self::assertTrue(str_starts_with($content, 'PK'));
     }
 
     public function testCsvExportTotalsMatchAnalyticsCostKpiForSameFilters(): void

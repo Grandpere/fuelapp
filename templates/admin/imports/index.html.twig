@@ -88,8 +88,13 @@
                     <input class="input" type="text" name="source" value="{{ filters.source ?? '' }}" placeholder="local">
                 </label>
                 <label class="label">
-                    Owner ID
-                    <input class="input" type="text" name="ownerId" value="{{ filters.ownerId ?? '' }}" placeholder="UUID user">
+                    Owner
+                    <select name="ownerId" class="select">
+                        <option value="">All owners</option>
+                        {% for owner in ownerOptions %}
+                            <option value="{{ owner.id }}" {{ filters.ownerId == owner.id ? 'selected' : '' }}>{{ owner.label }}</option>
+                        {% endfor %}
+                    </select>
                 </label>
                 <label class="label">
                     Search (id/file/checksum)

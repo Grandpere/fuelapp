@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\User\AdminUserManager;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
@@ -27,6 +28,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AdminImportJobListController extends AbstractController
 {
     public function __construct(
+        private readonly AdminUserManager $userManager,
         private readonly ImportJobRepository $importJobRepository,
         private readonly ReceiptRepository $receiptRepository,
     ) {
@@ -88,10 +90,18 @@ final class AdminImportJobListController extends AbstractController
         );
 
         $statusFilter = $status?->value;
+        $ownerOptions = [];
+        foreach ($this->userManager->listUsers() as $user) {
+            $ownerOptions[] = [
+                'id' => $user->id,
+                'label' => $user->email,
+            ];
+        }
 
         return $this->render('admin/imports/index.html.twig', [
             'jobs' => $rows,
             'metrics' => $metrics,
+            'ownerOptions' => $ownerOptions,
             'filters' => [
                 'status' => $statusFilter,
                 'ownerId' => $ownerId,
@@ -312,7 +322,8 @@ final class AdminImportJobListController extends AbstractController
         }
 
         if (null !== $ownerId) {
-            $summary[] = ['label' => 'Owner', 'value' => $ownerId];
+            $user = $this->userManager->getUser($ownerId);
+            $summary[] = ['label' => 'Owner', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $ownerId) : $ownerId];
         }
 
         if (null !== $source) {

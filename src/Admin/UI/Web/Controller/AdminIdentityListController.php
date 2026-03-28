@@ -48,6 +48,7 @@ final class AdminIdentityListController extends AbstractController
         return $this->render('admin/identities/index.html.twig', [
             'identities' => $identities,
             'users' => $this->userManager->listUsers(),
+            'userOptions' => $this->buildUserOptions(),
             'filters' => [
                 'q' => $q ?? '',
                 'provider' => $provider ?? '',
@@ -84,7 +85,8 @@ final class AdminIdentityListController extends AbstractController
             $summary[] = ['label' => 'Provider', 'value' => $provider];
         }
         if (null !== $userId) {
-            $summary[] = ['label' => 'User', 'value' => $userId];
+            $user = $this->userManager->getUser($userId);
+            $summary[] = ['label' => 'User', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $userId) : $userId];
         }
 
         return $summary;
@@ -118,5 +120,21 @@ final class AdminIdentityListController extends AbstractController
                 'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $userId]),
             ],
         ];
+    }
+
+    /**
+     * @return list<array{id:string,label:string}>
+     */
+    private function buildUserOptions(): array
+    {
+        $options = [];
+        foreach ($this->userManager->listUsers() as $user) {
+            $options[] = [
+                'id' => $user->id,
+                'label' => $user->email,
+            ];
+        }
+
+        return $options;
     }
 }

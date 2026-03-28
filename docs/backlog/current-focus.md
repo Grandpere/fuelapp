@@ -9,7 +9,7 @@
 ## In progress
 - SP34-001 is implemented and ready for grouped user validation at the end of Sprint 34.
 - SP34-002 is implemented and ready for grouped user validation at the end of Sprint 34.
-- SP34-003 support hub consolidation is now the active implementation slice.
+- SP34-003 is implemented and ready for grouped user validation at the end of Sprint 34.
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
@@ -20,6 +20,7 @@
 - SP34-002 will improve import queue decision speed so support can understand next actions earlier in the workflow.
 - SP34-002 now adds faster queue-level cause/next-step readouts plus top shortcuts to the next useful import dossier.
 - SP34-003 will consolidate the support hub once the underlying admin tools are stronger.
+- SP34-003 now turns the admin dashboard into a clearer hub for import recovery, maintenance investigation, and account recovery flows.
 - Sprint 33 is fully delivered across account recovery continuity, audit/security investigation, and import triage detail polish and is merged.
 - Sprint 32 is fully delivered across receipt continuity, dashboard signal quality, and account support flow and is merged.
 - Sprint 31 is fully delivered across import recovery, maintenance actionability, and admin shell polish and is merged.

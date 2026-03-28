@@ -19,8 +19,8 @@
 # TODO - SP34-003 Admin support hub consolidation
 
 ## Plan
-- [in_progress] Review the admin dashboard and top-level support entry points for missing links to the new admin tooling.
-- [pending] Consolidate the support hub so the right queues and investigation shortcuts are easier to reach from one place.
-- [pending] Update admin functional coverage for the touched dashboard/support-hub contract.
-- [pending] Run targeted syntax/Twig validation for the touched support-hub flow.
+- [completed] Review the admin dashboard and top-level support entry points for missing links to the new admin tooling.
+- [completed] Consolidate the support hub so the right queues and investigation shortcuts are easier to reach from one place.
+- [completed] Update admin functional coverage for the touched dashboard/support-hub contract.
+- [completed] Run targeted syntax/Twig validation for the touched support-hub flow.
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 34 after the three commits.

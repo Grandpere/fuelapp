@@ -132,16 +132,55 @@
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Quick actions</h3>
-        <ul class="admin-inline-list">
-            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'failed'}) }}">Failed imports</a></li>
-            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'needs_review'}) }}">Needs review</a></li>
-            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Browse receipts</a></li>
-            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Browse reminders</a></li>
-            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a></li>
-            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">Browse stations</a></li>
-            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list') }}">Browse events</a></li>
-            <li><a class="btn btn-secondary btn-compact" href="/api/docs">Open API docs</a></li>
-        </ul>
+        <h3 class="section-title">Support hub</h3>
+        <div class="admin-dashboard-columns">
+            <article class="card-subtle card-subtle-block admin-dashboard-item">
+                <div class="admin-dashboard-item-head">
+                    <strong>Import recovery</strong>
+                    <span class="muted compact-note">{{ importMetrics['failed']|default(0) }} failed · {{ importMetrics['needs_review']|default(0) }} needs review</span>
+                </div>
+                <p class="muted">Start from the queue that is blocking support, then jump into the right receipt or original import dossier.</p>
+                <div class="action-row">
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'failed'}) }}">Failed imports</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'needs_review'}) }}">Needs review</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'processed'}) }}">Processed imports</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'duplicate'}) }}">Duplicate imports</a>
+                </div>
+            </article>
+
+            <article class="card-subtle card-subtle-block admin-dashboard-item">
+                <div class="admin-dashboard-item-head">
+                    <strong>Maintenance investigation</strong>
+                    <span class="muted compact-note">{{ dueReminderCount }} due now · {{ maintenanceReminderCount }} reminders · {{ maintenanceEventCount }} events</span>
+                </div>
+                <p class="muted">Keep reminder, event, receipt, and vehicle context close while reconstructing a maintenance case.</p>
+                <div class="action-row">
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Browse reminders</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list') }}">Browse events</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Browse receipts</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a>
+                </div>
+            </article>
+
+            <article class="card-subtle card-subtle-block admin-dashboard-item">
+                <div class="admin-dashboard-item-head">
+                    <strong>Account recovery</strong>
+                    <span class="muted compact-note">Users, identities, security activity, and audit stay one click away.</span>
+                </div>
+                <p class="muted">Use the support investigation screens together when a login, verification, or account-state problem needs a full timeline.</p>
+                <div class="action-row">
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {has_identity: '0'}) }}">Missing identities</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {verification: 'unverified'}) }}">Unverified users</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_security_activity_list') }}">Security activities</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list') }}">Audit logs</a>
+                </div>
+            </article>
+        </div>
+
+        <div class="actions-wrap admin-table-top">
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">Browse stations</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_identity_list') }}">Browse identities</a>
+            <a class="btn btn-secondary btn-compact" href="/api/docs">Open API docs</a>
+        </div>
     </section>
 {% endblock %}

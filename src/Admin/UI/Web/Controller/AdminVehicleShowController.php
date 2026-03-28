@@ -13,6 +13,10 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Maintenance\Application\Repository\MaintenanceEventRepository;
+use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
+use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,8 +26,13 @@ use Symfony\Component\Uid\Uuid;
 
 final class AdminVehicleShowController extends AbstractController
 {
-    public function __construct(private readonly VehicleRepository $vehicleRepository)
-    {
+    public function __construct(
+        private readonly VehicleRepository $vehicleRepository,
+        private readonly ReceiptRepository $receiptRepository,
+        private readonly StationRepository $stationRepository,
+        private readonly MaintenanceEventRepository $maintenanceEventRepository,
+        private readonly MaintenanceReminderRepository $maintenanceReminderRepository,
+    ) {
     }
 
     #[Route('/ui/admin/vehicles/{id}', name: 'ui_admin_vehicle_show', requirements: ['id' => self::UUID_ROUTE_REQUIREMENT], methods: ['GET'])]
@@ -38,8 +47,53 @@ final class AdminVehicleShowController extends AbstractController
             throw new NotFoundHttpException();
         }
 
+        $stationNames = [];
+        foreach ($this->stationRepository->allForSystem() as $station) {
+            $stationNames[$station->id()->toString()] = $station->name();
+        }
+
+        $recentReceipts = [];
+        $receiptCount = 0;
+        foreach ($this->receiptRepository->allForSystem() as $receipt) {
+            if ($receipt->vehicleId()?->toString() !== $id) {
+                continue;
+            }
+
+            ++$receiptCount;
+            $recentReceipts[] = $receipt;
+        }
+
+        usort(
+            $recentReceipts,
+            static fn ($left, $right): int => $right->issuedAt() <=> $left->issuedAt(),
+        );
+        $recentReceipts = array_slice($recentReceipts, 0, 5);
+
+        $eventCount = 0;
+        foreach ($this->maintenanceEventRepository->allForSystem() as $event) {
+            if ($event->vehicleId() === $id) {
+                ++$eventCount;
+            }
+        }
+
+        $dueReminderCount = 0;
+        foreach ($this->maintenanceReminderRepository->allForSystem() as $reminder) {
+            if ($reminder->vehicleId() !== $id) {
+                continue;
+            }
+
+            if ($reminder->dueByDate() || $reminder->dueByOdometer()) {
+                ++$dueReminderCount;
+            }
+        }
+
         return $this->render('admin/vehicles/show.html.twig', [
             'vehicle' => $vehicle,
+            'recentReceipts' => $recentReceipts,
+            'stationNames' => $stationNames,
+            'receiptCount' => $receiptCount,
+            'eventCount' => $eventCount,
+            'dueReminderCount' => $dueReminderCount,
         ]);
     }
 

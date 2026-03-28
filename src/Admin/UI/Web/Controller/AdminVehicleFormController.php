@@ -46,6 +46,10 @@ final class AdminVehicleFormController extends AbstractController
             throw new NotFoundHttpException();
         }
 
+        $returnTo = $this->resolveReturnTo(
+            $request->query->get('return_to'),
+            $this->generateUrl('ui_admin_vehicle_list'),
+        );
         $formData = ['ownerId' => $vehicle->ownerId() ?? '', 'name' => $vehicle->name(), 'plateNumber' => $vehicle->plateNumber(), '_token' => ''];
         $errors = [];
 
@@ -72,7 +76,10 @@ final class AdminVehicleFormController extends AbstractController
                 $this->vehicleRepository->save($vehicle);
                 $this->addFlash('success', 'Vehicle updated.');
 
-                return new RedirectResponse($this->generateUrl('ui_admin_vehicle_list'), Response::HTTP_SEE_OTHER);
+                return new RedirectResponse(
+                    $this->resolveReturnTo($request->request->get('_return_to'), $returnTo),
+                    Response::HTTP_SEE_OTHER,
+                );
             }
         }
 
@@ -81,6 +88,7 @@ final class AdminVehicleFormController extends AbstractController
             'formData' => $formData,
             'errors' => $errors,
             'csrfToken' => $this->csrfTokenManager->getToken('admin_vehicle_form')->getValue(),
+            'returnTo' => $returnTo,
         ]);
 
         if ([] !== $errors) {
@@ -126,5 +134,23 @@ final class AdminVehicleFormController extends AbstractController
         }
 
         return array_values(array_unique($errors));
+    }
+
+    private function resolveReturnTo(mixed $value, string $fallback): string
+    {
+        if (!is_scalar($value)) {
+            return $fallback;
+        }
+
+        $candidate = trim((string) $value);
+        if ('' === $candidate) {
+            return $fallback;
+        }
+
+        if (!str_starts_with($candidate, '/') || str_starts_with($candidate, '//')) {
+            return $fallback;
+        }
+
+        return $candidate;
     }
 }

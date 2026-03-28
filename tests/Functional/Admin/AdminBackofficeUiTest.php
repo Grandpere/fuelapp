@@ -1269,6 +1269,117 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Open created receipt', $detailContent);
     }
 
+    public function testAdminVehicleListAndDetailExposeReceiptAndMaintenanceShortcuts(): void
+    {
+        $adminEmail = 'ui.admin.vehicle.shortcuts@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.admin.vehicle.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Garage Admin Vehicle');
+        $vehicle->setPlateNumber('GA-290-VE');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-27 09:00:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-27 09:05:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Garage Admin Station');
+        $station->setStreetName('10 Support Street');
+        $station->setPostalCode('75010');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setVehicle($vehicle);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-27 08:45:00'));
+        $receipt->setTotalCents(6200);
+        $receipt->setVatAmountCents(1033);
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(4000);
+        $line->setUnitPriceDeciCentsPerLiter(1550);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+        $this->em->persist($receipt);
+
+        $event = new MaintenanceEventEntity();
+        $event->setId(Uuid::v7());
+        $event->setOwner($owner);
+        $event->setVehicle($vehicle);
+        $event->setEventType(MaintenanceEventType::SERVICE);
+        $event->setOccurredAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $event->setDescription('Garage support event');
+        $event->setOdometerKilometers(85000);
+        $event->setTotalCostCents(18000);
+        $event->setCurrencyCode('EUR');
+        $event->setCreatedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $event->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
+        $this->em->persist($event);
+
+        $rule = new MaintenanceReminderRuleEntity();
+        $rule->setId(Uuid::v7());
+        $rule->setOwner($owner);
+        $rule->setVehicle($vehicle);
+        $rule->setName('Garage support rule');
+        $rule->setTriggerMode(ReminderRuleTriggerMode::DATE);
+        $rule->setEventType(MaintenanceEventType::SERVICE);
+        $rule->setIntervalDays(365);
+        $rule->setIntervalKilometers(null);
+        $rule->setCreatedAt(new DateTimeImmutable('2026-03-26 10:05:00'));
+        $rule->setUpdatedAt(new DateTimeImmutable('2026-03-26 10:05:00'));
+        $this->em->persist($rule);
+
+        $reminder = new MaintenanceReminderEntity();
+        $reminder->setId(Uuid::v7());
+        $reminder->setOwner($owner);
+        $reminder->setVehicle($vehicle);
+        $reminder->setRule($rule);
+        $reminder->setDedupKey(hash('sha256', 'garage-admin-vehicle-reminder'));
+        $reminder->setDueAtDate(new DateTimeImmutable('2026-03-28 00:00:00'));
+        $reminder->setDueAtOdometerKilometers(null);
+        $reminder->setDueByDate(true);
+        $reminder->setDueByOdometer(false);
+        $reminder->setCreatedAt(new DateTimeImmutable('2026-03-27 11:00:00'));
+        $this->em->persist($reminder);
+
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $vehicleId = $vehicle->getId()->toRfc4122();
+
+        $listResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('Garage Admin Vehicle', $listContent);
+        self::assertStringContainsString('1 receipt', $listContent);
+        self::assertStringContainsString('1 event', $listContent);
+        self::assertStringContainsString('1 due reminder', $listContent);
+        self::assertStringContainsString('Receipts', $listContent);
+        self::assertStringContainsString('Maintenance', $listContent);
+
+        $detailResponse = $this->request('GET', '/ui/admin/vehicles/'.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Support shortcuts', $detailContent);
+        self::assertStringContainsString('Open receipts', $detailContent);
+        self::assertStringContainsString('Open maintenance events', $detailContent);
+        self::assertStringContainsString('Open reminders', $detailContent);
+        self::assertStringContainsString('Recent receipts', $detailContent);
+        self::assertStringContainsString('Garage Admin Station', $detailContent);
+
+        $filteredReceiptsResponse = $this->request('GET', '/ui/admin/receipts?vehicle_id='.$vehicleId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $filteredReceiptsResponse->getStatusCode());
+        self::assertStringContainsString('Vehicle filter active', (string) $filteredReceiptsResponse->getContent());
+    }
+
     public function testAdminDuplicateImportDetailShowsShortcutToOriginalImport(): void
     {
         $adminEmail = 'ui.admin.import.duplicate.shortcut@example.com';

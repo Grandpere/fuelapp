@@ -1,3 +1,12 @@
+# TODO - SP29-001 Admin vehicle workflow usefulness
+
+## Plan
+- [completed] Enrich the admin vehicle list with receipt and maintenance context.
+- [completed] Add direct admin vehicle shortcuts into vehicle-scoped receipts and maintenance flows.
+- [completed] Make the admin vehicle detail page a support hub with recent receipts and safe return paths.
+- [completed] Extend admin functional coverage for the new vehicle workflow contract.
+- [pending] Batch user-run `make phpunit-functional` at the end of Sprint 29 after the three commits.
+
 # TODO - SP29-003 Admin dashboard triage pass
 
 ## Plan

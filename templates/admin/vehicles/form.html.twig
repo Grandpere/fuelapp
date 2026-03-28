@@ -23,6 +23,7 @@
 
         <form method="post" action="" data-turbo-frame="_top" class="form-stack content-narrow admin-detail-stack">
             <input type="hidden" name="_token" value="{{ csrfToken }}">
+            <input type="hidden" name="_return_to" value="{{ returnTo }}">
             <label class="label">
                 Owner ID
                 <input class="input" type="text" name="ownerId" value="{{ formData.ownerId }}" required>
@@ -38,7 +39,7 @@
 
             <div class="actions-wrap">
                 <button class="btn btn-primary" type="submit">Save changes</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}" data-turbo-frame="_top">Back to list</a>
+                <a class="btn btn-secondary" href="{{ returnTo }}" data-turbo-frame="_top">Back</a>
             </div>
         </form>
     </section>

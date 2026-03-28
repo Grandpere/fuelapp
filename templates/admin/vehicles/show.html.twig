@@ -7,21 +7,37 @@
 {% block admin_content %}
     {% set requestedReturnTo = app.request.query.get('return_to') %}
     {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_vehicle_list') %}
+    {% set currentVehicleUrl = path('ui_admin_vehicle_show', {id: vehicle.id.toString, return_to: backToListUrl}) %}
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
                 <h2 class="page-title">Vehicle Detail</h2>
-                <p class="muted">Back-office detail view with direct mutation actions.</p>
+                <p class="muted">Admin support view with direct follow-up into receipts and maintenance.</p>
             </div>
             <div class="admin-page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString}) }}">Edit vehicle</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString, return_to: currentVehicleUrl}) }}">Edit vehicle</a>
                 <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('Delete this vehicle?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_vehicle_delete_' ~ vehicle.id.toString) }}">
                     <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
-                    <button class="btn btn-danger" type="submit">Delete</button>
+                    <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                 </form>
-                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back to list</a>
+                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}">Back to list</a>
             </div>
+        </div>
+
+        <div class="admin-metric-grid admin-table-top">
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Receipts</p>
+                <p class="admin-metric-value">{{ receiptCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Maintenance events</p>
+                <p class="admin-metric-value">{{ eventCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Due reminders</p>
+                <p class="admin-metric-value">{{ dueReminderCount }}</p>
+            </article>
         </div>
 
         <dl class="admin-dl admin-detail-stack">
@@ -38,9 +54,47 @@
             <dt class="admin-dt">Updated at</dt>
             <dd class="admin-dd">{{ vehicle.updatedAt|date('Y-m-d H:i:s') }}</dd>
         </dl>
+    </section>
 
-        <div class="admin-page-actions admin-detail-stack">
-            <a class="btn btn-secondary" href="/api/admin/vehicles/{{ vehicle.id.toString }}">Open API resource</a>
-        </div>
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Support shortcuts</h3>
+        <ul class="admin-inline-list">
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: vehicle.id.toString}) }}">Open receipts</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: vehicle.id.toString}) }}">Open maintenance events</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: vehicle.id.toString}) }}">Open reminders</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="/api/admin/vehicles/{{ vehicle.id.toString }}">Open API resource</a></li>
+        </ul>
+    </section>
+
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Recent receipts</h3>
+        {% if recentReceipts is not empty %}
+            <div class="admin-dashboard-list">
+                {% for receipt in recentReceipts %}
+                    <article class="card-subtle card-subtle-block admin-dashboard-item">
+                        <div class="admin-dashboard-item-head">
+                            <strong>{{ receipt.issuedAt|date('Y-m-d H:i') }}</strong>
+                            <span class="muted">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</span>
+                        </div>
+                        <p class="muted compact-note">{{ receipt.id.toString }}</p>
+                        <div class="compact-note">
+                            {% if receipt.stationId %}
+                                Station: {{ stationNames[receipt.stationId.toString] ?? receipt.stationId.toString }}
+                            {% else %}
+                                Station: n/a
+                            {% endif %}
+                        </div>
+                        <div class="action-row">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_show', {id: receipt.id.toString, return_to: currentVehicleUrl}) }}">Open</a>
+                            {% if receipt.stationId %}
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: receipt.stationId.toString, return_to: currentVehicleUrl}) }}">Station</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted">No receipt is linked to this vehicle yet.</p>
+        {% endif %}
     </section>
 {% endblock %}

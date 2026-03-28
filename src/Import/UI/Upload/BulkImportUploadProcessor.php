@@ -186,46 +186,44 @@ final readonly class BulkImportUploadProcessor
             return;
         }
 
-        $tmpHandle = fopen($tmpPath, 'wb');
-        if (false === $tmpHandle) {
-            fclose($stream);
-            @unlink($tmpPath);
-            $result->addRejected($filename, 'Unable to open temporary file for ZIP entry.', $source);
-
-            return;
-        }
-
-        $copiedBytes = 0;
         try {
-            while (!feof($stream)) {
-                $chunk = fread($stream, 8192);
-                if (false === $chunk) {
-                    $result->addRejected($filename, 'Unable to read file entry from ZIP archive.', $source);
+            $tmpHandle = fopen($tmpPath, 'wb');
+            if (false === $tmpHandle) {
+                $result->addRejected($filename, 'Unable to open temporary file for ZIP entry.', $source);
 
-                    return;
-                }
-
-                if ('' === $chunk) {
-                    continue;
-                }
-
-                $copiedBytes += strlen($chunk);
-                if ($copiedBytes > self::MAX_IMAGE_UPLOAD_BYTES) {
-                    $result->addRejected($filename, self::SIZE_LIMIT_MESSAGE, $source);
-
-                    return;
-                }
-
-                fwrite($tmpHandle, $chunk);
+                return;
             }
-        } finally {
-            fclose($tmpHandle);
-            fclose($stream);
-        }
 
-        try {
+            try {
+                $copiedBytes = 0;
+                while (!feof($stream)) {
+                    $chunk = fread($stream, 8192);
+                    if (false === $chunk) {
+                        $result->addRejected($filename, 'Unable to read file entry from ZIP archive.', $source);
+
+                        return;
+                    }
+
+                    if ('' === $chunk) {
+                        continue;
+                    }
+
+                    $copiedBytes += strlen($chunk);
+                    if ($copiedBytes > self::MAX_IMAGE_UPLOAD_BYTES) {
+                        $result->addRejected($filename, self::SIZE_LIMIT_MESSAGE, $source);
+
+                        return;
+                    }
+
+                    fwrite($tmpHandle, $chunk);
+                }
+            } finally {
+                fclose($tmpHandle);
+            }
+
             $this->processReceiptUpload($ownerId, $tmpPath, $filename, $source, $result);
         } finally {
+            fclose($stream);
             @unlink($tmpPath);
         }
     }

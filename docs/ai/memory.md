@@ -231,6 +231,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: record `admin.vehicle.deleted.ui` with the key vehicle snapshot before deletion and cover it in the existing functional delete test.
 - Prevention: whenever an admin action exists in both UI and API channels, verify that destructive operations keep the same audit semantics in both paths.
 
+## 2026-03-28 - Bulk ZIP extraction must always clean temporary entry files on rejection
+- Symptom: rejected ZIP entries in bulk import could leave `fuelapp-import-zip-*` temp files behind in the system temp directory.
+- Root cause: `processZipEntry()` returned early on oversize/read failures before reaching the cleanup path that deleted the extracted temp file.
+- Fix: wrap the whole temp-file lifecycle in a single `try/finally` that always closes the stream and unlinks the temp file once allocated.
+- Prevention: when extracting user-supplied archives, put temp-file creation and cleanup in the same `try/finally` scope so every rejection path shares the same teardown.
+
 ## 2026-03-26 - Front receipt metadata forms must not use system-wide vehicle lists
 - Symptom: the new receipt metadata edit form exposed vehicles owned by other users in its dropdown.
 - Root cause: `VehicleRepository::all()` is system-wide and the controller reused it without explicit owner filtering.

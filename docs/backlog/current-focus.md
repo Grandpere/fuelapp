@@ -9,8 +9,8 @@
 ## In progress
 - SP37-001 is implemented and ready for grouped validation at the end of the autonomous hardening pass.
 - SP37-002 is implemented and ready for grouped validation at the end of the autonomous hardening pass.
-- SP37-003 is the active implementation slice.
-- SP37-003 will finish the cycle with compact observability improvements.
+- SP37-003 is implemented and ready for grouped validation at the end of the autonomous hardening pass.
+- Sprint 37 is now waiting on grouped quality checks and user-run functional validation.
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
@@ -20,4 +20,4 @@
 - Stability comes first because recurring test and runtime friction still wastes support and validation time.
 - SP37-001 now stabilizes XLSX export delivery around temp-file binary responses and bounded functional validation.
 - SP37-002 now hardens auth-sensitive login behavior by collapsing public API login failures and validating session-backed post-login redirect targets.
-- Observability stays intentionally small and should only add diagnostics that materially improve triage.
+- SP37-003 now surfaces request-correlation breadcrumbs across admin pages and adds owner-focused diagnostics on import dossiers for faster investigation.

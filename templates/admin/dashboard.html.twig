@@ -118,7 +118,7 @@
                             <span class="muted">{{ job.createdAt|date('Y-m-d H:i') }}</span>
                         </div>
                         <strong>{{ job.file }}</strong>
-                        <p class="muted compact-note">{{ job.ownerId }}</p>
+                        <p class="muted compact-note">{{ job.ownerLabel }}</p>
                         <div class="action-row">
                             <a class="btn btn-secondary btn-compact" href="{{ job.primaryUrl }}">{{ job.primaryLabel }}</a>
                             <a class="btn btn-secondary btn-compact" href="{{ job.secondaryUrl }}">{{ job.secondaryLabel }}</a>

@@ -19,8 +19,8 @@
 # TODO - SP37-003 Observability support pass
 
 ## Plan
-- [pending] Review the least legible support and incident flows after the stability/security passes.
-- [pending] Add compact diagnostics, correlation cues, or support breadcrumbs where they provide real triage value.
-- [pending] Update the most relevant tests and project memory for the new observability contract.
-- [pending] Run targeted syntax/Twig validation for the touched observability work.
+- [completed] Review the least legible support and incident flows after the stability/security passes.
+- [completed] Add compact diagnostics, correlation cues, or support breadcrumbs where they provide real triage value.
+- [completed] Update the most relevant tests and project memory for the new observability contract.
+- [completed] Run targeted syntax/Twig validation for the touched observability work.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.

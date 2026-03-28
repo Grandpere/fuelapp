@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\User\AdminUserManager;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\ImportJob;
 use App\Receipt\Application\Repository\ReceiptRepository;
@@ -34,6 +35,7 @@ final class AdminImportJobShowController extends AbstractController
         private readonly ReceiptRepository $receiptRepository,
         private readonly VehicleRepository $vehicleRepository,
         private readonly StationRepository $stationRepository,
+        private readonly AdminUserManager $userManager,
     ) {
     }
 
@@ -58,6 +60,8 @@ final class AdminImportJobShowController extends AbstractController
         $resolvedDuplicateReceiptId = $this->resolveExistingReceiptId($this->readString($payloadData, 'duplicateOfReceiptId'));
         $resolvedDuplicateOriginalImportId = $this->resolveExistingImportId($this->readString($payloadData, 'duplicateOfImportJobId'));
         $currentImportUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $backToListUrl]);
+        $owner = $this->userManager->getUser($job->ownerId());
+        $requestCorrelationId = $request->attributes->get('_correlation_id');
 
         return $this->render('admin/imports/show.html.twig', [
             'job' => $job,
@@ -74,6 +78,9 @@ final class AdminImportJobShowController extends AbstractController
                 $resolvedFinalizedReceiptId ?? $resolvedDuplicateReceiptId,
                 $currentImportUrl,
             ),
+            'ownerLabel' => null !== $owner ? sprintf('%s (%s)', $owner->email, $job->ownerId()) : $job->ownerId(),
+            'requestCorrelationId' => is_string($requestCorrelationId) && '' !== trim($requestCorrelationId) ? trim($requestCorrelationId) : null,
+            'investigationShortcuts' => $this->buildInvestigationShortcuts($job->ownerId()),
             'statusActions' => $this->buildStatusActions(
                 $job,
                 $backToListUrl,
@@ -414,6 +421,36 @@ final class AdminImportJobShowController extends AbstractController
         }
 
         return $actions;
+    }
+
+    /**
+     * @return list<array{label:string,url:string}>
+     */
+    private function buildInvestigationShortcuts(string $ownerId): array
+    {
+        $owner = $this->userManager->getUser($ownerId);
+        if (null === $owner) {
+            return [];
+        }
+
+        return [
+            [
+                'label' => 'Owner user',
+                'url' => $this->generateUrl('ui_admin_user_list', ['q' => $owner->email]),
+            ],
+            [
+                'label' => 'Owner identities',
+                'url' => $this->generateUrl('ui_admin_identity_list', ['user_id' => $ownerId]),
+            ],
+            [
+                'label' => 'Owner security',
+                'url' => $this->generateUrl('ui_admin_security_activity_list', ['actorId' => $ownerId]),
+            ],
+            [
+                'label' => 'Owner audit',
+                'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $ownerId]),
+            ],
+        ];
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

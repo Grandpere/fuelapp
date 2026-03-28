@@ -250,6 +250,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Recent receipts', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Import queue snapshot', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Support hub', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Request correlation', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Import recovery', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Maintenance investigation', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Vehicle queues', (string) $dashboardResponse->getContent());
@@ -1456,6 +1457,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('/ui/admin/receipts/'.$receiptId, $detailContent);
         self::assertStringContainsString('Open created receipt', $detailContent);
         self::assertStringContainsString('Receipt continuity', $detailContent);
+        self::assertStringContainsString('Support diagnostics', $detailContent);
+        self::assertStringContainsString('Owner security', $detailContent);
+        self::assertStringContainsString('Request audit trail', $detailContent);
         self::assertStringContainsString('/ui/admin/vehicles/'.$vehicle->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('/ui/admin/stations/'.$station->getId()->toRfc4122(), $detailContent);
     }

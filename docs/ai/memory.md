@@ -542,3 +542,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: post-login redirects reused Symfony's stored target path without passing it through the app's `SafeReturnPathResolver`, unlike the rest of the UI flows that already validate `return_to`.
 - Fix: `LoginFormAuthenticator` now resolves the stored target path through `SafeReturnPathResolver` and falls back to the receipt list when the stored value is malformed or external.
 - Prevention: any session-backed post-auth redirect should be treated like a `return_to` parameter and validated through the same safe-path guard.
+
+## 2026-03-28 - Admin diagnostics are more usable when correlation ids are visible in the UI
+- Symptom: support could retrieve `X-Correlation-Id` from responses, but the useful request id still stayed hidden from the normal admin browsing flow where incidents are actually triaged.
+- Root cause: observability metadata existed in headers and audit storage, but admin pages did not surface it inline where operators needed a quick breadcrumb into logs and audit trails.
+- Fix: the admin shell now shows the current request correlation id with a direct audit shortcut, and import detail pages add owner-focused diagnostics and investigation links.
+- Prevention: when a correlation id is central to incident follow-up, surface it on operator-facing admin screens instead of assuming browser headers or logs are close enough.

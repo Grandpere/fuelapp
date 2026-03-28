@@ -76,6 +76,28 @@
             </dl>
         </div>
 
+        <div class="card-subtle card-subtle-block admin-table-top">
+            <p class="text-block-title">Support diagnostics</p>
+            <dl class="admin-dl">
+                <dt class="admin-dt">Owner</dt>
+                <dd class="admin-dd">{{ ownerLabel }}</dd>
+                {% if requestCorrelationId is not null %}
+                    <dt class="admin-dt">Request correlation</dt>
+                    <dd class="admin-dd">{{ requestCorrelationId }}</dd>
+                {% endif %}
+            </dl>
+            {% if investigationShortcuts is not empty or requestCorrelationId is not null %}
+                <div class="actions-wrap admin-table-top">
+                    {% for action in investigationShortcuts %}
+                        <a class="btn btn-secondary btn-compact" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
+                    {% endfor %}
+                    {% if requestCorrelationId is not null %}
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list', {correlationId: requestCorrelationId}) }}" data-turbo-frame="_top">Request audit trail</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
         {% if payloadData is not null %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <p class="text-block-title">Decoded payload</p>

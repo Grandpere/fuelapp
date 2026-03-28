@@ -287,6 +287,7 @@ final class AdminDashboardController extends AbstractController
      *   statusLabel:string,
      *   file:string,
      *   ownerId:string,
+     *   ownerLabel:string,
      *   createdAt:DateTimeImmutable,
      *   primaryUrl:string,
      *   primaryLabel:string,
@@ -336,6 +337,7 @@ final class AdminDashboardController extends AbstractController
             'statusLabel' => $this->dashboardImportActionLabel($job->status()),
             'file' => $job->originalFilename(),
             'ownerId' => $job->ownerId(),
+            'ownerLabel' => $this->buildOwnerLabel($job->ownerId()),
             'createdAt' => $job->createdAt(),
             'primaryUrl' => $primaryUrl,
             'primaryLabel' => $primaryLabel,
@@ -384,6 +386,13 @@ final class AdminDashboardController extends AbstractController
         }
 
         return null;
+    }
+
+    private function buildOwnerLabel(string $ownerId): string
+    {
+        $owner = $this->userManager->getUser($ownerId);
+
+        return null !== $owner ? sprintf('%s (%s)', $owner->email, $ownerId) : $ownerId;
     }
 
     /**

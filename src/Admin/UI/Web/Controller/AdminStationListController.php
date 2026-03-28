@@ -15,6 +15,7 @@ namespace App\Admin\UI\Web\Controller;
 
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Station\Application\Repository\StationRepository;
+use App\Station\Domain\Station;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -94,7 +95,7 @@ final class AdminStationListController extends AbstractController
         usort(
             $stationRows,
             static fn (array $left, array $right): int => [$right['receiptCount'], $right['linkedVehicleCount']]
-                <=> [$left['receiptCount'], $left['linkedVehicleCount']]
+                <=> [$left['receiptCount'], $left['linkedVehicleCount']],
         );
 
         return $this->render('admin/stations/index.html.twig', [
@@ -123,7 +124,7 @@ final class AdminStationListController extends AbstractController
 
     /**
      * @param array{
-     *   station: object,
+     *   station: Station,
      *   receiptCount: int,
      *   linkedVehicleCount: int
      * } $row
@@ -193,7 +194,7 @@ final class AdminStationListController extends AbstractController
 
     /**
      * @param list<array{
-     *   station: object,
+     *   station: Station,
      *   receiptCount: int
      * }> $stationRows
      *

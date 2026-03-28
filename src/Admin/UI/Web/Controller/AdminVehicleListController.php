@@ -18,9 +18,10 @@ use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
+use App\Vehicle\Domain\Vehicle;
 use DateTimeImmutable;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -85,18 +86,21 @@ final class AdminVehicleListController extends AbstractController
         $vehicleRows = [];
         foreach ($this->vehicleRepository->all() as $vehicle) {
             $vehicleId = $vehicle->id()->toString();
+            $receiptCount = $receiptMetrics[$vehicleId]['count'] ?? 0;
+            $eventCount = $eventCounts[$vehicleId] ?? 0;
+            $dueReminderCount = $dueReminderCounts[$vehicleId] ?? 0;
             $owner = null !== $vehicle->ownerId() ? $this->userManager->getUser($vehicle->ownerId()) : null;
             $row = [
                 'vehicle' => $vehicle,
                 'ownerEmail' => $owner?->email,
-                'receiptCount' => $receiptMetrics[$vehicleId]['count'] ?? 0,
+                'receiptCount' => $receiptCount,
                 'lastReceiptAt' => $receiptMetrics[$vehicleId]['lastIssuedAt'] ?? null,
-                'eventCount' => $eventCounts[$vehicleId] ?? 0,
-                'dueReminderCount' => $dueReminderCounts[$vehicleId] ?? 0,
+                'eventCount' => $eventCount,
+                'dueReminderCount' => $dueReminderCount,
                 'signal' => $this->buildSignal(
-                    $receiptMetrics[$vehicleId]['count'] ?? 0,
-                    $eventCounts[$vehicleId] ?? 0,
-                    $dueReminderCounts[$vehicleId] ?? 0,
+                    $receiptCount,
+                    $eventCount,
+                    $dueReminderCount,
                 ),
             ];
 
@@ -110,7 +114,7 @@ final class AdminVehicleListController extends AbstractController
         usort(
             $vehicleRows,
             static fn (array $left, array $right): int => [$right['dueReminderCount'], $right['receiptCount'], $right['eventCount']]
-                <=> [$left['dueReminderCount'], $left['receiptCount'], $left['eventCount']]
+                <=> [$left['dueReminderCount'], $left['receiptCount'], $left['eventCount']],
         );
 
         return $this->render('admin/vehicles/index.html.twig', [
@@ -139,7 +143,7 @@ final class AdminVehicleListController extends AbstractController
 
     /**
      * @param array{
-     *   vehicle: object,
+     *   vehicle: Vehicle,
      *   ownerEmail: ?string,
      *   receiptCount: int,
      *   eventCount: int,
@@ -218,7 +222,7 @@ final class AdminVehicleListController extends AbstractController
 
     /**
      * @param list<array{
-     *   vehicle: object,
+     *   vehicle: Vehicle,
      *   receiptCount: int,
      *   dueReminderCount: int
      * }> $vehicleRows

@@ -724,8 +724,11 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Investigation continuity', $content);
         self::assertStringContainsString('Active filters', $content);
         self::assertStringContainsString('Open user', $content);
+        self::assertStringContainsString('User identities', $content);
         self::assertStringContainsString('User audit', $content);
+        self::assertStringContainsString('Identities', $content);
         self::assertStringContainsString('Audit', $content);
+        self::assertStringContainsString('Correlation', $content);
     }
 
     public function testAdminCanDeleteImportJobFromBackofficeUi(): void

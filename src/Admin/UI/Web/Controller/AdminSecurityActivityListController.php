@@ -44,10 +44,12 @@ final class AdminSecurityActivityListController extends AbstractController
             $entries[] = [
                 'entry' => $entry,
                 'userUrl' => null !== $entry->actorId ? $this->generateUrl('ui_admin_user_list', ['q' => $entry->actorEmail ?? $entry->actorId]) : null,
+                'identitiesUrl' => null !== $entry->actorId ? $this->generateUrl('ui_admin_identity_list', ['user_id' => $entry->actorId]) : null,
                 'auditUrl' => $this->generateUrl('ui_admin_audit_log_list', array_filter([
                     'actorId' => $entry->actorId,
                     'correlationId' => $entry->correlationId,
                 ])),
+                'correlationUrl' => '' !== trim($entry->correlationId) ? $this->generateUrl('ui_admin_audit_log_list', ['correlationId' => $entry->correlationId]) : null,
             ];
         }
 

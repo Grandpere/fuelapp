@@ -45,6 +45,7 @@ final class AdminAuditLogListController extends AbstractController
             $entries[] = [
                 'entry' => $entry,
                 'userUrl' => null !== $entry->actorId ? $this->generateUrl('ui_admin_user_list', ['q' => $entry->actorEmail ?? $entry->actorId]) : null,
+                'identitiesUrl' => null !== $entry->actorId ? $this->generateUrl('ui_admin_identity_list', ['user_id' => $entry->actorId]) : null,
                 'securityUrl' => null !== $entry->actorId ? $this->generateUrl('ui_admin_security_activity_list', array_filter([
                     'actorId' => $entry->actorId,
                     'action' => str_starts_with($entry->action, 'security.') ? $entry->action : null,

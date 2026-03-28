@@ -19,10 +19,10 @@
 # TODO - SP35-003 Admin audit and security correlation shortcuts
 
 ## Plan
-- [in_progress] Review the audit and security screens for the strongest remaining investigation friction.
-- [pending] Add quicker actor and correlation shortcuts across those views.
-- [pending] Update admin functional coverage for the touched investigation screens.
-- [pending] Run targeted syntax/Twig validation for the touched investigation flow.
+- [completed] Review the audit and security screens for the strongest remaining investigation friction.
+- [completed] Add quicker actor and correlation shortcuts across those views.
+- [completed] Update admin functional coverage for the touched investigation screens.
+- [completed] Run targeted syntax/Twig validation for the touched investigation flow.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
 
 # TODO - SP36-001 Admin vehicle and station queue polish

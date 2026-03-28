@@ -133,6 +133,9 @@
                             {% if entry.userUrl %}
                                 <a class="btn btn-secondary btn-compact" href="{{ entry.userUrl }}">User</a>
                             {% endif %}
+                            {% if entry.identitiesUrl %}
+                                <a class="btn btn-secondary btn-compact" href="{{ entry.identitiesUrl }}">Identities</a>
+                            {% endif %}
                             {% if entry.securityUrl %}
                                 <a class="btn btn-secondary btn-compact" href="{{ entry.securityUrl }}">Security</a>
                             {% endif %}

@@ -270,7 +270,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Users', (string) $usersResponse->getContent());
         self::assertStringContainsString('ui.owner@example.com', (string) $usersResponse->getContent());
         self::assertStringContainsString('Needs attention now', (string) $usersResponse->getContent());
+        self::assertStringContainsString('Account triage speed', (string) $usersResponse->getContent());
         self::assertStringContainsString('Missing identities', (string) $usersResponse->getContent());
+        self::assertStringContainsString('Signal', (string) $usersResponse->getContent());
 
         $identitiesResponse = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $identitiesResponse->getStatusCode());

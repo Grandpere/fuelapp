@@ -55,6 +55,8 @@ final class AdminUserListController extends AbstractController
                 'securityUrl' => $this->generateUrl('ui_admin_security_activity_list', ['actorId' => $user->id]),
                 'auditUrl' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $user->id]),
             ];
+            $row['signal'] = $this->buildSignal($row);
+            $row['severity'] = $this->buildSeverityScore($row);
 
             if (!$row['isActive']) {
                 ++$metrics['inactive'];
@@ -83,9 +85,15 @@ final class AdminUserListController extends AbstractController
             $users[] = $row;
         }
 
+        usort(
+            $users,
+            static fn (array $left, array $right): int => $right['severity'] <=> $left['severity'],
+        );
+
         return $this->render('admin/users/index.html.twig', [
             'users' => $users,
             'metrics' => $metrics,
+            'supportShortcuts' => $this->buildSupportShortcuts($users),
             'filters' => [
                 'q' => $q ?? '',
                 'role' => $role ?? '',
@@ -95,6 +103,129 @@ final class AdminUserListController extends AbstractController
             ],
             'activeFilterSummary' => $this->buildActiveFilterSummary($q, $role, $isActive, $verification, $hasIdentity),
         ]);
+    }
+
+    /**
+     * @param array{
+     *   email:string,
+     *   isActive:bool,
+     *   isAdmin:bool,
+     *   identityCount:int,
+     *   isEmailVerified:bool
+     * } $row
+     *
+     * @return array{headline:string,detail:string}
+     */
+    private function buildSignal(array $row): array
+    {
+        if (!$row['isActive'] && !$row['isEmailVerified']) {
+            return [
+                'headline' => 'Inactive and unverified',
+                'detail' => 'Account needs both activation and verification review.',
+            ];
+        }
+
+        if (0 === $row['identityCount']) {
+            return [
+                'headline' => 'Missing identities',
+                'detail' => 'Recovery may depend on linking or reviewing external identities.',
+            ];
+        }
+
+        if (!$row['isEmailVerified']) {
+            return [
+                'headline' => 'Email not verified',
+                'detail' => 'Verification or resend is likely the next support step.',
+            ];
+        }
+
+        if (!$row['isActive']) {
+            return [
+                'headline' => 'Inactive account',
+                'detail' => 'Support may need to reactivate the user before login succeeds.',
+            ];
+        }
+
+        if ($row['isAdmin']) {
+            return [
+                'headline' => 'Admin account',
+                'detail' => 'Keep admin-only changes auditable and deliberate.',
+            ];
+        }
+
+        return [
+            'headline' => 'Healthy account',
+            'detail' => 'No immediate support issue stands out on this row.',
+        ];
+    }
+
+    /**
+     * @param array{
+     *   isActive:bool,
+     *   isAdmin:bool,
+     *   identityCount:int,
+     *   isEmailVerified:bool
+     * } $row
+     */
+    private function buildSeverityScore(array $row): int
+    {
+        $score = 0;
+
+        if (0 === $row['identityCount']) {
+            $score += 40;
+        }
+        if (!$row['isEmailVerified']) {
+            $score += 30;
+        }
+        if (!$row['isActive']) {
+            $score += 20;
+        }
+        if ($row['isAdmin']) {
+            $score += 5;
+        }
+
+        return $score;
+    }
+
+    /**
+     * @param list<array{
+     *   email:string,
+     *   identitiesUrl:string,
+     *   securityUrl:string,
+     *   auditUrl:string,
+     *   isActive:bool,
+     *   identityCount:int,
+     *   isEmailVerified:bool
+     * }> $users
+     *
+     * @return list<array{label:string,url:string}>
+     */
+    private function buildSupportShortcuts(array $users): array
+    {
+        $shortcuts = [];
+
+        foreach ($users as $user) {
+            if (0 === $user['identityCount']) {
+                $shortcuts[] = ['label' => 'Open next missing identity', 'url' => $user['identitiesUrl']];
+                break;
+            }
+        }
+
+        foreach ($users as $user) {
+            if (!$user['isEmailVerified']) {
+                $shortcuts[] = ['label' => 'Open next unverified account', 'url' => $user['auditUrl']];
+                break;
+            }
+        }
+
+        foreach ($users as $user) {
+            if (!$user['isActive']) {
+                $shortcuts[] = ['label' => 'Open next inactive account', 'url' => $user['securityUrl']];
+                break;
+            }
+        }
+
+        return $shortcuts;
     }
 
     private function readFilter(Request $request, string $name): ?string

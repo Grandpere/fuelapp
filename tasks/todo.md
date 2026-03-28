@@ -10,16 +10,16 @@
 # TODO - SP35-002 Admin account triage speed pass
 
 ## Plan
-- [in_progress] Review the admin user/account workspace for the slowest support decisions.
-- [pending] Improve queue cues and shortcuts without bloating the table.
-- [pending] Update admin functional coverage for the touched account workspace contract.
-- [pending] Run targeted syntax/Twig validation for the touched account workspace flow.
+- [completed] Review the admin user/account workspace for the slowest support decisions.
+- [completed] Improve queue cues and shortcuts without bloating the table.
+- [completed] Update admin functional coverage for the touched account workspace contract.
+- [completed] Run targeted syntax/Twig validation for the touched account workspace flow.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
 
 # TODO - SP35-003 Admin audit and security correlation shortcuts
 
 ## Plan
-- [pending] Review the audit and security screens for the strongest remaining investigation friction.
+- [in_progress] Review the audit and security screens for the strongest remaining investigation friction.
 - [pending] Add quicker actor and correlation shortcuts across those views.
 - [pending] Update admin functional coverage for the touched investigation screens.
 - [pending] Run targeted syntax/Twig validation for the touched investigation flow.

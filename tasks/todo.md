@@ -10,10 +10,10 @@
 # TODO - SP33-003 Admin audit/security usefulness pass
 
 ## Plan
-- [pending] Review the audit and security screens for repetitive investigation steps, weak filters, and missing support shortcuts.
-- [pending] Improve the highest-value filters and drill-down actions without turning the sprint into a full redesign.
-- [pending] Update admin functional coverage for the touched audit/security contract.
-- [pending] Run targeted syntax/Twig validation for the touched audit/security flow.
+- [completed] Review the audit and security screens for repetitive investigation steps, weak filters, and missing support shortcuts.
+- [completed] Improve the highest-value filters and drill-down actions without turning the sprint into a full redesign.
+- [completed] Update admin functional coverage for the touched audit/security contract.
+- [completed] Run targeted syntax/Twig validation for the touched audit/security flow.
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 33 after the three commits.
 
 # TODO - SP33-002 Admin import triage detail polish

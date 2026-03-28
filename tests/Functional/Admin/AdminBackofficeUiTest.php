@@ -708,8 +708,14 @@ final class AdminBackofficeUiTest extends WebTestCase
             $sessionCookie,
         );
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
-        self::assertStringContainsString('security.login.failure', (string) $response->getContent());
-        self::assertStringContainsString('corr-ui-security-001', (string) $response->getContent());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('security.login.failure', $content);
+        self::assertStringContainsString('corr-ui-security-001', $content);
+        self::assertStringContainsString('Investigation continuity', $content);
+        self::assertStringContainsString('Active filters', $content);
+        self::assertStringContainsString('Open user', $content);
+        self::assertStringContainsString('User audit', $content);
+        self::assertStringContainsString('Audit', $content);
     }
 
     public function testAdminCanDeleteImportJobFromBackofficeUi(): void

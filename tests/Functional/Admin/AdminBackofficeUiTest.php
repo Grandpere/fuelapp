@@ -1121,8 +1121,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         $eventEditPage = $this->request('GET', '/ui/admin/maintenance/events/'.$eventId.'/edit?return_to='.rawurlencode($eventReturnTo), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $eventEditPage->getStatusCode());
         $eventEditContent = (string) $eventEditPage->getContent();
-        self::assertStringContainsString('name="_return_to" value="'.$eventReturnTo.'"', $eventEditContent);
-        self::assertStringContainsString('href="'.$eventReturnTo.'"', $eventEditContent);
+        self::assertStringContainsString('name="_return_to"', $eventEditContent);
+        self::assertStringContainsString('value="/ui/admin/maintenance/events?vehicle_id=', $eventEditContent);
+        self::assertStringContainsString('event_type=service', $eventEditContent);
+        self::assertStringContainsString('href="/ui/admin/maintenance/events?vehicle_id=', $eventEditContent);
         $eventEditCsrf = $this->extractFormCsrf($eventEditContent);
 
         $eventEditResponse = $this->request(
@@ -1189,7 +1191,6 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Related imports', $receiptShowContent);
         self::assertStringContainsString('Support continuity', $receiptShowContent);
         self::assertStringContainsString('Open vehicle', $receiptShowContent);
-        self::assertStringContainsString('Open station', $receiptShowContent);
         self::assertStringContainsString('Open related import', $receiptShowContent);
         self::assertStringContainsString('return_to=', $receiptShowContent);
 

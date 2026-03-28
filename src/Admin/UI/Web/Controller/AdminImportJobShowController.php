@@ -16,6 +16,8 @@ namespace App\Admin\UI\Web\Controller;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\ImportJob;
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Station\Application\Repository\StationRepository;
+use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,6 +32,8 @@ final class AdminImportJobShowController extends AbstractController
     public function __construct(
         private readonly ImportJobRepository $importJobRepository,
         private readonly ReceiptRepository $receiptRepository,
+        private readonly VehicleRepository $vehicleRepository,
+        private readonly StationRepository $stationRepository,
     ) {
     }
 
@@ -53,6 +57,7 @@ final class AdminImportJobShowController extends AbstractController
         $resolvedFinalizedReceiptId = $this->resolveExistingReceiptId($this->readString($payloadData, 'finalizedReceiptId'));
         $resolvedDuplicateReceiptId = $this->resolveExistingReceiptId($this->readString($payloadData, 'duplicateOfReceiptId'));
         $resolvedDuplicateOriginalImportId = $this->resolveExistingImportId($this->readString($payloadData, 'duplicateOfImportJobId'));
+        $currentImportUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $backToListUrl]);
 
         return $this->render('admin/imports/show.html.twig', [
             'job' => $job,
@@ -63,6 +68,10 @@ final class AdminImportJobShowController extends AbstractController
             'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
             'resolvedDuplicateReceiptId' => $resolvedDuplicateReceiptId,
             'resolvedDuplicateOriginalImportId' => $resolvedDuplicateOriginalImportId,
+            'receiptContinuity' => $this->buildReceiptContinuity(
+                $resolvedFinalizedReceiptId ?? $resolvedDuplicateReceiptId,
+                $currentImportUrl,
+            ),
             'statusActions' => $this->buildStatusActions(
                 $job,
                 $backToListUrl,
@@ -310,6 +319,51 @@ final class AdminImportJobShowController extends AbstractController
         }
 
         return null === $this->importJobRepository->getForSystem($importId) ? null : $importId;
+    }
+
+    /**
+     * @return list<array{label:string,url:string,variant:string}>
+     */
+    private function buildReceiptContinuity(?string $receiptId, string $returnTo): array
+    {
+        if (null === $receiptId) {
+            return [];
+        }
+
+        $receipt = $this->receiptRepository->getForSystem($receiptId);
+        if (null === $receipt) {
+            return [];
+        }
+
+        $actions = [[
+            'label' => 'Open receipt',
+            'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $receipt->id()->toString(), 'return_to' => $returnTo]),
+            'variant' => 'primary',
+        ]];
+
+        if (null !== $receipt->vehicleId()) {
+            $vehicle = $this->vehicleRepository->get($receipt->vehicleId()->toString());
+            if (null !== $vehicle) {
+                $actions[] = [
+                    'label' => 'Open vehicle',
+                    'url' => $this->generateUrl('ui_admin_vehicle_show', ['id' => $vehicle->id()->toString(), 'return_to' => $returnTo]),
+                    'variant' => 'secondary',
+                ];
+            }
+        }
+
+        if (null !== $receipt->stationId()) {
+            $station = $this->stationRepository->getForSystem($receipt->stationId()->toString());
+            if (null !== $station) {
+                $actions[] = [
+                    'label' => 'Open station',
+                    'url' => $this->generateUrl('ui_admin_station_show', ['id' => $station->id()->toString(), 'return_to' => $returnTo]),
+                    'variant' => 'secondary',
+                ];
+            }
+        }
+
+        return $actions;
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

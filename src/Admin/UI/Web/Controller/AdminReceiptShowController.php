@@ -69,6 +69,7 @@ final class AdminReceiptShowController extends AbstractController
             'vehicle' => $vehicle,
             'backToListUrl' => $backToListUrl,
             'relatedImports' => $this->findRelatedImports($receipt->id()->toString(), $backToListUrl),
+            'supportShortcuts' => $this->buildSupportShortcuts($receipt->id()->toString(), $vehicle?->id()?->toString(), $station?->id()?->toString(), $backToListUrl),
         ]);
     }
 
@@ -110,5 +111,45 @@ final class AdminReceiptShowController extends AbstractController
         );
 
         return $matches;
+    }
+
+    /**
+     * @return list<array{label:string,url:string}>
+     */
+    private function buildSupportShortcuts(string $receiptId, ?string $vehicleId, ?string $stationId, string $returnTo): array
+    {
+        $shortcuts = [];
+
+        if (null !== $vehicleId) {
+            $shortcuts[] = [
+                'label' => 'Open vehicle',
+                'url' => $this->generateUrl('ui_admin_vehicle_show', ['id' => $vehicleId, 'return_to' => $returnTo]),
+            ];
+            $shortcuts[] = [
+                'label' => 'Vehicle receipts',
+                'url' => $this->generateUrl('ui_admin_receipt_list', ['vehicle_id' => $vehicleId]),
+            ];
+        }
+
+        if (null !== $stationId) {
+            $shortcuts[] = [
+                'label' => 'Open station',
+                'url' => $this->generateUrl('ui_admin_station_show', ['id' => $stationId, 'return_to' => $returnTo]),
+            ];
+            $shortcuts[] = [
+                'label' => 'Station receipts',
+                'url' => $this->generateUrl('ui_admin_receipt_list', ['station_id' => $stationId]),
+            ];
+        }
+
+        foreach ($this->findRelatedImports($receiptId, $returnTo) as $item) {
+            $shortcuts[] = [
+                'label' => 'Open related import',
+                'url' => $item['url'],
+            ];
+            break;
+        }
+
+        return $shortcuts;
     }
 }

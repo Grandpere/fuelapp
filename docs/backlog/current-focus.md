@@ -18,7 +18,7 @@
 ## Notes
 - Sprint 30 follows Sprint 29 and stays on the admin side to convert the recent parity gains into smoother support continuity.
 - SP30-001 is fully delivered across reminder/event support shortcuts, safer event return paths, and maintenance-detail continuity.
-- SP30-002 will tighten admin import and receipt cross-navigation around linked records and support follow-up actions.
+- SP30-002 is fully delivered across import-to-receipt continuity shortcuts and richer receipt-to-vehicle/station/import support navigation.
 - SP30-003 will close the sprint with a pragmatic admin list consistency pass across density, labels, and action placement.
 - Sprint 29 is fully delivered across admin dashboard, vehicle, and station usefulness passes and is merged.
 - SP29-003 is fully delivered across failed-import and needs-review signals, due reminder surfacing, recent receipts/import snapshots, and faster admin drill-downs.

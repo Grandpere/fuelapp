@@ -1179,6 +1179,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Vehicle', $receiptShowContent);
         self::assertStringContainsString('Station', $receiptShowContent);
         self::assertStringContainsString('Related imports', $receiptShowContent);
+        self::assertStringContainsString('Support continuity', $receiptShowContent);
+        self::assertStringContainsString('Open vehicle', $receiptShowContent);
+        self::assertStringContainsString('Open station', $receiptShowContent);
+        self::assertStringContainsString('Open related import', $receiptShowContent);
         self::assertStringContainsString('return_to=', $receiptShowContent);
 
         $receiptEditPage = $this->request('GET', '/ui/admin/receipts/'.$receiptId.'/edit?return_to='.rawurlencode('/ui/admin/receipts?context=edit-flow'), [], [], $sessionCookie);
@@ -1226,16 +1230,35 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringNotContainsString($receiptId, (string) $afterReceiptDelete->getContent());
     }
 
-    public function testAdminProcessedImportDetailShowsShortcutToCreatedReceipt(): void
+    public function testAdminProcessedImportDetailShowsReceiptContinuityShortcuts(): void
     {
         $adminEmail = 'ui.admin.import.processed.shortcut@example.com';
         $adminPassword = 'test1234';
         $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
         $owner = $this->createUser('ui.admin.import.processed.owner@example.com', 'test1234', ['ROLE_USER']);
 
+        $vehicle = new VehicleEntity();
+        $vehicle->setId(Uuid::v7());
+        $vehicle->setName('Processed Import Vehicle');
+        $vehicle->setPlateNumber('PI-300-AA');
+        $vehicle->setOwner($owner);
+        $vehicle->setCreatedAt(new DateTimeImmutable('2026-03-26 09:40:00'));
+        $vehicle->setUpdatedAt(new DateTimeImmutable('2026-03-26 09:40:00'));
+        $this->em->persist($vehicle);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Processed Import Station');
+        $station->setStreetName('14 Queue Avenue');
+        $station->setPostalCode('75011');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
         $receipt = new ReceiptEntity();
         $receipt->setId(Uuid::v7());
         $receipt->setOwner($owner);
+        $receipt->setVehicle($vehicle);
+        $receipt->setStation($station);
         $receipt->setIssuedAt(new DateTimeImmutable('2026-03-26 10:00:00'));
         $receipt->setTotalCents(4200);
         $receipt->setVatAmountCents(700);
@@ -1281,6 +1304,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Import completed', $detailContent);
         self::assertStringContainsString('/ui/admin/receipts/'.$receiptId, $detailContent);
         self::assertStringContainsString('Open created receipt', $detailContent);
+        self::assertStringContainsString('Receipt continuity', $detailContent);
+        self::assertStringContainsString('/ui/admin/vehicles/'.$vehicle->getId()->toRfc4122(), $detailContent);
+        self::assertStringContainsString('/ui/admin/stations/'.$station->getId()->toRfc4122(), $detailContent);
     }
 
     public function testAdminVehicleListAndDetailExposeReceiptAndMaintenanceShortcuts(): void

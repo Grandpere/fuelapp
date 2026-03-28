@@ -10,11 +10,11 @@
 # TODO - SP30-002 Admin import and receipt cross-navigation polish
 
 ## Plan
-- [pending] Review the current admin import and receipt detail screens and identify the missing linked-record shortcuts.
-- [pending] Tighten import-to-receipt continuity with clearer support shortcuts and preserved context.
-- [pending] Tighten receipt-to-import/vehicle/station continuity with clearer next steps.
-- [pending] Update admin functional coverage for the new cross-navigation contract.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Review the current admin import and receipt detail screens and identify the missing linked-record shortcuts.
+- [completed] Tighten import-to-receipt continuity with clearer support shortcuts and preserved context.
+- [completed] Tighten receipt-to-import/vehicle/station continuity with clearer next steps.
+- [completed] Update admin functional coverage for the new cross-navigation contract.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 30 after the three commits.
 
 # TODO - SP30-001 Admin maintenance detail continuity

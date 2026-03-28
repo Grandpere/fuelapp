@@ -50,6 +50,17 @@
         </dl>
     </section>
 
+    {% if supportShortcuts is not empty %}
+        <section class="card admin-panel admin-section-spaced">
+            <h3 class="section-title">Support continuity</h3>
+            <div class="actions-wrap admin-table-top">
+                {% for item in supportShortcuts %}
+                    <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
     {% if relatedImports is not empty %}
         <section class="card admin-panel admin-section-spaced">
             <h3 class="section-title">Related imports</h3>

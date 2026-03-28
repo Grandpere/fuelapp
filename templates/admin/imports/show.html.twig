@@ -103,6 +103,17 @@
                 </div>
             </div>
         {% endif %}
+
+        {% if receiptContinuity is not empty %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <p class="text-block-title">Receipt continuity</p>
+                <div class="actions-wrap">
+                    {% for action in receiptContinuity %}
+                        <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
     </section>
 
     {% if payloadData is not null and payloadData.fallbackReason is defined %}

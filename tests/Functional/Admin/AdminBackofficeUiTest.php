@@ -1293,6 +1293,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $receiptList->getStatusCode());
         $receiptListContent = (string) $receiptList->getContent();
         self::assertStringContainsString('System-wide receipt ledger', $receiptListContent);
+        self::assertStringContainsString('Total receipts', $receiptListContent);
+        self::assertStringContainsString('Support shortcuts', $receiptListContent);
+        self::assertStringContainsString('Open latest receipt', $receiptListContent);
+        self::assertStringContainsString('Apply filters', $receiptListContent);
         self::assertStringContainsString('Vehicle', $receiptListContent);
         self::assertStringContainsString('Station', $receiptListContent);
         self::assertStringContainsString('/ui/admin/receipts/'.$receiptId.'/edit', $receiptListContent);

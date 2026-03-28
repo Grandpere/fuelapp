@@ -1,29 +1,25 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 34 - Admin support toolkit completion
+- Sprint 35 - Admin final workflow usefulness pass
 
 ## Current goal
-- Make the admin workspace faster for support decisions by tightening the maintenance toolkit, speeding up import queue decisions, and consolidating the support hub.
+- Finish the last profitable admin support improvements across receipt queues, account triage, investigation shortcuts, queue polish, dashboard signals, and continuity gaps.
 
 ## In progress
-- SP34-001 is implemented and ready for grouped user validation at the end of Sprint 34.
-- SP34-002 is implemented and ready for grouped user validation at the end of Sprint 34.
-- SP34-003 is implemented and ready for grouped user validation at the end of Sprint 34.
+- SP35-001 is implemented and ready for grouped validation at the end of the autonomous pass.
+- SP35-002 is the active implementation slice.
+- Sprint 36 is pre-scoped so the remaining admin work can continue without pause if the ROI stays real.
 
 ## Next tickets (ordered)
 1. Microsoft OIDC remains deferred
 
 ## Notes
-- Sprint 34 follows Sprint 33 and stays focused on admin usefulness before any broader redesign work.
-- SP34-001 now adds event-type-aware reminder filtering plus tighter receipts/events/vehicle continuity across admin maintenance reminders and events.
-- SP34-002 will improve import queue decision speed so support can understand next actions earlier in the workflow.
-- SP34-002 now adds faster queue-level cause/next-step readouts plus top shortcuts to the next useful import dossier.
-- SP34-003 will consolidate the support hub once the underlying admin tools are stronger.
-- SP34-003 now turns the admin dashboard into a clearer hub for import recovery, maintenance investigation, and account recovery flows.
-- Sprint 33 is fully delivered across account recovery continuity, audit/security investigation, and import triage detail polish and is merged.
-- Sprint 32 is fully delivered across receipt continuity, dashboard signal quality, and account support flow and is merged.
-- Sprint 31 is fully delivered across import recovery, maintenance actionability, and admin shell polish and is merged.
-- Sprint 30 is fully delivered across admin maintenance continuity, import/receipt navigation, and list consistency and is merged.
-- Sprint 29 is fully delivered across admin dashboard, vehicle, and station usefulness passes and is merged.
+- Sprint 35 follows Sprint 34 and focuses on the last clearly valuable admin queue and investigation improvements.
+- SP35-001 targets the admin receipt ledger as a true support queue.
+- SP35-001 now adds real receipt ledger filters, metrics, and top support shortcuts.
+- SP35-002 will sharpen the admin account workspace.
+- SP35-003 will shorten audit/security investigation hops.
+- Sprint 36 is intentionally pre-scoped but may be the final profitable admin pass depending on what remains after Sprint 35.
+- Sprint 34 is fully delivered across maintenance toolkit, import decision speed, support hub consolidation, and humanized support filters and is merged.
 - Microsoft OIDC remains deferred unless product priority changes.

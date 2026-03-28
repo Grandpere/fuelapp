@@ -142,7 +142,8 @@ final class AdminApiManagementTest extends KernelTestCase
             ['CONTENT_TYPE' => 'application/json'],
             json_encode(['email' => $managedEmail, 'password' => 'test1234'], JSON_THROW_ON_ERROR),
         );
-        self::assertSame(Response::HTTP_FORBIDDEN, $disabledLogin->getStatusCode());
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $disabledLogin->getStatusCode());
+        self::assertStringContainsString('Invalid credentials.', (string) $disabledLogin->getContent());
 
         $promoteResponse = $this->request(
             'PATCH',

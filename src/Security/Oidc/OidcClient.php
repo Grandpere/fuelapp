@@ -39,7 +39,7 @@ final readonly class OidcClient
         return sprintf('%s?%s', $authorizationEndpoint, $query);
     }
 
-    /** @return array{sub: string, email: ?string, name: ?string, picture: ?string} */
+    /** @return array{sub: string, email: ?string, email_verified: ?bool, name: ?string, picture: ?string} */
     public function exchangeCodeForUserClaims(OidcProvider $provider, string $code, string $redirectUri): array
     {
         $discovery = $this->discovery($provider);
@@ -70,6 +70,7 @@ final readonly class OidcClient
         return [
             'sub' => $this->requiredString($claims, 'sub'),
             'email' => $this->optionalString($claims, 'email'),
+            'email_verified' => $this->optionalBool($claims, 'email_verified'),
             'name' => $this->optionalString($claims, 'name'),
             'picture' => $this->optionalString($claims, 'picture'),
         ];
@@ -110,5 +111,13 @@ final readonly class OidcClient
         $trimmed = trim($value);
 
         return '' === $trimmed ? null : $trimmed;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function optionalBool(array $payload, string $key): ?bool
+    {
+        $value = $payload[$key] ?? null;
+
+        return is_bool($value) ? $value : null;
     }
 }

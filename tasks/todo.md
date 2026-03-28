@@ -1,53 +1,34 @@
-# TODO - SP35-001 Admin receipt queue usefulness pass
+# TODO - SP37-001 Stability hardening pass
 
 ## Plan
-- [completed] Review the admin receipt ledger for the biggest remaining support queue gaps.
-- [completed] Add the smallest useful receipt queue improvements in list filtering, top-level signals, and context shortcuts.
-- [completed] Update admin functional coverage for the touched receipt queue contract.
-- [completed] Run targeted syntax/Twig validation for the touched receipt queue flow.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
+- [completed] Review the recurring technical failures and fragile validations seen in the last few sprints.
+- [completed] Apply the smallest root-cause fixes that reduce reruns and flaky support behavior.
+- [completed] Update the most relevant tests and project memory for the stabilized flows.
+- [completed] Run targeted syntax/Twig validation for the touched stability work.
+- [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
 
-# TODO - SP35-002 Admin account triage speed pass
-
-## Plan
-- [completed] Review the admin user/account workspace for the slowest support decisions.
-- [completed] Improve queue cues and shortcuts without bloating the table.
-- [completed] Update admin functional coverage for the touched account workspace contract.
-- [completed] Run targeted syntax/Twig validation for the touched account workspace flow.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
-
-# TODO - SP35-003 Admin audit and security correlation shortcuts
+# TODO - SP37-002 Security hardening pass
 
 ## Plan
-- [completed] Review the audit and security screens for the strongest remaining investigation friction.
-- [completed] Add quicker actor and correlation shortcuts across those views.
-- [completed] Update admin functional coverage for the touched investigation screens.
-- [completed] Run targeted syntax/Twig validation for the touched investigation flow.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
+- [completed] Review sensitive auth, import, and admin mutation flows with a security lens.
+- [completed] Apply the smallest concrete hardening changes that improve safety without product churn.
+- [completed] Update security-relevant tests and project memory for the hardened behavior.
+- [completed] Run targeted syntax/Twig validation for the touched security work.
+- [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
 
-# TODO - SP36-001 Admin vehicle and station queue polish
-
-## Plan
-- [completed] Review the vehicle and station queues for the strongest remaining support friction.
-- [completed] Improve queue scanability and filters with minimal UI churn.
-- [completed] Update admin functional coverage for the touched queues.
-- [completed] Run targeted syntax/Twig validation for the touched queue flow.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
-
-# TODO - SP36-002 Admin dashboard support signal expansion
+# TODO - SP37-003 Observability support pass
 
 ## Plan
-- [completed] Review the dashboard against the newly improved queues and investigation screens.
-- [completed] Add the last high-value support signals and jumps.
-- [completed] Update admin functional coverage for the touched dashboard contract.
-- [completed] Run targeted syntax/Twig validation for the touched dashboard flow.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
+- [completed] Review the least legible support and incident flows after the stability/security passes.
+- [completed] Add compact diagnostics, correlation cues, or support breadcrumbs where they provide real triage value.
+- [completed] Update the most relevant tests and project memory for the new observability contract.
+- [completed] Run targeted syntax/Twig validation for the touched observability work.
+- [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
 
-# TODO - SP36-003 Admin form and detail continuity final pass
+# TODO - Security audit follow-up
 
 ## Plan
-- [completed] Review the remaining admin detail and edit flows for continuity gaps.
-- [completed] Close the last high-value continuity gaps with minimal code churn.
-- [completed] Update admin functional coverage for the touched detail/form contract.
-- [completed] Run targeted syntax/Twig validation for the touched detail/form flow.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
+- [completed] Review the OIDC account-linking flow from the full-project auth audit.
+- [completed] Require an explicitly verified email claim before linking an existing local account by OIDC email match.
+- [completed] Add integration coverage for the unverified-email regression and record the rule in project memory.
+- [pending] Ask for the user-run functional suite after the hardening fix.

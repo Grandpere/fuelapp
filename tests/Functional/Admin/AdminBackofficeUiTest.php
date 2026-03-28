@@ -250,6 +250,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Recent receipts', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Import queue snapshot', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Support hub', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Request correlation', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Import recovery', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Maintenance investigation', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Vehicle queues', (string) $dashboardResponse->getContent());
@@ -399,6 +400,15 @@ final class AdminBackofficeUiTest extends WebTestCase
         $afterDelete = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
         self::assertStringNotContainsString('BO-200-BB', (string) $afterDelete->getContent());
+
+        $audit = $this->em->getRepository(AdminAuditLogEntity::class)->findOneBy(['action' => 'admin.vehicle.deleted.ui']);
+        self::assertInstanceOf(AdminAuditLogEntity::class, $audit);
+        self::assertSame($vehicleId, $audit->getTargetId());
+        self::assertSame('vehicle', $audit->getTargetType());
+        $diffSummary = $audit->getDiffSummary();
+        self::assertIsArray($diffSummary['before'] ?? null);
+        self::assertSame('Backoffice Vehicle Updated', $diffSummary['before']['name'] ?? null);
+        self::assertSame('BO-200-BB', $diffSummary['before']['plateNumber'] ?? null);
     }
 
     public function testAdminMaintenanceEventDetailKeepsFilteredReturnContext(): void
@@ -1456,6 +1466,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('/ui/admin/receipts/'.$receiptId, $detailContent);
         self::assertStringContainsString('Open created receipt', $detailContent);
         self::assertStringContainsString('Receipt continuity', $detailContent);
+        self::assertStringContainsString('Support diagnostics', $detailContent);
+        self::assertStringContainsString('Owner security', $detailContent);
+        self::assertStringContainsString('Request audit trail', $detailContent);
         self::assertStringContainsString('/ui/admin/vehicles/'.$vehicle->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('/ui/admin/stations/'.$station->getId()->toRfc4122(), $detailContent);
     }

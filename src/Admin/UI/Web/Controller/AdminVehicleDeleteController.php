@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Shared\UI\Web\SafeReturnPathResolver;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,6 +30,7 @@ final class AdminVehicleDeleteController extends AbstractController
 
     public function __construct(
         private readonly VehicleRepository $vehicleRepository,
+        private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
@@ -50,6 +52,18 @@ final class AdminVehicleDeleteController extends AbstractController
             throw new NotFoundHttpException();
         }
 
+        $this->auditTrail->record(
+            'admin.vehicle.deleted.ui',
+            'vehicle',
+            $id,
+            [
+                'before' => [
+                    'ownerId' => $vehicle->ownerId(),
+                    'name' => $vehicle->name(),
+                    'plateNumber' => $vehicle->plateNumber(),
+                ],
+            ],
+        );
         $this->vehicleRepository->delete($id);
         $this->addFlash('success', 'Vehicle deleted.');
 

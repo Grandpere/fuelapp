@@ -28,7 +28,7 @@ final readonly class OidcUserLinker
     ) {
     }
 
-    public function resolveUser(string $provider, string $subject, ?string $email): UserEntity
+    public function resolveUser(string $provider, string $subject, ?string $email, ?bool $emailVerified): UserEntity
     {
         /** @var UserIdentityEntity|null $identity */
         $identity = $this->em->getRepository(UserIdentityEntity::class)->findOneBy([
@@ -47,6 +47,10 @@ final readonly class OidcUserLinker
 
         /** @var UserEntity|null $user */
         $user = $this->em->getRepository(UserEntity::class)->findOneBy(['email' => $normalizedEmail]);
+        if (null !== $user && true !== $emailVerified) {
+            throw new RuntimeException('OIDC account is not linkable: email claim is not verified.');
+        }
+
         if (null === $user) {
             $user = new UserEntity();
             $user->setId(Uuid::v7());

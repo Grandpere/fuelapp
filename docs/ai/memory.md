@@ -219,6 +219,24 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-03-28 - OIDC email claims are not trustworthy unless explicitly verified
+- Symptom: OIDC login could link an external identity to an existing local user on email match alone.
+- Root cause: the linker trusted `email` without requiring an explicit `email_verified=true` claim from the provider.
+- Fix: propagate `email_verified` through the OIDC claim flow and refuse email-based linking to existing local users unless the claim is explicitly verified.
+- Prevention: for OIDC/SAML-style identity linking, never treat a bare email claim as proof of account ownership; require the provider's verified-email signal (or equivalent trusted identity proof) before attaching to an existing local account.
+
+## 2026-03-28 - Admin UI destructive actions must keep audit parity with admin API
+- Symptom: deleting a vehicle from the admin web UI left no audit trail, while the admin API delete path did.
+- Root cause: the web controller deleted directly and flashed success without recording the same before-state metadata captured in the API processor.
+- Fix: record `admin.vehicle.deleted.ui` with the key vehicle snapshot before deletion and cover it in the existing functional delete test.
+- Prevention: whenever an admin action exists in both UI and API channels, verify that destructive operations keep the same audit semantics in both paths.
+
+## 2026-03-28 - Bulk ZIP extraction must always clean temporary entry files on rejection
+- Symptom: rejected ZIP entries in bulk import could leave `fuelapp-import-zip-*` temp files behind in the system temp directory.
+- Root cause: `processZipEntry()` returned early on oversize/read failures before reaching the cleanup path that deleted the extracted temp file.
+- Fix: wrap the whole temp-file lifecycle in a single `try/finally` that always closes the stream and unlinks the temp file once allocated.
+- Prevention: when extracting user-supplied archives, put temp-file creation and cleanup in the same `try/finally` scope so every rejection path shares the same teardown.
+
 ## 2026-03-26 - Front receipt metadata forms must not use system-wide vehicle lists
 - Symptom: the new receipt metadata edit form exposed vehicles owned by other users in its dropdown.
 - Root cause: `VehicleRepository::all()` is system-wide and the controller reused it without explicit owner filtering.
@@ -524,3 +542,27 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the functional test buffered the whole streamed XLSX response body in memory just to check the ZIP magic prefix, recreating the same pressure the export flow was designed to avoid.
 - Fix: stop reading the full XLSX stream in the functional test and assert the stable download contract through HTTP status and headers.
 - Prevention: for streamed binary downloads, BrowserKit-style tests should avoid full in-memory buffering unless the binary payload itself is the behavior under test.
+
+## 2026-03-28 - Temp-file XLSX exports should use BinaryFileResponse
+- Symptom: XLSX export delivery stayed more fragile than necessary because the controller created a temp file, then manually streamed it with an echo loop anyway.
+- Root cause: the response layer did not reuse Symfony's normal binary-file delivery even though the XLSX artifact already existed on disk.
+- Fix: generate the XLSX into a temp file, return a `BinaryFileResponse`, and keep functional validation bounded to the ZIP magic prefix instead of full buffering.
+- Prevention: when an export already materializes a complete file on disk, prefer `BinaryFileResponse` to custom streaming closures.
+
+## 2026-03-28 - API login should not expose disabled-account state
+- Symptom: `/api/login` returned `403 Account disabled.` for inactive users while invalid credentials returned `401 Invalid credentials.`, which made account-state enumeration trivial.
+- Root cause: the password login endpoint exposed a different public response for disabled accounts even though both cases represent a failed authentication from the caller's perspective.
+- Fix: `ApiLoginController` now returns the same `401 Invalid credentials.` response for invalid passwords and inactive accounts, while keeping the exact failure reason in admin audit metadata.
+- Prevention: public authentication endpoints should collapse user-facing failure messages unless exposing account state is an explicit product requirement.
+
+## 2026-03-28 - Session target-path redirects need the same safe-path guard as return_to
+- Symptom: `LoginFormAuthenticator` redirected directly to the target path stored in the session after authentication success.
+- Root cause: post-login redirects reused Symfony's stored target path without passing it through the app's `SafeReturnPathResolver`, unlike the rest of the UI flows that already validate `return_to`.
+- Fix: `LoginFormAuthenticator` now resolves the stored target path through `SafeReturnPathResolver` and falls back to the receipt list when the stored value is malformed or external.
+- Prevention: any session-backed post-auth redirect should be treated like a `return_to` parameter and validated through the same safe-path guard.
+
+## 2026-03-28 - Admin diagnostics are more usable when correlation ids are visible in the UI
+- Symptom: support could retrieve `X-Correlation-Id` from responses, but the useful request id still stayed hidden from the normal admin browsing flow where incidents are actually triaged.
+- Root cause: observability metadata existed in headers and audit storage, but admin pages did not surface it inline where operators needed a quick breadcrumb into logs and audit trails.
+- Fix: the admin shell now shows the current request correlation id with a direct audit shortcut, and import detail pages add owner-focused diagnostics and investigation links.
+- Prevention: when a correlation id is central to incident follow-up, surface it on operator-facing admin screens instead of assuming browser headers or logs are close enough.

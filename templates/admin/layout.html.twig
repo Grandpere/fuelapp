@@ -220,6 +220,16 @@
             align-items: center;
         }
 
+        .admin-request-correlation {
+            display: grid;
+            gap: 0.45rem;
+            padding: 0.85rem 1rem;
+        }
+
+        .admin-request-correlation code {
+            word-break: break-all;
+        }
+
         .admin-filter-grid-4,
         .admin-filter-grid-5 {
             display: grid;
@@ -371,6 +381,21 @@
         </aside>
 
         <main class="admin-main">
+            {% set requestCorrelationId = app.request.attributes.get('_correlation_id') %}
+            {% if requestCorrelationId %}
+                <section class="card card-subtle admin-request-correlation">
+                    <div class="admin-page-head">
+                        <div class="admin-page-header">
+                            <strong>Request correlation</strong>
+                            <p class="muted compact-note">Keep this id when a support action or rendering issue needs log or audit follow-up.</p>
+                        </div>
+                        <div class="admin-page-actions">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list', {correlationId: requestCorrelationId}) }}">Audit trail</a>
+                        </div>
+                    </div>
+                    <code>{{ requestCorrelationId }}</code>
+                </section>
+            {% endif %}
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
                     <div class="flash{{ label == 'error' ? ' flash-error' : '' }}">

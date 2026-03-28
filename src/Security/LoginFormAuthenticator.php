@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,8 +35,10 @@ final class LoginFormAuthenticator extends AbstractAuthenticator implements Auth
 
     public const LOGIN_ROUTE = 'ui_login';
 
-    public function __construct(private readonly UrlGeneratorInterface $urlGenerator)
-    {
+    public function __construct(
+        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
+    ) {
     }
 
     public function supports(Request $request): bool
@@ -65,7 +68,12 @@ final class LoginFormAuthenticator extends AbstractAuthenticator implements Auth
     {
         $targetPath = $this->getTargetPath($request->getSession(), $firewallName);
         if (null !== $targetPath) {
-            return new RedirectResponse($targetPath);
+            return new RedirectResponse(
+                $this->safeReturnPathResolver->resolve(
+                    $targetPath,
+                    $this->urlGenerator->generate('ui_receipt_index'),
+                ),
+            );
         }
 
         return new RedirectResponse($this->urlGenerator->generate('ui_receipt_index'));

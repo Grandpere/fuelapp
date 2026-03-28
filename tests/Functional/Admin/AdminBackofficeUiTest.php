@@ -263,6 +263,8 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $usersResponse->getStatusCode());
         self::assertStringContainsString('Users', (string) $usersResponse->getContent());
         self::assertStringContainsString('ui.owner@example.com', (string) $usersResponse->getContent());
+        self::assertStringContainsString('Needs attention now', (string) $usersResponse->getContent());
+        self::assertStringContainsString('Missing identities', (string) $usersResponse->getContent());
 
         $identitiesResponse = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $identitiesResponse->getStatusCode());
@@ -518,9 +520,14 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $listResponse = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
-        self::assertStringContainsString('ui.managed.user@example.com', (string) $listResponse->getContent());
+        $listContent = (string) $listResponse->getContent();
+        self::assertStringContainsString('ui.managed.user@example.com', $listContent);
+        self::assertStringContainsString('Inactive accounts', $listContent);
+        self::assertStringContainsString('Identities', $listContent);
+        self::assertStringContainsString('Security', $listContent);
+        self::assertStringContainsString('Audit', $listContent);
 
-        $activeToken = $this->extractToggleActiveCsrf((string) $listResponse->getContent(), $managedId);
+        $activeToken = $this->extractToggleActiveCsrf($listContent, $managedId);
         $deactivateResponse = $this->request(
             'POST',
             '/ui/admin/users/'.$managedId.'/toggle-active',
@@ -533,6 +540,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $afterDeactivate = $this->request('GET', '/ui/admin/users?is_active=0', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDeactivate->getStatusCode());
         self::assertStringContainsString('inactive', (string) $afterDeactivate->getContent());
+        self::assertStringContainsString('Active filters', (string) $afterDeactivate->getContent());
 
         $reactivateToken = $this->extractToggleActiveCsrf((string) $afterDeactivate->getContent(), $managedId);
         $reactivateResponse = $this->request(
@@ -559,6 +567,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $onlyAdmins = $this->request('GET', '/ui/admin/users?role=admin', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $onlyAdmins->getStatusCode());
         self::assertStringContainsString('ui.managed.user@example.com', (string) $onlyAdmins->getContent());
+        self::assertStringContainsString('Active filters', (string) $onlyAdmins->getContent());
 
         $toggleVerificationToken = $this->extractToggleVerificationCsrf((string) $adminList->getContent(), $managedId);
         $verifyResponse = $this->request(

@@ -19,8 +19,8 @@
 # TODO - SP32-002 Admin user/account support pass
 
 ## Plan
-- [pending] Review the admin user management list for the most repetitive support actions and missing account-state context.
-- [pending] Add the highest-value support shortcuts and clearer account-state signals while keeping the UI compact.
-- [pending] Update admin/API functional coverage for the touched account support contract.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Review the admin user management list for the most repetitive support actions and missing account-state context.
+- [completed] Add the highest-value support shortcuts and clearer account-state signals while keeping the UI compact.
+- [completed] Update admin/API functional coverage for the touched account support contract.
+- [completed] Run targeted syntax/Twig validation for the touched account-support flow.
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 32 after the three commits.

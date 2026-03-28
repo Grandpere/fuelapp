@@ -1542,9 +1542,12 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
         self::assertStringContainsString('Garage Admin Vehicle', $listContent);
+        self::assertStringContainsString('Queue shortcuts', $listContent);
+        self::assertStringContainsString('Signal', $listContent);
         self::assertStringContainsString('1 receipt', $listContent);
         self::assertStringContainsString('1 event', $listContent);
         self::assertStringContainsString('1 due reminder', $listContent);
+        self::assertStringContainsString('Due maintenance needs review', $listContent);
         self::assertStringContainsString('Receipts', $listContent);
         self::assertStringContainsString('Maintenance', $listContent);
 
@@ -1669,7 +1672,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
         self::assertStringContainsString('Garage Support Station', $listContent);
+        self::assertStringContainsString('Queue shortcuts', $listContent);
+        self::assertStringContainsString('Signal', $listContent);
         self::assertStringContainsString('1 receipt', $listContent);
+        self::assertStringContainsString('Geocoding', $listContent);
         self::assertStringContainsString('Receipts', $listContent);
 
         $detailResponse = $this->request('GET', '/ui/admin/stations/'.$stationId, [], [], $sessionCookie);

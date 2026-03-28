@@ -28,10 +28,10 @@
 # TODO - SP36-001 Admin vehicle and station queue polish
 
 ## Plan
-- [pending] Review the vehicle and station queues for the strongest remaining support friction.
-- [pending] Improve queue scanability and filters with minimal UI churn.
-- [pending] Update admin functional coverage for the touched queues.
-- [pending] Run targeted syntax/Twig validation for the touched queue flow.
+- [completed] Review the vehicle and station queues for the strongest remaining support friction.
+- [completed] Improve queue scanability and filters with minimal UI churn.
+- [completed] Update admin functional coverage for the touched queues.
+- [completed] Run targeted syntax/Twig validation for the touched queue flow.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
 
 # TODO - SP36-002 Admin dashboard support signal expansion

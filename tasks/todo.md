@@ -1,10 +1,10 @@
 # TODO - SP31-003 Admin shell polish
 
 ## Plan
-- [pending] Review the remaining admin shell friction around width, headers, and repeated action placement.
-- [pending] Apply the smallest layout and shell changes that materially improve support comfort.
-- [pending] Update admin functional coverage only where the shell contract changes.
-- [pending] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
+- [completed] Review the remaining admin shell friction around width, headers, and repeated action placement.
+- [completed] Apply the smallest layout and shell changes that materially improve support comfort.
+- [completed] Update admin functional coverage only where the shell contract changes.
+- [completed] Run non-functional quality gates (`phpstan`, `unit`, `integration`, `cs-fixer-check`).
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 31 after the three commits.
 
 # TODO - SP31-001 Admin maintenance actionability pass

@@ -296,6 +296,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $importsContent = (string) $importsResponse->getContent();
         self::assertStringContainsString('data-admin-sidebar-toggle', $importsContent);
         self::assertStringContainsString('aria-label="Hide admin menu"', $importsContent);
+        self::assertStringContainsString('admin-sidebar-collapsed-rail', $importsContent);
         self::assertStringContainsString('ui-import.pdf', $importsContent);
         self::assertStringContainsString('needs_review', $importsContent);
         self::assertStringContainsString('data-controller="row-link"', $importsContent);

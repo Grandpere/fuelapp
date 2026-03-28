@@ -305,9 +305,11 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('ui-import.pdf', $importsContent);
         self::assertStringContainsString('needs_review', $importsContent);
         self::assertStringContainsString('data-controller="row-link"', $importsContent);
-        self::assertStringContainsString('Follow up now', $importsContent);
+        self::assertStringContainsString('Queue decision speed', $importsContent);
         self::assertStringContainsString('Review next pending', $importsContent);
         self::assertStringContainsString('Manual review needed', $importsContent);
+        self::assertStringContainsString('Cause:', $importsContent);
+        self::assertStringContainsString('Next:', $importsContent);
         self::assertStringContainsString('Active filters', $importsContent);
         self::assertStringContainsString('Status: needs_review', $importsContent);
 

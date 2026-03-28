@@ -10,16 +10,16 @@
 # TODO - SP34-002 Admin import queue decision speed
 
 ## Plan
-- [in_progress] Review the admin import queue for the slowest decision points around status, probable cause, and next action.
-- [pending] Improve queue scanability and next-step cues without bloating the list.
-- [pending] Update admin functional coverage for the touched import queue contract.
-- [pending] Run targeted syntax/Twig validation for the touched import queue flow.
+- [completed] Review the admin import queue for the slowest decision points around status, probable cause, and next action.
+- [completed] Improve queue scanability and next-step cues without bloating the list.
+- [completed] Update admin functional coverage for the touched import queue contract.
+- [completed] Run targeted syntax/Twig validation for the touched import queue flow.
 - [pending] Batch user-run `make phpunit-functional` at the end of Sprint 34 after the three commits.
 
 # TODO - SP34-003 Admin support hub consolidation
 
 ## Plan
-- [pending] Review the admin dashboard and top-level support entry points for missing links to the new admin tooling.
+- [in_progress] Review the admin dashboard and top-level support entry points for missing links to the new admin tooling.
 - [pending] Consolidate the support hub so the right queues and investigation shortcuts are easier to reach from one place.
 - [pending] Update admin functional coverage for the touched dashboard/support-hub contract.
 - [pending] Run targeted syntax/Twig validation for the touched support-hub flow.

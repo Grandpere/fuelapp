@@ -400,6 +400,15 @@ final class AdminBackofficeUiTest extends WebTestCase
         $afterDelete = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
         self::assertStringNotContainsString('BO-200-BB', (string) $afterDelete->getContent());
+
+        $audit = $this->em->getRepository(AdminAuditLogEntity::class)->findOneBy(['action' => 'admin.vehicle.deleted.ui']);
+        self::assertInstanceOf(AdminAuditLogEntity::class, $audit);
+        self::assertSame($vehicleId, $audit->getTargetId());
+        self::assertSame('vehicle', $audit->getTargetType());
+        $diffSummary = $audit->getDiffSummary();
+        self::assertIsArray($diffSummary['before'] ?? null);
+        self::assertSame('Backoffice Vehicle Updated', $diffSummary['before']['name'] ?? null);
+        self::assertSame('BO-200-BB', $diffSummary['before']['plateNumber'] ?? null);
     }
 
     public function testAdminMaintenanceEventDetailKeepsFilteredReturnContext(): void

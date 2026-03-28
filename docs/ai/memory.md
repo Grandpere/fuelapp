@@ -225,6 +225,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: propagate `email_verified` through the OIDC claim flow and refuse email-based linking to existing local users unless the claim is explicitly verified.
 - Prevention: for OIDC/SAML-style identity linking, never treat a bare email claim as proof of account ownership; require the provider's verified-email signal (or equivalent trusted identity proof) before attaching to an existing local account.
 
+## 2026-03-28 - Admin UI destructive actions must keep audit parity with admin API
+- Symptom: deleting a vehicle from the admin web UI left no audit trail, while the admin API delete path did.
+- Root cause: the web controller deleted directly and flashed success without recording the same before-state metadata captured in the API processor.
+- Fix: record `admin.vehicle.deleted.ui` with the key vehicle snapshot before deletion and cover it in the existing functional delete test.
+- Prevention: whenever an admin action exists in both UI and API channels, verify that destructive operations keep the same audit semantics in both paths.
+
 ## 2026-03-26 - Front receipt metadata forms must not use system-wide vehicle lists
 - Symptom: the new receipt metadata edit form exposed vehicles owned by other users in its dropdown.
 - Root cause: `VehicleRepository::all()` is system-wide and the controller reused it without explicit owner filtering.

@@ -488,6 +488,8 @@ final class AdminBackofficeUiTest extends WebTestCase
         $content = (string) $detailResponse->getContent();
         self::assertStringContainsString('Reminder Shortcut Vehicle', $content);
         self::assertStringContainsString('/ui/admin/vehicles/'.$vehicle->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('/ui/admin/receipts?vehicle_id='.$vehicle->getId()->toRfc4122(), $content);
+        self::assertStringContainsString('/ui/admin/maintenance/reminders?vehicle_id='.$vehicle->getId()->toRfc4122(), $content);
         self::assertStringContainsString('/ui/admin/maintenance/events?vehicle_id='.$vehicle->getId()->toRfc4122(), $content);
     }
 
@@ -1097,17 +1099,27 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $afterStationDelete->getStatusCode());
         self::assertStringNotContainsString('Updated Station', (string) $afterStationDelete->getContent());
 
-        $eventShow = $this->request('GET', '/ui/admin/maintenance/events/'.$eventId, [], [], $sessionCookie);
+        $eventReturnTo = '/ui/admin/maintenance/events?vehicle_id='.$vehicleId.'&event_type='.MaintenanceEventType::SERVICE->value;
+        $eventShow = $this->request('GET', '/ui/admin/maintenance/events/'.$eventId.'?return_to='.rawurlencode($eventReturnTo), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $eventShow->getStatusCode());
-        self::assertStringContainsString('Initial maintenance event', (string) $eventShow->getContent());
+        $eventShowContent = (string) $eventShow->getContent();
+        self::assertStringContainsString('Initial maintenance event', $eventShowContent);
+        self::assertStringContainsString('/ui/admin/vehicles/'.$vehicleId, $eventShowContent);
+        self::assertStringContainsString('/ui/admin/receipts?vehicle_id='.$vehicleId, $eventShowContent);
+        self::assertStringContainsString('/ui/admin/maintenance/reminders?vehicle_id='.$vehicleId, $eventShowContent);
+        self::assertStringContainsString('/ui/admin/maintenance/events?vehicle_id='.$vehicleId, $eventShowContent);
+        self::assertStringContainsString('return_to=', $eventShowContent);
 
-        $eventEditPage = $this->request('GET', '/ui/admin/maintenance/events/'.$eventId.'/edit', [], [], $sessionCookie);
+        $eventEditPage = $this->request('GET', '/ui/admin/maintenance/events/'.$eventId.'/edit?return_to='.rawurlencode($eventReturnTo), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $eventEditPage->getStatusCode());
-        $eventEditCsrf = $this->extractFormCsrf((string) $eventEditPage->getContent());
+        $eventEditContent = (string) $eventEditPage->getContent();
+        self::assertStringContainsString('name="_return_to" value="'.$eventReturnTo.'"', $eventEditContent);
+        self::assertStringContainsString('href="'.$eventReturnTo.'"', $eventEditContent);
+        $eventEditCsrf = $this->extractFormCsrf($eventEditContent);
 
         $eventEditResponse = $this->request(
             'POST',
-            '/ui/admin/maintenance/events/'.$eventId.'/edit',
+            '/ui/admin/maintenance/events/'.$eventId.'/edit?return_to='.rawurlencode($eventReturnTo),
             [
                 'vehicleId' => $vehicleId,
                 'eventType' => MaintenanceEventType::SERVICE->value,
@@ -1117,11 +1129,13 @@ final class AdminBackofficeUiTest extends WebTestCase
                 'totalCostCents' => '25000',
                 'currencyCode' => 'EUR',
                 '_token' => $eventEditCsrf,
+                '_return_to' => $eventReturnTo,
             ],
             [],
             $sessionCookie,
         );
         self::assertSame(Response::HTTP_SEE_OTHER, $eventEditResponse->getStatusCode());
+        self::assertSame($eventReturnTo, $eventEditResponse->headers->get('Location'));
 
         $eventList = $this->request('GET', '/ui/admin/maintenance/events', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $eventList->getStatusCode());

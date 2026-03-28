@@ -5,8 +5,6 @@
 {% set admin_section = 'maintenance_events' %}
 
 {% block admin_content %}
-    {% set requestedReturnTo = app.request.query.get('return_to') %}
-    {% set backToListUrl = requestedReturnTo is not empty and requestedReturnTo starts with('/') and not (requestedReturnTo starts with('//')) ? requestedReturnTo : path('ui_admin_maintenance_event_list') %}
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
@@ -14,7 +12,7 @@
                 <p class="muted">Back-office detail view with direct mutation actions.</p>
             </div>
             <div class="admin-page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString}) }}">Edit event</a>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString, return_to: app.request.requestUri}) }}">Edit event</a>
                 <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" onsubmit="return confirm('Delete this maintenance event?');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.id.toString) }}">
                     <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
@@ -30,7 +28,14 @@
             <dt class="admin-dt">Owner ID</dt>
             <dd class="admin-dd">{{ event.ownerId }}</dd>
             <dt class="admin-dt">Vehicle ID</dt>
-            <dd class="admin-dd">{{ event.vehicleId }}</dd>
+            <dd class="admin-dd">
+                {% if vehicle %}
+                    <a href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">{{ vehicle.name() }}</a>
+                    <span class="muted compact-note">({{ event.vehicleId }})</span>
+                {% else %}
+                    {{ event.vehicleId }}
+                {% endif %}
+            </dd>
             <dt class="admin-dt">Type</dt>
             <dd class="admin-dd">{{ event.eventType.value }}</dd>
             <dt class="admin-dt">Occurred at</dt>
@@ -54,6 +59,12 @@
         </dl>
 
         <div class="admin-page-actions admin-detail-stack">
+            {% if vehicle %}
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">Open vehicle</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: vehicle.id().toString()}) }}">Open vehicle receipts</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: vehicle.id().toString()}) }}">Open vehicle reminders</a>
+            {% endif %}
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: event.vehicleId}) }}">Open vehicle events</a>
             <a class="btn btn-secondary" href="/api/admin/maintenance/events/{{ event.id.toString }}">Open API resource</a>
         </div>
     </section>

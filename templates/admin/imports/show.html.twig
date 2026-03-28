@@ -164,11 +164,11 @@
             <p class="muted">This import already created a receipt. Jump straight to the resulting receipt from here.</p>
             <div class="actions-wrap">
                 {% if resolvedFinalizedReceiptId is not null %}
-                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_receipt_show', {id: resolvedFinalizedReceiptId}) }}" data-turbo-frame="_top">Open created receipt</a>
+                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_receipt_show', {id: resolvedFinalizedReceiptId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">Open created receipt</a>
                 {% else %}
                     <span class="muted compact-note">The linked receipt is no longer available.</span>
                 {% endif %}
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}" data-turbo-frame="_top">Back to receipts</a>
+                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to queue</a>
             </div>
         </section>
     {% elseif job.status.value == 'duplicate' %}
@@ -177,13 +177,13 @@
             <p class="muted">This job matches an existing receipt or previously uploaded import. Open the existing record directly from here.</p>
             <div class="actions-wrap">
                 {% if resolvedDuplicateReceiptId is not null %}
-                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_receipt_show', {id: resolvedDuplicateReceiptId}) }}" data-turbo-frame="_top">Open existing receipt</a>
+                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_receipt_show', {id: resolvedDuplicateReceiptId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">Open existing receipt</a>
                 {% elseif resolvedDuplicateOriginalImportId is not null %}
-                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_import_job_show', {id: resolvedDuplicateOriginalImportId, return_to: backToListUrl}) }}" data-turbo-frame="_top">Open original import</a>
+                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_import_job_show', {id: resolvedDuplicateOriginalImportId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">Open original import</a>
                 {% else %}
                     <span class="muted compact-note">The linked receipt or original import is no longer available.</span>
                 {% endif %}
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list') }}" data-turbo-frame="_top">Back to imports</a>
+                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to queue</a>
             </div>
         </section>
     {% endif %}

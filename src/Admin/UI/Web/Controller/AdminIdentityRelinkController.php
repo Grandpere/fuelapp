@@ -42,6 +42,8 @@ final class AdminIdentityRelinkController extends AbstractController
             throw new NotFoundHttpException();
         }
 
+        $redirectTo = $this->resolveRedirect($request->request->get('_redirect'));
+
         $identity = $this->identityManager->getIdentity($id);
         if (!$identity instanceof AdminIdentityRecord) {
             throw new NotFoundHttpException();
@@ -56,7 +58,7 @@ final class AdminIdentityRelinkController extends AbstractController
         if (!is_scalar($targetUserId) || !Uuid::isValid((string) $targetUserId)) {
             $this->addFlash('error', 'Invalid target user id.');
 
-            return new RedirectResponse($this->generateUrl('ui_admin_identity_list'), Response::HTTP_SEE_OTHER);
+            return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
         }
 
         $before = $this->snapshot($identity);
@@ -66,7 +68,7 @@ final class AdminIdentityRelinkController extends AbstractController
         } catch (LogicException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return new RedirectResponse($this->generateUrl('ui_admin_identity_list'), Response::HTTP_SEE_OTHER);
+            return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
         }
 
         $after = $this->snapshot($updated);
@@ -83,7 +85,19 @@ final class AdminIdentityRelinkController extends AbstractController
 
         $this->addFlash('success', sprintf('Identity %s has been linked to %s.', $updated->provider, $updated->userEmail));
 
-        return new RedirectResponse($this->generateUrl('ui_admin_identity_list'), Response::HTTP_SEE_OTHER);
+        return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
+    }
+
+    private function resolveRedirect(mixed $candidate): string
+    {
+        if (is_scalar($candidate)) {
+            $value = trim((string) $candidate);
+            if ('' !== $value && str_starts_with($value, '/') && !str_starts_with($value, '//')) {
+                return $value;
+            }
+        }
+
+        return $this->generateUrl('ui_admin_identity_list');
     }
 
     /** @return array<string, mixed> */

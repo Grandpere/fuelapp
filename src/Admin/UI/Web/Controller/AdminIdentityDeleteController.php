@@ -42,6 +42,8 @@ final class AdminIdentityDeleteController extends AbstractController
             throw new NotFoundHttpException();
         }
 
+        $redirectTo = $this->resolveRedirect($request->request->get('_redirect'));
+
         $identity = $this->identityManager->getIdentity($id);
         if (!$identity instanceof AdminIdentityRecord) {
             throw new NotFoundHttpException();
@@ -65,7 +67,7 @@ final class AdminIdentityDeleteController extends AbstractController
         } catch (LogicException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return new RedirectResponse($this->generateUrl('ui_admin_identity_list'), Response::HTTP_SEE_OTHER);
+            return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
         }
 
         $this->auditTrail->record(
@@ -77,6 +79,18 @@ final class AdminIdentityDeleteController extends AbstractController
 
         $this->addFlash('success', 'Identity deleted.');
 
-        return new RedirectResponse($this->generateUrl('ui_admin_identity_list'), Response::HTTP_SEE_OTHER);
+        return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
+    }
+
+    private function resolveRedirect(mixed $candidate): string
+    {
+        if (is_scalar($candidate)) {
+            $value = trim((string) $candidate);
+            if ('' !== $value && str_starts_with($value, '/') && !str_starts_with($value, '//')) {
+                return $value;
+            }
+        }
+
+        return $this->generateUrl('ui_admin_identity_list');
     }
 }

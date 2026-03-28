@@ -659,12 +659,14 @@ final class AdminBackofficeUiTest extends WebTestCase
             '/ui/admin/identities/'.$identityId.'/relink',
             [
                 '_token' => $relinkToken,
+                '_redirect' => '/ui/admin/identities?q=ui-owner-subject-001',
                 'user_id' => $ownerBId,
             ],
             [],
             $sessionCookie,
         );
         self::assertSame(Response::HTTP_SEE_OTHER, $relinkResponse->getStatusCode());
+        self::assertSame('/ui/admin/identities?q=ui-owner-subject-001', $relinkResponse->headers->get('Location'));
 
         $afterRelink = $this->request('GET', '/ui/admin/identities?user_id='.$ownerBId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterRelink->getStatusCode());
@@ -679,11 +681,15 @@ final class AdminBackofficeUiTest extends WebTestCase
         $deleteResponse = $this->request(
             'POST',
             '/ui/admin/identities/'.$identityId.'/delete',
-            ['_token' => $deleteToken],
+            [
+                '_token' => $deleteToken,
+                '_redirect' => '/ui/admin/identities?user_id='.$ownerBId,
+            ],
             [],
             $sessionCookie,
         );
         self::assertContains($deleteResponse->getStatusCode(), [Response::HTTP_FOUND, Response::HTTP_SEE_OTHER]);
+        self::assertSame('/ui/admin/identities?user_id='.$ownerBId, $deleteResponse->headers->get('Location'));
 
         $afterDelete = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
@@ -1623,6 +1629,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Duplicate import', $detailContent);
         self::assertStringContainsString('/ui/admin/imports/'.$originalJobId, $detailContent);
         self::assertStringContainsString('Open original import', $detailContent);
+        self::assertStringContainsString('Back to queue', $detailContent);
     }
 
     public function testAdminStationListAndDetailExposeReceiptShortcuts(): void

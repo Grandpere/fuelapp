@@ -5,6 +5,7 @@
 {% set admin_section = 'identities' %}
 
 {% block admin_content %}
+    {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
             <h2 class="page-title">Identities</h2>
@@ -98,6 +99,7 @@
                             </div>
                             <form method="post" action="{{ path('ui_admin_identity_relink', {id: identity.record.id}) }}" class="admin-form-actions" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_identity_relink_' ~ identity.record.id) }}">
+                                <input type="hidden" name="_redirect" value="{{ returnTo }}">
                                 <select class="select" name="user_id">
                                     {% for user in users %}
                                         <option value="{{ user.id }}" {% if user.id == identity.record.userId %}selected{% endif %}>{{ user.email }}</option>
@@ -107,6 +109,7 @@
                             </form>
                             <form method="post" action="{{ path('ui_admin_identity_delete', {id: identity.record.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_identity_delete_' ~ identity.record.id) }}">
+                                <input type="hidden" name="_redirect" value="{{ returnTo }}">
                                 <button class="btn btn-danger btn-compact" type="submit">Delete</button>
                             </form>
                         </td>

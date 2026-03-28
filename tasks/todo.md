@@ -46,8 +46,8 @@
 # TODO - SP36-003 Admin form and detail continuity final pass
 
 ## Plan
-- [pending] Review the remaining admin detail and edit flows for continuity gaps.
-- [pending] Close the last high-value continuity gaps with minimal code churn.
-- [pending] Update admin functional coverage for the touched detail/form contract.
-- [pending] Run targeted syntax/Twig validation for the touched detail/form flow.
+- [completed] Review the remaining admin detail and edit flows for continuity gaps.
+- [completed] Close the last high-value continuity gaps with minimal code churn.
+- [completed] Update admin functional coverage for the touched detail/form contract.
+- [completed] Run targeted syntax/Twig validation for the touched detail/form flow.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.

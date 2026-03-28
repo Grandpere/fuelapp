@@ -1,10 +1,10 @@
 # TODO - SP37-001 Stability hardening pass
 
 ## Plan
-- [pending] Review the recurring technical failures and fragile validations seen in the last few sprints.
-- [pending] Apply the smallest root-cause fixes that reduce reruns and flaky support behavior.
-- [pending] Update the most relevant tests and project memory for the stabilized flows.
-- [pending] Run targeted syntax/Twig validation for the touched stability work.
+- [completed] Review the recurring technical failures and fragile validations seen in the last few sprints.
+- [completed] Apply the smallest root-cause fixes that reduce reruns and flaky support behavior.
+- [completed] Update the most relevant tests and project memory for the stabilized flows.
+- [completed] Run targeted syntax/Twig validation for the touched stability work.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
 
 # TODO - SP37-002 Security hardening pass

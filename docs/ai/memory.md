@@ -524,3 +524,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the functional test buffered the whole streamed XLSX response body in memory just to check the ZIP magic prefix, recreating the same pressure the export flow was designed to avoid.
 - Fix: stop reading the full XLSX stream in the functional test and assert the stable download contract through HTTP status and headers.
 - Prevention: for streamed binary downloads, BrowserKit-style tests should avoid full in-memory buffering unless the binary payload itself is the behavior under test.
+
+## 2026-03-28 - Temp-file XLSX exports should use BinaryFileResponse
+- Symptom: XLSX export delivery stayed more fragile than necessary because the controller created a temp file, then manually streamed it with an echo loop anyway.
+- Root cause: the response layer did not reuse Symfony's normal binary-file delivery even though the XLSX artifact already existed on disk.
+- Fix: generate the XLSX into a temp file, return a `BinaryFileResponse`, and keep functional validation bounded to the ZIP magic prefix instead of full buffering.
+- Prevention: when an export already materializes a complete file on disk, prefer `BinaryFileResponse` to custom streaming closures.

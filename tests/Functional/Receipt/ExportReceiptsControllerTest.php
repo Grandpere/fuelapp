@@ -25,6 +25,7 @@ use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
@@ -140,6 +141,7 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         );
         self::assertStringContainsString('.xlsx', (string) $response->headers->get('Content-Disposition'));
         self::assertStringContainsString('receipts-export-2026-02-01-to-2026-02-28-', (string) $response->headers->get('Content-Disposition'));
+        self::assertSame("PK\x03\x04", $this->responsePrefix($response, 4));
     }
 
     public function testCsvExportTotalsMatchAnalyticsCostKpiForSameFilters(): void
@@ -282,6 +284,38 @@ final class ExportReceiptsControllerTest extends KernelTestCase
         }
 
         return (string) $response->getContent();
+    }
+
+    private function responsePrefix(Response $response, int $length): string
+    {
+        if ($response instanceof BinaryFileResponse) {
+            $file = $response->getFile();
+            $handle = fopen($file->getPathname(), 'rb');
+            if (false === $handle) {
+                throw new RuntimeException('Cannot read binary response file.');
+            }
+
+            try {
+                $prefix = fread($handle, $length);
+                if (false === $prefix) {
+                    throw new RuntimeException('Cannot read binary response prefix.');
+                }
+
+                return $prefix;
+            } finally {
+                fclose($handle);
+            }
+        }
+
+        if ($response instanceof StreamedResponse) {
+            ob_start();
+            $response->sendContent();
+            $content = (string) ob_get_clean();
+
+            return substr($content, 0, $length);
+        }
+
+        return substr((string) $response->getContent(), 0, $length);
     }
 
     private function apiLogin(string $email, string $password): string

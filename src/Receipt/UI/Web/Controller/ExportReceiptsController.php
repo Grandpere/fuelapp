@@ -20,6 +20,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -298,7 +299,7 @@ final class ExportReceiptsController extends AbstractController
         ?int $unitPriceDeciCentsPerLiterMax,
         ?int $vatRatePercent,
     ): Response {
-        $response = new StreamedResponse(function () use (
+        $tempFile = $this->buildXlsxTempFile(
             $metadataRows,
             $columns,
             $vehicleId,
@@ -313,89 +314,100 @@ final class ExportReceiptsController extends AbstractController
             $unitPriceDeciCentsPerLiterMin,
             $unitPriceDeciCentsPerLiterMax,
             $vatRatePercent,
-        ): void {
-            $spreadsheet = new Spreadsheet();
-            $tempDirectory = sys_get_temp_dir();
-            $tempFile = tempnam($tempDirectory, 'fuelapp-xlsx-');
-            if (false === $tempFile) {
-                throw new RuntimeException('Cannot create temporary XLSX file.');
-            }
+        );
 
-            try {
-                $sheet = $spreadsheet->getActiveSheet();
-                $sheet->setTitle('Receipts export');
-
-                $rowIndex = 1;
-                foreach ($metadataRows as [$key, $value]) {
-                    $sheet->setCellValue(sprintf('A%d', $rowIndex), $key);
-                    $sheet->setCellValue(sprintf('B%d', $rowIndex), $value);
-                    ++$rowIndex;
-                }
-                ++$rowIndex;
-
-                $columnIndex = 1;
-                foreach ($columns as $column) {
-                    $sheet->setCellValue([$columnIndex, $rowIndex], self::COLUMN_LABELS[$column]);
-                    ++$columnIndex;
-                }
-                ++$rowIndex;
-
-                foreach ($this->iterateRowsForExport(
-                    $vehicleId,
-                    $stationId,
-                    $issuedFrom,
-                    $issuedTo,
-                    $sortBy,
-                    $sortDirection,
-                    $fuelType,
-                    $quantityMilliLitersMin,
-                    $quantityMilliLitersMax,
-                    $unitPriceDeciCentsPerLiterMin,
-                    $unitPriceDeciCentsPerLiterMax,
-                    $vatRatePercent,
-                ) as $row) {
-                    $columnIndex = 1;
-                    foreach ($columns as $column) {
-                        $sheet->setCellValue([$columnIndex, $rowIndex], $this->mapColumnValue($column, $row));
-                        ++$columnIndex;
-                    }
-                    ++$rowIndex;
-                }
-
-                $writer = new Xlsx($spreadsheet);
-                $writer->setPreCalculateFormulas(false);
-                $writer->setUseDiskCaching(true, $tempDirectory);
-                $writer->save($tempFile);
-
-                $stream = fopen($tempFile, 'rb');
-                if (false === $stream) {
-                    throw new RuntimeException('Cannot read temporary XLSX file.');
-                }
-
-                while (!feof($stream)) {
-                    $chunk = fread($stream, 8192);
-                    if (false === $chunk) {
-                        break;
-                    }
-
-                    echo $chunk;
-                }
-
-                fclose($stream);
-            } finally {
-                $spreadsheet->disconnectWorksheets();
-                unset($spreadsheet);
-
-                if (is_file($tempFile)) {
-                    @unlink($tempFile);
-                }
-            }
-        });
-
+        $response = new BinaryFileResponse($tempFile);
+        $response->deleteFileAfterSend(true);
         $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
 
         return $response;
+    }
+
+    /**
+     * @param list<array{0:string,1:string}> $metadataRows
+     * @param list<string>                   $columns
+     */
+    private function buildXlsxTempFile(
+        array $metadataRows,
+        array $columns,
+        ?string $vehicleId,
+        ?string $stationId,
+        ?DateTimeImmutable $issuedFrom,
+        ?DateTimeImmutable $issuedTo,
+        string $sortBy,
+        string $sortDirection,
+        ?string $fuelType,
+        ?int $quantityMilliLitersMin,
+        ?int $quantityMilliLitersMax,
+        ?int $unitPriceDeciCentsPerLiterMin,
+        ?int $unitPriceDeciCentsPerLiterMax,
+        ?int $vatRatePercent,
+    ): string {
+        $spreadsheet = new Spreadsheet();
+        $tempDirectory = sys_get_temp_dir();
+        $tempFile = tempnam($tempDirectory, 'fuelapp-xlsx-');
+        if (false === $tempFile) {
+            throw new RuntimeException('Cannot create temporary XLSX file.');
+        }
+
+        try {
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Receipts export');
+
+            $rowIndex = 1;
+            foreach ($metadataRows as [$key, $value]) {
+                $sheet->setCellValue(sprintf('A%d', $rowIndex), $key);
+                $sheet->setCellValue(sprintf('B%d', $rowIndex), $value);
+                ++$rowIndex;
+            }
+            ++$rowIndex;
+
+            $columnIndex = 1;
+            foreach ($columns as $column) {
+                $sheet->setCellValue([$columnIndex, $rowIndex], self::COLUMN_LABELS[$column]);
+                ++$columnIndex;
+            }
+            ++$rowIndex;
+
+            foreach ($this->iterateRowsForExport(
+                $vehicleId,
+                $stationId,
+                $issuedFrom,
+                $issuedTo,
+                $sortBy,
+                $sortDirection,
+                $fuelType,
+                $quantityMilliLitersMin,
+                $quantityMilliLitersMax,
+                $unitPriceDeciCentsPerLiterMin,
+                $unitPriceDeciCentsPerLiterMax,
+                $vatRatePercent,
+            ) as $row) {
+                $columnIndex = 1;
+                foreach ($columns as $column) {
+                    $sheet->setCellValue([$columnIndex, $rowIndex], $this->mapColumnValue($column, $row));
+                    ++$columnIndex;
+                }
+                ++$rowIndex;
+            }
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->setPreCalculateFormulas(false);
+            $writer->setUseDiskCaching(true, $tempDirectory);
+            $writer->save($tempFile);
+        } catch (\Throwable $throwable) {
+            if (is_file($tempFile)) {
+                @unlink($tempFile);
+            }
+
+            throw $throwable;
+        } finally {
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+        }
+
+        return $tempFile;
     }
 
     /**

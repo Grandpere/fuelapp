@@ -13,8 +13,10 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\User\AdminUserManager;
 use App\Maintenance\Application\Repository\MaintenanceReminderRepository;
 use App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository;
+use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,10 +24,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use ValueError;
 
 final class AdminMaintenanceReminderListController extends AbstractController
 {
     public function __construct(
+        private readonly AdminUserManager $userManager,
         private readonly MaintenanceReminderRepository $reminderRepository,
         private readonly MaintenanceReminderRuleRepository $ruleRepository,
         private readonly VehicleRepository $vehicleRepository,
@@ -38,8 +42,17 @@ final class AdminMaintenanceReminderListController extends AbstractController
         $ownerId = $this->readUuidFilter($request, 'owner_id');
         $vehicleId = $this->readUuidFilter($request, 'vehicle_id');
         $dueBy = $this->readDueByFilter($request, 'due_by');
+        $eventType = $this->readEventTypeFilter($request, 'event_type');
         $dueFrom = $this->readDateFilter($request, 'due_from');
         $dueTo = $this->readDateFilter($request, 'due_to');
+
+        $ruleSummaries = [];
+        foreach ($this->ruleRepository->allForSystem() as $rule) {
+            $ruleSummaries[$rule->id()->toString()] = [
+                'name' => $rule->name(),
+                'eventType' => $rule->eventType()?->value,
+            ];
+        }
 
         $reminders = [];
         $metrics = [
@@ -57,6 +70,10 @@ final class AdminMaintenanceReminderListController extends AbstractController
             if (null !== $dueBy && !$this->matchesDueBy($reminder->dueByDate(), $reminder->dueByOdometer(), $dueBy)) {
                 continue;
             }
+            $ruleSummary = $ruleSummaries[$reminder->ruleId()] ?? null;
+            if (null !== $eventType && ($ruleSummary['eventType'] ?? null) !== $eventType->value) {
+                continue;
+            }
             if (!$this->matchesDateWindow($reminder->dueAtDate(), $dueFrom, $dueTo)) {
                 continue;
             }
@@ -72,38 +89,36 @@ final class AdminMaintenanceReminderListController extends AbstractController
             ];
         }
 
-        $ruleSummaries = [];
-        foreach ($this->ruleRepository->allForSystem() as $rule) {
-            $ruleSummaries[$rule->id()->toString()] = [
-                'name' => $rule->name(),
-                'eventType' => $rule->eventType()?->value,
-            ];
-        }
-
         return $this->render('admin/maintenance/reminders/index.html.twig', [
             'reminders' => $reminders,
             'ruleSummaries' => $ruleSummaries,
             'metrics' => $metrics,
+            'contextVehicle' => null !== $vehicleId ? $this->vehicleRepository->get($vehicleId) : null,
+            'ownerOptions' => $this->buildOwnerOptions(),
+            'vehicleOptions' => $this->buildVehicleOptions(),
             'filters' => [
                 'ownerId' => $ownerId,
                 'vehicleId' => $vehicleId,
                 'dueBy' => $dueBy,
+                'eventType' => $eventType?->value,
                 'dueFrom' => $dueFrom?->format('Y-m-d'),
                 'dueTo' => $dueTo?->format('Y-m-d'),
             ],
-            'activeFilterSummary' => $this->buildActiveFilterSummary($ownerId, $vehicleId, $dueBy, $dueFrom, $dueTo),
+            'activeFilterSummary' => $this->buildActiveFilterSummary($ownerId, $vehicleId, $dueBy, $eventType, $dueFrom, $dueTo),
+            'eventTypeOptions' => array_map(static fn (MaintenanceEventType $type): string => $type->value, MaintenanceEventType::cases()),
         ]);
     }
 
     /**
      * @return list<array{label:string,value:string}>
      */
-    private function buildActiveFilterSummary(?string $ownerId, ?string $vehicleId, ?string $dueBy, ?DateTimeImmutable $dueFrom, ?DateTimeImmutable $dueTo): array
+    private function buildActiveFilterSummary(?string $ownerId, ?string $vehicleId, ?string $dueBy, ?MaintenanceEventType $eventType, ?DateTimeImmutable $dueFrom, ?DateTimeImmutable $dueTo): array
     {
         $summary = [];
 
         if (null !== $ownerId) {
-            $summary[] = ['label' => 'Owner', 'value' => $ownerId];
+            $user = $this->userManager->getUser($ownerId);
+            $summary[] = ['label' => 'Owner', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $ownerId) : $ownerId];
         }
 
         if (null !== $vehicleId) {
@@ -116,6 +131,10 @@ final class AdminMaintenanceReminderListController extends AbstractController
 
         if (null !== $dueBy) {
             $summary[] = ['label' => 'Due by', 'value' => $dueBy];
+        }
+
+        if (null !== $eventType) {
+            $summary[] = ['label' => 'Event type', 'value' => $eventType->value];
         }
 
         if (null !== $dueFrom) {
@@ -193,6 +212,25 @@ final class AdminMaintenanceReminderListController extends AbstractController
         return in_array($trimmed, ['date', 'odometer', 'both'], true) ? $trimmed : null;
     }
 
+    private function readEventTypeFilter(Request $request, string $name): ?MaintenanceEventType
+    {
+        $value = $request->query->get($name);
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $trimmed = trim((string) $value);
+        if ('' === $trimmed) {
+            return null;
+        }
+
+        try {
+            return MaintenanceEventType::from($trimmed);
+        } catch (ValueError) {
+            return null;
+        }
+    }
+
     private function readDateFilter(Request $request, string $name): ?DateTimeImmutable
     {
         $value = $request->query->get($name);
@@ -208,5 +246,45 @@ final class AdminMaintenanceReminderListController extends AbstractController
         $parsed = DateTimeImmutable::createFromFormat('Y-m-d', $trimmed);
 
         return false === $parsed ? null : $parsed;
+    }
+
+    /**
+     * @return list<array{id:string,label:string}>
+     */
+    private function buildOwnerOptions(): array
+    {
+        $options = [];
+        foreach ($this->userManager->listUsers() as $user) {
+            $options[] = [
+                'id' => $user->id,
+                'label' => $user->email,
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return list<array{id:string,label:string}>
+     */
+    private function buildVehicleOptions(): array
+    {
+        $options = [];
+        foreach ($this->vehicleRepository->all() as $vehicle) {
+            $label = $vehicle->name();
+            $plateNumber = trim($vehicle->plateNumber());
+            if ('' !== $plateNumber) {
+                $label .= sprintf(' (%s)', $plateNumber);
+            }
+
+            $options[] = [
+                'id' => $vehicle->id()->toString(),
+                'label' => $label,
+            ];
+        }
+
+        usort($options, static fn (array $left, array $right): int => $left['label'] <=> $right['label']);
+
+        return $options;
     }
 }

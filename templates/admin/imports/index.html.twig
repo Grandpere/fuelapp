@@ -57,7 +57,8 @@
 
         {% if followUpShortcuts is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
-                <p class="text-block-title">Follow up now</p>
+                <p class="text-block-title">Queue decision speed</p>
+                <p class="muted compact-note">Jump straight to the next review, failure, created receipt, or duplicate dossier instead of scanning the whole table first.</p>
                 <div class="actions-wrap">
                     {% for shortcut in followUpShortcuts %}
                         <a class="btn {{ shortcut.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ shortcut.url }}">
@@ -87,8 +88,13 @@
                     <input class="input" type="text" name="source" value="{{ filters.source ?? '' }}" placeholder="local">
                 </label>
                 <label class="label">
-                    Owner ID
-                    <input class="input" type="text" name="ownerId" value="{{ filters.ownerId ?? '' }}" placeholder="UUID user">
+                    Owner
+                    <select name="ownerId" class="select">
+                        <option value="">All owners</option>
+                        {% for owner in ownerOptions %}
+                            <option value="{{ owner.id }}" {{ filters.ownerId == owner.id ? 'selected' : '' }}>{{ owner.label }}</option>
+                        {% endfor %}
+                    </select>
                 </label>
                 <label class="label">
                     Search (id/file/checksum)
@@ -144,6 +150,8 @@
                         <td>
                             <strong>{{ job.summary.headline }}</strong>
                             <div class="muted compact-note">{{ job.summary.detail }}</div>
+                            <div class="muted compact-note">Cause: {{ job.decision.cause }}</div>
+                            <div class="muted compact-note">Next: {{ job.decision.nextStep }}</div>
                         </td>
                         <td>{{ job.job.ownerId }}</td>
                         <td>

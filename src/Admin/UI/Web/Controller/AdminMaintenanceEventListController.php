@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\User\AdminUserManager;
 use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Vehicle\Application\Repository\VehicleRepository;
@@ -27,6 +28,7 @@ use ValueError;
 final class AdminMaintenanceEventListController extends AbstractController
 {
     public function __construct(
+        private readonly AdminUserManager $userManager,
         private readonly MaintenanceEventRepository $eventRepository,
         private readonly VehicleRepository $vehicleRepository,
     ) {
@@ -67,6 +69,8 @@ final class AdminMaintenanceEventListController extends AbstractController
 
         return $this->render('admin/maintenance/events/index.html.twig', [
             'events' => $events,
+            'ownerOptions' => $this->buildOwnerOptions(),
+            'vehicleOptions' => $this->buildVehicleOptions(),
             'filters' => [
                 'ownerId' => $ownerId,
                 'vehicleId' => $vehicleId,
@@ -87,7 +91,8 @@ final class AdminMaintenanceEventListController extends AbstractController
         $summary = [];
 
         if (null !== $ownerId) {
-            $summary[] = ['label' => 'Owner', 'value' => $ownerId];
+            $user = $this->userManager->getUser($ownerId);
+            $summary[] = ['label' => 'Owner', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $ownerId) : $ownerId];
         }
 
         if (null !== $vehicleId) {
@@ -162,5 +167,45 @@ final class AdminMaintenanceEventListController extends AbstractController
         $parsed = DateTimeImmutable::createFromFormat('Y-m-d', $trimmed);
 
         return false === $parsed ? null : $parsed;
+    }
+
+    /**
+     * @return list<array{id:string,label:string}>
+     */
+    private function buildOwnerOptions(): array
+    {
+        $options = [];
+        foreach ($this->userManager->listUsers() as $user) {
+            $options[] = [
+                'id' => $user->id,
+                'label' => $user->email,
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return list<array{id:string,label:string}>
+     */
+    private function buildVehicleOptions(): array
+    {
+        $options = [];
+        foreach ($this->vehicleRepository->all() as $vehicle) {
+            $label = $vehicle->name();
+            $plateNumber = trim($vehicle->plateNumber());
+            if ('' !== $plateNumber) {
+                $label .= sprintf(' (%s)', $plateNumber);
+            }
+
+            $options[] = [
+                'id' => $vehicle->id()->toString(),
+                'label' => $label,
+            ];
+        }
+
+        usort($options, static fn (array $left, array $right): int => $left['label'] <=> $right['label']);
+
+        return $options;
     }
 }

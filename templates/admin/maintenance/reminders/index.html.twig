@@ -30,12 +30,22 @@
         <form method="get" action="{{ path('ui_admin_maintenance_reminder_list') }}" class="admin-filters-form">
             <div class="form-grid-2 admin-table-top">
                 <label class="label">
-                    Owner ID
-                    <input class="input" type="text" name="owner_id" value="{{ filters.ownerId }}" placeholder="UUID v7">
+                    Owner
+                    <select class="select" name="owner_id">
+                        <option value="">All owners</option>
+                        {% for owner in ownerOptions %}
+                            <option value="{{ owner.id }}" {% if filters.ownerId == owner.id %}selected{% endif %}>{{ owner.label }}</option>
+                        {% endfor %}
+                    </select>
                 </label>
                 <label class="label">
-                    Vehicle ID
-                    <input class="input" type="text" name="vehicle_id" value="{{ filters.vehicleId }}" placeholder="UUID v7">
+                    Vehicle
+                    <select class="select" name="vehicle_id">
+                        <option value="">All vehicles</option>
+                        {% for vehicle in vehicleOptions %}
+                            <option value="{{ vehicle.id }}" {% if filters.vehicleId == vehicle.id %}selected{% endif %}>{{ vehicle.label }}</option>
+                        {% endfor %}
+                    </select>
                 </label>
                 <label class="label">
                     Due by
@@ -44,6 +54,15 @@
                         <option value="date" {% if filters.dueBy == 'date' %}selected{% endif %}>Date</option>
                         <option value="odometer" {% if filters.dueBy == 'odometer' %}selected{% endif %}>Odometer</option>
                         <option value="both" {% if filters.dueBy == 'both' %}selected{% endif %}>Both</option>
+                    </select>
+                </label>
+                <label class="label">
+                    Event type
+                    <select class="select" name="event_type">
+                        <option value="">All</option>
+                        {% for eventType in eventTypeOptions %}
+                            <option value="{{ eventType }}" {% if filters.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
+                        {% endfor %}
                     </select>
                 </label>
                 <label class="label">
@@ -74,6 +93,22 @@
                     </div>
                     <div class="admin-page-actions">
                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Reset</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if contextVehicle %}
+            <div class="card-subtle card-subtle-block admin-table-top">
+                <div class="admin-page-head">
+                    <div class="admin-page-header">
+                        <strong>Support toolkit</strong>
+                        <p class="muted compact-note">Anchored on {{ contextVehicle.name() }} so we can move between reminders, events, receipts, and the vehicle dossier without losing context.</p>
+                    </div>
+                    <div class="admin-page-actions">
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: contextVehicle.id().toString(), return_to: returnTo}) }}">Vehicle</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: contextVehicle.id().toString()}) }}">Receipts</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: contextVehicle.id().toString(), event_type: filters.eventType}) }}">Events</a>
                     </div>
                 </div>
             </div>
@@ -129,6 +164,7 @@
                                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.reminder.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
                                 {% if reminder.vehicle %}
                                     <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: reminder.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: reminder.vehicle.id().toString()}) }}" data-turbo-frame="_top">Receipts</a>
                                     <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: reminder.vehicle.id().toString(), event_type: ruleSummary is not null and ruleSummary.eventType is not empty ? ruleSummary.eventType : null}) }}" data-turbo-frame="_top">Events</a>
                                 {% endif %}
                             </div>

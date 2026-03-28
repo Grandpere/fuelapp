@@ -52,6 +52,11 @@ final class AdminMaintenanceEventShowController extends AbstractController
             'event' => $event,
             'vehicle' => $vehicle,
             'backToListUrl' => $backToListUrl,
+            'matchingReceiptsUrl' => $this->generateUrl('ui_admin_receipt_list', ['vehicle_id' => $event->vehicleId()]),
+            'matchingRemindersUrl' => $this->generateUrl('ui_admin_maintenance_reminder_list', [
+                'vehicle_id' => $event->vehicleId(),
+                'event_type' => $event->eventType()->value,
+            ]),
         ]);
     }
 

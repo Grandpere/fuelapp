@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
+use App\Admin\Application\User\AdminUserManager;
 use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Domain\ImportJob;
@@ -27,6 +28,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AdminImportJobListController extends AbstractController
 {
     public function __construct(
+        private readonly AdminUserManager $userManager,
         private readonly ImportJobRepository $importJobRepository,
         private readonly ReceiptRepository $receiptRepository,
     ) {
@@ -88,10 +90,18 @@ final class AdminImportJobListController extends AbstractController
         );
 
         $statusFilter = $status?->value;
+        $ownerOptions = [];
+        foreach ($this->userManager->listUsers() as $user) {
+            $ownerOptions[] = [
+                'id' => $user->id,
+                'label' => $user->email,
+            ];
+        }
 
         return $this->render('admin/imports/index.html.twig', [
             'jobs' => $rows,
             'metrics' => $metrics,
+            'ownerOptions' => $ownerOptions,
             'filters' => [
                 'status' => $statusFilter,
                 'ownerId' => $ownerId,
@@ -111,6 +121,7 @@ final class AdminImportJobListController extends AbstractController
      * @return array{
      *     job:ImportJob,
      *     summary:array{headline:string,detail:string},
+     *     decision:array{cause:string,nextStep:string},
      *     primaryAction:array{label:string,url:string,variant:string},
      *     secondaryAction:array{label:string,url:string,variant:string}|null
      * }
@@ -122,6 +133,7 @@ final class AdminImportJobListController extends AbstractController
         return [
             'job' => $job,
             'summary' => $this->buildListSummary($job, $payload),
+            'decision' => $this->buildDecisionPreview($job, $payload),
             'primaryAction' => $this->buildPrimaryAction($job, $payload, $returnTo),
             'secondaryAction' => $this->buildSecondaryAction($job, $payload, $returnTo),
         ];
@@ -160,6 +172,43 @@ final class AdminImportJobListController extends AbstractController
             ImportJobStatus::DUPLICATE => [
                 'headline' => 'Duplicate already handled',
                 'detail' => $this->readDuplicateDetail($payload),
+            ],
+        };
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     *
+     * @return array{cause:string,nextStep:string}
+     */
+    private function buildDecisionPreview(ImportJob $job, ?array $payload): array
+    {
+        return match ($job->status()) {
+            ImportJobStatus::NEEDS_REVIEW => [
+                'cause' => $this->readNeedsReviewDetail($payload),
+                'nextStep' => 'Review extracted values, fix gaps, then finalize.',
+            ],
+            ImportJobStatus::FAILED => [
+                'cause' => $this->readFailedDetail($payload, $job->errorPayload()),
+                'nextStep' => $job->ocrRetryCount() > 0
+                    ? 'Retry only after checking the provider or input issue.'
+                    : 'Inspect the failure details, then decide whether a retry is safe.',
+            ],
+            ImportJobStatus::PROCESSED => [
+                'cause' => 'A receipt was already created for this import.',
+                'nextStep' => 'Jump straight to the resulting receipt if support continues there.',
+            ],
+            ImportJobStatus::DUPLICATE => [
+                'cause' => $this->readDuplicateDetail($payload),
+                'nextStep' => 'Open the linked receipt or original import before taking action.',
+            ],
+            ImportJobStatus::PROCESSING => [
+                'cause' => 'OCR is still running for this upload.',
+                'nextStep' => 'Wait for a terminal state before intervening.',
+            ],
+            ImportJobStatus::QUEUED => [
+                'cause' => 'The job has not started processing yet.',
+                'nextStep' => 'Keep the queue moving unless it stalls unexpectedly.',
             ],
         };
     }
@@ -273,7 +322,8 @@ final class AdminImportJobListController extends AbstractController
         }
 
         if (null !== $ownerId) {
-            $summary[] = ['label' => 'Owner', 'value' => $ownerId];
+            $user = $this->userManager->getUser($ownerId);
+            $summary[] = ['label' => 'Owner', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $ownerId) : $ownerId];
         }
 
         if (null !== $source) {
@@ -340,6 +390,7 @@ final class AdminImportJobListController extends AbstractController
      * @param list<array{
      *     job:ImportJob,
      *     summary:array{headline:string,detail:string},
+     *     decision:array{cause:string,nextStep:string},
      *     primaryAction:array{label:string,url:string,variant:string},
      *     secondaryAction:array{label:string,url:string,variant:string}|null
      * }> $rows
@@ -366,6 +417,28 @@ final class AdminImportJobListController extends AbstractController
                 $shortcuts[] = [
                     'label' => 'Inspect latest failure',
                     'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
+                    'variant' => 'secondary',
+                ];
+                break;
+            }
+        }
+
+        foreach ($rows as $row) {
+            if (ImportJobStatus::PROCESSED === $row['job']->status() && 'Open receipt' === $row['primaryAction']['label']) {
+                $shortcuts[] = [
+                    'label' => 'Open latest created receipt',
+                    'url' => $row['primaryAction']['url'],
+                    'variant' => 'secondary',
+                ];
+                break;
+            }
+        }
+
+        foreach ($rows as $row) {
+            if (ImportJobStatus::DUPLICATE === $row['job']->status() && in_array($row['primaryAction']['label'], ['Open receipt', 'Open original'], true)) {
+                $shortcuts[] = [
+                    'label' => 'Check latest duplicate',
+                    'url' => $row['primaryAction']['url'],
                     'variant' => 'secondary',
                 ];
                 break;

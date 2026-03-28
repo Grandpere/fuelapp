@@ -54,11 +54,18 @@
             <dd class="admin-dd">{{ reminder.createdAt|date('Y-m-d H:i:s') }}</dd>
         </dl>
 
+        <div class="card-subtle card-subtle-block admin-detail-stack">
+            <div class="admin-page-header">
+                <strong>Support continuity</strong>
+                <p class="muted compact-note">Use the same vehicle anchor to compare receipts, reminder siblings, and matching maintenance events while reviewing this reminder.</p>
+            </div>
+        </div>
+
         <div class="admin-page-actions admin-detail-stack">
             {% if vehicle %}
                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">Open vehicle</a>
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: vehicle.id().toString()}) }}">Open vehicle receipts</a>
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: vehicle.id().toString()}) }}">Open vehicle reminders</a>
+                <a class="btn btn-secondary btn-compact" href="{{ matchingReceiptsUrl }}">Open vehicle receipts</a>
+                <a class="btn btn-secondary btn-compact" href="{{ matchingRemindersUrl }}">Open similar reminders</a>
                 <a class="btn btn-secondary btn-compact" href="{{ matchingEventsUrl }}">Open matching events</a>
             {% endif %}
             <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: reminder.vehicleId}) }}">Open vehicle events</a>

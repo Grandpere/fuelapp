@@ -69,6 +69,8 @@ final class AdminMaintenanceReminderShowController extends AbstractController
             'backToListUrl' => $backToListUrl,
             'ruleSummary' => $this->buildRuleSummary($rule),
             'matchingEventsUrl' => $this->buildMatchingEventsUrl($reminder->vehicleId(), $rule),
+            'matchingReceiptsUrl' => $this->generateUrl('ui_admin_receipt_list', ['vehicle_id' => $reminder->vehicleId()]),
+            'matchingRemindersUrl' => $this->buildMatchingRemindersUrl($reminder->vehicleId(), $rule),
         ]);
     }
 
@@ -101,6 +103,19 @@ final class AdminMaintenanceReminderShowController extends AbstractController
         }
 
         return $this->generateUrl('ui_admin_maintenance_event_list', $parameters);
+    }
+
+    private function buildMatchingRemindersUrl(string $vehicleId, ?MaintenanceReminderRule $rule): string
+    {
+        $parameters = [
+            'vehicle_id' => $vehicleId,
+        ];
+
+        if ($rule instanceof MaintenanceReminderRule && null !== $rule->eventType()) {
+            $parameters['event_type'] = $rule->eventType()->value;
+        }
+
+        return $this->generateUrl('ui_admin_maintenance_reminder_list', $parameters);
     }
 
     private function formatCadence(MaintenanceReminderRule $rule): ?string

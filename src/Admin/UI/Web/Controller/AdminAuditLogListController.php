@@ -55,6 +55,7 @@ final class AdminAuditLogListController extends AbstractController
 
         return $this->render('admin/audit/index.html.twig', [
             'entries' => $entries,
+            'actorOptions' => $this->buildActorOptions(),
             'filters' => [
                 'action' => $action,
                 'actorId' => $actorId,
@@ -105,7 +106,6 @@ final class AdminAuditLogListController extends AbstractController
 
         foreach ([
             ['label' => 'Action', 'value' => $action],
-            ['label' => 'Actor', 'value' => $actorId],
             ['label' => 'Target type', 'value' => $targetType],
             ['label' => 'Target id', 'value' => $targetId],
             ['label' => 'Correlation', 'value' => $correlationId],
@@ -113,6 +113,11 @@ final class AdminAuditLogListController extends AbstractController
             if (is_string($item['value']) && '' !== $item['value']) {
                 $summary[] = $item;
             }
+        }
+
+        if (null !== $actorId) {
+            $user = $this->userManager->getUser($actorId);
+            $summary[] = ['label' => 'Actor', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $actorId) : $actorId];
         }
 
         if ($from instanceof DateTimeImmutable) {
@@ -158,5 +163,21 @@ final class AdminAuditLogListController extends AbstractController
         }
 
         return $shortcuts;
+    }
+
+    /**
+     * @return list<array{id:string,label:string}>
+     */
+    private function buildActorOptions(): array
+    {
+        $options = [];
+        foreach ($this->userManager->listUsers() as $user) {
+            $options[] = [
+                'id' => $user->id,
+                'label' => $user->email,
+            ];
+        }
+
+        return $options;
     }
 }

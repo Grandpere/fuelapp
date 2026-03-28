@@ -55,8 +55,13 @@
                     <input class="input" type="text" name="action" value="{{ filters.action ?? '' }}" placeholder="admin.station.updated">
                 </label>
                 <label class="label">
-                    Actor ID
-                    <input class="input" type="text" name="actorId" value="{{ filters.actorId ?? '' }}" placeholder="UUID">
+                    Actor
+                    <select class="select" name="actorId">
+                        <option value="">All actors</option>
+                        {% for actor in actorOptions %}
+                            <option value="{{ actor.id }}" {% if filters.actorId == actor.id %}selected{% endif %}>{{ actor.label }}</option>
+                        {% endfor %}
+                    </select>
                 </label>
                 <label class="label">
                     Target type

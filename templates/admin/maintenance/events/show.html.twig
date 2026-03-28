@@ -58,11 +58,18 @@
             <dd class="admin-dd">{{ event.updatedAt|date('Y-m-d H:i:s') }}</dd>
         </dl>
 
+        <div class="card-subtle card-subtle-block admin-detail-stack">
+            <div class="admin-page-header">
+                <strong>Support continuity</strong>
+                <p class="muted compact-note">Use the vehicle anchor to compare receipts and reminder rules that could explain or validate this maintenance event.</p>
+            </div>
+        </div>
+
         <div class="admin-page-actions admin-detail-stack">
             {% if vehicle %}
                 <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">Open vehicle</a>
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: vehicle.id().toString()}) }}">Open vehicle receipts</a>
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: vehicle.id().toString()}) }}">Open matching reminders</a>
+                <a class="btn btn-secondary btn-compact" href="{{ matchingReceiptsUrl }}">Open vehicle receipts</a>
+                <a class="btn btn-secondary btn-compact" href="{{ matchingRemindersUrl }}">Open matching reminders</a>
             {% endif %}
             <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: event.vehicleId}) }}">Open vehicle events</a>
             <a class="btn btn-secondary" href="/api/admin/maintenance/events/{{ event.id.toString }}">Open API resource</a>

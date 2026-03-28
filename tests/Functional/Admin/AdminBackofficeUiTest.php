@@ -776,20 +776,26 @@ final class AdminBackofficeUiTest extends WebTestCase
         $jobId = $job->getId()->toRfc4122();
         $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
 
-        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId.'?return_to=%2Fui%2Fadmin%2Fimports%3Fstatus%3Dneeds_review', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
         self::assertStringContainsString('/ui/admin/imports/'.$jobId.'/reparse', $detailContent);
+        self::assertStringContainsString('name="_redirect"', $detailContent);
+        self::assertStringContainsString('status%3Dneeds_review', $detailContent);
         $reparseToken = $this->extractReparseCsrfForImport((string) $detailResponse->getContent(), $jobId);
 
         $reparseResponse = $this->request(
             'POST',
             '/ui/admin/imports/'.$jobId.'/reparse',
-            ['_token' => $reparseToken],
+            [
+                '_token' => $reparseToken,
+                '_redirect' => '/ui/admin/imports?status=needs_review',
+            ],
             [],
             $sessionCookie,
         );
         self::assertSame(Response::HTTP_FOUND, $reparseResponse->getStatusCode());
+        self::assertSame('/ui/admin/imports?status=needs_review', $reparseResponse->headers->get('Location'));
 
         $this->em->clear();
         $updated = $this->em->find(ImportJobEntity::class, $jobId);
@@ -909,12 +915,14 @@ final class AdminBackofficeUiTest extends WebTestCase
         $jobId = $job->getId()->toRfc4122();
         $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
 
-        $reviewResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
+        $reviewResponse = $this->request('GET', '/ui/admin/imports/'.$jobId.'?return_to=%2Fui%2Fadmin%2Fimports%3Fstatus%3Dneeds_review', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $reviewResponse->getStatusCode());
         $reviewContent = (string) $reviewResponse->getContent();
         self::assertStringContainsString('Receipt lines', $reviewContent);
         self::assertStringContainsString('name="lines[0][fuelType]"', $reviewContent);
         self::assertStringContainsString('name="lines[1][fuelType]"', $reviewContent);
+        self::assertStringContainsString('name="_redirect"', $reviewContent);
+        self::assertStringContainsString('status%3Dneeds_review', $reviewContent);
         $csrfToken = $this->extractFinalizeCsrfForImport((string) $reviewResponse->getContent(), $jobId);
 
         $finalizeResponse = $this->request(
@@ -922,6 +930,7 @@ final class AdminBackofficeUiTest extends WebTestCase
             '/ui/admin/imports/'.$jobId.'/finalize',
             [
                 '_token' => $csrfToken,
+                '_redirect' => '/ui/admin/imports?status=needs_review',
                 'issuedAt' => '2026-03-25T12:20',
                 'stationName' => 'TOTAL ENERGIES',
                 'stationStreetName' => '1 Rue de Rivoli',
@@ -946,6 +955,7 @@ final class AdminBackofficeUiTest extends WebTestCase
             $sessionCookie,
         );
         self::assertSame(Response::HTTP_FOUND, $finalizeResponse->getStatusCode());
+        self::assertSame('/ui/admin/imports?status=needs_review', $finalizeResponse->headers->get('Location'));
 
         $this->em->clear();
         $updated = $this->em->find(ImportJobEntity::class, $jobId);
@@ -955,6 +965,62 @@ final class AdminBackofficeUiTest extends WebTestCase
         $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
         self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
         self::assertCount(2, $savedReceipt->getLines());
+    }
+
+    public function testAdminCanRetryFailedImportWithoutLosingQueueContext(): void
+    {
+        $adminEmail = 'ui.admin.import.retry@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+        $owner = $this->createUser('ui.import.retry.owner@example.com', 'test1234', ['ROLE_USER']);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($owner);
+        $job->setStatus(ImportJobStatus::FAILED);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/28/admin-retry.jpg');
+        $job->setOriginalFilename('admin-retry.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('e', 64));
+        $job->setErrorPayload('{"error":"failed"}');
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-28 08:00:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-28 08:00:00'));
+        $job->setFailedAt(new DateTimeImmutable('2026-03-28 08:01:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-28 08:00:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+
+        $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId.'?return_to=%2Fui%2Fadmin%2Fimports%3Fstatus%3Dfailed', [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
+        $detailContent = (string) $detailResponse->getContent();
+        self::assertStringContainsString('Retry Failed Job', $detailContent);
+        self::assertStringContainsString('name="_redirect"', $detailContent);
+        self::assertStringContainsString('status%3Dfailed', $detailContent);
+        preg_match('#name="_token" value="([^"]+)".*?Retry job#s', $detailContent, $matches);
+        self::assertArrayHasKey(1, $matches);
+
+        $retryResponse = $this->request(
+            'POST',
+            '/ui/admin/imports/'.$jobId.'/retry',
+            [
+                '_token' => $matches[1],
+                '_redirect' => '/ui/admin/imports?status=failed',
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $retryResponse->getStatusCode());
+        self::assertSame('/ui/admin/imports?status=failed', $retryResponse->headers->get('Location'));
+
+        $this->em->clear();
+        $updated = $this->em->find(ImportJobEntity::class, $jobId);
+        self::assertInstanceOf(ImportJobEntity::class, $updated);
+        self::assertSame(ImportJobStatus::QUEUED, $updated->getStatus());
     }
 
     public function testAdminCanEditAndDeleteStationAndMaintenanceEventFromBackofficeUi(): void

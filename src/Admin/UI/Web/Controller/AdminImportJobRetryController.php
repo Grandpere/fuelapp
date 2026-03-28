@@ -16,6 +16,7 @@ namespace App\Admin\UI\Web\Controller;
 use App\Admin\Application\Audit\AdminAuditTrail;
 use App\Import\Application\Command\RetryImportJobCommand;
 use App\Import\Application\Command\RetryImportJobHandler;
+use App\Shared\UI\Web\SafeReturnPathResolver;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -28,6 +29,7 @@ final class AdminImportJobRetryController extends AbstractController
     public function __construct(
         private readonly RetryImportJobHandler $retryImportJobHandler,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
 
@@ -38,10 +40,16 @@ final class AdminImportJobRetryController extends AbstractController
             throw $this->createNotFoundException();
         }
 
+        $fallbackRedirect = $this->generateUrl('ui_admin_import_job_show', ['id' => $id]);
+        $redirectTarget = $this->safeReturnPathResolver->resolve(
+            $request->request->get('_redirect'),
+            $fallbackRedirect,
+        );
+
         if (!$this->isCsrfTokenValid('admin_import_retry_'.$id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Invalid CSRF token.');
 
-            return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
+            return new RedirectResponse($redirectTarget);
         }
 
         try {
@@ -59,7 +67,7 @@ final class AdminImportJobRetryController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
+        return new RedirectResponse($redirectTarget);
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

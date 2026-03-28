@@ -252,6 +252,8 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertStringContainsString('Support hub', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Import recovery', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Maintenance investigation', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Vehicle queues', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Station queues', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Account recovery', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Duplicate imports', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('Security activities', (string) $dashboardResponse->getContent());

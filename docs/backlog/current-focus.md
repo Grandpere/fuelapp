@@ -1,7 +1,7 @@
 # Current Focus
 
 ## Active sprint
-- Sprint 35 - Admin final workflow usefulness pass
+- Sprint 36 - Admin final support-hub and continuity pass
 
 ## Current goal
 - Finish the last profitable admin support improvements across receipt queues, account triage, investigation shortcuts, queue polish, dashboard signals, and continuity gaps.
@@ -11,7 +11,8 @@
 - SP35-002 is implemented and ready for grouped validation at the end of the autonomous pass.
 - SP35-003 is implemented and ready for grouped validation at the end of the autonomous pass.
 - SP36-001 is implemented and ready for grouped validation at the end of the autonomous pass.
-- SP36-002 is the active implementation slice.
+- SP36-002 is implemented and ready for grouped validation at the end of the autonomous pass.
+- SP36-003 is the active implementation slice.
 - Sprint 36 remains profitable enough to continue through the planned queue, dashboard, and continuity passes.
 
 ## Next tickets (ordered)
@@ -25,5 +26,6 @@
 - SP35-002 now adds user-list signal readouts, triage shortcuts, and severity-based ordering.
 - SP35-003 now adds row-level identity and correlation shortcuts across audit and security views.
 - SP36-001 now adds queue filters, signal columns, and top shortcuts for admin vehicles and stations.
+- SP36-002 now expands the dashboard with vehicle, station, and account recovery signals grounded in the new queues.
 - Sprint 34 is fully delivered across maintenance toolkit, import decision speed, support hub consolidation, and humanized support filters and is merged.
 - Microsoft OIDC remains deferred unless product priority changes.

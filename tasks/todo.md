@@ -37,10 +37,10 @@
 # TODO - SP36-002 Admin dashboard support signal expansion
 
 ## Plan
-- [pending] Review the dashboard against the newly improved queues and investigation screens.
-- [pending] Add the last high-value support signals and jumps.
-- [pending] Update admin functional coverage for the touched dashboard contract.
-- [pending] Run targeted syntax/Twig validation for the touched dashboard flow.
+- [completed] Review the dashboard against the newly improved queues and investigation screens.
+- [completed] Add the last high-value support signals and jumps.
+- [completed] Update admin functional coverage for the touched dashboard contract.
+- [completed] Run targeted syntax/Twig validation for the touched dashboard flow.
 - [pending] Batch user-run `make phpunit-functional` after the autonomous multi-sprint pass.
 
 # TODO - SP36-003 Admin form and detail continuity final pass

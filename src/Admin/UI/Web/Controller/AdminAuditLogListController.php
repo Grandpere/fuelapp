@@ -26,8 +26,7 @@ final class AdminAuditLogListController extends AbstractController
     public function __construct(
         private readonly AdminAuditLogReader $reader,
         private readonly AdminUserManager $userManager,
-    )
-    {
+    ) {
     }
 
     #[Route('/ui/admin/audit-logs', name: 'ui_admin_audit_log_list', methods: ['GET'])]
@@ -50,7 +49,7 @@ final class AdminAuditLogListController extends AbstractController
                     'actorId' => $entry->actorId,
                     'action' => str_starts_with($entry->action, 'security.') ? $entry->action : null,
                 ])) : null,
-                'correlationUrl' => null !== $entry->correlationId ? $this->generateUrl('ui_admin_audit_log_list', ['correlationId' => $entry->correlationId]) : null,
+                'correlationUrl' => '' !== trim($entry->correlationId) ? $this->generateUrl('ui_admin_audit_log_list', ['correlationId' => $entry->correlationId]) : null,
             ];
         }
 

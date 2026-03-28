@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace App\Admin\UI\Web\Controller;
 
-use App\Admin\Application\User\AdminUserManager;
 use App\Admin\Application\Security\SecurityActivityReader;
+use App\Admin\Application\User\AdminUserManager;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,8 +27,7 @@ final class AdminSecurityActivityListController extends AbstractController
     public function __construct(
         private readonly SecurityActivityReader $reader,
         private readonly AdminUserManager $userManager,
-    )
-    {
+    ) {
     }
 
     #[Route('/ui/admin/security-activities', name: 'ui_admin_security_activity_list', methods: ['GET'])]

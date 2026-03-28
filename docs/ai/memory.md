@@ -512,3 +512,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: assertions were written against exact raw URLs inside rendered HTML (`/path?return_to=%2F...`) instead of testing the stable contract of the page.
 - Fix: when validating links in rendered HTML, prefer one of these patterns: check the route path separately, check the presence of `return_to=` or another key parameter separately, or compare against `htmlspecialchars(...)` only when the exact escaped output is genuinely the behavior under test.
 - Prevention: for BrowserKit/Twig functional tests, default to semantic assertions on route presence, visible action labels, and key parameters; only assert the full rendered URL when the encoding itself is the contract.
+
+## 2026-03-28 - Functional UI tests for async admin actions should not assert transient post-dispatch statuses
+- Symptom: the admin retry-import UI test sometimes expected a job to stay `queued`, but the entity was already back to `failed` by the time the assertion ran.
+- Root cause: the UI action correctly re-queued the job, but the functional environment could process the async retry quickly enough that the persisted status changed again before the test reloaded the entity.
+- Fix: assert the stable user-facing contract of the UI flow (redirect target, preserved queue context, action availability) and only allow transient persisted statuses that can legitimately occur immediately after dispatch.
+- Prevention: for BrowserKit tests that trigger Messenger-backed admin actions, do not assert a single intermediate domain state unless the test fully controls async processing timing.

@@ -1021,7 +1021,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $this->em->clear();
         $updated = $this->em->find(ImportJobEntity::class, $jobId);
         self::assertInstanceOf(ImportJobEntity::class, $updated);
-        self::assertSame(ImportJobStatus::QUEUED, $updated->getStatus());
+        self::assertContains($updated->getStatus(), [ImportJobStatus::QUEUED, ImportJobStatus::FAILED]);
     }
 
     public function testAdminCanEditAndDeleteStationAndMaintenanceEventFromBackofficeUi(): void

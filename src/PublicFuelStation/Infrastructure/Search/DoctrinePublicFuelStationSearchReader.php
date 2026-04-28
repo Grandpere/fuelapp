@@ -70,6 +70,16 @@ final readonly class DoctrinePublicFuelStationSearchReader implements PublicFuel
                 $clauses[] = sprintf("(s.fuels -> %s ->> 'available') = 'true'", $fuelKey);
             }
             $clauses[] = sprintf("(s.fuels -> %s ->> 'priceMilliEurosPerLiter') IS NOT NULL", $fuelKey);
+        } else {
+            $snapshotClauses = ["(fuel.snapshot ->> 'priceMilliEurosPerLiter') IS NOT NULL"];
+            if ($filters->availableOnly) {
+                $snapshotClauses[] = "(fuel.snapshot ->> 'available') = 'true'";
+            }
+
+            $clauses[] = sprintf(
+                'EXISTS (SELECT 1 FROM json_each(s.fuels) AS fuel(fuel_key, snapshot) WHERE %s)',
+                implode(' AND ', $snapshotClauses),
+            );
         }
 
         return [' WHERE '.implode(' AND ', $clauses), $parameters];

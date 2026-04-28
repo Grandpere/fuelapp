@@ -50,7 +50,14 @@ final class SyncPublicFuelStationsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $source = $this->readStringOption($input, 'source') ?? self::DEFAULT_SOURCE_URL;
-        $limit = $this->readPositiveIntOption($input, 'limit');
+        try {
+            $limit = $this->readPositiveIntOption($input, 'limit');
+        } catch (RuntimeException $e) {
+            $output->writeln(sprintf('<error>Public fuel stations sync failed: %s</error>', $e->getMessage()));
+
+            return Command::FAILURE;
+        }
+
         $runId = $this->syncRunRepository->start($source);
         $preparedPath = null;
 
@@ -140,7 +147,10 @@ final class SyncPublicFuelStationsCommand extends Command
         }
 
         $intValue = (int) $value;
+        if ($intValue <= 0) {
+            throw new RuntimeException(sprintf('Option "%s" must be a positive integer.', $name));
+        }
 
-        return $intValue > 0 ? $intValue : null;
+        return $intValue;
     }
 }

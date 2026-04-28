@@ -62,6 +62,19 @@ final class DoctrinePublicFuelStationSearchReaderTest extends KernelTestCase
         self::assertSame(1789, $result->items[0]->fuels['gazole']['priceMilliEurosPerLiter']);
     }
 
+    public function testItFiltersAvailableStationsWhenNoFuelTypeIsSelected(): void
+    {
+        $this->persistPublicStation('1000001', '596 AVENUE DE TREVOUX', '01000', 'SAINT-DENIS-LÈS-BOURG', true, 1789);
+        $this->persistPublicStation('2000002', '8 ROUTE SANS GAZOLE', '01000', 'BOURG-EN-BRESSE', false, 1799);
+        $this->em->flush();
+
+        $result = $this->reader->search(new PublicFuelStationSearchFilters('01000', null, true));
+
+        self::assertSame(1, $result->totalCount);
+        self::assertCount(1, $result->items);
+        self::assertSame('1000001', $result->items[0]->sourceId);
+    }
+
     private function persistPublicStation(string $sourceId, string $address, string $postalCode, string $city, bool $available, int $priceMilliEurosPerLiter): void
     {
         $station = new PublicFuelStationEntity();

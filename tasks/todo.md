@@ -15,7 +15,7 @@
 # TODO - SP38-003 Public fuel station map
 
 ## Plan
-- [pending] Add a public map/list from cached public stations with practical fuel filters.
+- [completed] Add a public map/list from cached public stations with practical fuel filters.
 
 # TODO - SP38-004 Visited/public station matching
 

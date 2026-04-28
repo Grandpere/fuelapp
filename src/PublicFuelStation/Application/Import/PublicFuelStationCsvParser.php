@@ -19,6 +19,9 @@ use SplFileObject;
 
 final class PublicFuelStationCsvParser
 {
+    private const LATITUDE_100K_MAX = 9_000_000.0;
+    private const LONGITUDE_100K_MAX = 18_000_000.0;
+
     /** @return iterable<ParsedPublicFuelStation> */
     public function parseFile(string $path): iterable
     {
@@ -92,8 +95,7 @@ final class PublicFuelStationCsvParser
             return null;
         }
 
-        $latitude = $this->readMicroDegrees($record['latitude'] ?? '');
-        $longitude = $this->readMicroDegrees($record['longitude'] ?? '');
+        [$latitude, $longitude] = $this->readCoordinatePair($record['latitude'] ?? '', $record['longitude'] ?? '');
         $sourceUpdatedAt = $this->readLatestFuelUpdate($record);
 
         return new ParsedPublicFuelStation(
@@ -142,24 +144,62 @@ final class PublicFuelStationCsvParser
         return trim($header, '_');
     }
 
-    private function readMicroDegrees(string $value): ?int
+    /** @return array{0:?int, 1:?int} */
+    private function readCoordinatePair(string $latitude, string $longitude): array
     {
-        $normalized = str_replace([' ', ','], ['', '.'], trim($value));
-        if ('' === $normalized || !is_numeric($normalized)) {
+        $parsedLatitude = $this->readRawCoordinate($latitude);
+        $parsedLongitude = $this->readRawCoordinate($longitude);
+
+        if (null === $parsedLatitude || null === $parsedLongitude) {
+            return [$this->toMicroDegrees($parsedLatitude), $this->toMicroDegrees($parsedLongitude)];
+        }
+
+        if (
+            !$parsedLatitude['fromDecimalDegrees']
+            && !$parsedLongitude['fromDecimalDegrees']
+            && abs($parsedLatitude['value']) <= self::LATITUDE_100K_MAX
+            && abs($parsedLongitude['value']) <= self::LONGITUDE_100K_MAX
+        ) {
+            return [
+                (int) round($parsedLatitude['value'] * 10),
+                (int) round($parsedLongitude['value'] * 10),
+            ];
+        }
+
+        return [$this->toMicroDegrees($parsedLatitude), $this->toMicroDegrees($parsedLongitude)];
+    }
+
+    /** @return array{value:float, fromDecimalDegrees:bool}|null */
+    private function readRawCoordinate(string $value): ?array
+    {
+        $trimmed = trim($value);
+        if ('' === $trimmed) {
             return null;
         }
 
-        $coordinate = (float) $normalized;
-        if (abs($coordinate) <= 180.0) {
-            return (int) round($coordinate * 1_000_000);
+        $normalized = str_replace([' ', ','], ['', '.'], $trimmed);
+        if (!is_numeric($normalized)) {
+            return null;
         }
 
-        // data.gouv fuel feeds commonly expose coordinates as degrees * 100000.
-        if (abs($coordinate) <= 18_000_000.0) {
-            return (int) round($coordinate * 10);
+        return [
+            'value' => (float) $normalized,
+            'fromDecimalDegrees' => str_contains($trimmed, '.') || str_contains($trimmed, ','),
+        ];
+    }
+
+    /** @param array{value:float, fromDecimalDegrees:bool}|null $coordinate */
+    private function toMicroDegrees(?array $coordinate): ?int
+    {
+        if (null === $coordinate) {
+            return null;
         }
 
-        return (int) round($coordinate);
+        if ($coordinate['fromDecimalDegrees'] || abs($coordinate['value']) <= 180.0) {
+            return (int) round($coordinate['value'] * 1_000_000);
+        }
+
+        return (int) round($coordinate['value']);
     }
 
     /**

@@ -68,6 +68,25 @@ final class DoctrinePublicFuelStationMatcherTest extends KernelTestCase
         self::assertSame(1789, $matches[0]->fuels['gazole']['priceMilliEurosPerLiter']);
     }
 
+    public function testItFindsBestCandidatesInBulkForMultipleVisitedStations(): void
+    {
+        $this->persistPublicStation('bordeaux-near', 44569010, -579010, '5 PLACE CENTRALE', '33000', 'BORDEAUX');
+        $this->persistPublicStation('paris-near', 48856610, 2352210, '1 MAIN ST', '75001', 'PARIS');
+        $this->persistPublicStation('paris-far', 48876000, 2358000, '99 FAR AWAY', '75001', 'PARIS');
+        $this->em->flush();
+
+        $matches = $this->matcher->findBestCandidates([
+            'station-bordeaux' => new VisitedStationPublicMatchQuery(44569000, -579000, '5 Place Centrale', '33000', 'Bordeaux', 1),
+            'station-paris' => new VisitedStationPublicMatchQuery(48856600, 2352200, '1 Main St', '75001', 'Paris', 1),
+        ]);
+
+        self::assertCount(2, $matches);
+        self::assertSame('bordeaux-near', $matches['station-bordeaux']->sourceId);
+        self::assertSame('paris-near', $matches['station-paris']->sourceId);
+        self::assertSame('high', $matches['station-bordeaux']->confidence);
+        self::assertSame('high', $matches['station-paris']->confidence);
+    }
+
     private function persistPublicStation(string $sourceId, int $latitudeMicroDegrees, int $longitudeMicroDegrees, string $address, string $postalCode, string $city): void
     {
         $station = new PublicFuelStationEntity();

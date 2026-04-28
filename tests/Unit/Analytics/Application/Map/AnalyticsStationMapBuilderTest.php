@@ -18,6 +18,7 @@ use App\Analytics\Application\Map\AnalyticsStationMapBuilder;
 use App\PublicFuelStation\Application\Matching\PublicFuelStationMatchCandidate;
 use App\PublicFuelStation\Application\Matching\PublicFuelStationMatcher;
 use App\PublicFuelStation\Application\Matching\VisitedStationPublicMatchQuery;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 
 final class AnalyticsStationMapBuilderTest extends TestCase
@@ -27,38 +28,46 @@ final class AnalyticsStationMapBuilderTest extends TestCase
         $builder = new AnalyticsStationMapBuilder(new class implements PublicFuelStationMatcher {
             public function findCandidates(VisitedStationPublicMatchQuery $query): array
             {
-                if ('Visited A' === $query->streetName) {
-                    return [
-                        new PublicFuelStationMatchCandidate(
-                            'public-1',
-                            '5 PUBLIC ROAD',
-                            '75001',
-                            'PARIS',
-                            48856120,
-                            2352210,
-                            32,
-                            'high',
-                            [
-                                'gazole' => [
-                                    'available' => true,
-                                    'priceMilliEurosPerLiter' => 1789,
-                                    'priceUpdatedAt' => '2026-04-28T09:15:00+02:00',
-                                    'ruptureType' => null,
-                                    'ruptureStartedAt' => null,
-                                ],
-                                'sp95' => [
-                                    'available' => false,
-                                    'priceMilliEurosPerLiter' => 1899,
-                                    'priceUpdatedAt' => '2026-04-28T09:20:00+02:00',
-                                    'ruptureType' => 'temporaire',
-                                    'ruptureStartedAt' => '2026-04-28T10:00:00+02:00',
-                                ],
+                throw new LogicException('Analytics map builder should use bulk matching.');
+            }
+
+            public function findBestCandidates(array $queries): array
+            {
+                $matches = [];
+                foreach ($queries as $key => $query) {
+                    if ('Visited A' !== $query->streetName) {
+                        continue;
+                    }
+
+                    $matches[$key] = new PublicFuelStationMatchCandidate(
+                        'public-1',
+                        '5 PUBLIC ROAD',
+                        '75001',
+                        'PARIS',
+                        48856120,
+                        2352210,
+                        32,
+                        'high',
+                        [
+                            'gazole' => [
+                                'available' => true,
+                                'priceMilliEurosPerLiter' => 1789,
+                                'priceUpdatedAt' => '2026-04-28T09:15:00+02:00',
+                                'ruptureType' => null,
+                                'ruptureStartedAt' => null,
                             ],
-                        ),
-                    ];
+                            'sp95' => [
+                                'available' => false,
+                                'priceMilliEurosPerLiter' => 1899,
+                                'priceUpdatedAt' => '2026-04-28T09:20:00+02:00',
+                                'ruptureType' => 'temporaire',
+                                'ruptureStartedAt' => '2026-04-28T10:00:00+02:00',
+                            ],
+                        ],
+                    );
                 }
 
-                return [];
+                return $matches;
             }
         });
 

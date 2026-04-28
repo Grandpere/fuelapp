@@ -70,9 +70,10 @@ final readonly class AnalyticsStationMapBuilder
         $visitedPoints = [];
         $publicPoints = [];
         $matchedVisitedCount = 0;
+        $matches = $this->bestMatches($items);
 
         foreach ($items as $item) {
-            $match = $this->bestMatch($item);
+            $match = $matches[$item->stationId] ?? null;
             if (null !== $match) {
                 ++$matchedVisitedCount;
             }
@@ -124,18 +125,26 @@ final readonly class AnalyticsStationMapBuilder
         ];
     }
 
-    private function bestMatch(VisitedStationPointKpi $item): ?PublicFuelStationMatchCandidate
+    /**
+     * @param list<VisitedStationPointKpi> $items
+     *
+     * @return array<string, PublicFuelStationMatchCandidate>
+     */
+    private function bestMatches(array $items): array
     {
-        $matches = $this->publicFuelStationMatcher->findCandidates(new VisitedStationPublicMatchQuery(
-            $item->latitudeMicroDegrees,
-            $item->longitudeMicroDegrees,
-            $item->streetName,
-            $item->postalCode,
-            $item->city,
-            1,
-        ));
+        $queries = [];
+        foreach ($items as $item) {
+            $queries[$item->stationId] = new VisitedStationPublicMatchQuery(
+                $item->latitudeMicroDegrees,
+                $item->longitudeMicroDegrees,
+                $item->streetName,
+                $item->postalCode,
+                $item->city,
+                1,
+            );
+        }
 
-        return $matches[0] ?? null;
+        return $this->publicFuelStationMatcher->findBestCandidates($queries);
     }
 
     /**

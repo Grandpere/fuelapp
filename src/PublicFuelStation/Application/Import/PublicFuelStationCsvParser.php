@@ -94,7 +94,7 @@ final class PublicFuelStationCsvParser
 
         $latitude = $this->readMicroDegrees($record['latitude'] ?? '');
         $longitude = $this->readMicroDegrees($record['longitude'] ?? '');
-        $sourceUpdatedAt = $this->readLatestFuelUpdate($record) ?? new DateTimeImmutable();
+        $sourceUpdatedAt = $this->readLatestFuelUpdate($record);
 
         return new ParsedPublicFuelStation(
             $sourceId,

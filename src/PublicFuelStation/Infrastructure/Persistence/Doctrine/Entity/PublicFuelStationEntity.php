@@ -73,8 +73,8 @@ class PublicFuelStationEntity
     #[ORM\Column(type: 'json')]
     private array $fuels = [];
 
-    #[ORM\Column(type: 'datetime_immutable', name: 'source_updated_at')]
-    private DateTimeImmutable $sourceUpdatedAt;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, name: 'source_updated_at')]
+    private ?DateTimeImmutable $sourceUpdatedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', name: 'imported_at')]
     private DateTimeImmutable $importedAt;
@@ -82,7 +82,6 @@ class PublicFuelStationEntity
     public function __construct()
     {
         $this->id = Uuid::v7();
-        $this->sourceUpdatedAt = new DateTimeImmutable();
         $this->importedAt = new DateTimeImmutable();
     }
 
@@ -163,7 +162,7 @@ class PublicFuelStationEntity
         return $this->fuels;
     }
 
-    public function getSourceUpdatedAt(): DateTimeImmutable
+    public function getSourceUpdatedAt(): ?DateTimeImmutable
     {
         return $this->sourceUpdatedAt;
     }
@@ -245,7 +244,7 @@ class PublicFuelStationEntity
         $this->fuels = $fuels;
     }
 
-    public function setSourceUpdatedAt(DateTimeImmutable $sourceUpdatedAt): void
+    public function setSourceUpdatedAt(?DateTimeImmutable $sourceUpdatedAt): void
     {
         $this->sourceUpdatedAt = $sourceUpdatedAt;
     }

@@ -37,7 +37,7 @@ final readonly class ParsedPublicFuelStation
         public bool $automate24,
         public array $services,
         public array $fuels,
-        public DateTimeImmutable $sourceUpdatedAt,
+        public ?DateTimeImmutable $sourceUpdatedAt,
     ) {
     }
 }

@@ -51,15 +51,25 @@ final class DoctrinePublicFuelStationRepositoryTest extends KernelTestCase
 
         self::assertSame(1, $this->repository->countAll());
 
-        $row = $this->em->getConnection()->fetchAssociative('SELECT source_id, address, fuels FROM public_fuel_stations WHERE source_id = ?', ['1000001']);
+        $row = $this->em->getConnection()->fetchAssociative('SELECT source_id, address, fuels, source_updated_at FROM public_fuel_stations WHERE source_id = ?', ['1000001']);
         self::assertIsArray($row);
         self::assertSame('1000001', $row['source_id']);
         self::assertSame('Rue B', $row['address']);
         self::assertIsString($row['fuels']);
         self::assertStringContainsString('priceMilliEurosPerLiter', $row['fuels']);
+        self::assertSame('2026-04-28 07:15:00', $row['source_updated_at']);
     }
 
-    private function station(string $sourceId, string $address): ParsedPublicFuelStation
+    public function testItPersistsNullSourceUpdatedAtWhenSourceDateIsMissing(): void
+    {
+        $this->repository->upsert($this->station('1000002', 'Rue C', null));
+
+        $sourceUpdatedAt = $this->em->getConnection()->fetchOne('SELECT source_updated_at FROM public_fuel_stations WHERE source_id = ?', ['1000002']);
+
+        self::assertNull($sourceUpdatedAt);
+    }
+
+    private function station(string $sourceId, string $address, ?DateTimeImmutable $sourceUpdatedAt = new DateTimeImmutable('2026-04-28T09:15:00+02:00')): ParsedPublicFuelStation
     {
         return new ParsedPublicFuelStation(
             $sourceId,
@@ -84,7 +94,7 @@ final class DoctrinePublicFuelStationRepositoryTest extends KernelTestCase
                     'ruptureStartedAt' => null,
                 ],
             ],
-            new DateTimeImmutable('2026-04-28T09:15:00+02:00'),
+            $sourceUpdatedAt,
         );
     }
 }

@@ -16,6 +16,7 @@ namespace App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Repository;
 use App\PublicFuelStation\Application\Import\ParsedPublicFuelStation;
 use App\PublicFuelStation\Application\Repository\PublicFuelStationRepository;
 use DateTimeImmutable;
+use DateTimeZone;
 use Doctrine\DBAL\Connection;
 use JsonException;
 use Symfony\Component\Uid\Uuid;
@@ -31,7 +32,8 @@ final readonly class DoctrinePublicFuelStationRepository implements PublicFuelSt
      */
     public function upsert(ParsedPublicFuelStation $station): void
     {
-        $now = new DateTimeImmutable();
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $sourceUpdatedAt = $station->sourceUpdatedAt?->setTimezone(new DateTimeZone('UTC'));
         $this->connection->executeStatement(<<<'SQL'
             INSERT INTO public_fuel_stations (
                 id,
@@ -102,7 +104,7 @@ final readonly class DoctrinePublicFuelStationRepository implements PublicFuelSt
             'automate24' => $station->automate24 ? 'true' : 'false',
             'services' => json_encode($station->services, JSON_THROW_ON_ERROR),
             'fuels' => json_encode($station->fuels, JSON_THROW_ON_ERROR),
-            'sourceUpdatedAt' => $station->sourceUpdatedAt->format('Y-m-d H:i:s'),
+            'sourceUpdatedAt' => $sourceUpdatedAt?->format('Y-m-d H:i:s'),
             'importedAt' => $now->format('Y-m-d H:i:s'),
         ]);
     }

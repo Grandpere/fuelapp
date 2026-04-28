@@ -1,0 +1,107 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Admin Public Fuel Stations{% endblock %}
+
+{% set admin_section = 'public_fuel_stations' %}
+
+{% block admin_content %}
+    <section class="card admin-panel">
+        <div class="admin-page-header">
+            <h2 class="page-title">Public Fuel Stations</h2>
+            <p class="muted">Read-only sync diagnostics for the official data.gouv fuel station cache.</p>
+        </div>
+
+        <div class="admin-metric-grid metric-grid-spaced">
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Cached stations</p>
+                <p class="admin-metric-value">{{ diagnostics.stationCount }}</p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Latest source update</p>
+                <p class="admin-metric-value admin-metric-value-small">
+                    {{ diagnostics.latestSourceUpdatedAt ? diagnostics.latestSourceUpdatedAt|date('Y-m-d H:i') : 'n/a' }}
+                </p>
+            </article>
+            <article class="card-subtle admin-metric-card">
+                <p class="admin-metric-label">Latest local import</p>
+                <p class="admin-metric-value admin-metric-value-small">
+                    {{ diagnostics.latestImportedAt ? diagnostics.latestImportedAt|date('Y-m-d H:i') : 'n/a' }}
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Latest sync run</h3>
+        {% if diagnostics.latestRun %}
+            {% set run = diagnostics.latestRun %}
+            <div class="admin-metric-grid metric-grid-spaced">
+                <article class="card-subtle admin-metric-card">
+                    <p class="admin-metric-label">Status</p>
+                    <p class="admin-metric-value admin-metric-value-small">{{ run.status }}</p>
+                </article>
+                <article class="card-subtle admin-metric-card">
+                    <p class="admin-metric-label">Processed</p>
+                    <p class="admin-metric-value">{{ run.processedCount }}</p>
+                </article>
+                <article class="card-subtle admin-metric-card">
+                    <p class="admin-metric-label">Rejected</p>
+                    <p class="admin-metric-value">{{ run.rejectedCount }}</p>
+                </article>
+            </div>
+
+            <dl class="admin-dl admin-detail-stack">
+                <dt class="admin-dt">Run ID</dt>
+                <dd class="admin-dd">{{ run.id }}</dd>
+                <dt class="admin-dt">Source</dt>
+                <dd class="admin-dd">{{ run.sourceUrl }}</dd>
+                <dt class="admin-dt">Started</dt>
+                <dd class="admin-dd">{{ run.startedAt|date('Y-m-d H:i:s') }}</dd>
+                <dt class="admin-dt">Completed</dt>
+                <dd class="admin-dd">{{ run.completedAt ? run.completedAt|date('Y-m-d H:i:s') : 'running or interrupted' }}</dd>
+                <dt class="admin-dt">Upserted</dt>
+                <dd class="admin-dd">{{ run.upsertedCount }}</dd>
+                {% if run.errorMessage %}
+                    <dt class="admin-dt">Error</dt>
+                    <dd class="admin-dd">{{ run.errorMessage }}</dd>
+                {% endif %}
+            </dl>
+        {% else %}
+            <p class="muted">No public fuel station sync has run yet.</p>
+        {% endif %}
+    </section>
+
+    <section class="card admin-panel admin-section-spaced">
+        <h3 class="section-title">Recent sync runs</h3>
+        <div class="table-wrap table-min-980">
+            <table class="app-table table-min-980">
+                <thead>
+                <tr>
+                    <th>Started</th>
+                    <th>Status</th>
+                    <th>Processed</th>
+                    <th>Upserted</th>
+                    <th>Rejected</th>
+                    <th>Error</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for run in diagnostics.recentRuns %}
+                    <tr>
+                        <td>{{ run.startedAt|date('Y-m-d H:i:s') }}</td>
+                        <td><span class="pill status-pill status-{{ run.status }}">{{ run.status }}</span></td>
+                        <td>{{ run.processedCount }}</td>
+                        <td>{{ run.upsertedCount }}</td>
+                        <td>{{ run.rejectedCount }}</td>
+                        <td>{{ run.errorMessage ?? 'n/a' }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="muted">No sync run found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

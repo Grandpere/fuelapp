@@ -21,6 +21,8 @@ use App\Maintenance\Domain\Enum\ReminderRuleTriggerMode;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderEntity;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceReminderRuleEntity;
+use App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Entity\PublicFuelStationEntity;
+use App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Entity\PublicFuelStationSyncRunEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -62,7 +64,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         }
         $this->passwordHasher = $passwordHasher;
 
-        $this->em->getConnection()->executeStatement('TRUNCATE TABLE admin_audit_logs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, maintenance_planned_costs, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
+        $this->em->getConnection()->executeStatement('TRUNCATE TABLE admin_audit_logs, public_fuel_station_sync_runs, public_fuel_stations, maintenance_reminders, maintenance_reminder_rules, maintenance_events, maintenance_planned_costs, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
     }
 
     public function testRoleUserCannotAccessAdminUiPagesWhenAuthenticated(): void
@@ -82,6 +84,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
         $maintenanceEventsResponse = $this->request('GET', '/ui/admin/maintenance/events', [], [], $sessionCookie);
         $maintenanceRemindersResponse = $this->request('GET', '/ui/admin/maintenance/reminders', [], [], $sessionCookie);
+        $publicFuelStationsResponse = $this->request('GET', '/ui/admin/public-fuel-stations', [], [], $sessionCookie);
         $receiptsResponse = $this->request('GET', '/ui/admin/receipts', [], [], $sessionCookie);
         $importsResponse = $this->request('GET', '/ui/admin/imports', [], [], $sessionCookie);
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs', [], [], $sessionCookie);
@@ -94,9 +97,60 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_FORBIDDEN, $vehiclesResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceEventsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $maintenanceRemindersResponse->getStatusCode());
+        self::assertSame(Response::HTTP_FORBIDDEN, $publicFuelStationsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $receiptsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $importsResponse->getStatusCode());
         self::assertSame(Response::HTTP_FORBIDDEN, $auditResponse->getStatusCode());
+    }
+
+    public function testAdminCanViewPublicFuelStationSyncDiagnostics(): void
+    {
+        $adminEmail = 'ui.admin.public.stations@example.com';
+        $adminPassword = 'test1234';
+        $this->createUser($adminEmail, $adminPassword, ['ROLE_ADMIN']);
+
+        $station = new PublicFuelStationEntity();
+        $station->setSourceId('1000001');
+        $station->setLatitudeMicroDegrees(49569000);
+        $station->setLongitudeMicroDegrees(3646000);
+        $station->setAddress('596 AVENUE DE TREVOUX');
+        $station->setPostalCode('01000');
+        $station->setCity('SAINT-DENIS-LÈS-BOURG');
+        $station->setPopulationKind('R');
+        $station->setDepartment('Ain');
+        $station->setDepartmentCode('01');
+        $station->setRegion('Auvergne-Rhône-Alpes');
+        $station->setRegionCode('84');
+        $station->setAutomate24(true);
+        $station->setServices(['Boutique alimentaire']);
+        $station->setFuels([
+            'gazole' => [
+                'available' => true,
+                'priceMilliEurosPerLiter' => 1789,
+                'priceUpdatedAt' => '2026-04-28T09:15:00+02:00',
+                'ruptureType' => null,
+                'ruptureStartedAt' => null,
+            ],
+        ]);
+        $station->setSourceUpdatedAt(new DateTimeImmutable('2026-04-28 09:15:00'));
+        $station->setImportedAt(new DateTimeImmutable('2026-04-28 09:20:00'));
+        $this->em->persist($station);
+
+        $run = new PublicFuelStationSyncRunEntity('https://example.test/public-fuel-stations.csv.gz');
+        $run->finish('success', 1, 1, 0);
+        $this->em->persist($run);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($adminEmail, $adminPassword);
+        $response = $this->request('GET', '/ui/admin/public-fuel-stations', [], [], $sessionCookie);
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('Public Fuel Stations', $content);
+        self::assertStringContainsString('Cached stations', $content);
+        self::assertStringContainsString('Latest sync run', $content);
+        self::assertStringContainsString('https://example.test/public-fuel-stations.csv.gz', $content);
+        self::assertStringContainsString('success', $content);
     }
 
     public function testAdminCanAccessBackofficePagesAndSeeSeededData(): void

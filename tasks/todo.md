@@ -1,34 +1,23 @@
-# TODO - SP37-001 Stability hardening pass
+# TODO - SP38-001 Public fuel station import and cache
 
 ## Plan
-- [completed] Review the recurring technical failures and fragile validations seen in the last few sprints.
-- [completed] Apply the smallest root-cause fixes that reduce reruns and flaky support behavior.
-- [completed] Update the most relevant tests and project memory for the stabilized flows.
-- [completed] Run targeted syntax/Twig validation for the touched stability work.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
+- [completed] Review project memory and start from an up-to-date dedicated branch.
+- [completed] Inspect the data.gouv instant v2 CSV shape and choose a local-cache model.
+- [completed] Implement parser, importer, persistence, sync command and tests.
+- [completed] Run quality gates and review the diff for PR readiness.
+- [pending] Hand over migration/sync commands for user-side validation.
 
-# TODO - SP37-002 Security hardening pass
-
-## Plan
-- [completed] Review sensitive auth, import, and admin mutation flows with a security lens.
-- [completed] Apply the smallest concrete hardening changes that improve safety without product churn.
-- [completed] Update security-relevant tests and project memory for the hardened behavior.
-- [completed] Run targeted syntax/Twig validation for the touched security work.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
-
-# TODO - SP37-003 Observability support pass
+# TODO - SP38-002 Admin public station sync monitor
 
 ## Plan
-- [completed] Review the least legible support and incident flows after the stability/security passes.
-- [completed] Add compact diagnostics, correlation cues, or support breadcrumbs where they provide real triage value.
-- [completed] Update the most relevant tests and project memory for the new observability contract.
-- [completed] Run targeted syntax/Twig validation for the touched observability work.
-- [pending] Batch user-run `make phpunit-functional` after the autonomous hardening pass.
+- [completed] Add read-only admin diagnostics for sync health, freshness and failures.
 
-# TODO - Security audit follow-up
+# TODO - SP38-003 Public fuel station map
 
 ## Plan
-- [completed] Review the OIDC account-linking flow from the full-project auth audit.
-- [completed] Require an explicitly verified email claim before linking an existing local account by OIDC email match.
-- [completed] Add integration coverage for the unverified-email regression and record the rule in project memory.
-- [pending] Ask for the user-run functional suite after the hardening fix.
+- [completed] Add a public map/list from cached public stations with practical fuel filters.
+
+# TODO - SP38-004 Visited/public station matching
+
+## Plan
+- [completed] Add safe matching between user visited stations and public station records.

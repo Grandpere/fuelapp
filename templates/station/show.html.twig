@@ -112,6 +112,40 @@
             flex-wrap: wrap;
         }
 
+        .station-public-match {
+            padding: 0.85rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .station-public-match-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.7rem;
+            align-items: flex-start;
+        }
+
+        .station-public-fuels {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .station-public-fuel-pill {
+            padding: 0.2rem 0.48rem;
+            border-radius: 999px;
+            border: 1px solid var(--surface-soft-border);
+            background: var(--surface-soft-bg);
+            font-size: 0.78rem;
+            color: var(--text-soft);
+        }
+
+        .station-public-fuel-pill.is-available {
+            color: var(--text-strong);
+            border-color: rgba(32, 176, 124, 0.34);
+            background: rgba(32, 176, 124, 0.14);
+        }
+
         .station-empty {
             padding: 0.85rem;
             border: 1px dashed var(--table-wrap-border);
@@ -215,6 +249,47 @@
                     <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Analytics</a>
                 </div>
             </aside>
+        </section>
+
+        <section class="card station-panel">
+            <div class="station-panel-head">
+                <div>
+                    <h2>Public station candidates</h2>
+                    <p class="muted compact-note">Read-only matches from the public fuel station cache. Nothing is merged automatically.</p>
+                </div>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_public_fuel_station_map', {q: station.postalCode, available: '1'}) }}">Open fuel map</a>
+            </div>
+
+            {% if publicStationCandidates is not empty %}
+                <div class="station-list">
+                    {% for candidate in publicStationCandidates %}
+                        <article class="card-subtle station-public-match">
+                            <div class="station-public-match-head">
+                                <div>
+                                    <strong>{{ candidate.city }}</strong>
+                                    <div class="muted compact-note">{{ candidate.postalCode }} · {{ candidate.address }}</div>
+                                </div>
+                                <span class="pill">{{ candidate.confidence }}</span>
+                            </div>
+                            <div class="station-item-meta">
+                                <span>Public id: {{ candidate.sourceId }}</span>
+                                {% if candidate.distanceMeters is not null %}<span>{{ candidate.distanceMeters }} m away</span>{% endif %}
+                            </div>
+                            <div class="station-public-fuels">
+                                {% for fuel, snapshot in candidate.fuels %}
+                                    {% if snapshot.priceMilliEurosPerLiter is defined and snapshot.priceMilliEurosPerLiter %}
+                                        <span class="station-public-fuel-pill {{ snapshot.available ? 'is-available' : '' }}">
+                                            {{ fuel|upper }} {{ (snapshot.priceMilliEurosPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
+                                        </span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="station-empty">No public station candidate found yet. This can happen before the sync runs or when the visited station has too little matching context.</div>
+            {% endif %}
         </section>
     </main>
 {% endblock %}

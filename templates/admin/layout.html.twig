@@ -168,6 +168,24 @@
             line-height: 1;
         }
 
+        .admin-metric-value-small {
+            font-size: 1rem;
+            line-height: 1.25;
+        }
+
+        .status-pill.status-success {
+            border-color: rgba(32, 176, 124, 0.32);
+            background: rgba(32, 176, 124, 0.14);
+            color: #147653;
+        }
+
+        .status-pill.status-running,
+        .status-pill.status-partial {
+            border-color: rgba(247, 181, 0, 0.34);
+            background: rgba(247, 181, 0, 0.16);
+            color: #8f5f00;
+        }
+
         .admin-inline-list {
             margin: 0;
             padding: 0;
@@ -370,6 +388,7 @@
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'users' ? 'is-active' : '' }}" href="{{ path('ui_admin_user_list') }}">Users</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'identities' ? 'is-active' : '' }}" href="{{ path('ui_admin_identity_list') }}">Identities</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'stations' ? 'is-active' : '' }}" href="{{ path('ui_admin_station_list') }}">Stations</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'public_fuel_stations' ? 'is-active' : '' }}" href="{{ path('ui_admin_public_fuel_station_diagnostics') }}">Public Fuel Stations</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'receipts' ? 'is-active' : '' }}" href="{{ path('ui_admin_receipt_list') }}">Receipts</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'vehicles' ? 'is-active' : '' }}" href="{{ path('ui_admin_vehicle_list') }}">Vehicles</a>
                 <a class="admin-nav-link {{ admin_section is defined and admin_section == 'maintenance_events' ? 'is-active' : '' }}" href="{{ path('ui_admin_maintenance_event_list') }}">Maintenance Events</a>

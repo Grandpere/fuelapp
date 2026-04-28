@@ -231,6 +231,30 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: record `admin.vehicle.deleted.ui` with the key vehicle snapshot before deletion and cover it in the existing functional delete test.
 - Prevention: whenever an admin action exists in both UI and API channels, verify that destructive operations keep the same audit semantics in both paths.
 
+## 2026-04-28 - Bulk public station sync must avoid dev Doctrine debug accumulation
+- Symptom: `make public-fuel-stations-sync` exhausted the 128 MB PHP memory limit during a data.gouv import.
+- Root cause: the sync ran in Symfony debug mode and used ORM `flush/clear` per station, so Doctrine debug middleware accumulated query backtraces for thousands of rows.
+- Fix: run the sync console command with `--no-debug` and upsert public station rows through DBAL `INSERT ... ON CONFLICT`.
+- Prevention: bulk import commands should run without debug and avoid per-row ORM unit-of-work churn.
+
+## 2026-04-28 - Functional date fixtures must not expire against the real clock
+- Symptom: `DashboardWebUiTest` stopped seeing the planned-maintenance card after the hardcoded `2026-04-02` fixture date moved into the past.
+- Root cause: the dashboard computes upcoming maintenance from `today` at runtime, while the test used a fixed planned date that only stayed valid for a short window.
+- Fix: make the planned maintenance fixture relative to the current day so it always falls inside the dashboard's upcoming window.
+- Prevention: for behavior that depends on `today`, either control the clock explicitly or create test dates relative to the runtime date, including "recent" and "due soon" UI badges.
+
+## 2026-04-28 - Public and admin UI tests must assert page-specific copy
+- Symptom: the public fuel station UI test expected `Cached stations`, a metric label that only exists on the admin diagnostics page.
+- Root cause: public and admin coverage for the same feature reused similar wording without checking which page owned the copy.
+- Fix: assert `Station list` on the public map page and keep `Cached stations` for the admin diagnostics page.
+- Prevention: when a feature has both public and admin pages, assertions should target the stable visible contract of that exact page, not shared feature vocabulary.
+
+## 2026-04-28 - Public fuel station source coordinates use a 1e5 scale
+- Symptom: the public fuel station map showed markers over a blue ocean even though station rows and map points existed.
+- Root cause: data.gouv fuel coordinates such as `4956900` represent `49.56900` degrees (`degrees * 100000`), but the import stored them as microdegrees directly; the UI then read `4.9569` degrees.
+- Fix: normalize source coordinates to real microdegrees during CSV parsing, while still accepting decimal-degree and already-microdegree inputs.
+- Prevention: whenever importing external coordinates, test the source unit conversion with a real-looking France coordinate and assert the final rendered degree value.
+
 ## 2026-03-28 - Bulk ZIP extraction must always clean temporary entry files on rejection
 - Symptom: rejected ZIP entries in bulk import could leave `fuelapp-import-zip-*` temp files behind in the system temp directory.
 - Root cause: `processZipEntry()` returned early on oversize/read failures before reaching the cleanup path that deleted the extracted temp file.
@@ -566,3 +590,15 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: observability metadata existed in headers and audit storage, but admin pages did not surface it inline where operators needed a quick breadcrumb into logs and audit trails.
 - Fix: the admin shell now shows the current request correlation id with a direct audit shortcut, and import detail pages add owner-focused diagnostics and investigation links.
 - Prevention: when a correlation id is central to incident follow-up, surface it on operator-facing admin screens instead of assuming browser headers or logs are close enough.
+
+## 2026-04-28 - Embedded JSON in Twig script tags must be hex-escaped
+- Symptom: the public fuel station page embedded `mapPoints|json_encode|raw` inside `<script type="application/json">`, which let a malicious `</script>` sequence from imported station data break out of the JSON block.
+- Root cause: plain `json_encode` is valid JSON but not safe by itself inside HTML script tags because `<`, `>`, `'`, `"` and `&` still interact with the HTML parser.
+- Fix: encode map payloads with `JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT` before rendering them raw in Twig.
+- Prevention: whenever imported or user-controlled JSON is embedded in a `<script>` tag, treat it as an HTML-context escape problem, not just a JSON serialization problem.
+
+## 2026-04-28 - Public fuel station coordinate parsing needs per-column hints plus row-level fallbacks
+- Symptom: longitude values like `364600` were sometimes left 10x too small, while already-microdegree values like `2352200` or `-579000` could also be wrongly multiplied by 10.
+- Root cause: the public fuel feed mixes decimal degrees, `degrees * 100000`, and already-microdegree values, and longitude alone is ambiguous because many valid microdegree longitudes stay below the `100k` upper bound.
+- Fix: infer reliable column hints first, then apply narrow row-level fallbacks only for still-ambiguous coordinates instead of scaling every candidate longitude the same way.
+- Prevention: for mixed coordinate feeds, avoid one-size-fits-all magnitude rules on a single coordinate; decide from the full row and preserve ambiguous values unless a stronger hint exists.

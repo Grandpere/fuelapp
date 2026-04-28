@@ -1,0 +1,308 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Public Fuel Stations{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <style>
+        .public-fuel-page {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .public-fuel-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .public-fuel-hero-card {
+            padding: 1.1rem;
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .public-fuel-filter-card {
+            padding: 1rem;
+        }
+
+        .public-fuel-filter-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .public-fuel-map-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.75fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .public-fuel-map-card,
+        .public-fuel-list-card {
+            padding: 1rem;
+        }
+
+        .public-fuel-map {
+            min-height: 520px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--table-wrap-border);
+            background: var(--surface-soft-bg);
+        }
+
+        .public-fuel-list {
+            display: grid;
+            gap: 0.75rem;
+            max-height: 720px;
+            overflow: auto;
+            padding-right: 0.2rem;
+        }
+
+        .public-fuel-item {
+            padding: 0.85rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .public-fuel-item-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .public-fuel-meta,
+        .public-fuel-fuels {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .public-fuel-fuel-pill {
+            padding: 0.22rem 0.5rem;
+            border-radius: 999px;
+            border: 1px solid var(--surface-soft-border);
+            background: var(--surface-soft-bg);
+            font-size: 0.78rem;
+            color: var(--text-soft);
+        }
+
+        .public-fuel-fuel-pill.is-available {
+            color: var(--text-strong);
+            border-color: rgba(32, 176, 124, 0.34);
+            background: rgba(32, 176, 124, 0.14);
+        }
+
+        .public-fuel-empty {
+            padding: 1rem;
+        }
+
+        @media (max-width: 980px) {
+            .public-fuel-hero,
+            .public-fuel-map-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .public-fuel-map {
+                min-height: 380px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="app-shell public-fuel-page">
+        <section class="public-fuel-hero">
+            <article class="card public-fuel-hero-card">
+                <div>
+                    <h1 class="page-title">Public Fuel Stations</h1>
+                    <p class="muted section-lead">Browse official public station data from the local cache. This map is separate from your visited stations, so public prices never rewrite your receipt history.</p>
+                </div>
+                <div class="public-fuel-meta">
+                    <span class="pill">{{ result.totalCount }} station{{ result.totalCount == 1 ? '' : 's' }} matching</span>
+                    <span class="pill">Showing {{ result.items|length }} max {{ result.limit }}</span>
+                    {% if selectedFuelType %}<span class="pill">Fuel {{ selectedFuelType.sourceLabel }}</span>{% endif %}
+                </div>
+            </article>
+
+            <section class="card public-fuel-filter-card">
+                <form method="get" action="{{ path('ui_public_fuel_station_map') }}" class="public-fuel-filter-grid">
+                    <label class="label">
+                        Search city, postcode or address
+                        <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="Paris, 75001, avenue...">
+                    </label>
+                    <label class="label">
+                        Fuel
+                        <select class="select" name="fuel">
+                            <option value="">All fuels</option>
+                            {% for fuel in fuelOptions %}
+                                <option value="{{ fuel.value }}" {% if filters.fuel == fuel.value %}selected{% endif %}>{{ fuel.sourceLabel }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="label">
+                        Availability
+                        <select class="select" name="available">
+                            <option value="1" {% if filters.available == '1' %}selected{% endif %}>Available only</option>
+                            <option value="0" {% if filters.available == '0' %}selected{% endif %}>With known price</option>
+                        </select>
+                    </label>
+                    <div class="actions-wrap">
+                        <button class="btn btn-primary" type="submit">Apply filters</button>
+                        <a class="btn btn-secondary" href="{{ path('ui_public_fuel_station_map') }}">Reset</a>
+                    </div>
+                </form>
+            </section>
+        </section>
+
+        <section class="public-fuel-map-grid">
+            <section class="card public-fuel-map-card">
+                {% if mapPoints is empty %}
+                    <div class="empty-state public-fuel-empty">No public station is available for the current filters. Run the public station sync or widen the filters.</div>
+                {% else %}
+                    <div class="public-fuel-map" id="public-fuel-station-map"></div>
+                    <script type="application/json" id="public-fuel-station-map-data">{{ mapPoints|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT'))|raw }}</script>
+                {% endif %}
+            </section>
+
+            <section class="card public-fuel-list-card">
+                <h2 class="section-title">Station list</h2>
+                <div class="public-fuel-list">
+                    {% for station in result.items %}
+                        {% set selectedSnapshot = selectedFuelType ? station.fuels[selectedFuelType.value]|default(null) : null %}
+                        <article class="card-subtle public-fuel-item">
+                            <div class="public-fuel-item-head">
+                                <div>
+                                    <strong>{{ station.city }}</strong>
+                                    <div class="muted compact-note">{{ station.postalCode }} · {{ station.address }}</div>
+                                </div>
+                                {% if station.automate24 %}<span class="pill">24/24</span>{% endif %}
+                            </div>
+
+                            {% if selectedSnapshot %}
+                                <div class="public-fuel-meta">
+                                    <span class="public-fuel-fuel-pill {{ selectedSnapshot.available ? 'is-available' : '' }}">
+                                        {{ selectedFuelType.sourceLabel }} · {{ selectedSnapshot.available ? 'available' : 'unavailable' }}
+                                    </span>
+                                    {% if selectedSnapshot.priceMilliEurosPerLiter %}
+                                        <span class="public-fuel-fuel-pill is-available">{{ (selectedSnapshot.priceMilliEurosPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L</span>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="public-fuel-fuels">
+                                    {% for fuel, snapshot in station.fuels %}
+                                        {% if snapshot.priceMilliEurosPerLiter is defined and snapshot.priceMilliEurosPerLiter %}
+                                            <span class="public-fuel-fuel-pill {{ snapshot.available ? 'is-available' : '' }}">
+                                                {{ fuel|upper }} {{ (snapshot.priceMilliEurosPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
+                                            </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if station.services is not empty %}
+                                <div class="muted compact-note">Services: {{ station.services|slice(0, 4)|join(', ') }}</div>
+                            {% endif %}
+                            {% if station.sourceUpdatedAt %}
+                                <div class="muted compact-note">Updated: {{ station.sourceUpdatedAt|date('Y-m-d H:i') }}</div>
+                            {% endif %}
+                        </article>
+                    {% else %}
+                        <div class="empty-state public-fuel-empty">No station found.</div>
+                    {% endfor %}
+                </div>
+            </section>
+        </section>
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script id="public-fuel-leaflet-script" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        const initPublicFuelStationMap = () => {
+            const mapContainer = document.getElementById('public-fuel-station-map');
+            const dataContainer = document.getElementById('public-fuel-station-map-data');
+            if (!mapContainer || !dataContainer || mapContainer.dataset.mapInitialized === '1') {
+                return;
+            }
+
+            if (typeof L === 'undefined') {
+                const leafletScript = document.getElementById('public-fuel-leaflet-script');
+                if (leafletScript && leafletScript.dataset.publicFuelMapBound !== '1') {
+                    leafletScript.addEventListener('load', initPublicFuelStationMap, { once: true });
+                    leafletScript.dataset.publicFuelMapBound = '1';
+                }
+
+                return;
+            }
+
+            let points = [];
+            try {
+                points = JSON.parse(dataContainer.textContent || '[]');
+            } catch (error) {
+                points = [];
+            }
+
+            if (!Array.isArray(points) || points.length === 0) {
+                return;
+            }
+
+            const map = L.map(mapContainer, {scrollWheelZoom: false});
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            const bounds = [];
+            points.forEach((point) => {
+                if (typeof point.latitude !== 'number' || typeof point.longitude !== 'number') {
+                    return;
+                }
+
+                const marker = L.marker([point.latitude, point.longitude]).addTo(map);
+                const price = typeof point.priceMilliEurosPerLiter === 'number'
+                    ? ` · ${(point.priceMilliEurosPerLiter / 1000).toFixed(3)} EUR/L`
+                    : '';
+                const fuel = point.fuel ? `<br>${escapeHtml(point.fuel)}${price}` : '';
+                const availability = typeof point.available === 'boolean'
+                    ? `<br>${point.available ? 'Available' : 'Unavailable'}`
+                    : '';
+
+                marker.bindPopup(
+                    `<strong>${escapeHtml(point.label)}</strong><br>` +
+                    `${escapeHtml(point.address)}` +
+                    `${fuel}` +
+                    `${availability}` +
+                    `${point.automate24 ? '<br>Automate 24/24' : ''}`
+                );
+                bounds.push([point.latitude, point.longitude]);
+            });
+
+            if (bounds.length === 1) {
+                map.setView(bounds[0], 12);
+            } else if (bounds.length > 1) {
+                map.fitBounds(bounds, {padding: [20, 20]});
+            } else {
+                map.setView([46.603354, 1.888334], 5);
+            }
+
+            mapContainer.dataset.mapInitialized = '1';
+            setTimeout(() => map.invalidateSize(), 0);
+        };
+
+        document.addEventListener('DOMContentLoaded', initPublicFuelStationMap);
+        document.addEventListener('turbo:load', initPublicFuelStationMap);
+    </script>
+{% endblock %}

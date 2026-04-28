@@ -106,13 +106,14 @@ final class DashboardWebUiTest extends WebTestCase
         $this->em->persist($needsReview);
         $this->em->persist($failed);
 
+        $plannedFor = new DateTimeImmutable('+7 days 09:00:00');
         $plan = new MaintenancePlannedCostEntity();
         $plan->setId(Uuid::v7());
         $plan->setOwner($user);
         $plan->setVehicle($vehicle);
         $plan->setLabel('Oil change');
         $plan->setEventType(MaintenanceEventType::SERVICE);
-        $plan->setPlannedFor(new DateTimeImmutable('2026-04-02 09:00:00'));
+        $plan->setPlannedFor($plannedFor);
         $plan->setPlannedCostCents(9900);
         $plan->setCurrencyCode('EUR');
         $plan->setCreatedAt(new DateTimeImmutable('2026-03-27 09:10:00'));

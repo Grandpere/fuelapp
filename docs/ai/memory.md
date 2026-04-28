@@ -243,6 +243,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: make the planned maintenance fixture relative to the current day so it always falls inside the dashboard's upcoming window.
 - Prevention: for behavior that depends on `today`, either control the clock explicitly or create test dates relative to the runtime date.
 
+## 2026-04-28 - Public and admin UI tests must assert page-specific copy
+- Symptom: the public fuel station UI test expected `Cached stations`, a metric label that only exists on the admin diagnostics page.
+- Root cause: public and admin coverage for the same feature reused similar wording without checking which page owned the copy.
+- Fix: assert `Station list` on the public map page and keep `Cached stations` for the admin diagnostics page.
+- Prevention: when a feature has both public and admin pages, assertions should target the stable visible contract of that exact page, not shared feature vocabulary.
+
 ## 2026-03-28 - Bulk ZIP extraction must always clean temporary entry files on rejection
 - Symptom: rejected ZIP entries in bulk import could leave `fuelapp-import-zip-*` temp files behind in the system temp directory.
 - Root cause: `processZipEntry()` returned early on oversize/read failures before reaching the cleanup path that deleted the extracted temp file.

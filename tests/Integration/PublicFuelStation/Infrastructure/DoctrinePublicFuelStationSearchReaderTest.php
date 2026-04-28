@@ -57,7 +57,7 @@ final class DoctrinePublicFuelStationSearchReaderTest extends KernelTestCase
         self::assertSame(1, $result->totalCount);
         self::assertCount(1, $result->items);
         self::assertSame('1000001', $result->items[0]->sourceId);
-        self::assertSame(4.9569, $result->items[0]->latitude);
+        self::assertSame(49.569, $result->items[0]->latitude);
         self::assertTrue($result->items[0]->fuels['gazole']['available']);
         self::assertSame(1789, $result->items[0]->fuels['gazole']['priceMilliEurosPerLiter']);
     }
@@ -66,8 +66,8 @@ final class DoctrinePublicFuelStationSearchReaderTest extends KernelTestCase
     {
         $station = new PublicFuelStationEntity();
         $station->setSourceId($sourceId);
-        $station->setLatitudeMicroDegrees(4956900);
-        $station->setLongitudeMicroDegrees(364600);
+        $station->setLatitudeMicroDegrees(49569000);
+        $station->setLongitudeMicroDegrees(3646000);
         $station->setAddress($address);
         $station->setPostalCode($postalCode);
         $station->setCity($city);

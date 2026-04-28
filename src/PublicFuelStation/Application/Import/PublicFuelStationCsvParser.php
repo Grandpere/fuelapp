@@ -144,11 +144,22 @@ final class PublicFuelStationCsvParser
 
     private function readMicroDegrees(string $value): ?int
     {
-        if ('' === trim($value) || !is_numeric($value)) {
+        $normalized = str_replace([' ', ','], ['', '.'], trim($value));
+        if ('' === $normalized || !is_numeric($normalized)) {
             return null;
         }
 
-        return (int) round((float) $value);
+        $coordinate = (float) $normalized;
+        if (abs($coordinate) <= 180.0) {
+            return (int) round($coordinate * 1_000_000);
+        }
+
+        // data.gouv fuel feeds commonly expose coordinates as degrees * 100000.
+        if (abs($coordinate) <= 18_000_000.0) {
+            return (int) round($coordinate * 10);
+        }
+
+        return (int) round($coordinate);
     }
 
     /**

@@ -63,8 +63,8 @@ final class DoctrinePublicFuelStationRepositoryTest extends KernelTestCase
     {
         return new ParsedPublicFuelStation(
             $sourceId,
-            4956900,
-            364600,
+            49569000,
+            3646000,
             $address,
             '01000',
             'Bourg',

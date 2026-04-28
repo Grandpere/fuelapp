@@ -30,8 +30,8 @@ final class PublicFuelStationCsvParserTest extends TestCase
         self::assertCount(1, $stations);
         $station = $stations[0];
         self::assertSame('1000001', $station->sourceId);
-        self::assertSame(4956900, $station->latitudeMicroDegrees);
-        self::assertSame(364600, $station->longitudeMicroDegrees);
+        self::assertSame(49569000, $station->latitudeMicroDegrees);
+        self::assertSame(3646000, $station->longitudeMicroDegrees);
         self::assertSame('596 AVENUE DE TREVOUX', $station->address);
         self::assertSame('01000', $station->postalCode);
         self::assertSame('SAINT-DENIS-LÈS-BOURG', $station->city);

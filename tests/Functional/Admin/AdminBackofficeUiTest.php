@@ -111,8 +111,8 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $station = new PublicFuelStationEntity();
         $station->setSourceId('1000001');
-        $station->setLatitudeMicroDegrees(4956900);
-        $station->setLongitudeMicroDegrees(364600);
+        $station->setLatitudeMicroDegrees(49569000);
+        $station->setLongitudeMicroDegrees(3646000);
         $station->setAddress('596 AVENUE DE TREVOUX');
         $station->setPostalCode('01000');
         $station->setCity('SAINT-DENIS-LÈS-BOURG');

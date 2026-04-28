@@ -249,6 +249,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: assert `Station list` on the public map page and keep `Cached stations` for the admin diagnostics page.
 - Prevention: when a feature has both public and admin pages, assertions should target the stable visible contract of that exact page, not shared feature vocabulary.
 
+## 2026-04-28 - Public fuel station source coordinates use a 1e5 scale
+- Symptom: the public fuel station map showed markers over a blue ocean even though station rows and map points existed.
+- Root cause: data.gouv fuel coordinates such as `4956900` represent `49.56900` degrees (`degrees * 100000`), but the import stored them as microdegrees directly; the UI then read `4.9569` degrees.
+- Fix: normalize source coordinates to real microdegrees during CSV parsing, while still accepting decimal-degree and already-microdegree inputs.
+- Prevention: whenever importing external coordinates, test the source unit conversion with a real-looking France coordinate and assert the final rendered degree value.
+
 ## 2026-03-28 - Bulk ZIP extraction must always clean temporary entry files on rejection
 - Symptom: rejected ZIP entries in bulk import could leave `fuelapp-import-zip-*` temp files behind in the system temp directory.
 - Root cause: `processZipEntry()` returned early on oversize/read failures before reaching the cleanup path that deleted the extracted temp file.

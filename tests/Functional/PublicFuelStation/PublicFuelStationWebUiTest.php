@@ -74,6 +74,7 @@ final class PublicFuelStationWebUiTest extends WebTestCase
         self::assertStringContainsString('596 AVENUE DE TREVOUX', $content);
         self::assertStringContainsString('1.789 EUR/L', $content);
         self::assertStringContainsString('public-fuel-station-map-data', $content);
+        self::assertStringContainsString('"latitude":49.569', $content);
         self::assertStringNotContainsString('8 ROUTE SANS GAZOLE', $content);
     }
 
@@ -81,8 +82,8 @@ final class PublicFuelStationWebUiTest extends WebTestCase
     {
         $station = new PublicFuelStationEntity();
         $station->setSourceId($sourceId);
-        $station->setLatitudeMicroDegrees(4956900);
-        $station->setLongitudeMicroDegrees(364600);
+        $station->setLatitudeMicroDegrees(49569000);
+        $station->setLongitudeMicroDegrees(3646000);
         $station->setAddress($address);
         $station->setPostalCode($postalCode);
         $station->setCity($city);

@@ -237,6 +237,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: run the sync console command with `--no-debug` and upsert public station rows through DBAL `INSERT ... ON CONFLICT`.
 - Prevention: bulk import commands should run without debug and avoid per-row ORM unit-of-work churn.
 
+## 2026-04-28 - Functional date fixtures must not expire against the real clock
+- Symptom: `DashboardWebUiTest` stopped seeing the planned-maintenance card after the hardcoded `2026-04-02` fixture date moved into the past.
+- Root cause: the dashboard computes upcoming maintenance from `today` at runtime, while the test used a fixed planned date that only stayed valid for a short window.
+- Fix: make the planned maintenance fixture relative to the current day so it always falls inside the dashboard's upcoming window.
+- Prevention: for behavior that depends on `today`, either control the clock explicitly or create test dates relative to the runtime date.
+
 ## 2026-03-28 - Bulk ZIP extraction must always clean temporary entry files on rejection
 - Symptom: rejected ZIP entries in bulk import could leave `fuelapp-import-zip-*` temp files behind in the system temp directory.
 - Root cause: `processZipEntry()` returned early on oversize/read failures before reaching the cleanup path that deleted the extracted temp file.

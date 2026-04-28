@@ -62,6 +62,8 @@ final class DoctrinePublicFuelStationMatcherTest extends KernelTestCase
         self::assertNotEmpty($matches);
         self::assertSame('near-public-station', $matches[0]->sourceId);
         self::assertSame('high', $matches[0]->confidence);
+        self::assertSame(44569010, $matches[0]->latitudeMicroDegrees);
+        self::assertSame(-579010, $matches[0]->longitudeMicroDegrees);
         self::assertNotNull($matches[0]->distanceMeters);
         self::assertSame(1789, $matches[0]->fuels['gazole']['priceMilliEurosPerLiter']);
     }

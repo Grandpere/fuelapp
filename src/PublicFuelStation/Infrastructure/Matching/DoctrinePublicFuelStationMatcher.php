@@ -38,7 +38,7 @@ final readonly class DoctrinePublicFuelStationMatcher implements PublicFuelStati
     {
         $limit = max(1, min($query->limit, 5));
         $rows = $this->connection->fetchAllAssociative(<<<SQL
-            SELECT source_id, address, postal_code, city, fuels,
+            SELECT source_id, address, postal_code, city, latitude_micro_degrees, longitude_micro_degrees, fuels,
                 SQRT(
                     POWER((latitude_micro_degrees - :latitude) * 0.11132, 2)
                     + POWER((longitude_micro_degrees - :longitude) * 0.11132 * COS(RADIANS(:latitude / 1000000.0)), 2)
@@ -63,7 +63,7 @@ final readonly class DoctrinePublicFuelStationMatcher implements PublicFuelStati
     {
         $limit = max(1, min($query->limit, 5));
         $rows = $this->connection->fetchAllAssociative(<<<SQL
-            SELECT source_id, address, postal_code, city, fuels, NULL AS distance_meters
+            SELECT source_id, address, postal_code, city, latitude_micro_degrees, longitude_micro_degrees, fuels, NULL AS distance_meters
             FROM public_fuel_stations
             WHERE postal_code = :postalCode
                 AND LOWER(city) = :city
@@ -93,6 +93,8 @@ final readonly class DoctrinePublicFuelStationMatcher implements PublicFuelStati
                 $this->readString($row['address'] ?? null),
                 $this->readString($row['postal_code'] ?? null),
                 $this->readString($row['city'] ?? null),
+                $this->readIntOrNull($row['latitude_micro_degrees'] ?? null),
+                $this->readIntOrNull($row['longitude_micro_degrees'] ?? null),
                 $distanceMeters,
                 $this->confidence($distanceMeters),
                 $this->readFuelJson($row['fuels'] ?? null),

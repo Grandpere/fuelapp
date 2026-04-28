@@ -21,6 +21,7 @@ use App\Analytics\Application\Kpi\MonthlyConsumptionKpi;
 use App\Analytics\Application\Kpi\MonthlyCostKpi;
 use App\Analytics\Application\Kpi\MonthlyFuelPriceKpi;
 use App\Analytics\Application\Kpi\VisitedStationPointKpi;
+use App\Analytics\Application\Map\AnalyticsStationMapBuilder;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
@@ -43,6 +44,7 @@ final class AnalyticsDashboardController extends AbstractController
         private readonly VehicleRepository $vehicleRepository,
         private readonly StationRepository $stationRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
+        private readonly AnalyticsStationMapBuilder $analyticsStationMapBuilder,
     ) {
     }
 
@@ -71,6 +73,7 @@ final class AnalyticsDashboardController extends AbstractController
         $fuelPricePerMonth = $fuelSnapshot->fuelPricePerMonth;
         $vehicleOptions = $this->vehicleOptions($ownerId);
         $stationOptions = $this->stationOptions();
+        $stationMap = $this->analyticsStationMapBuilder->build($visitedStations);
         $analyticsQueryParams = [
             'from' => $from?->format('Y-m-d'),
             'to' => $to?->format('Y-m-d'),
@@ -105,7 +108,7 @@ final class AnalyticsDashboardController extends AbstractController
             'totalQuantityMilliLiters' => $averagePrice->totalQuantityMilliLiters,
             'averagePriceDeciCentsPerLiter' => $averagePrice->averagePriceDeciCentsPerLiter,
             'visitedStations' => $visitedStations,
-            'stationMapPoints' => $this->stationMapPoints($visitedStations),
+            'stationMap' => $stationMap,
             'dateShortcuts' => $this->dateShortcuts($analyticsQueryParams),
             'activeFilterBadges' => $this->activeFilterBadges($vehicleOptions, $stationOptions, $vehicleId, $stationId, $fuelType, $from, $to),
             'selectedVehicleLabel' => null !== $vehicleId ? ($vehicleOptions[$vehicleId] ?? null) : null,
@@ -333,39 +336,6 @@ final class AnalyticsDashboardController extends AbstractController
         }
 
         return $trend;
-    }
-
-    /**
-     * @param list<VisitedStationPointKpi> $items
-     *
-     * @return list<array{
-     *     stationId:string,
-     *     stationName:string,
-     *     address:string,
-     *     latitude:float,
-     *     longitude:float,
-     *     receiptCount:int,
-     *     totalCostCents:int,
-     *     totalQuantityMilliLiters:int
-     * }>
-     */
-    private function stationMapPoints(array $items): array
-    {
-        $points = [];
-        foreach ($items as $item) {
-            $points[] = [
-                'stationId' => $item->stationId,
-                'stationName' => $item->stationName,
-                'address' => sprintf('%s, %s %s', $item->streetName, $item->postalCode, $item->city),
-                'latitude' => $item->latitudeMicroDegrees / 1_000_000,
-                'longitude' => $item->longitudeMicroDegrees / 1_000_000,
-                'receiptCount' => $item->receiptCount,
-                'totalCostCents' => $item->totalCostCents,
-                'totalQuantityMilliLiters' => $item->totalQuantityMilliLiters,
-            ];
-        }
-
-        return $points;
     }
 
     /** @param array<string, ?string> $baseParams

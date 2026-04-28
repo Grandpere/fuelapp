@@ -590,3 +590,15 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: observability metadata existed in headers and audit storage, but admin pages did not surface it inline where operators needed a quick breadcrumb into logs and audit trails.
 - Fix: the admin shell now shows the current request correlation id with a direct audit shortcut, and import detail pages add owner-focused diagnostics and investigation links.
 - Prevention: when a correlation id is central to incident follow-up, surface it on operator-facing admin screens instead of assuming browser headers or logs are close enough.
+
+## 2026-04-28 - Embedded JSON in Twig script tags must be hex-escaped
+- Symptom: the public fuel station page embedded `mapPoints|json_encode|raw` inside `<script type="application/json">`, which let a malicious `</script>` sequence from imported station data break out of the JSON block.
+- Root cause: plain `json_encode` is valid JSON but not safe by itself inside HTML script tags because `<`, `>`, `'`, `"` and `&` still interact with the HTML parser.
+- Fix: encode map payloads with `JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT` before rendering them raw in Twig.
+- Prevention: whenever imported or user-controlled JSON is embedded in a `<script>` tag, treat it as an HTML-context escape problem, not just a JSON serialization problem.
+
+## 2026-04-28 - Public fuel station coordinate parsing needs per-column hints plus row-level fallbacks
+- Symptom: longitude values like `364600` were sometimes left 10x too small, while already-microdegree values like `2352200` or `-579000` could also be wrongly multiplied by 10.
+- Root cause: the public fuel feed mixes decimal degrees, `degrees * 100000`, and already-microdegree values, and longitude alone is ambiguous because many valid microdegree longitudes stay below the `100k` upper bound.
+- Fix: infer reliable column hints first, then apply narrow row-level fallbacks only for still-ambiguous coordinates instead of scaling every candidate longitude the same way.
+- Prevention: for mixed coordinate feeds, avoid one-size-fits-all magnitude rules on a single coordinate; decide from the full row and preserve ambiguous values unless a stronger hint exists.

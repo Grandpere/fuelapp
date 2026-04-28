@@ -102,6 +102,23 @@ final class PublicFuelStationCsvParserTest extends TestCase
         self::assertSame(3646000, $stations[0]->longitudeMicroDegrees);
     }
 
+    public function testItConvertsMixedScaleColumnsUsingFileLevelHints(): void
+    {
+        $path = $this->writeCsv(<<<'CSV'
+            id;latitude;longitude;Code postal;pop;Adresse;Ville;Prix Gazole mis à jour le;Prix Gazole;Carburants disponibles;Automate 24-24 (oui/non);Services proposés
+            1000005;48856600;364600;75000;R;Rue Mixte;Paris;2026-04-28T09:15:00+02:00;1.789;Gazole;oui;Boutique alimentaire
+            1000006;49569000;2352200;01000;R;Rue Reference;Bourg;2026-04-28T09:15:00+02:00;1.799;SP95;oui;Boutique alimentaire
+            CSV);
+
+        $stations = iterator_to_array(new PublicFuelStationCsvParser()->parseFile($path));
+
+        self::assertCount(2, $stations);
+        self::assertSame(48856600, $stations[0]->latitudeMicroDegrees);
+        self::assertSame(3646000, $stations[0]->longitudeMicroDegrees);
+        self::assertSame(49569000, $stations[1]->latitudeMicroDegrees);
+        self::assertSame(2352200, $stations[1]->longitudeMicroDegrees);
+    }
+
     private function writeCsv(string $contents): string
     {
         $path = tempnam(sys_get_temp_dir(), 'fuelapp-public-parser-');

@@ -59,6 +59,7 @@ final class PublicFuelStationWebUiTest extends WebTestCase
         $password = 'test1234';
         $this->createUser($email, $password, ['ROLE_USER']);
         $this->persistPublicStation('1000001', '596 AVENUE DE TREVOUX', '01000', 'SAINT-DENIS-LÈS-BOURG', true, true);
+        $this->persistPublicStation('1000003', '12 </script><script>alert(1)</script> AVENUE', '01000', 'BOURG-ESCAPE', true, true);
         $this->persistPublicStation('2000002', '8 ROUTE SANS GAZOLE', '69000', 'LYON', false, false);
         $this->em->flush();
 
@@ -75,6 +76,7 @@ final class PublicFuelStationWebUiTest extends WebTestCase
         self::assertStringContainsString('1.789 EUR/L', $content);
         self::assertStringContainsString('public-fuel-station-map-data', $content);
         self::assertStringContainsString('"latitude":49.569', $content);
+        self::assertStringContainsString('\u003C\/script\u003E\u003Cscript\u003Ealert(1)\u003C\/script\u003E', $content);
         self::assertStringNotContainsString('8 ROUTE SANS GAZOLE', $content);
     }
 

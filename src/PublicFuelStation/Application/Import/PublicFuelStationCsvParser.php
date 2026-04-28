@@ -21,6 +21,9 @@ final class PublicFuelStationCsvParser
 {
     private const LATITUDE_100K_MAX = 9_000_000.0;
     private const LONGITUDE_100K_MAX = 18_000_000.0;
+    private const SCALE_UNKNOWN = 'unknown';
+    private const SCALE_100K = '100k';
+    private const SCALE_MICRO = 'micro';
 
     /** @return iterable<ParsedPublicFuelStation> */
     public function parseFile(string $path): iterable
@@ -28,9 +31,11 @@ final class PublicFuelStationCsvParser
         $file = new SplFileObject($path, 'rb');
         $file->setFlags(SplFileObject::READ_CSV | SplFileObject::DROP_NEW_LINE | SplFileObject::SKIP_EMPTY);
         $file->setCsvControl(';', '"', '');
+        $coordinateScales = $this->inferCoordinateScales($file);
 
         /** @var list<string>|null $headers */
         $headers = null;
+        $file->rewind();
         foreach ($file as $row) {
             if (!is_array($row) || [] === $row || [null] === $row) {
                 continue;
@@ -45,7 +50,7 @@ final class PublicFuelStationCsvParser
             }
 
             $record = $this->combineRecord($headers, $csvRow);
-            $station = $this->parseRecord($record);
+            $station = $this->parseRecord($record, $coordinateScales);
             if ($station instanceof ParsedPublicFuelStation) {
                 yield $station;
             }
@@ -87,15 +92,18 @@ final class PublicFuelStationCsvParser
         return $record;
     }
 
-    /** @param array<string, string> $record */
-    private function parseRecord(array $record): ?ParsedPublicFuelStation
+    /**
+     * @param array<string, string>                   $record
+     * @param array{latitude:string,longitude:string} $coordinateScales
+     */
+    private function parseRecord(array $record, array $coordinateScales): ?ParsedPublicFuelStation
     {
         $sourceId = $record['id'] ?? '';
         if ('' === $sourceId) {
             return null;
         }
 
-        [$latitude, $longitude] = $this->readCoordinatePair($record['latitude'] ?? '', $record['longitude'] ?? '');
+        [$latitude, $longitude] = $this->readCoordinatePair($record['latitude'] ?? '', $record['longitude'] ?? '', $coordinateScales);
         $sourceUpdatedAt = $this->readLatestFuelUpdate($record);
 
         return new ParsedPublicFuelStation(
@@ -144,18 +152,60 @@ final class PublicFuelStationCsvParser
         return trim($header, '_');
     }
 
-    /** @return array{0:?int, 1:?int} */
-    private function readCoordinatePair(string $latitude, string $longitude): array
+    /**
+     * @param array{latitude:string,longitude:string} $coordinateScales
+     *
+     * @return array{0:?int, 1:?int}
+     */
+    private function readCoordinatePair(string $latitude, string $longitude, array $coordinateScales): array
     {
         $parsedLatitude = $this->readRawCoordinate($latitude);
         $parsedLongitude = $this->readRawCoordinate($longitude);
 
         if (null === $parsedLatitude || null === $parsedLongitude) {
-            return [$this->toMicroDegrees($parsedLatitude), $this->toMicroDegrees($parsedLongitude)];
+            return [
+                $this->toMicroDegrees($parsedLatitude, self::LATITUDE_100K_MAX, $coordinateScales['latitude']),
+                $this->toMicroDegrees($parsedLongitude, self::LONGITUDE_100K_MAX, $coordinateScales['longitude']),
+            ];
         }
 
         if (
-            abs($parsedLatitude['value']) > 180.0
+            self::SCALE_100K === $coordinateScales['latitude']
+            && self::SCALE_UNKNOWN === $coordinateScales['longitude']
+            && $this->isHundredKCandidate($parsedLongitude, self::LONGITUDE_100K_MAX)
+        ) {
+            return [
+                $this->toMicroDegrees($parsedLatitude, self::LATITUDE_100K_MAX, $coordinateScales['latitude']),
+                (int) round($parsedLongitude['value'] * 10),
+            ];
+        }
+
+        if (
+            self::SCALE_MICRO === $coordinateScales['latitude']
+            && self::SCALE_UNKNOWN === $coordinateScales['longitude']
+            && $this->shouldScaleAmbiguousLongitudeWithMicroLatitude($parsedLongitude)
+        ) {
+            return [
+                $this->toMicroDegrees($parsedLatitude, self::LATITUDE_100K_MAX, $coordinateScales['latitude']),
+                (int) round($parsedLongitude['value'] * 10),
+            ];
+        }
+
+        if (
+            self::SCALE_MICRO === $coordinateScales['longitude']
+            && self::SCALE_UNKNOWN === $coordinateScales['latitude']
+            && $this->isHundredKCandidate($parsedLatitude, self::LATITUDE_100K_MAX)
+        ) {
+            return [
+                (int) round($parsedLatitude['value'] * 10),
+                $this->toMicroDegrees($parsedLongitude, self::LONGITUDE_100K_MAX, $coordinateScales['longitude']),
+            ];
+        }
+
+        if (
+            self::SCALE_UNKNOWN === $coordinateScales['latitude']
+            && self::SCALE_UNKNOWN === $coordinateScales['longitude']
+            && abs($parsedLatitude['value']) > 180.0
             && abs($parsedLongitude['value']) > 180.0
             && abs($parsedLatitude['value']) <= self::LATITUDE_100K_MAX
             && abs($parsedLongitude['value']) <= self::LONGITUDE_100K_MAX
@@ -166,7 +216,10 @@ final class PublicFuelStationCsvParser
             ];
         }
 
-        return [$this->toMicroDegrees($parsedLatitude), $this->toMicroDegrees($parsedLongitude)];
+        return [
+            $this->toMicroDegrees($parsedLatitude, self::LATITUDE_100K_MAX, $coordinateScales['latitude']),
+            $this->toMicroDegrees($parsedLongitude, self::LONGITUDE_100K_MAX, $coordinateScales['longitude']),
+        ];
     }
 
     /** @return array{value:float, fromDecimalDegrees:bool}|null */
@@ -185,8 +238,24 @@ final class PublicFuelStationCsvParser
         return ['value' => (float) $normalized, 'fromDecimalDegrees' => str_contains($trimmed, '.') || str_contains($trimmed, ',')];
     }
 
-    /** @param array{value:float, fromDecimalDegrees:bool}|null $coordinate */
-    private function toMicroDegrees(?array $coordinate): ?int
+    /** @param array{value:float, fromDecimalDegrees:bool} $coordinate */
+    private function isHundredKCandidate(array $coordinate, float $hundredKMax): bool
+    {
+        return abs($coordinate['value']) > 180.0 && abs($coordinate['value']) <= $hundredKMax;
+    }
+
+    /** @param array{value:float, fromDecimalDegrees:bool} $coordinate */
+    private function shouldScaleAmbiguousLongitudeWithMicroLatitude(array $coordinate): bool
+    {
+        return $coordinate['value'] > 0
+            && abs($coordinate['value']) < 1_000_000.0
+            && $this->isHundredKCandidate($coordinate, self::LONGITUDE_100K_MAX);
+    }
+
+    /**
+     * @param array{value:float, fromDecimalDegrees:bool}|null $coordinate
+     */
+    private function toMicroDegrees(?array $coordinate, float $hundredKMax, string $scale): ?int
     {
         if (null === $coordinate) {
             return null;
@@ -196,7 +265,81 @@ final class PublicFuelStationCsvParser
             return (int) round($coordinate['value'] * 1_000_000);
         }
 
+        if (self::SCALE_100K === $scale && abs($coordinate['value']) <= $hundredKMax) {
+            return (int) round($coordinate['value'] * 10);
+        }
+
         return (int) round($coordinate['value']);
+    }
+
+    /**
+     * @return array{latitude:string,longitude:string}
+     */
+    private function inferCoordinateScales(SplFileObject $file): array
+    {
+        $headers = null;
+        $latitudeHundredK = false;
+        $latitudeMicro = false;
+        $longitudeHundredK = false;
+        $longitudeMicro = false;
+
+        $file->rewind();
+        foreach ($file as $row) {
+            if (!is_array($row) || [] === $row || [null] === $row) {
+                continue;
+            }
+
+            /** @var list<string|null> $csvRow */
+            $csvRow = array_values($row);
+            if (null === $headers) {
+                $headers = $this->normalizeHeaders($csvRow);
+
+                continue;
+            }
+
+            $record = $this->combineRecord($headers, $csvRow);
+            $parsedLatitude = $this->readRawCoordinate($record['latitude'] ?? '');
+            $this->markScaleHints($parsedLatitude, self::LATITUDE_100K_MAX, $latitudeHundredK, $latitudeMicro);
+
+            $parsedLongitude = $this->readRawCoordinate($record['longitude'] ?? '');
+            $this->markScaleHints($parsedLongitude, self::LONGITUDE_100K_MAX, $longitudeHundredK, $longitudeMicro);
+        }
+
+        return [
+            'latitude' => $this->resolveScaleHint($latitudeHundredK, $latitudeMicro, true),
+            'longitude' => $this->resolveScaleHint($longitudeHundredK, $longitudeMicro, false),
+        ];
+    }
+
+    /**
+     * @param array{value:float, fromDecimalDegrees:bool}|null $coordinate
+     */
+    private function markScaleHints(?array $coordinate, float $hundredKMax, bool &$hundredK, bool &$micro): void
+    {
+        if (null === $coordinate || abs($coordinate['value']) <= 180.0) {
+            return;
+        }
+
+        if (abs($coordinate['value']) <= $hundredKMax) {
+            $hundredK = true;
+
+            return;
+        }
+
+        $micro = true;
+    }
+
+    private function resolveScaleHint(bool $hundredK, bool $micro, bool $allowHundredKHint): string
+    {
+        if ($allowHundredKHint && $hundredK && !$micro) {
+            return self::SCALE_100K;
+        }
+
+        if ($micro && !$hundredK) {
+            return self::SCALE_MICRO;
+        }
+
+        return self::SCALE_UNKNOWN;
     }
 
     /**

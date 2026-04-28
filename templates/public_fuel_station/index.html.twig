@@ -165,7 +165,7 @@
                     <div class="empty-state public-fuel-empty">No public station is available for the current filters. Run the public station sync or widen the filters.</div>
                 {% else %}
                     <div class="public-fuel-map" id="public-fuel-station-map"></div>
-                    <script type="application/json" id="public-fuel-station-map-data">{{ mapPoints|json_encode|raw }}</script>
+                    <script type="application/json" id="public-fuel-station-map-data">{{ mapPoints|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT'))|raw }}</script>
                 {% endif %}
             </section>
 

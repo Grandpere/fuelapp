@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Station\UI\Web\Controller;
 
+use App\PublicFuelStation\Application\Matching\PublicFuelStationMatcher;
+use App\PublicFuelStation\Application\Matching\VisitedStationPublicMatchQuery;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Security\Voter\StationVoter;
 use App\Station\Application\Repository\StationRepository;
@@ -29,6 +31,7 @@ final class ShowStationController extends AbstractController
     public function __construct(
         private readonly StationRepository $stationRepository,
         private readonly ReceiptRepository $receiptRepository,
+        private readonly PublicFuelStationMatcher $publicFuelStationMatcher,
     ) {
     }
 
@@ -77,6 +80,13 @@ final class ShowStationController extends AbstractController
             'latestReceipt' => $latestReceipt,
             'recentFuelSpendCents' => $recentFuelSpendCents,
             'latestOdometer' => $latestOdometer,
+            'publicStationCandidates' => $this->publicFuelStationMatcher->findCandidates(new VisitedStationPublicMatchQuery(
+                $station->latitudeMicroDegrees(),
+                $station->longitudeMicroDegrees(),
+                $station->streetName(),
+                $station->postalCode(),
+                $station->city(),
+            )),
             'backToListUrl' => $backToListUrl,
         ]);
     }

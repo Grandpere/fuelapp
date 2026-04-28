@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Station;
 
+use App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Entity\PublicFuelStationEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -52,7 +53,7 @@ final class StationWebUiTest extends WebTestCase
         }
         $this->passwordHasher = $passwordHasher;
 
-        $this->em->getConnection()->executeStatement('TRUNCATE TABLE maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
+        $this->em->getConnection()->executeStatement('TRUNCATE TABLE public_fuel_station_sync_runs, public_fuel_stations, maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
     }
 
     public function testStationDetailActsAsWorkflowHub(): void
@@ -67,7 +68,31 @@ final class StationWebUiTest extends WebTestCase
         $station->setStreetName('5 Place Centrale');
         $station->setPostalCode('33000');
         $station->setCity('Bordeaux');
+        $station->setLatitudeMicroDegrees(44569000);
+        $station->setLongitudeMicroDegrees(-579000);
         $this->em->persist($station);
+
+        $publicStation = new PublicFuelStationEntity();
+        $publicStation->setSourceId('public-hub-station');
+        $publicStation->setLatitudeMicroDegrees(44569010);
+        $publicStation->setLongitudeMicroDegrees(-579010);
+        $publicStation->setAddress('5 PLACE CENTRALE');
+        $publicStation->setPostalCode('33000');
+        $publicStation->setCity('BORDEAUX');
+        $publicStation->setAutomate24(true);
+        $publicStation->setServices(['Station de gonflage']);
+        $publicStation->setFuels([
+            'gazole' => [
+                'available' => true,
+                'priceMilliEurosPerLiter' => 1789,
+                'priceUpdatedAt' => '2026-04-28T09:15:00+02:00',
+                'ruptureType' => null,
+                'ruptureStartedAt' => null,
+            ],
+        ]);
+        $publicStation->setSourceUpdatedAt(new DateTimeImmutable('2026-04-28 09:15:00'));
+        $publicStation->setImportedAt(new DateTimeImmutable('2026-04-28 09:20:00'));
+        $this->em->persist($publicStation);
 
         $receipt = new ReceiptEntity();
         $receipt->setId(Uuid::v7());
@@ -101,6 +126,9 @@ final class StationWebUiTest extends WebTestCase
         self::assertStringContainsString('/ui/receipts/new?station_id='.$stationId, $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $content);
         self::assertStringContainsString('145200 km', $content);
+        self::assertStringContainsString('Public station candidates', $content);
+        self::assertStringContainsString('public-hub-station', $content);
+        self::assertStringContainsString('1.789 EUR/L', $content);
     }
 
     public function testStationDetailRequiresAccessibleStationForFrontUsers(): void

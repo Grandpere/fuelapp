@@ -20,4 +20,4 @@
 # TODO - SP38-004 Visited/public station matching
 
 ## Plan
-- [pending] Add safe matching between user visited stations and public station records.
+- [completed] Add safe matching between user visited stations and public station records.

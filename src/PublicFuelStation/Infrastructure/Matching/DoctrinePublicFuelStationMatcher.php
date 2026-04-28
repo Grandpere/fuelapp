@@ -17,6 +17,7 @@ use App\PublicFuelStation\Application\Matching\PublicFuelStationMatchCandidate;
 use App\PublicFuelStation\Application\Matching\PublicFuelStationMatcher;
 use App\PublicFuelStation\Application\Matching\VisitedStationPublicMatchQuery;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 
 final readonly class DoctrinePublicFuelStationMatcher implements PublicFuelStationMatcher
 {
@@ -33,12 +34,39 @@ final readonly class DoctrinePublicFuelStationMatcher implements PublicFuelStati
         return $this->findByAddressContext($query);
     }
 
+    public function findBestCandidates(array $queries): array
+    {
+        $coordinateQueries = [];
+        $fallbackQueries = [];
+
+        foreach ($queries as $key => $query) {
+            if (null !== $query->latitudeMicroDegrees && null !== $query->longitudeMicroDegrees) {
+                $coordinateQueries[$key] = $query;
+
+                continue;
+            }
+
+            $fallbackQueries[$key] = $query;
+        }
+
+        $matches = $this->findBestByCoordinates($coordinateQueries);
+
+        foreach ($fallbackQueries as $key => $query) {
+            $match = $this->findCandidates($query)[0] ?? null;
+            if ($match instanceof PublicFuelStationMatchCandidate) {
+                $matches[$key] = $match;
+            }
+        }
+
+        return $matches;
+    }
+
     /** @return list<PublicFuelStationMatchCandidate> */
     private function findByCoordinates(VisitedStationPublicMatchQuery $query): array
     {
         $limit = max(1, min($query->limit, 5));
         $rows = $this->connection->fetchAllAssociative(<<<SQL
-            SELECT source_id, address, postal_code, city, fuels,
+            SELECT source_id, address, postal_code, city, latitude_micro_degrees, longitude_micro_degrees, fuels,
                 SQRT(
                     POWER((latitude_micro_degrees - :latitude) * 0.11132, 2)
                     + POWER((longitude_micro_degrees - :longitude) * 0.11132 * COS(RADIANS(:latitude / 1000000.0)), 2)
@@ -63,7 +91,7 @@ final readonly class DoctrinePublicFuelStationMatcher implements PublicFuelStati
     {
         $limit = max(1, min($query->limit, 5));
         $rows = $this->connection->fetchAllAssociative(<<<SQL
-            SELECT source_id, address, postal_code, city, fuels, NULL AS distance_meters
+            SELECT source_id, address, postal_code, city, latitude_micro_degrees, longitude_micro_degrees, fuels, NULL AS distance_meters
             FROM public_fuel_stations
             WHERE postal_code = :postalCode
                 AND LOWER(city) = :city
@@ -79,6 +107,94 @@ final readonly class DoctrinePublicFuelStationMatcher implements PublicFuelStati
     }
 
     /**
+     * @param array<string, VisitedStationPublicMatchQuery> $queries
+     *
+     * @return array<string, PublicFuelStationMatchCandidate>
+     */
+    private function findBestByCoordinates(array $queries): array
+    {
+        if ([] === $queries) {
+            return [];
+        }
+
+        $values = [];
+        $params = [];
+        $types = [];
+        $index = 0;
+
+        foreach ($queries as $key => $query) {
+            $values[] = "(:key_{$index}, CAST(:latitude_{$index} AS INTEGER), CAST(:longitude_{$index} AS INTEGER))";
+            $params["key_{$index}"] = $key;
+            $params["latitude_{$index}"] = $query->latitudeMicroDegrees;
+            $params["longitude_{$index}"] = $query->longitudeMicroDegrees;
+            $types["key_{$index}"] = ParameterType::STRING;
+            $types["latitude_{$index}"] = ParameterType::INTEGER;
+            $types["longitude_{$index}"] = ParameterType::INTEGER;
+            ++$index;
+        }
+
+        $rows = $this->connection->fetchAllAssociative(
+            sprintf(
+                <<<'SQL'
+                        WITH visited_points (query_key, latitude_micro_degrees, longitude_micro_degrees) AS (
+                            VALUES %s
+                        ),
+                        ranked_matches AS (
+                            SELECT
+                                visited_points.query_key,
+                                source_id,
+                                address,
+                                postal_code,
+                                city,
+                                public_fuel_stations.latitude_micro_degrees,
+                                public_fuel_stations.longitude_micro_degrees,
+                                fuels,
+                                SQRT(
+                                    POWER((public_fuel_stations.latitude_micro_degrees - visited_points.latitude_micro_degrees) * 0.11132, 2)
+                                    + POWER((public_fuel_stations.longitude_micro_degrees - visited_points.longitude_micro_degrees) * 0.11132 * COS(RADIANS(visited_points.latitude_micro_degrees / 1000000.0)), 2)
+                                ) AS distance_meters,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY visited_points.query_key
+                                    ORDER BY
+                                        SQRT(
+                                            POWER((public_fuel_stations.latitude_micro_degrees - visited_points.latitude_micro_degrees) * 0.11132, 2)
+                                            + POWER((public_fuel_stations.longitude_micro_degrees - visited_points.longitude_micro_degrees) * 0.11132 * COS(RADIANS(visited_points.latitude_micro_degrees / 1000000.0)), 2)
+                                        ) ASC
+                                ) AS match_rank
+                            FROM visited_points
+                            JOIN public_fuel_stations
+                                ON public_fuel_stations.latitude_micro_degrees IS NOT NULL
+                                AND public_fuel_stations.longitude_micro_degrees IS NOT NULL
+                                AND ABS(public_fuel_stations.latitude_micro_degrees - visited_points.latitude_micro_degrees) <= 15000
+                                AND ABS(public_fuel_stations.longitude_micro_degrees - visited_points.longitude_micro_degrees) <= 20000
+                        )
+                        SELECT query_key, source_id, address, postal_code, city, latitude_micro_degrees, longitude_micro_degrees, fuels, distance_meters
+                        FROM ranked_matches
+                        WHERE match_rank = 1
+                    SQL,
+                implode(', ', $values),
+            ),
+            $params,
+            $types,
+        );
+
+        $matches = [];
+        foreach ($rows as $row) {
+            $queryKey = $this->readString($row['query_key'] ?? null);
+            if ('' === $queryKey) {
+                continue;
+            }
+
+            $matches[$queryKey] = $this->mapRow($row);
+        }
+
+        /** @var array<string, PublicFuelStationMatchCandidate> $filtered */
+        $filtered = array_filter($matches, static fn (mixed $match): bool => $match instanceof PublicFuelStationMatchCandidate);
+
+        return $filtered;
+    }
+
+    /**
      * @param list<array<string, mixed>> $rows
      *
      * @return list<PublicFuelStationMatchCandidate>
@@ -87,19 +203,36 @@ final readonly class DoctrinePublicFuelStationMatcher implements PublicFuelStati
     {
         $candidates = [];
         foreach ($rows as $row) {
-            $distanceMeters = $this->readIntOrNull($row['distance_meters'] ?? null);
-            $candidates[] = new PublicFuelStationMatchCandidate(
-                $this->readString($row['source_id'] ?? null),
-                $this->readString($row['address'] ?? null),
-                $this->readString($row['postal_code'] ?? null),
-                $this->readString($row['city'] ?? null),
-                $distanceMeters,
-                $this->confidence($distanceMeters),
-                $this->readFuelJson($row['fuels'] ?? null),
-            );
+            $candidate = $this->mapRow($row);
+            if ($candidate instanceof PublicFuelStationMatchCandidate) {
+                $candidates[] = $candidate;
+            }
         }
 
         return $candidates;
+    }
+
+    /** @param array<string, mixed> $row */
+    private function mapRow(array $row): ?PublicFuelStationMatchCandidate
+    {
+        $sourceId = $this->readString($row['source_id'] ?? null);
+        if ('' === $sourceId) {
+            return null;
+        }
+
+        $distanceMeters = $this->readIntOrNull($row['distance_meters'] ?? null);
+
+        return new PublicFuelStationMatchCandidate(
+            $sourceId,
+            $this->readString($row['address'] ?? null),
+            $this->readString($row['postal_code'] ?? null),
+            $this->readString($row['city'] ?? null),
+            $this->readIntOrNull($row['latitude_micro_degrees'] ?? null),
+            $this->readIntOrNull($row['longitude_micro_degrees'] ?? null),
+            $distanceMeters,
+            $this->confidence($distanceMeters),
+            $this->readFuelJson($row['fuels'] ?? null),
+        );
     }
 
     private function confidence(?int $distanceMeters): string

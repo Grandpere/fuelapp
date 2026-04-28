@@ -109,6 +109,60 @@
             font-size: 1.05rem;
         }
 
+        .map-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .map-card-head p {
+            margin: 0.2rem 0 0;
+        }
+
+        .map-card-badges {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 0.65rem 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 0.7rem 0.85rem;
+            border-radius: 12px;
+            border: 1px solid var(--surface-soft-border);
+            background: var(--surface-soft-bg);
+            font-size: 0.82rem;
+            color: var(--text-soft);
+        }
+
+        .map-legend-item {
+            display: inline-flex;
+            gap: 0.45rem;
+            align-items: center;
+        }
+
+        .map-legend-dot {
+            display: inline-block;
+            width: 0.9rem;
+            height: 0.9rem;
+            border-radius: 999px;
+            border: 2px solid #24364b;
+        }
+
+        .map-legend-dot.visited {
+            background: #f7b500;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.72);
+        }
+
+        .map-legend-dot.public {
+            background: #61ddff;
+        }
+
         .map-canvas {
             height: 360px;
             border-radius: 12px;
@@ -126,9 +180,8 @@
         }
 
         .station-map-item {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem 0.9rem;
+            display: grid;
+            gap: 0.45rem;
             padding: 0.6rem 0.7rem;
             border-radius: 10px;
             border: 1px solid var(--surface-soft-border);
@@ -136,8 +189,51 @@
             font-size: 0.86rem;
         }
 
+        .station-map-item-head,
+        .station-map-item-row,
+        .station-map-item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem 0.8rem;
+            align-items: center;
+        }
+
         .station-map-item strong {
             color: var(--text-strong);
+        }
+
+        .station-map-item-match {
+            color: var(--text-soft);
+            font-size: 0.82rem;
+        }
+
+        .analytics-map-popup {
+            display: grid;
+            gap: 0.32rem;
+            min-width: 220px;
+            line-height: 1.35;
+        }
+
+        .analytics-map-popup strong {
+            color: var(--text-strong);
+        }
+
+        .analytics-map-popup .popup-kicker {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+        }
+
+        .analytics-map-popup .popup-meta {
+            color: var(--text-soft);
+            font-size: 0.82rem;
+        }
+
+        .analytics-map-popup .popup-highlight {
+            color: var(--text-strong);
+            font-weight: 600;
         }
 
         .trend-card {
@@ -624,23 +720,52 @@
         </section>
 
         <section class="card map-card">
-            <h2>Visited stations map</h2>
-            {% if stationMapPoints is empty %}
+            <div class="map-card-head">
+                <div>
+                    <h2>Visited and matched public stations</h2>
+                    <p class="muted">Your receipt history stays primary. Public stations appear as a separate helper layer when a close match exists.</p>
+                </div>
+                <div class="map-card-badges">
+                    <span class="pill">{{ stationMap.visitedPoints|length }} visited</span>
+                    <span class="pill">{{ stationMap.matchedVisitedCount }} with public match</span>
+                    <span class="pill">{{ stationMap.publicPoints|length }} public marker{{ stationMap.publicPoints|length == 1 ? '' : 's' }}</span>
+                </div>
+            </div>
+            {% if stationMap.visitedPoints is empty %}
                 <div class="empty-state">No geocoded station data for current filters.</div>
             {% else %}
+                <div class="map-legend">
+                    <span class="map-legend-item"><span class="map-legend-dot visited"></span>Visited station from your receipt history</span>
+                    <span class="map-legend-item"><span class="map-legend-dot public"></span>Matched public station from the official cache</span>
+                </div>
                 <div class="map-canvas" id="analytics-station-map"></div>
                 <ul class="station-map-list">
-                    {% for point in stationMapPoints %}
+                    {% for point in stationMap.visitedPoints %}
                         <li class="station-map-item">
-                            <strong>{{ point.stationName }}</strong>
-                            <span>{{ point.address }}</span>
-                            <span>{{ (point.totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
-                            <span>{{ (point.totalQuantityMilliLiters / 1000)|number_format(2, '.', ' ') }} L</span>
-                            <span>{{ point.receiptCount }} receipt(s)</span>
+                            <div class="station-map-item-head">
+                                <strong>{{ point.stationName }}</strong>
+                                <span class="pill">Visited</span>
+                                {% if point.publicMatch is not null %}
+                                    <span class="pill">Public match · {{ point.publicMatch.confidence }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="station-map-item-row">
+                                <span>{{ point.address }}</span>
+                                <span>{{ (point.totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                                <span>{{ (point.totalQuantityMilliLiters / 1000)|number_format(2, '.', ' ') }} L</span>
+                                <span>{{ point.receiptCount }} receipt(s)</span>
+                            </div>
+                            {% if point.publicMatch is not null %}
+                                <div class="station-map-item-match">
+                                    {{ point.publicMatch.address }}, {{ point.publicMatch.postalCode }} {{ point.publicMatch.city }}
+                                    {% if point.publicMatch.distanceMeters is not null %} · {{ point.publicMatch.distanceMeters }} m away{% endif %}
+                                    {% if point.publicMatch.availableFuelLabels is not empty %} · {{ point.publicMatch.availableFuelLabels|join(', ') }}{% endif %}
+                                </div>
+                            {% endif %}
                         </li>
                     {% endfor %}
                 </ul>
-                <script type="application/json" id="analytics-station-map-data">{{ stationMapPoints|json_encode|raw }}</script>
+                <script type="application/json" id="analytics-station-map-data">{{ stationMap|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT'))|raw }}</script>
             {% endif %}
         </section>
 
@@ -922,14 +1047,17 @@
                 return;
             }
 
-            let points = [];
+            let mapData = { visitedPoints: [], publicPoints: [] };
             try {
-                points = JSON.parse(dataContainer.textContent || '[]');
+                mapData = JSON.parse(dataContainer.textContent || '{"visitedPoints":[],"publicPoints":[]}');
             } catch (error) {
-                points = [];
+                mapData = { visitedPoints: [], publicPoints: [] };
             }
 
-            if (!Array.isArray(points) || points.length === 0) {
+            const visitedPoints = Array.isArray(mapData.visitedPoints) ? mapData.visitedPoints : [];
+            const publicPoints = Array.isArray(mapData.publicPoints) ? mapData.publicPoints : [];
+
+            if (visitedPoints.length === 0 && publicPoints.length === 0) {
                 return;
             }
 
@@ -947,21 +1075,81 @@
                 .replace(/'/g, '&#039;');
 
             const bounds = [];
-            points.forEach((point) => {
+            const visitedLayer = L.layerGroup();
+            const publicLayer = L.layerGroup();
+
+            const visitedIcon = L.divIcon({
+                className: 'analytics-map-visited-icon',
+                html: '<span style="display:block;width:14px;height:14px;border-radius:999px;background:#f7b500;border:2px solid #24364b;box-shadow:0 0 0 2px rgba(255,255,255,0.72)"></span>',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7],
+            });
+
+            visitedPoints.forEach((point) => {
                 if (typeof point.latitude !== 'number' || typeof point.longitude !== 'number') {
                     return;
                 }
 
-                const marker = L.marker([point.latitude, point.longitude]).addTo(map);
+                const marker = L.marker([point.latitude, point.longitude], { icon: visitedIcon }).addTo(visitedLayer);
                 const stationName = escapeHtml(point.stationName);
                 const address = escapeHtml(point.address);
+                const publicMatch = point.publicMatch && typeof point.publicMatch === 'object' ? point.publicMatch : null;
+                const publicMatchHtml = publicMatch
+                    ? `<div class="popup-meta">Public match</div>` +
+                        `<div>${escapeHtml(publicMatch.address)}, ${escapeHtml(publicMatch.postalCode)} ${escapeHtml(publicMatch.city)}</div>` +
+                        (typeof publicMatch.distanceMeters === 'number' ? `<div class="popup-meta">${publicMatch.distanceMeters} m away · ${escapeHtml(publicMatch.confidence)}</div>` : `<div class="popup-meta">${escapeHtml(publicMatch.confidence)}</div>`) +
+                        (Array.isArray(publicMatch.availableFuelLabels) && publicMatch.availableFuelLabels.length > 0 ? `<div class="popup-highlight">${escapeHtml(publicMatch.availableFuelLabels.join(', '))}</div>` : '')
+                    : '';
                 marker.bindPopup(
-                    `<strong>${stationName}</strong><br>` +
-                    `${address}<br>` +
-                    `${(point.totalCostCents / 100).toFixed(2)} EUR · ${(point.totalQuantityMilliLiters / 1000).toFixed(2)} L`
+                    `<div class="analytics-map-popup">` +
+                    `<div class="popup-kicker">Visited station</div>` +
+                    `<strong>${stationName}</strong>` +
+                    `<div>${address}</div>` +
+                    `<div class="popup-highlight">${(point.totalCostCents / 100).toFixed(2)} EUR · ${(point.totalQuantityMilliLiters / 1000).toFixed(2)} L</div>` +
+                    `<div class="popup-meta">${point.receiptCount} receipt(s)</div>` +
+                    publicMatchHtml +
+                    `</div>`
                 );
                 bounds.push([point.latitude, point.longitude]);
             });
+
+            publicPoints.forEach((point) => {
+                if (typeof point.latitude !== 'number' || typeof point.longitude !== 'number') {
+                    return;
+                }
+
+                const marker = L.circleMarker([point.latitude, point.longitude], {
+                    radius: 8,
+                    color: '#24364b',
+                    weight: 2,
+                    fillColor: '#61ddff',
+                    fillOpacity: 0.82,
+                }).addTo(publicLayer);
+
+                marker.bindPopup(
+                    `<div class="analytics-map-popup">` +
+                    `<div class="popup-kicker">Public station</div>` +
+                    `<strong>${escapeHtml(point.address)}</strong>` +
+                    `<div>${escapeHtml(point.postalCode)} ${escapeHtml(point.city)}</div>` +
+                    `<div class="popup-meta">${escapeHtml(point.confidence)} match` +
+                    (typeof point.distanceMeters === 'number' ? ` · ${point.distanceMeters} m` : '') +
+                    `</div>` +
+                    (Array.isArray(point.availableFuelLabels) && point.availableFuelLabels.length > 0 ? `<div class="popup-highlight">${escapeHtml(point.availableFuelLabels.join(', '))}</div>` : '') +
+                    (Array.isArray(point.matchedStationNames) && point.matchedStationNames.length > 0 ? `<div class="popup-meta">Linked to: ${escapeHtml(point.matchedStationNames.join(', '))}</div>` : '') +
+                    `</div>`
+                );
+
+                bounds.push([point.latitude, point.longitude]);
+            });
+
+            visitedLayer.addTo(map);
+            if (publicPoints.length > 0) {
+                publicLayer.addTo(map);
+                L.control.layers({}, {
+                    'Visited stations': visitedLayer,
+                    'Matched public stations': publicLayer,
+                }, { collapsed: false }).addTo(map);
+            }
 
             if (bounds.length === 1) {
                 map.setView(bounds[0], 12);

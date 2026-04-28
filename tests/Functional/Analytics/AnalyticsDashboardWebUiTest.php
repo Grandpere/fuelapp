@@ -16,6 +16,7 @@ namespace App\Tests\Functional\Analytics;
 use App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
+use App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Entity\PublicFuelStationEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -73,7 +74,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $this->projectionRefresher = $refresher;
 
         $this->em->getConnection()->executeStatement(
-            'TRUNCATE TABLE analytics_projection_states, analytics_daily_fuel_kpis, maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE',
+            'TRUNCATE TABLE analytics_projection_states, analytics_daily_fuel_kpis, public_fuel_stations, public_fuel_station_sync_runs, maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE',
         );
     }
 
@@ -91,6 +92,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
 
         $stationA = $this->createStation('Station A', '1 Main St', '75001', 'Paris');
         $stationB = $this->createStation('Station B', '2 Oak Ave', '69001', 'Lyon');
+        $this->persistPublicStation('public-station-a', 48856120, 2352210, '5 PUBLIC ROAD', '75001', 'PARIS');
         $this->em->flush();
 
         $this->createReceipt($owner, $vehicle, $stationA, new DateTimeImmutable('2026-01-10 10:00:00'), [
@@ -129,8 +131,11 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('280.00 EUR', $content);
         self::assertStringContainsString('2026-02', $content);
         self::assertStringContainsString('20.00 L', $content);
-        self::assertStringContainsString('Visited stations map', $content);
+        self::assertStringContainsString('Visited and matched public stations', $content);
+        self::assertStringContainsString('with public match', $content);
         self::assertStringContainsString('Station A', $content);
+        self::assertStringContainsString('Public match · high', $content);
+        self::assertStringContainsString('5 PUBLIC ROAD, 75001 PARIS', $content);
         self::assertStringContainsString('receipt(s)', $content);
         self::assertStringContainsString('Fuel price trend by month', $content);
         self::assertStringContainsString('2026-01 · diesel', $content);
@@ -370,5 +375,35 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $event->setCreatedAt($occurredAt);
         $event->setUpdatedAt($occurredAt);
         $this->em->persist($event);
+    }
+
+    private function persistPublicStation(string $sourceId, int $latitudeMicroDegrees, int $longitudeMicroDegrees, string $address, string $postalCode, string $city): void
+    {
+        $station = new PublicFuelStationEntity();
+        $station->setSourceId($sourceId);
+        $station->setLatitudeMicroDegrees($latitudeMicroDegrees);
+        $station->setLongitudeMicroDegrees($longitudeMicroDegrees);
+        $station->setAddress($address);
+        $station->setPostalCode($postalCode);
+        $station->setCity($city);
+        $station->setPopulationKind('R');
+        $station->setDepartment('Paris');
+        $station->setDepartmentCode('75');
+        $station->setRegion('Ile-de-France');
+        $station->setRegionCode('11');
+        $station->setAutomate24(true);
+        $station->setServices(['Boutique alimentaire']);
+        $station->setFuels([
+            'gazole' => [
+                'available' => true,
+                'priceMilliEurosPerLiter' => 1789,
+                'priceUpdatedAt' => '2026-04-28T09:15:00+02:00',
+                'ruptureType' => null,
+                'ruptureStartedAt' => null,
+            ],
+        ]);
+        $station->setSourceUpdatedAt(new DateTimeImmutable('2026-04-28 09:15:00'));
+        $station->setImportedAt(new DateTimeImmutable('2026-04-28 09:20:00'));
+        $this->em->persist($station);
     }
 }

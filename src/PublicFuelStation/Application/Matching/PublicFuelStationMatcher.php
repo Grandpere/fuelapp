@@ -17,4 +17,11 @@ interface PublicFuelStationMatcher
 {
     /** @return list<PublicFuelStationMatchCandidate> */
     public function findCandidates(VisitedStationPublicMatchQuery $query): array;
+
+    /**
+     * @param array<string, VisitedStationPublicMatchQuery> $queries
+     *
+     * @return array<string, PublicFuelStationMatchCandidate>
+     */
+    public function findBestCandidates(array $queries): array;
 }

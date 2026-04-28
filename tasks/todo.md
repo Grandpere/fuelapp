@@ -21,3 +21,11 @@
 
 ## Plan
 - [completed] Add safe matching between user visited stations and public station records.
+
+# TODO - SP39-001 Analytics visited/public station map fusion
+
+## Plan
+- [completed] Inspect analytics map and matching data already available in the codebase.
+- [completed] Add a read model that enriches visited station points with nearby public station context.
+- [completed] Update the analytics map/list UI to show the merged station context clearly.
+- [completed] Add or update unit/integration/functional coverage and run quality gates.

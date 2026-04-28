@@ -21,6 +21,8 @@ final readonly class PublicFuelStationMatchCandidate
         public string $address,
         public string $postalCode,
         public string $city,
+        public ?int $latitudeMicroDegrees,
+        public ?int $longitudeMicroDegrees,
         public ?int $distanceMeters,
         public string $confidence,
         public array $fuels,

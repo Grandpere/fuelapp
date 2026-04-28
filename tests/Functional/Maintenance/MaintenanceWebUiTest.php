@@ -144,6 +144,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $newEventPage = $this->request('GET', '/ui/maintenance/events/new', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $newEventPage->getStatusCode());
         $eventCsrf = $this->extractFormCsrf((string) $newEventPage->getContent());
+        $initialOccurredAt = new DateTimeImmutable('-10 days 09:30:00')->format('Y-m-d\TH:i');
 
         $createEventResponse = $this->request(
             'POST',
@@ -151,7 +152,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
             [
                 'vehicleId' => $vehicleId,
                 'eventType' => MaintenanceEventType::SERVICE->value,
-                'occurredAt' => '2026-03-02T09:30',
+                'occurredAt' => $initialOccurredAt,
                 'description' => 'Initial annual service',
                 'odometerKilometers' => '124000',
                 'totalCostEuros' => '189.90',
@@ -171,6 +172,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $editEventPage = $this->request('GET', '/ui/maintenance/events/'.$eventId.'/edit', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $editEventPage->getStatusCode());
         $eventEditCsrf = $this->extractFormCsrf((string) $editEventPage->getContent());
+        $updatedOccurredAt = new DateTimeImmutable('-3 days 18:15:00')->format('Y-m-d\TH:i');
 
         $editEventResponse = $this->request(
             'POST',
@@ -178,7 +180,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
             [
                 'vehicleId' => $vehicleId,
                 'eventType' => MaintenanceEventType::REPAIR->value,
-                'occurredAt' => '2026-03-05T18:15',
+                'occurredAt' => $updatedOccurredAt,
                 'description' => 'Updated repair entry',
                 'odometerKilometers' => '124850',
                 'totalCostEuros' => '245,00',
@@ -194,6 +196,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $newPlanPage = $this->request('GET', '/ui/maintenance/plans/new', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $newPlanPage->getStatusCode());
         $planCsrf = $this->extractFormCsrf((string) $newPlanPage->getContent());
+        $plannedFor = new DateTimeImmutable('+7 days')->format('Y-m-d');
 
         $createPlanResponse = $this->request(
             'POST',
@@ -202,7 +205,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
                 'vehicleId' => $vehicleId,
                 'label' => 'Front brake replacement',
                 'eventType' => MaintenanceEventType::REPAIR->value,
-                'plannedFor' => '2026-06-10',
+                'plannedFor' => $plannedFor,
                 'plannedCostEuros' => '320.00',
                 'currencyCode' => 'EUR',
                 'notes' => 'Before summer trip',
@@ -229,7 +232,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
                 'vehicleId' => $vehicleId,
                 'label' => 'Front + rear brake replacement',
                 'eventType' => MaintenanceEventType::REPAIR->value,
-                'plannedFor' => '2026-06-15',
+                'plannedFor' => $plannedFor,
                 'plannedCostEuros' => '470,00',
                 'currencyCode' => 'EUR',
                 'notes' => 'Updated budget after quote',

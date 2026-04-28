@@ -241,7 +241,7 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Symptom: `DashboardWebUiTest` stopped seeing the planned-maintenance card after the hardcoded `2026-04-02` fixture date moved into the past.
 - Root cause: the dashboard computes upcoming maintenance from `today` at runtime, while the test used a fixed planned date that only stayed valid for a short window.
 - Fix: make the planned maintenance fixture relative to the current day so it always falls inside the dashboard's upcoming window.
-- Prevention: for behavior that depends on `today`, either control the clock explicitly or create test dates relative to the runtime date.
+- Prevention: for behavior that depends on `today`, either control the clock explicitly or create test dates relative to the runtime date, including "recent" and "due soon" UI badges.
 
 ## 2026-04-28 - Public and admin UI tests must assert page-specific copy
 - Symptom: the public fuel station UI test expected `Cached stations`, a metric label that only exists on the admin diagnostics page.

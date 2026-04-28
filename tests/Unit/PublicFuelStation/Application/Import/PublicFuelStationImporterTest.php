@@ -16,8 +16,10 @@ namespace App\Tests\Unit\PublicFuelStation\Application\Import;
 use App\PublicFuelStation\Application\Import\ParsedPublicFuelStation;
 use App\PublicFuelStation\Application\Import\PublicFuelStationCsvParser;
 use App\PublicFuelStation\Application\Import\PublicFuelStationImporter;
+use App\PublicFuelStation\Application\Import\PublicFuelStationImportException;
 use App\PublicFuelStation\Application\Repository\PublicFuelStationRepository;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class PublicFuelStationImporterTest extends TestCase
 {
@@ -39,6 +41,27 @@ final class PublicFuelStationImporterTest extends TestCase
         self::assertSame(1, $result->rejectedCount);
         self::assertCount(1, $repository->stations);
         self::assertSame('1', $repository->stations[0]->sourceId);
+    }
+
+    public function testItReportsPartialCountsWhenRepositoryFailsMidImport(): void
+    {
+        $path = $this->writeCsv(<<<'CSV'
+            id;latitude;longitude;Code postal;pop;Adresse;Ville;Carburants disponibles;Automate 24-24 (oui/non);Services proposés
+            1;4956900;364600;01000;R;Rue A;Bourg;Gazole;oui;Boutique
+            2;4957000;364700;01000;R;Rue B;Bourg;E10;non;
+            CSV);
+        $repository = new FailingPublicFuelStationRepository();
+        $importer = new PublicFuelStationImporter(new PublicFuelStationCsvParser(), $repository);
+
+        try {
+            $importer->importFile($path);
+            self::fail('Expected import exception.');
+        } catch (PublicFuelStationImportException $e) {
+            self::assertSame(2, $e->processedCount);
+            self::assertSame(1, $e->upsertedCount);
+            self::assertSame(0, $e->rejectedCount);
+            self::assertSame('Simulated repository failure.', $e->getMessage());
+        }
     }
 
     private function writeCsv(string $contents): string
@@ -64,5 +87,23 @@ final class RecordingPublicFuelStationRepository implements PublicFuelStationRep
     public function countAll(): int
     {
         return count($this->stations);
+    }
+}
+
+final class FailingPublicFuelStationRepository implements PublicFuelStationRepository
+{
+    private int $calls = 0;
+
+    public function upsert(ParsedPublicFuelStation $station): void
+    {
+        ++$this->calls;
+        if (2 === $this->calls) {
+            throw new RuntimeException('Simulated repository failure.');
+        }
+    }
+
+    public function countAll(): int
+    {
+        return 0;
     }
 }

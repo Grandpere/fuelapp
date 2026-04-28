@@ -88,6 +88,20 @@ final class PublicFuelStationCsvParserTest extends TestCase
         self::assertSame(-579000, $stations[0]->longitudeMicroDegrees);
     }
 
+    public function testItConverts100kCoordinatesEvenWhenTheyHaveDecimalSuffixes(): void
+    {
+        $path = $this->writeCsv(<<<'CSV'
+            id;latitude;longitude;Code postal;pop;Adresse;Ville;Prix Gazole mis à jour le;Prix Gazole;Carburants disponibles;Automate 24-24 (oui/non);Services proposés
+            1000004;4956900.0;364600.0;01000;R;Rue Float;Bourg;2026-04-28T09:15:00+02:00;1.789;Gazole;oui;Boutique alimentaire
+            CSV);
+
+        $stations = iterator_to_array(new PublicFuelStationCsvParser()->parseFile($path));
+
+        self::assertCount(1, $stations);
+        self::assertSame(49569000, $stations[0]->latitudeMicroDegrees);
+        self::assertSame(3646000, $stations[0]->longitudeMicroDegrees);
+    }
+
     private function writeCsv(string $contents): string
     {
         $path = tempnam(sys_get_temp_dir(), 'fuelapp-public-parser-');

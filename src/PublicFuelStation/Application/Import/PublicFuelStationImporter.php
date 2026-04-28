@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\PublicFuelStation\Application\Import;
 
 use App\PublicFuelStation\Application\Repository\PublicFuelStationRepository;
+use Throwable;
 
 final readonly class PublicFuelStationImporter
 {
@@ -29,20 +30,24 @@ final readonly class PublicFuelStationImporter
         $upserted = 0;
         $rejected = 0;
 
-        foreach ($this->parser->parseFile($path) as $station) {
-            if (null !== $limit && $processed >= $limit) {
-                break;
+        try {
+            foreach ($this->parser->parseFile($path) as $station) {
+                if (null !== $limit && $processed >= $limit) {
+                    break;
+                }
+
+                ++$processed;
+                if (null === $station->latitudeMicroDegrees || null === $station->longitudeMicroDegrees) {
+                    ++$rejected;
+
+                    continue;
+                }
+
+                $this->repository->upsert($station);
+                ++$upserted;
             }
-
-            ++$processed;
-            if (null === $station->latitudeMicroDegrees || null === $station->longitudeMicroDegrees) {
-                ++$rejected;
-
-                continue;
-            }
-
-            $this->repository->upsert($station);
-            ++$upserted;
+        } catch (Throwable $e) {
+            throw new PublicFuelStationImportException($processed, $upserted, $rejected, $e->getMessage(), $e);
         }
 
         return new PublicFuelStationImportResult($processed, $upserted, $rejected);

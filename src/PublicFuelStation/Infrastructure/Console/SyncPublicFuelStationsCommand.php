@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\PublicFuelStation\Infrastructure\Console;
 
 use App\PublicFuelStation\Application\Import\PublicFuelStationImporter;
+use App\PublicFuelStation\Application\Import\PublicFuelStationImportException;
 use App\PublicFuelStation\Application\Repository\PublicFuelStationSyncRunRepository;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -76,6 +77,11 @@ final class SyncPublicFuelStationsCommand extends Command
             ));
 
             return Command::SUCCESS;
+        } catch (PublicFuelStationImportException $e) {
+            $this->syncRunRepository->finish($runId, 'failed', $e->processedCount, $e->upsertedCount, $e->rejectedCount, $e->getMessage());
+            $output->writeln(sprintf('<error>Public fuel stations sync failed: %s</error>', $e->getMessage()));
+
+            return Command::FAILURE;
         } catch (Throwable $e) {
             $this->syncRunRepository->finish($runId, 'failed', 0, 0, 0, $e->getMessage());
             $output->writeln(sprintf('<error>Public fuel stations sync failed: %s</error>', $e->getMessage()));

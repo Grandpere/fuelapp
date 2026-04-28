@@ -155,8 +155,8 @@ final class PublicFuelStationCsvParser
         }
 
         if (
-            !$parsedLatitude['fromDecimalDegrees']
-            && !$parsedLongitude['fromDecimalDegrees']
+            abs($parsedLatitude['value']) > 180.0
+            && abs($parsedLongitude['value']) > 180.0
             && abs($parsedLatitude['value']) <= self::LATITUDE_100K_MAX
             && abs($parsedLongitude['value']) <= self::LONGITUDE_100K_MAX
         ) {
@@ -182,10 +182,7 @@ final class PublicFuelStationCsvParser
             return null;
         }
 
-        return [
-            'value' => (float) $normalized,
-            'fromDecimalDegrees' => str_contains($trimmed, '.') || str_contains($trimmed, ','),
-        ];
+        return ['value' => (float) $normalized, 'fromDecimalDegrees' => str_contains($trimmed, '.') || str_contains($trimmed, ',')];
     }
 
     /** @param array{value:float, fromDecimalDegrees:bool}|null $coordinate */
@@ -195,7 +192,7 @@ final class PublicFuelStationCsvParser
             return null;
         }
 
-        if ($coordinate['fromDecimalDegrees'] || abs($coordinate['value']) <= 180.0) {
+        if (abs($coordinate['value']) <= 180.0) {
             return (int) round($coordinate['value'] * 1_000_000);
         }
 

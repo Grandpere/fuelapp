@@ -3,7 +3,7 @@
 ## Summary
 Expose read-only operational diagnostics for the public station import.
 
-## Planned scope
+## Delivered scope
 - show latest sync status, freshness, processed/upserted/rejected counts and error messages
 - provide a compact station directory health summary for support
 - keep this read-only unless a concrete recovery action proves necessary

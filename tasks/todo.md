@@ -10,7 +10,7 @@
 # TODO - SP38-002 Admin public station sync monitor
 
 ## Plan
-- [pending] Add read-only admin diagnostics for sync health, freshness and failures.
+- [completed] Add read-only admin diagnostics for sync health, freshness and failures.
 
 # TODO - SP38-003 Public fuel station map
 

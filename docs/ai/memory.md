@@ -231,6 +231,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: record `admin.vehicle.deleted.ui` with the key vehicle snapshot before deletion and cover it in the existing functional delete test.
 - Prevention: whenever an admin action exists in both UI and API channels, verify that destructive operations keep the same audit semantics in both paths.
 
+## 2026-04-28 - Bulk public station sync must avoid dev Doctrine debug accumulation
+- Symptom: `make public-fuel-stations-sync` exhausted the 128 MB PHP memory limit during a data.gouv import.
+- Root cause: the sync ran in Symfony debug mode and used ORM `flush/clear` per station, so Doctrine debug middleware accumulated query backtraces for thousands of rows.
+- Fix: run the sync console command with `--no-debug` and upsert public station rows through DBAL `INSERT ... ON CONFLICT`.
+- Prevention: bulk import commands should run without debug and avoid per-row ORM unit-of-work churn.
+
 ## 2026-03-28 - Bulk ZIP extraction must always clean temporary entry files on rejection
 - Symptom: rejected ZIP entries in bulk import could leave `fuelapp-import-zip-*` temp files behind in the system temp directory.
 - Root cause: `processZipEntry()` returned early on oversize/read failures before reaching the cleanup path that deleted the extracted temp file.

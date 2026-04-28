@@ -65,6 +65,12 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Analytics/Infrastructure/Persistence/Doctrine/Entity'
                 prefix: 'App\Analytics\Infrastructure\Persistence\Doctrine\Entity'
                 alias: Analytics
+            PublicFuelStation:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/PublicFuelStation/Infrastructure/Persistence/Doctrine/Entity'
+                prefix: 'App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Entity'
+                alias: PublicFuelStation
         controller_resolver:
             auto_mapping: false
 

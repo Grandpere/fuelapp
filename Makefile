@@ -157,6 +157,10 @@ analytics-receipts-dispatch: ## Dispatch receipt analytics refresh message
 analytics-demo-seed: ## Seed demo analytics account data (EMAIL=... PASSWORD=... optional)
 	$(DC_EXEC) php bin/console app:analytics:demo-seed $(if $(EMAIL),--email "$(EMAIL)") $(if $(PASSWORD),--password "$(PASSWORD)")
 
+.PHONY: public-fuel-stations-sync
+public-fuel-stations-sync: ## Sync public data.gouv fuel stations (SOURCE=... LIMIT=... optional)
+	$(DC_EXEC) php bin/console app:public-fuel-stations:sync $(if $(SOURCE),--source "$(SOURCE)") $(if $(LIMIT),--limit "$(LIMIT)")
+
 .PHONY: messenger-failed-show
 messenger-failed-show: ## Show failed messenger messages stats
 	$(DC_EXEC) php bin/console messenger:failed:show --stats

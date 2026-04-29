@@ -823,6 +823,23 @@ final class ImportWebUiTest extends WebTestCase
         $this->persistPublicFuelStation('public-1', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000);
 
         $job = $this->createNeedsReviewJob($user, 'public-picker-review.jpg', '2026-04-29 10:00:00', 'p');
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'creationPayload' => [
+                    'issuedAt' => '2026-04-29T11:20:00+00:00',
+                    'stationName' => 'TOTAL',
+                    'stationStreetName' => '40 Rue Robert Schuman',
+                    'stationPostalCode' => '5751',
+                    'stationCity' => 'FRISANGE',
+                    'lines' => [[
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 30000,
+                        'unitPriceDeciCentsPerLiter' => 1820,
+                        'vatRatePercent' => 20,
+                    ]],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
         $this->em->persist($job);
         $this->em->flush();
 

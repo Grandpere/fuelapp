@@ -728,6 +728,62 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame(ImportJobStatus::PROCESSED, $updated->getStatus());
     }
 
+    public function testUserCanFinalizeImportUsingSelectedExistingStation(): void
+    {
+        $email = 'import.web.station-picker@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('TOTAL ENERGIES');
+        $station->setStreetName('1 Rue de Rivoli');
+        $station->setPostalCode('75001');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $existingReceipt = new ReceiptEntity();
+        $existingReceipt->setId(Uuid::v7());
+        $existingReceipt->setOwner($user);
+        $existingReceipt->setStation($station);
+        $existingReceipt->setIssuedAt(new DateTimeImmutable('2026-03-24 08:00:00'));
+        $existingReceipt->setTotalCents(3200);
+        $existingReceipt->setVatAmountCents(533);
+        $existingLine = new ReceiptLineEntity();
+        $existingLine->setId(Uuid::v7());
+        $existingLine->setFuelType('diesel');
+        $existingLine->setQuantityMilliLiters(20000);
+        $existingLine->setUnitPriceDeciCentsPerLiter(1600);
+        $existingLine->setVatRatePercent(20);
+        $existingReceipt->addLine($existingLine);
+        $this->em->persist($existingReceipt);
+
+        $job = $this->createNeedsReviewJob($user, 'picker-review.jpg', '2026-04-29 10:00:00', 'x');
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $page = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $page->getStatusCode());
+        $content = (string) $page->getContent();
+        self::assertStringContainsString('Existing station', $content);
+        self::assertStringContainsString('TOTAL ENERGIES - 1 Rue de Rivoli, 75001 Paris', $content);
+        $csrf = $this->extractFinalizeCsrfToken($content, $jobId);
+
+        $response = $this->request('POST', '/ui/imports/'.$jobId.'/finalize', [
+            '_token' => $csrf,
+            'selectedStationId' => $station->getId()->toRfc4122(),
+        ], [], $sessionCookie);
+        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+
+        $this->em->clear();
+        $receipts = $this->em->getRepository(ReceiptEntity::class)->findBy(['owner' => $user], ['issuedAt' => 'DESC']);
+        self::assertCount(2, $receipts);
+        self::assertSame($station->getId()->toRfc4122(), $receipts[0]->getStation()?->getId()->toRfc4122());
+    }
+
     public function testUserCanDeleteOwnImportFromUiList(): void
     {
         $email = 'import.web.delete@example.com';

@@ -97,6 +97,70 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         self::assertNotNull($receipt->stationId());
     }
 
+    public function testItUsesSelectedStationIdBeforeIdentityLookup(): void
+    {
+        $selectedStation = Station::reconstitute(
+            StationId::fromString('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01'),
+            'Selected Station',
+            '1 Picker Road',
+            '51120',
+            'SEZANNE',
+            null,
+            null,
+        );
+
+        $stationRepo = new InMemoryStationRepository($selectedStation);
+        $stationRepo->setIdentityResult(null);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $handler = new CreateReceiptWithStationHandler(
+            new CreateReceiptHandler($receiptRepo),
+            $stationRepo,
+            new CreateStationHandler($stationRepo, new NullMessageBus()),
+        );
+
+        $receipt = $handler(new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-04-29T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Typed Name',
+            'Typed Street',
+            '75001',
+            'Paris',
+            null,
+            null,
+            selectedStationId: '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01',
+        ));
+
+        self::assertSame('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01', $receipt->stationId()?->toString());
+    }
+
+    public function testItThrowsWhenSelectedStationDoesNotExist(): void
+    {
+        $stationRepo = new InMemoryStationRepository(null);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $handler = new CreateReceiptWithStationHandler(
+            new CreateReceiptHandler($receiptRepo),
+            $stationRepo,
+            new CreateStationHandler($stationRepo, new NullMessageBus()),
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Selected station was not found.');
+
+        $handler(new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-04-29T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Typed Name',
+            'Typed Street',
+            '75001',
+            'Paris',
+            null,
+            null,
+            selectedStationId: '018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b99',
+        ));
+    }
+
     public function testItIsIdempotentOnStationCreationRace(): void
     {
         $existingStation = Station::reconstitute(
@@ -139,6 +203,7 @@ final class InMemoryStationRepository implements StationRepository
 {
     private ?Station $station;
     private ?Station $fallback = null;
+    private ?Station $identityResult = null;
 
     public function __construct(?Station $station)
     {
@@ -148,6 +213,11 @@ final class InMemoryStationRepository implements StationRepository
     public function setFallback(Station $station): void
     {
         $this->fallback = $station;
+    }
+
+    public function setIdentityResult(?Station $station): void
+    {
+        $this->identityResult = $station;
     }
 
     public function save(Station $station): void
@@ -192,6 +262,10 @@ final class InMemoryStationRepository implements StationRepository
 
     public function findByIdentity(string $name, string $streetName, string $postalCode, string $city): ?Station
     {
+        if (null !== $this->identityResult) {
+            return $this->identityResult;
+        }
+
         if (null !== $this->station) {
             return $this->station;
         }

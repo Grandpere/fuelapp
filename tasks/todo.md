@@ -37,3 +37,11 @@
 - [completed] Enrich the analytics station map with nearby public stations not already matched.
 - [completed] Update analytics UI and fallback list to distinguish visited, matched public and nearby public stations.
 - [pending] Add or update unit/integration/functional coverage and run quality gates.
+
+# TODO - SP40-001 Station picker and import matching
+
+## Plan
+- [in_progress] Add a shared station candidate search read model.
+- [pending] Support explicit existing-station selection in manual receipt creation.
+- [pending] Reuse the same station selection flow during import review finalization.
+- [pending] Add or update unit/integration/functional coverage and run quality gates.

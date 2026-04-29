@@ -19,6 +19,7 @@ use App\Station\Application\Command\CreateStationHandler;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\ValueObject\StationId;
 use App\Vehicle\Domain\ValueObject\VehicleId;
+use RuntimeException;
 use Throwable;
 
 final class CreateReceiptWithStationHandler
@@ -32,12 +33,23 @@ final class CreateReceiptWithStationHandler
 
     public function __invoke(CreateReceiptWithStationCommand $command): Receipt
     {
-        $station = $this->stationRepository->findByIdentity(
-            $command->stationName,
-            $command->stationStreetName,
-            $command->stationPostalCode,
-            $command->stationCity,
-        );
+        $station = null;
+
+        if (null !== $command->selectedStationId) {
+            $station = $this->stationRepository->get($command->selectedStationId);
+            if (null === $station) {
+                throw new RuntimeException('Selected station was not found.');
+            }
+        }
+
+        if (null === $station) {
+            $station = $this->stationRepository->findByIdentity(
+                $command->stationName,
+                $command->stationStreetName,
+                $command->stationPostalCode,
+                $command->stationCity,
+            );
+        }
 
         if (null === $station) {
             try {

@@ -22,6 +22,9 @@ use App\Receipt\UI\Api\Resource\Input\ReceiptLineInput;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Station\Application\Repository\StationRepository;
+use App\Station\Application\Search\StationSearchCandidate;
+use App\Station\Application\Search\StationSearchQuery;
+use App\Station\Application\Search\StationSearchReader;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -40,6 +43,7 @@ final class CreateReceiptController extends AbstractController
     public function __construct(
         private readonly CreateReceiptWithStationHandler $createReceiptWithStationHandler,
         private readonly StationRepository $stationRepository,
+        private readonly StationSearchReader $stationSearchReader,
         private readonly ReceiptStreamPublisher $streamPublisher,
         private readonly VehicleRepository $vehicleRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
@@ -64,7 +68,15 @@ final class CreateReceiptController extends AbstractController
             $formData = $this->extractFormData($request, $ownerId);
             if (!$this->isCsrfTokenValid('receipt_new', $formData['_token'])) {
                 $errors[] = 'Jeton CSRF invalide.';
+            } elseif ($this->isStationLookupRequest($request)) {
+                if (!$this->hasStationSearchContext($formData)) {
+                    $errors[] = 'Enter a station search term or fill at least one station field before looking for matches.';
+                } else {
+                    return new RedirectResponse($this->generateUrl('ui_receipt_new', $this->stationLookupQueryParams($formData)), Response::HTTP_SEE_OTHER);
+                }
             } else {
+                $errors = $this->validateSelectedStationChoice($formData);
+                $this->hydrateSelectedStationFields($formData);
                 $errors = $this->validateFormData($formData, $ownerId);
                 if ([] === $errors) {
                     $this->persistReceiptFromForm($formData, $ownerId);
@@ -75,11 +87,16 @@ final class CreateReceiptController extends AbstractController
             }
         }
 
+        $stationCandidates = $this->stationCandidates($formData);
+
         $response = $this->render($isTurboFrameRequest ? 'receipt/_form.html.twig' : 'receipt/new.html.twig', [
             'formData' => $formData,
             'errors' => $errors,
             'fuelTypes' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
             'vehicleOptions' => $this->vehicleOptions($ownerId),
+            'stationCandidates' => $stationCandidates,
+            'stationLookupPerformed' => $this->stationLookupPerformed($request),
+            'stationLookupCount' => count($stationCandidates),
             'csrfToken' => $this->csrfTokenManager->getToken('receipt_new')->getValue(),
         ]);
 
@@ -96,19 +113,21 @@ final class CreateReceiptController extends AbstractController
         $prefilledStation = $this->readPrefilledStation($request);
 
         return [
-            'issuedAt' => new DateTimeImmutable()->format('Y-m-d\TH:i'),
-            'vehicleId' => $this->readPrefilledVehicleId($request, $ownerId) ?? '',
-            'fuelType' => FuelType::DIESEL->value,
-            'quantityLiters' => '',
-            'unitPriceEurosPerLiter' => '',
-            'vatRatePercent' => '20',
-            'stationName' => $prefilledStation?->name() ?? '',
-            'stationStreetName' => $prefilledStation?->streetName() ?? '',
-            'stationPostalCode' => $prefilledStation?->postalCode() ?? '',
-            'stationCity' => $prefilledStation?->city() ?? '',
+            'issuedAt' => $this->queryValue($request, 'issuedAt', new DateTimeImmutable()->format('Y-m-d\TH:i')),
+            'vehicleId' => $this->queryValue($request, 'vehicleId', $this->readPrefilledVehicleId($request, $ownerId) ?? ''),
+            'fuelType' => $this->queryValue($request, 'fuelType', FuelType::DIESEL->value),
+            'quantityLiters' => $this->queryValue($request, 'quantityLiters', ''),
+            'unitPriceEurosPerLiter' => $this->queryValue($request, 'unitPriceEurosPerLiter', ''),
+            'vatRatePercent' => $this->queryValue($request, 'vatRatePercent', '20'),
+            'stationName' => $this->queryValue($request, 'stationName', $prefilledStation?->name() ?? ''),
+            'stationStreetName' => $this->queryValue($request, 'stationStreetName', $prefilledStation?->streetName() ?? ''),
+            'stationPostalCode' => $this->queryValue($request, 'stationPostalCode', $prefilledStation?->postalCode() ?? ''),
+            'stationCity' => $this->queryValue($request, 'stationCity', $prefilledStation?->city() ?? ''),
+            'selectedStationId' => $this->queryValue($request, 'selectedStationId', $prefilledStation?->id()->toString() ?? ''),
+            'stationSearch' => $this->queryValue($request, 'stationSearch', $prefilledStation?->name() ?? ''),
             'latitudeMicroDegrees' => null !== $prefilledStation?->latitudeMicroDegrees() ? (string) $prefilledStation->latitudeMicroDegrees() : '',
             'longitudeMicroDegrees' => null !== $prefilledStation?->longitudeMicroDegrees() ? (string) $prefilledStation->longitudeMicroDegrees() : '',
-            'odometerKilometers' => '',
+            'odometerKilometers' => $this->queryValue($request, 'odometerKilometers', ''),
             '_token' => '',
         ];
     }
@@ -131,6 +150,11 @@ final class CreateReceiptController extends AbstractController
      */
     private function validateFormData(array $formData, string $ownerId): array
     {
+        $selectedStationErrors = $this->validateSelectedStationChoice($formData);
+        if ([] !== $selectedStationErrors) {
+            return $selectedStationErrors;
+        }
+
         $issuedAt = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $formData['issuedAt']) ?: null;
         $quantityMilliLiters = $this->parseScaledDecimalToInt($formData['quantityLiters'], 1000, 3);
         $unitPriceDeciCentsPerLiter = $this->parseScaledDecimalToInt($formData['unitPriceEurosPerLiter'], 1000, 3);
@@ -206,6 +230,7 @@ final class CreateReceiptController extends AbstractController
             $this->nullIfEmpty($formData['vehicleId']),
             $ownerId,
             odometerKilometers: $this->toNullableInt($formData['odometerKilometers']),
+            selectedStationId: $this->nullIfEmpty($formData['selectedStationId']),
         );
 
         $receipt = ($this->createReceiptWithStationHandler)($command);
@@ -296,6 +321,133 @@ final class CreateReceiptController extends AbstractController
         }
 
         return $options;
+    }
+
+    private function isStationLookupRequest(Request $request): bool
+    {
+        if ('1' === (string) $request->request->get('_station_lookup_requested')) {
+            return true;
+        }
+
+        return $request->request->has('_station_lookup');
+    }
+
+    private function stationLookupPerformed(Request $request): bool
+    {
+        return '1' === $this->queryValue($request, 'station_lookup', '0');
+    }
+
+    /**
+     * @param array<string, string> $formData
+     *
+     * @return list<string>
+     */
+    private function validateSelectedStationChoice(array $formData): array
+    {
+        $selectedStationId = $this->nullIfEmpty($formData['selectedStationId']);
+        if (null === $selectedStationId) {
+            return [];
+        }
+
+        if (!Uuid::isValid($selectedStationId) || null === $this->stationRepository->get($selectedStationId)) {
+            return ['Selected station was not found.'];
+        }
+
+        return [];
+    }
+
+    /**
+     * @param array<string, string> $formData
+     */
+    private function hydrateSelectedStationFields(array &$formData): void
+    {
+        $selectedStationId = $this->nullIfEmpty($formData['selectedStationId']);
+        if (null === $selectedStationId) {
+            return;
+        }
+
+        $station = $this->stationRepository->get($selectedStationId);
+        if (null === $station) {
+            return;
+        }
+
+        $formData['stationName'] = $station->name();
+        $formData['stationStreetName'] = $station->streetName();
+        $formData['stationPostalCode'] = $station->postalCode();
+        $formData['stationCity'] = $station->city();
+        $formData['stationSearch'] = sprintf('%s - %s, %s %s', $station->name(), $station->streetName(), $station->postalCode(), $station->city());
+        $formData['latitudeMicroDegrees'] = null !== $station->latitudeMicroDegrees() ? (string) $station->latitudeMicroDegrees() : '';
+        $formData['longitudeMicroDegrees'] = null !== $station->longitudeMicroDegrees() ? (string) $station->longitudeMicroDegrees() : '';
+    }
+
+    /**
+     * @param array<string, string> $formData
+     *
+     * @return list<StationSearchCandidate>
+     */
+    private function stationCandidates(array $formData): array
+    {
+        if (!$this->hasStationSearchContext($formData)) {
+            return [];
+        }
+
+        return $this->stationSearchReader->search(new StationSearchQuery(
+            $this->nullIfEmpty($formData['stationSearch']),
+            $this->nullIfEmpty($formData['stationName']),
+            $this->nullIfEmpty($formData['stationStreetName']),
+            $this->nullIfEmpty($formData['stationPostalCode']),
+            $this->nullIfEmpty($formData['stationCity']),
+        ));
+    }
+
+    /**
+     * @param array<string, string> $formData
+     */
+    private function hasStationSearchContext(array $formData): bool
+    {
+        foreach (['stationSearch', 'stationName', 'stationStreetName', 'stationPostalCode', 'stationCity', 'selectedStationId'] as $key) {
+            if ('' !== trim($formData[$key] ?? '')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, string> $formData
+     *
+     * @return array<string, string>
+     */
+    private function stationLookupQueryParams(array $formData): array
+    {
+        return [
+            'station_lookup' => '1',
+            'issuedAt' => $formData['issuedAt'],
+            'vehicleId' => $formData['vehicleId'],
+            'fuelType' => $formData['fuelType'],
+            'quantityLiters' => $formData['quantityLiters'],
+            'unitPriceEurosPerLiter' => $formData['unitPriceEurosPerLiter'],
+            'vatRatePercent' => $formData['vatRatePercent'],
+            'stationSearch' => $formData['stationSearch'],
+            'stationName' => $formData['stationName'],
+            'stationStreetName' => $formData['stationStreetName'],
+            'stationPostalCode' => $formData['stationPostalCode'],
+            'stationCity' => $formData['stationCity'],
+            'latitudeMicroDegrees' => $formData['latitudeMicroDegrees'],
+            'longitudeMicroDegrees' => $formData['longitudeMicroDegrees'],
+            'odometerKilometers' => $formData['odometerKilometers'],
+        ];
+    }
+
+    private function queryValue(Request $request, string $key, string $default): string
+    {
+        $raw = $request->query->get($key);
+        if (!is_scalar($raw)) {
+            return $default;
+        }
+
+        return (string) $raw;
     }
 
     private function readPrefilledVehicleId(Request $request, string $ownerId): ?string

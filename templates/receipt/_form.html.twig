@@ -11,6 +11,7 @@
 
     <form method="post" action="{{ path('ui_receipt_new') }}" data-turbo-frame="_top" class="form-stack">
         <input type="hidden" name="_token" value="{{ csrfToken }}">
+        <input type="hidden" name="_station_lookup_requested" id="receipt_station_lookup_requested" value="0">
 
         <label class="label">
             Date
@@ -60,6 +61,52 @@
 
         <fieldset class="card-subtle form-block">
             <legend class="muted">Station</legend>
+            <div class="station-lookup-block">
+                <label class="label">
+                    Existing station (optional)
+                    <input class="input" type="text" name="stationSearch" value="{{ formData.stationSearch }}" placeholder="Search by name, street, postal code, or city">
+                </label>
+                <div class="actions-wrap station-lookup-actions">
+                    <button class="btn btn-secondary btn-compact station-lookup-button" type="submit" name="_station_lookup" value="1" formnovalidate onclick="document.getElementById('receipt_station_lookup_requested').value='1';">Find matches</button>
+                    <p class="muted station-lookup-hint">Type a station clue here, or fill the station name/address fields below, then use <code>Find matches</code>.</p>
+                </div>
+                {% if stationLookupPerformed %}
+                    <div class="station-lookup-feedback">
+                        <span class="station-lookup-feedback-label">Search result</span>
+                        <p class="muted compact-note">
+                        {% if stationLookupCount > 0 %}
+                            {{ stationLookupCount }} existing station{{ stationLookupCount > 1 ? 's' : '' }} matched these terms.
+                        {% else %}
+                            No existing station matched these terms closely enough.
+                        {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+                {% if stationCandidates is not empty %}
+                    <div class="station-lookup-results">
+                        <p class="station-lookup-results-title">Choose an existing station</p>
+                        {% for candidate in stationCandidates %}
+                            <label class="station-lookup-option">
+                                <input type="radio" name="selectedStationId" value="{{ candidate.id }}" {% if formData.selectedStationId == candidate.id %}checked{% endif %}>
+                                <span class="station-lookup-option-content">
+                                    <strong>{{ candidate.name }}</strong>
+                                    <span>{{ candidate.streetName }}</span>
+                                    <span class="station-lookup-option-meta">{{ candidate.postalCode }} {{ candidate.city }}</span>
+                                </span>
+                            </label>
+                        {% endfor %}
+                        <label class="station-lookup-option station-lookup-manual">
+                            <input type="radio" name="selectedStationId" value="" {% if formData.selectedStationId == '' %}checked{% endif %}>
+                            <span class="station-lookup-option-content">
+                                <strong>Do not use an existing station</strong>
+                                <span>Keep the manual station fields below.</span>
+                            </span>
+                        </label>
+                    </div>
+                {% else %}
+                    <input type="hidden" name="selectedStationId" value="{{ formData.selectedStationId }}">
+                {% endif %}
+            </div>
             <div class="form-grid-2">
                 <label class="label">
                     Name
@@ -89,7 +136,7 @@
         </fieldset>
 
         <div class="actions-wrap">
-            <button class="btn btn-primary" type="submit">Save receipt</button>
+            <button class="btn btn-primary" type="submit" onclick="document.getElementById('receipt_station_lookup_requested').value='0';">Save receipt</button>
             <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Cancel</a>
         </div>
     </form>

@@ -82,6 +82,7 @@ final readonly class FinalizeImportJobHandler
             $longitudeMicroDegrees,
             ownerId: $job->ownerId(),
             odometerKilometers: $odometerKilometers,
+            selectedStationId: $command->selectedStationId,
         ));
 
         $job->markProcessedWithPayload($this->buildProcessedPayload(

@@ -207,6 +207,35 @@
                             <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\TH:i') : (parsedDraft is not null and parsedDraft.issuedAt is defined and parsedDraft.issuedAt is not null ? parsedDraft.issuedAt|date('Y-m-d\\TH:i') : '') }}">
                         </label>
                         <label class="label">
+                            Existing station (optional)
+                            <input class="input" type="text" name="stationSearch" value="{{ stationSearch|default('') }}" readonly>
+                            <span class="muted compact-note">Pick an existing station when OCR is close but not exact.</span>
+                        </label>
+                    </div>
+
+                    {% if stationCandidates is not empty %}
+                        <div class="form-stack card-subtle card-subtle-block">
+                            {% for candidate in stationCandidates %}
+                                <label class="label">
+                                    <span class="muted compact-note">
+                                        <input type="radio" name="selectedStationId" value="{{ candidate.id }}">
+                                        {{ candidate.name }} - {{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}
+                                    </span>
+                                </label>
+                            {% endfor %}
+                            <label class="label">
+                                <span class="muted compact-note">
+                                    <input type="radio" name="selectedStationId" value="" checked>
+                                    Keep manual station fields
+                                </span>
+                            </label>
+                        </div>
+                    {% else %}
+                        <input type="hidden" name="selectedStationId" value="">
+                    {% endif %}
+
+                    <div class="form-grid-2">
+                        <label class="label">
                             Station name
                             <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : (parsedDraft is not null and parsedDraft.stationName is defined ? parsedDraft.stationName : '') }}">
                         </label>

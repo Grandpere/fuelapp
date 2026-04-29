@@ -127,6 +127,7 @@ services:
     App\Analytics\Application\Kpi\AnalyticsKpiReader: '@App\Analytics\Infrastructure\ReadModel\DoctrineAnalyticsKpiReader'
     App\Analytics\Application\Aggregation\ReceiptAnalyticsProjectionRefresher: '@App\Analytics\Infrastructure\Aggregation\DoctrineReceiptAnalyticsProjectionRefresher'
     App\Station\Application\Repository\StationRepository: '@App\Station\Infrastructure\Persistence\Doctrine\Repository\DoctrineStationRepository'
+    App\Station\Application\Search\StationSearchReader: '@App\Station\Infrastructure\Search\DoctrineStationSearchReader'
     App\Vehicle\Application\Repository\VehicleRepository: '@App\Vehicle\Infrastructure\Persistence\Doctrine\Repository\DoctrineVehicleRepository'
     App\PublicFuelStation\Application\Repository\PublicFuelStationRepository: '@App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Repository\DoctrinePublicFuelStationRepository'
     App\PublicFuelStation\Application\Repository\PublicFuelStationSyncRunRepository: '@App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Repository\DoctrinePublicFuelStationSyncRunRepository'

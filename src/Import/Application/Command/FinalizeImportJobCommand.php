@@ -30,6 +30,7 @@ final readonly class FinalizeImportJobCommand
         public ?int $latitudeMicroDegrees = null,
         public ?int $longitudeMicroDegrees = null,
         public ?int $odometerKilometers = null,
+        public ?string $selectedStationId = null,
     ) {
     }
 }

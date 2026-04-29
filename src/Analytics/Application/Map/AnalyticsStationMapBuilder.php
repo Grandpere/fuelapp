@@ -17,12 +17,17 @@ use App\Analytics\Application\Kpi\VisitedStationPointKpi;
 use App\PublicFuelStation\Application\Matching\PublicFuelStationMatchCandidate;
 use App\PublicFuelStation\Application\Matching\PublicFuelStationMatcher;
 use App\PublicFuelStation\Application\Matching\VisitedStationPublicMatchQuery;
+use App\PublicFuelStation\Application\Nearby\NearbyPublicFuelStationPoint;
+use App\PublicFuelStation\Application\Nearby\NearbyPublicFuelStationQuery;
+use App\PublicFuelStation\Application\Nearby\PublicFuelStationNearbyReader;
 use App\PublicFuelStation\Domain\Enum\PublicFuelType;
 
 final readonly class AnalyticsStationMapBuilder
 {
-    public function __construct(private PublicFuelStationMatcher $publicFuelStationMatcher)
-    {
+    public function __construct(
+        private PublicFuelStationMatcher $publicFuelStationMatcher,
+        private PublicFuelStationNearbyReader $publicFuelStationNearbyReader,
+    ) {
     }
 
     /**
@@ -62,20 +67,39 @@ final readonly class AnalyticsStationMapBuilder
      *         availableFuelLabels:list<string>,
      *         matchedStationNames:list<string>
      *     }>,
+     *     nearbyPublicPoints:list<array{
+     *         sourceId:string,
+     *         address:string,
+     *         city:string,
+     *         postalCode:string,
+     *         distanceMeters:int,
+     *         latitude:float,
+     *         longitude:float,
+     *         availableFuelLabels:list<string>,
+     *         nearbyStationNames:list<string>
+     *     }>,
      *     matchedVisitedCount:int
+     *     nearbyVisitedCount:int
      * }
      */
     public function build(array $items): array
     {
         $visitedPoints = [];
         $publicPoints = [];
+        $nearbyPublicPoints = [];
         $matchedVisitedCount = 0;
         $matches = $this->bestMatches($items);
+        $nearbyByStation = $this->nearbyPoints($items, $matches);
+        $nearbyVisitedCount = 0;
 
         foreach ($items as $item) {
             $match = $matches[$item->stationId] ?? null;
+            $nearbyStations = $nearbyByStation[$item->stationId] ?? [];
             if (null !== $match) {
                 ++$matchedVisitedCount;
+            }
+            if ([] !== $nearbyStations) {
+                ++$nearbyVisitedCount;
             }
 
             $visitedPoints[] = [
@@ -88,29 +112,49 @@ final readonly class AnalyticsStationMapBuilder
                 'totalCostCents' => $item->totalCostCents,
                 'totalQuantityMilliLiters' => $item->totalQuantityMilliLiters,
                 'publicMatch' => $this->mapMatch($match),
+                'nearbyPublicStations' => array_map(fn (NearbyPublicFuelStationPoint $point): array => $this->mapNearbyPoint($point), $nearbyStations),
             ];
 
             if (null === $match || null === $match->latitudeMicroDegrees || null === $match->longitudeMicroDegrees) {
-                continue;
+            } else {
+                $sourceId = $match->sourceId;
+                if (!isset($publicPoints[$sourceId])) {
+                    $publicPoints[$sourceId] = [
+                        'sourceId' => $sourceId,
+                        'address' => $match->address,
+                        'city' => $match->city,
+                        'postalCode' => $match->postalCode,
+                        'confidence' => $match->confidence,
+                        'distanceMeters' => $match->distanceMeters,
+                        'latitude' => $match->latitudeMicroDegrees / 1_000_000.0,
+                        'longitude' => $match->longitudeMicroDegrees / 1_000_000.0,
+                        'availableFuelLabels' => $this->availableFuelLabels($match),
+                        'matchedStationNames' => [],
+                    ];
+                }
+
+                $publicPoints[$sourceId]['matchedStationNames'][] = $item->stationName;
             }
 
-            $sourceId = $match->sourceId;
-            if (!isset($publicPoints[$sourceId])) {
-                $publicPoints[$sourceId] = [
-                    'sourceId' => $sourceId,
-                    'address' => $match->address,
-                    'city' => $match->city,
-                    'postalCode' => $match->postalCode,
-                    'confidence' => $match->confidence,
-                    'distanceMeters' => $match->distanceMeters,
-                    'latitude' => $match->latitudeMicroDegrees / 1_000_000.0,
-                    'longitude' => $match->longitudeMicroDegrees / 1_000_000.0,
-                    'availableFuelLabels' => $this->availableFuelLabels($match),
-                    'matchedStationNames' => [],
-                ];
-            }
+            foreach ($nearbyStations as $nearbyPoint) {
+                $sourceId = $nearbyPoint->sourceId;
+                if (!isset($nearbyPublicPoints[$sourceId])) {
+                    $nearbyPublicPoints[$sourceId] = [
+                        'sourceId' => $sourceId,
+                        'address' => $nearbyPoint->address,
+                        'city' => $nearbyPoint->city,
+                        'postalCode' => $nearbyPoint->postalCode,
+                        'distanceMeters' => $nearbyPoint->distanceMeters,
+                        'latitude' => $nearbyPoint->latitude,
+                        'longitude' => $nearbyPoint->longitude,
+                        'availableFuelLabels' => $nearbyPoint->availableFuelLabels,
+                        'nearbyStationNames' => [],
+                    ];
+                }
 
-            $publicPoints[$sourceId]['matchedStationNames'][] = $item->stationName;
+                $nearbyPublicPoints[$sourceId]['nearbyStationNames'][] = $item->stationName;
+                $nearbyPublicPoints[$sourceId]['distanceMeters'] = min($nearbyPublicPoints[$sourceId]['distanceMeters'], $nearbyPoint->distanceMeters);
+            }
         }
 
         foreach ($publicPoints as &$publicPoint) {
@@ -118,10 +162,17 @@ final readonly class AnalyticsStationMapBuilder
         }
         unset($publicPoint);
 
+        foreach ($nearbyPublicPoints as &$nearbyPublicPoint) {
+            $nearbyPublicPoint['nearbyStationNames'] = array_keys(array_fill_keys($nearbyPublicPoint['nearbyStationNames'], true));
+        }
+        unset($nearbyPublicPoint);
+
         return [
             'visitedPoints' => $visitedPoints,
             'publicPoints' => array_values($publicPoints),
+            'nearbyPublicPoints' => array_values($nearbyPublicPoints),
             'matchedVisitedCount' => $matchedVisitedCount,
+            'nearbyVisitedCount' => $nearbyVisitedCount,
         ];
     }
 
@@ -145,6 +196,32 @@ final readonly class AnalyticsStationMapBuilder
         }
 
         return $this->publicFuelStationMatcher->findBestCandidates($queries);
+    }
+
+    /**
+     * @param list<VisitedStationPointKpi>                   $items
+     * @param array<string, PublicFuelStationMatchCandidate> $matches
+     *
+     * @return array<string, list<NearbyPublicFuelStationPoint>>
+     */
+    private function nearbyPoints(array $items, array $matches): array
+    {
+        $queries = [];
+        $excludedSourceIds = [];
+
+        foreach ($items as $item) {
+            $queries[$item->stationId] = new NearbyPublicFuelStationQuery(
+                $item->latitudeMicroDegrees,
+                $item->longitudeMicroDegrees,
+            );
+
+            $match = $matches[$item->stationId] ?? null;
+            if ($match instanceof PublicFuelStationMatchCandidate) {
+                $excludedSourceIds[] = $match->sourceId;
+            }
+        }
+
+        return $this->publicFuelStationNearbyReader->findNearby($queries, $excludedSourceIds);
     }
 
     /**
@@ -176,6 +253,32 @@ final readonly class AnalyticsStationMapBuilder
             'latitude' => null !== $match->latitudeMicroDegrees ? $match->latitudeMicroDegrees / 1_000_000.0 : null,
             'longitude' => null !== $match->longitudeMicroDegrees ? $match->longitudeMicroDegrees / 1_000_000.0 : null,
             'availableFuelLabels' => $this->availableFuelLabels($match),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     sourceId:string,
+     *     address:string,
+     *     city:string,
+     *     postalCode:string,
+     *     distanceMeters:int,
+     *     latitude:float,
+     *     longitude:float,
+     *     availableFuelLabels:list<string>
+     * }
+     */
+    private function mapNearbyPoint(NearbyPublicFuelStationPoint $point): array
+    {
+        return [
+            'sourceId' => $point->sourceId,
+            'address' => $point->address,
+            'city' => $point->city,
+            'postalCode' => $point->postalCode,
+            'distanceMeters' => $point->distanceMeters,
+            'latitude' => $point->latitude,
+            'longitude' => $point->longitude,
+            'availableFuelLabels' => $point->availableFuelLabels,
         ];
     }
 

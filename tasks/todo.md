@@ -29,3 +29,11 @@
 - [completed] Add a read model that enriches visited station points with nearby public station context.
 - [completed] Update the analytics map/list UI to show the merged station context clearly.
 - [completed] Add or update unit/integration/functional coverage and run quality gates.
+
+# TODO - SP39-002 Nearby public stations around visited stations
+
+## Plan
+- [completed] Design a dedicated bulk nearby-public reader for analytics instead of reusing the generic list search.
+- [completed] Enrich the analytics station map with nearby public stations not already matched.
+- [completed] Update analytics UI and fallback list to distinguish visited, matched public and nearby public stations.
+- [pending] Add or update unit/integration/functional coverage and run quality gates.

@@ -93,6 +93,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $stationA = $this->createStation('Station A', '1 Main St', '75001', 'Paris');
         $stationB = $this->createStation('Station B', '2 Oak Ave', '69001', 'Lyon');
         $this->persistPublicStation('public-station-a', 48856120, 2352210, '5 PUBLIC ROAD', '75001', 'PARIS');
+        $this->persistPublicStation('public-station-nearby', 48857120, 2352310, '7 NEARBY ROAD', '75001', 'PARIS');
         $this->em->flush();
 
         $this->createReceipt($owner, $vehicle, $stationA, new DateTimeImmutable('2026-01-10 10:00:00'), [
@@ -133,9 +134,13 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('20.00 L', $content);
         self::assertStringContainsString('Visited and matched public stations', $content);
         self::assertStringContainsString('with public match', $content);
+        self::assertStringContainsString('with nearby public', $content);
         self::assertStringContainsString('Station A', $content);
         self::assertStringContainsString('Public match · high', $content);
         self::assertStringContainsString('5 PUBLIC ROAD, 75001 PARIS', $content);
+        self::assertStringContainsString('Nearby public:', $content);
+        self::assertStringContainsString('7 NEARBY ROAD, 75001 PARIS', $content);
+        self::assertStringContainsString('Nearby public stations', $content);
         self::assertStringContainsString('receipt(s)', $content);
         self::assertStringContainsString('Fuel price trend by month', $content);
         self::assertStringContainsString('2026-01 · diesel', $content);

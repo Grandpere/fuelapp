@@ -132,6 +132,7 @@ services:
     App\PublicFuelStation\Application\Repository\PublicFuelStationSyncRunRepository: '@App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Repository\DoctrinePublicFuelStationSyncRunRepository'
     App\PublicFuelStation\Application\Admin\PublicFuelStationAdminDiagnosticsReader: '@App\PublicFuelStation\Infrastructure\Admin\DoctrinePublicFuelStationAdminDiagnosticsReader'
     App\PublicFuelStation\Application\Matching\PublicFuelStationMatcher: '@App\PublicFuelStation\Infrastructure\Matching\DoctrinePublicFuelStationMatcher'
+    App\PublicFuelStation\Application\Nearby\PublicFuelStationNearbyReader: '@App\PublicFuelStation\Infrastructure\Nearby\DoctrinePublicFuelStationNearbyReader'
     App\PublicFuelStation\Application\Search\PublicFuelStationSearchReader: '@App\PublicFuelStation\Infrastructure\Search\DoctrinePublicFuelStationSearchReader'
     App\Admin\Application\Audit\AdminAuditContext: '@App\Admin\Infrastructure\Audit\SecurityRequestAdminAuditContext'
     App\Admin\Application\Audit\AdminAuditTrail: '@App\Admin\Infrastructure\Persistence\Doctrine\Audit\DoctrineAdminAuditTrail'

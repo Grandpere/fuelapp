@@ -163,6 +163,10 @@
             background: #61ddff;
         }
 
+        .map-legend-dot.nearby {
+            background: #9bff76;
+        }
+
         .map-canvas {
             height: 360px;
             border-radius: 12px;
@@ -728,7 +732,9 @@
                 <div class="map-card-badges">
                     <span class="pill">{{ stationMap.visitedPoints|length }} visited</span>
                     <span class="pill">{{ stationMap.matchedVisitedCount }} with public match</span>
+                    <span class="pill">{{ stationMap.nearbyVisitedCount }} with nearby public</span>
                     <span class="pill">{{ stationMap.publicPoints|length }} public marker{{ stationMap.publicPoints|length == 1 ? '' : 's' }}</span>
+                    <span class="pill">{{ stationMap.nearbyPublicPoints|length }} nearby marker{{ stationMap.nearbyPublicPoints|length == 1 ? '' : 's' }}</span>
                 </div>
             </div>
             {% if stationMap.visitedPoints is empty %}
@@ -737,6 +743,7 @@
                 <div class="map-legend">
                     <span class="map-legend-item"><span class="map-legend-dot visited"></span>Visited station from your receipt history</span>
                     <span class="map-legend-item"><span class="map-legend-dot public"></span>Matched public station from the official cache</span>
+                    <span class="map-legend-item"><span class="map-legend-dot nearby"></span>Nearby public station not yet visited</span>
                 </div>
                 <div class="map-canvas" id="analytics-station-map"></div>
                 <ul class="station-map-list">
@@ -760,6 +767,14 @@
                                     {{ point.publicMatch.address }}, {{ point.publicMatch.postalCode }} {{ point.publicMatch.city }}
                                     {% if point.publicMatch.distanceMeters is not null %} · {{ point.publicMatch.distanceMeters }} m away{% endif %}
                                     {% if point.publicMatch.availableFuelLabels is not empty %} · {{ point.publicMatch.availableFuelLabels|join(', ') }}{% endif %}
+                                </div>
+                            {% endif %}
+                            {% if point.nearbyPublicStations is not empty %}
+                                <div class="station-map-item-match">
+                                    Nearby public:
+                                    {% for nearby in point.nearbyPublicStations %}
+                                        {{ nearby.address }}, {{ nearby.postalCode }} {{ nearby.city }} · {{ nearby.distanceMeters }} m{% if nearby.availableFuelLabels is not empty %} · {{ nearby.availableFuelLabels|join(', ') }}{% endif %}{% if not loop.last %} | {% endif %}
+                                    {% endfor %}
                                 </div>
                             {% endif %}
                         </li>
@@ -1047,17 +1062,18 @@
                 return;
             }
 
-            let mapData = { visitedPoints: [], publicPoints: [] };
+            let mapData = { visitedPoints: [], publicPoints: [], nearbyPublicPoints: [] };
             try {
-                mapData = JSON.parse(dataContainer.textContent || '{"visitedPoints":[],"publicPoints":[]}');
+                mapData = JSON.parse(dataContainer.textContent || '{"visitedPoints":[],"publicPoints":[],"nearbyPublicPoints":[]}');
             } catch (error) {
-                mapData = { visitedPoints: [], publicPoints: [] };
+                mapData = { visitedPoints: [], publicPoints: [], nearbyPublicPoints: [] };
             }
 
             const visitedPoints = Array.isArray(mapData.visitedPoints) ? mapData.visitedPoints : [];
             const publicPoints = Array.isArray(mapData.publicPoints) ? mapData.publicPoints : [];
+            const nearbyPublicPoints = Array.isArray(mapData.nearbyPublicPoints) ? mapData.nearbyPublicPoints : [];
 
-            if (visitedPoints.length === 0 && publicPoints.length === 0) {
+            if (visitedPoints.length === 0 && publicPoints.length === 0 && nearbyPublicPoints.length === 0) {
                 return;
             }
 
@@ -1077,6 +1093,7 @@
             const bounds = [];
             const visitedLayer = L.layerGroup();
             const publicLayer = L.layerGroup();
+            const nearbyLayer = L.layerGroup();
 
             const visitedIcon = L.divIcon({
                 className: 'analytics-map-visited-icon',
@@ -1142,12 +1159,46 @@
                 bounds.push([point.latitude, point.longitude]);
             });
 
+            nearbyPublicPoints.forEach((point) => {
+                if (typeof point.latitude !== 'number' || typeof point.longitude !== 'number') {
+                    return;
+                }
+
+                const marker = L.circleMarker([point.latitude, point.longitude], {
+                    radius: 7,
+                    color: '#24364b',
+                    weight: 2,
+                    dashArray: '3 2',
+                    fillColor: '#9bff76',
+                    fillOpacity: 0.82,
+                }).addTo(nearbyLayer);
+
+                marker.bindPopup(
+                    `<div class="analytics-map-popup">` +
+                    `<div class="popup-kicker">Nearby public station</div>` +
+                    `<strong>${escapeHtml(point.address)}</strong>` +
+                    `<div>${escapeHtml(point.postalCode)} ${escapeHtml(point.city)}</div>` +
+                    `<div class="popup-meta">${point.distanceMeters} m from visited context</div>` +
+                    (Array.isArray(point.availableFuelLabels) && point.availableFuelLabels.length > 0 ? `<div class="popup-highlight">${escapeHtml(point.availableFuelLabels.join(', '))}</div>` : '') +
+                    (Array.isArray(point.nearbyStationNames) && point.nearbyStationNames.length > 0 ? `<div class="popup-meta">Nearby: ${escapeHtml(point.nearbyStationNames.join(', '))}</div>` : '') +
+                    `</div>`
+                );
+
+                bounds.push([point.latitude, point.longitude]);
+            });
+
             visitedLayer.addTo(map);
             if (publicPoints.length > 0) {
                 publicLayer.addTo(map);
+            }
+            if (nearbyPublicPoints.length > 0) {
+                nearbyLayer.addTo(map);
+            }
+            if (publicPoints.length > 0 || nearbyPublicPoints.length > 0) {
                 L.control.layers({}, {
                     'Visited stations': visitedLayer,
                     'Matched public stations': publicLayer,
+                    'Nearby public stations': nearbyLayer,
                 }, { collapsed: false }).addTo(map);
             }
 

@@ -19,6 +19,8 @@ use App\Import\Application\Repository\ImportJobRepository;
 use App\Import\Application\Storage\ImportFileStorage;
 use App\Import\Application\Storage\StoredImportFile;
 use App\Import\Domain\ImportJob;
+use App\PublicFuelStation\Application\Search\PublicFuelStationSuggestion;
+use App\PublicFuelStation\Application\Search\PublicFuelStationSuggestionReader;
 use App\Receipt\Application\Command\CreateReceiptHandler;
 use App\Receipt\Application\Command\CreateReceiptWithStationHandler;
 use App\Receipt\Application\Repository\ReceiptRepository;
@@ -70,6 +72,7 @@ final class FinalizeImportJobHandlerTest extends TestCase
             new CreateReceiptHandler($receiptRepository),
             $stationRepository,
             new CreateStationHandler($stationRepository, new FinalizeNullMessageBus()),
+            new FinalizeInMemoryPublicFuelStationSuggestionReader(),
         );
         $handler = new FinalizeImportJobHandler($repository, new FinalizeNullImportFileStorage(), $createReceiptWithStationHandler);
 
@@ -99,6 +102,7 @@ final class FinalizeImportJobHandlerTest extends TestCase
             new CreateReceiptHandler(new FinalizeInMemoryReceiptRepository()),
             $stationRepository,
             new CreateStationHandler($stationRepository, new FinalizeNullMessageBus()),
+            new FinalizeInMemoryPublicFuelStationSuggestionReader(),
         );
         $handler = new FinalizeImportJobHandler($repository, new FinalizeNullImportFileStorage(), $createReceiptWithStationHandler);
 
@@ -144,6 +148,7 @@ final class FinalizeImportJobHandlerTest extends TestCase
             new CreateReceiptHandler($receiptRepository),
             $stationRepository,
             new CreateStationHandler($stationRepository, new FinalizeNullMessageBus()),
+            new FinalizeInMemoryPublicFuelStationSuggestionReader(),
         );
         $handler = new FinalizeImportJobHandler($repository, new FinalizeNullImportFileStorage(), $createReceiptWithStationHandler);
 
@@ -419,6 +424,24 @@ final class FinalizeInMemoryStationRepository implements StationRepository
     public function allForSystem(): iterable
     {
         return $this->all();
+    }
+}
+
+final class FinalizeInMemoryPublicFuelStationSuggestionReader implements PublicFuelStationSuggestionReader
+{
+    /** @param array<string, PublicFuelStationSuggestion> $items */
+    public function __construct(private array $items = [])
+    {
+    }
+
+    public function search(\App\Station\Application\Suggestion\StationSuggestionQuery $query, int $limit): array
+    {
+        return array_slice(array_values($this->items), 0, $limit);
+    }
+
+    public function getBySourceId(string $sourceId): ?PublicFuelStationSuggestion
+    {
+        return $this->items[$sourceId] ?? null;
     }
 }
 

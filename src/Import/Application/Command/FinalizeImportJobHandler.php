@@ -83,6 +83,8 @@ final readonly class FinalizeImportJobHandler
             ownerId: $job->ownerId(),
             odometerKilometers: $odometerKilometers,
             selectedStationId: $command->selectedStationId,
+            selectedSuggestionType: $command->selectedSuggestionType,
+            selectedSuggestionId: $command->selectedSuggestionId,
         ));
 
         $job->markProcessedWithPayload($this->buildProcessedPayload(

@@ -41,7 +41,15 @@
 # TODO - SP40-001 Station picker and import matching
 
 ## Plan
-- [in_progress] Add a shared station candidate search read model.
-- [pending] Support explicit existing-station selection in manual receipt creation.
-- [pending] Reuse the same station selection flow during import review finalization.
-- [pending] Add or update unit/integration/functional coverage and run quality gates.
+- [completed] Add a shared station candidate search read model.
+- [completed] Support explicit existing-station selection in manual receipt creation.
+- [completed] Reuse the same station selection flow during import review finalization.
+- [completed] Add or update unit/integration/functional coverage and run quality gates.
+
+# TODO - SP40-002 Public station suggestions in station picker
+
+## Plan
+- [completed] Add a unified suggestion flow that merges internal stations and cached public fuel stations.
+- [completed] Let receipt creation resolve a selected public suggestion into an internal `Station` on save.
+- [completed] Reuse the same public suggestion flow during import review finalization.
+- [in_progress] Run quality gates and prepare the manual functional validation handover.

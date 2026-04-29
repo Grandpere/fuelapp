@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace App\Receipt\UI\Web\Controller;
 
+use App\PublicFuelStation\Application\Search\PublicFuelStationSuggestionReader;
 use App\Receipt\Application\Command\CreateReceiptLineCommand;
 use App\Receipt\Application\Command\CreateReceiptWithStationCommand;
 use App\Receipt\Application\Command\CreateReceiptWithStationHandler;
@@ -22,9 +23,9 @@ use App\Receipt\UI\Api\Resource\Input\ReceiptLineInput;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Station\Application\Repository\StationRepository;
-use App\Station\Application\Search\StationSearchCandidate;
-use App\Station\Application\Search\StationSearchQuery;
-use App\Station\Application\Search\StationSearchReader;
+use App\Station\Application\Suggestion\StationSuggestion;
+use App\Station\Application\Suggestion\StationSuggestionQuery;
+use App\Station\Application\Suggestion\StationSuggestionReader;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -43,7 +44,8 @@ final class CreateReceiptController extends AbstractController
     public function __construct(
         private readonly CreateReceiptWithStationHandler $createReceiptWithStationHandler,
         private readonly StationRepository $stationRepository,
-        private readonly StationSearchReader $stationSearchReader,
+        private readonly StationSuggestionReader $stationSuggestionReader,
+        private readonly PublicFuelStationSuggestionReader $publicFuelStationSuggestionReader,
         private readonly ReceiptStreamPublisher $streamPublisher,
         private readonly VehicleRepository $vehicleRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
@@ -75,7 +77,7 @@ final class CreateReceiptController extends AbstractController
                     return new RedirectResponse($this->generateUrl('ui_receipt_new', $this->stationLookupQueryParams($formData)), Response::HTTP_SEE_OTHER);
                 }
             } else {
-                $errors = $this->validateSelectedStationChoice($formData);
+                $errors = $this->validateSelectedSuggestionChoice($formData);
                 $this->hydrateSelectedStationFields($formData);
                 $errors = $this->validateFormData($formData, $ownerId);
                 if ([] === $errors) {
@@ -87,16 +89,17 @@ final class CreateReceiptController extends AbstractController
             }
         }
 
-        $stationCandidates = $this->stationCandidates($formData);
+        $stationSuggestions = $this->stationSuggestions($formData);
 
         $response = $this->render($isTurboFrameRequest ? 'receipt/_form.html.twig' : 'receipt/new.html.twig', [
             'formData' => $formData,
             'errors' => $errors,
             'fuelTypes' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
             'vehicleOptions' => $this->vehicleOptions($ownerId),
-            'stationCandidates' => $stationCandidates,
+            'existingStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'station' === $suggestion->sourceType)),
+            'publicStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'public' === $suggestion->sourceType)),
             'stationLookupPerformed' => $this->stationLookupPerformed($request),
-            'stationLookupCount' => count($stationCandidates),
+            'stationLookupCount' => count($stationSuggestions),
             'csrfToken' => $this->csrfTokenManager->getToken('receipt_new')->getValue(),
         ]);
 
@@ -124,6 +127,7 @@ final class CreateReceiptController extends AbstractController
             'stationPostalCode' => $this->queryValue($request, 'stationPostalCode', $prefilledStation?->postalCode() ?? ''),
             'stationCity' => $this->queryValue($request, 'stationCity', $prefilledStation?->city() ?? ''),
             'selectedStationId' => $this->queryValue($request, 'selectedStationId', $prefilledStation?->id()->toString() ?? ''),
+            'selectedSuggestion' => $this->queryValue($request, 'selectedSuggestion', null !== $prefilledStation ? 'station:'.$prefilledStation->id()->toString() : ''),
             'stationSearch' => $this->queryValue($request, 'stationSearch', $prefilledStation?->name() ?? ''),
             'latitudeMicroDegrees' => $this->queryValue($request, 'latitudeMicroDegrees', null !== $prefilledStation?->latitudeMicroDegrees() ? (string) $prefilledStation->latitudeMicroDegrees() : ''),
             'longitudeMicroDegrees' => $this->queryValue($request, 'longitudeMicroDegrees', null !== $prefilledStation?->longitudeMicroDegrees() ? (string) $prefilledStation->longitudeMicroDegrees() : ''),
@@ -150,7 +154,7 @@ final class CreateReceiptController extends AbstractController
      */
     private function validateFormData(array $formData, string $ownerId): array
     {
-        $selectedStationErrors = $this->validateSelectedStationChoice($formData);
+        $selectedStationErrors = $this->validateSelectedSuggestionChoice($formData);
         if ([] !== $selectedStationErrors) {
             return $selectedStationErrors;
         }
@@ -231,6 +235,8 @@ final class CreateReceiptController extends AbstractController
             $ownerId,
             odometerKilometers: $this->toNullableInt($formData['odometerKilometers']),
             selectedStationId: $this->nullIfEmpty($formData['selectedStationId']),
+            selectedSuggestionType: $this->selectedSuggestionType($formData),
+            selectedSuggestionId: $this->selectedSuggestionId($formData),
         );
 
         $receipt = ($this->createReceiptWithStationHandler)($command);
@@ -342,18 +348,32 @@ final class CreateReceiptController extends AbstractController
      *
      * @return list<string>
      */
-    private function validateSelectedStationChoice(array $formData): array
+    private function validateSelectedSuggestionChoice(array $formData): array
     {
-        $selectedStationId = $this->nullIfEmpty($formData['selectedStationId']);
-        if (null === $selectedStationId) {
+        $selectedSuggestionType = $this->selectedSuggestionType($formData);
+        $selectedSuggestionId = $this->selectedSuggestionId($formData);
+
+        if (null === $selectedSuggestionType || null === $selectedSuggestionId) {
             return [];
         }
 
-        if (!Uuid::isValid($selectedStationId) || null === $this->stationRepository->get($selectedStationId)) {
-            return ['Selected station was not found.'];
+        if ('station' === $selectedSuggestionType) {
+            if (!Uuid::isValid($selectedSuggestionId) || null === $this->stationRepository->get($selectedSuggestionId)) {
+                return ['Selected station was not found.'];
+            }
+
+            return [];
         }
 
-        return [];
+        if ('public' === $selectedSuggestionType) {
+            if (null === $this->publicFuelStationSuggestionReader->getBySourceId($selectedSuggestionId)) {
+                return ['Selected public station was not found.'];
+            }
+
+            return [];
+        }
+
+        return ['Selected station suggestion is invalid.'];
     }
 
     /**
@@ -361,37 +381,57 @@ final class CreateReceiptController extends AbstractController
      */
     private function hydrateSelectedStationFields(array &$formData): void
     {
-        $selectedStationId = $this->nullIfEmpty($formData['selectedStationId']);
-        if (null === $selectedStationId) {
+        $selectedSuggestionType = $this->selectedSuggestionType($formData);
+        $selectedSuggestionId = $this->selectedSuggestionId($formData);
+        if (null === $selectedSuggestionType || null === $selectedSuggestionId) {
             return;
         }
 
-        $station = $this->stationRepository->get($selectedStationId);
-        if (null === $station) {
+        if ('station' === $selectedSuggestionType) {
+            $station = $this->stationRepository->get($selectedSuggestionId);
+            if (null === $station) {
+                return;
+            }
+
+            $formData['stationName'] = $station->name();
+            $formData['stationStreetName'] = $station->streetName();
+            $formData['stationPostalCode'] = $station->postalCode();
+            $formData['stationCity'] = $station->city();
+            $formData['stationSearch'] = sprintf('%s - %s, %s %s', $station->name(), $station->streetName(), $station->postalCode(), $station->city());
+            $formData['latitudeMicroDegrees'] = null !== $station->latitudeMicroDegrees() ? (string) $station->latitudeMicroDegrees() : '';
+            $formData['longitudeMicroDegrees'] = null !== $station->longitudeMicroDegrees() ? (string) $station->longitudeMicroDegrees() : '';
+            $formData['selectedStationId'] = $station->id()->toString();
+
             return;
         }
 
-        $formData['stationName'] = $station->name();
-        $formData['stationStreetName'] = $station->streetName();
-        $formData['stationPostalCode'] = $station->postalCode();
-        $formData['stationCity'] = $station->city();
-        $formData['stationSearch'] = sprintf('%s - %s, %s %s', $station->name(), $station->streetName(), $station->postalCode(), $station->city());
-        $formData['latitudeMicroDegrees'] = null !== $station->latitudeMicroDegrees() ? (string) $station->latitudeMicroDegrees() : '';
-        $formData['longitudeMicroDegrees'] = null !== $station->longitudeMicroDegrees() ? (string) $station->longitudeMicroDegrees() : '';
+        $publicStation = $this->publicFuelStationSuggestionReader->getBySourceId($selectedSuggestionId);
+        if (null === $publicStation) {
+            return;
+        }
+
+        $formData['stationName'] = $publicStation->name;
+        $formData['stationStreetName'] = $publicStation->streetName;
+        $formData['stationPostalCode'] = $publicStation->postalCode;
+        $formData['stationCity'] = $publicStation->city;
+        $formData['latitudeMicroDegrees'] = null !== $publicStation->latitudeMicroDegrees ? (string) $publicStation->latitudeMicroDegrees : '';
+        $formData['longitudeMicroDegrees'] = null !== $publicStation->longitudeMicroDegrees ? (string) $publicStation->longitudeMicroDegrees : '';
+        $formData['selectedStationId'] = '';
+        $formData['stationSearch'] = trim(implode(' ', array_filter([$publicStation->name, $publicStation->postalCode, $publicStation->city])));
     }
 
     /**
      * @param array<string, string> $formData
      *
-     * @return list<StationSearchCandidate>
+     * @return list<StationSuggestion>
      */
-    private function stationCandidates(array $formData): array
+    private function stationSuggestions(array $formData): array
     {
         if (!$this->hasStationSearchContext($formData)) {
             return [];
         }
 
-        return $this->stationSearchReader->search(new StationSearchQuery(
+        return $this->stationSuggestionReader->search(new StationSuggestionQuery(
             $this->nullIfEmpty($formData['stationSearch']),
             $this->nullIfEmpty($formData['stationName']),
             $this->nullIfEmpty($formData['stationStreetName']),
@@ -405,13 +445,52 @@ final class CreateReceiptController extends AbstractController
      */
     private function hasStationSearchContext(array $formData): bool
     {
-        foreach (['stationSearch', 'stationName', 'stationStreetName', 'stationPostalCode', 'stationCity', 'selectedStationId'] as $key) {
+        foreach (['stationSearch', 'stationName', 'stationStreetName', 'stationPostalCode', 'stationCity', 'selectedStationId', 'selectedSuggestion'] as $key) {
             if ('' !== trim($formData[$key] ?? '')) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @param array<string, string> $formData
+     */
+    private function selectedSuggestionType(array $formData): ?string
+    {
+        $selectedSuggestion = $this->nullIfEmpty($formData['selectedSuggestion']);
+        if (null === $selectedSuggestion) {
+            $selectedStationId = $this->nullIfEmpty($formData['selectedStationId']);
+
+            return null === $selectedStationId ? null : 'station';
+        }
+
+        [$type] = explode(':', $selectedSuggestion, 2);
+        $trimmed = trim($type);
+
+        return '' === $trimmed ? null : $trimmed;
+    }
+
+    /**
+     * @param array<string, string> $formData
+     */
+    private function selectedSuggestionId(array $formData): ?string
+    {
+        $selectedSuggestion = $this->nullIfEmpty($formData['selectedSuggestion']);
+        if (null === $selectedSuggestion) {
+            return $this->nullIfEmpty($formData['selectedStationId']);
+        }
+
+        $parts = explode(':', $selectedSuggestion, 2);
+        $id = $parts[1] ?? null;
+        if (null === $id) {
+            return null;
+        }
+
+        $trimmed = trim($id);
+
+        return '' === $trimmed ? null : $trimmed;
     }
 
     /**
@@ -434,6 +513,7 @@ final class CreateReceiptController extends AbstractController
             'stationStreetName' => $formData['stationStreetName'],
             'stationPostalCode' => $formData['stationPostalCode'],
             'stationCity' => $formData['stationCity'],
+            'selectedSuggestion' => $formData['selectedSuggestion'],
             'latitudeMicroDegrees' => $formData['latitudeMicroDegrees'],
             'longitudeMicroDegrees' => $formData['longitudeMicroDegrees'],
             'odometerKilometers' => $formData['odometerKilometers'],

@@ -75,54 +75,74 @@
                         <span class="station-lookup-feedback-label">Search result</span>
                         <p class="muted compact-note">
                         {% if stationLookupCount > 0 %}
-                            {{ stationLookupCount }} existing station{{ stationLookupCount > 1 ? 's' : '' }} matched these terms.
+                            {{ stationLookupCount }} station suggestion{{ stationLookupCount > 1 ? 's' : '' }} matched these terms.
                         {% else %}
-                            No existing station matched these terms closely enough.
+                            No station suggestion matched these terms closely enough.
                         {% endif %}
                         </p>
                     </div>
                 {% endif %}
-                {% if stationCandidates is not empty %}
+                {% set existingStationSuggestions = existingStationSuggestions|default([]) %}
+                {% set publicStationSuggestions = publicStationSuggestions|default([]) %}
+                {% if existingStationSuggestions is not empty or publicStationSuggestions is not empty %}
                     <div class="station-lookup-results">
-                        <p class="station-lookup-results-title">Choose an existing station</p>
-                        {% for candidate in stationCandidates %}
-                            <label class="station-lookup-option">
-                                <input type="radio" name="selectedStationId" value="{{ candidate.id }}" {% if formData.selectedStationId == candidate.id %}checked{% endif %}>
-                                <span class="station-lookup-option-content">
-                                    <strong>{{ candidate.name }}</strong>
-                                    <span>{{ candidate.streetName }}</span>
-                                    <span class="station-lookup-option-meta">{{ candidate.postalCode }} {{ candidate.city }}</span>
-                                </span>
-                            </label>
-                        {% endfor %}
+                        {% if existingStationSuggestions is not empty %}
+                            <p class="station-lookup-results-title">Existing stations</p>
+                            {% for candidate in existingStationSuggestions %}
+                                <label class="station-lookup-option">
+                                    <input type="radio" name="selectedSuggestion" value="station:{{ candidate.sourceId }}" {% if formData.selectedSuggestion == 'station:' ~ candidate.sourceId or formData.selectedStationId == candidate.sourceId %}checked{% endif %}>
+                                    <span class="station-lookup-option-content">
+                                        <span class="station-lookup-option-badge">Existing</span>
+                                        <strong>{{ candidate.name }}</strong>
+                                        <span>{{ candidate.streetName }}</span>
+                                        <span class="station-lookup-option-meta">{{ candidate.postalCode }} {{ candidate.city }}</span>
+                                    </span>
+                                </label>
+                            {% endfor %}
+                        {% endif %}
+                        {% if publicStationSuggestions is not empty %}
+                            <p class="station-lookup-results-title">Public station suggestions</p>
+                            {% for candidate in publicStationSuggestions %}
+                                <label class="station-lookup-option">
+                                    <input type="radio" name="selectedSuggestion" value="public:{{ candidate.sourceId }}" {% if formData.selectedSuggestion == 'public:' ~ candidate.sourceId %}checked{% endif %}>
+                                    <span class="station-lookup-option-content">
+                                        <span class="station-lookup-option-badge station-lookup-option-badge-public">Public</span>
+                                        <strong>{{ candidate.name }}</strong>
+                                        <span class="station-lookup-option-meta">{{ candidate.postalCode }} {{ candidate.city }}</span>
+                                        <span class="muted compact-note">This will create or reuse an internal station when you save.</span>
+                                    </span>
+                                </label>
+                            {% endfor %}
+                        {% endif %}
                         <label class="station-lookup-option station-lookup-manual">
-                            <input type="radio" name="selectedStationId" value="" {% if formData.selectedStationId == '' %}checked{% endif %}>
+                            <input type="radio" name="selectedSuggestion" value="" {% if formData.selectedSuggestion == '' and formData.selectedStationId == '' %}checked{% endif %}>
                             <span class="station-lookup-option-content">
-                                <strong>Do not use an existing station</strong>
+                                <strong>Do not use a suggestion</strong>
                                 <span>Keep the manual station fields below.</span>
                             </span>
                         </label>
                     </div>
                 {% else %}
+                    <input type="hidden" name="selectedSuggestion" value="{{ formData.selectedSuggestion }}">
                     <input type="hidden" name="selectedStationId" value="{{ formData.selectedStationId }}">
                 {% endif %}
             </div>
-            <div class="form-grid-2">
+            <div class="form-grid-2 station-manual-fields" data-station-manual-fields>
                 <label class="label">
                     Name
-                    <input class="input" type="text" name="stationName" value="{{ formData.stationName }}" required>
+                    <input class="input" type="text" name="stationName" value="{{ formData.stationName }}" required data-manual-required="1">
                 </label>
                 <label class="label">
                     Street name
-                    <input class="input" type="text" name="stationStreetName" value="{{ formData.stationStreetName }}" required>
+                    <input class="input" type="text" name="stationStreetName" value="{{ formData.stationStreetName }}" required data-manual-required="1">
                 </label>
                 <label class="label">
                     Postal code
-                    <input class="input" type="text" name="stationPostalCode" value="{{ formData.stationPostalCode }}" required>
+                    <input class="input" type="text" name="stationPostalCode" value="{{ formData.stationPostalCode }}" required data-manual-required="1">
                 </label>
                 <label class="label">
                     City
-                    <input class="input" type="text" name="stationCity" value="{{ formData.stationCity }}" required>
+                    <input class="input" type="text" name="stationCity" value="{{ formData.stationCity }}" required data-manual-required="1">
                 </label>
                 <label class="label">
                     Latitude (micro-degrees, optional)
@@ -140,4 +160,32 @@
             <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Cancel</a>
         </div>
     </form>
+
+    <script>
+        (() => {
+            const root = document.currentScript?.closest('turbo-frame') ?? document;
+            const radios = Array.from(root.querySelectorAll('input[name="selectedSuggestion"]'));
+            const manualFields = Array.from(root.querySelectorAll('[data-station-manual-fields] input, [data-station-manual-fields] select, [data-station-manual-fields] textarea'));
+
+            if (radios.length === 0 || manualFields.length === 0) {
+                return;
+            }
+
+            const syncManualFields = () => {
+                const selected = radios.find((radio) => radio.checked);
+                const useSuggestion = !!selected && selected.value !== '';
+
+                for (const field of manualFields) {
+                    field.disabled = useSuggestion;
+                    field.required = !useSuggestion && field.dataset.manualRequired === '1';
+                }
+            };
+
+            for (const radio of radios) {
+                radio.addEventListener('change', syncManualFields);
+            }
+
+            syncManualFields();
+        })();
+    </script>
 </turbo-frame>

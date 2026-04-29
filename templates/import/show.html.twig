@@ -213,24 +213,42 @@
                         </label>
                     </div>
 
-                    {% if stationCandidates is not empty %}
+                    {% set existingStationSuggestions = existingStationSuggestions|default([]) %}
+                    {% set publicStationSuggestions = publicStationSuggestions|default([]) %}
+                    {% if existingStationSuggestions is not empty or publicStationSuggestions is not empty %}
                         <div class="form-stack card-subtle card-subtle-block">
-                            {% for candidate in stationCandidates %}
-                                <label class="label">
-                                    <span class="muted compact-note">
-                                        <input type="radio" name="selectedStationId" value="{{ candidate.id }}">
-                                        {{ candidate.name }} - {{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}
-                                    </span>
-                                </label>
-                            {% endfor %}
+                            {% if existingStationSuggestions is not empty %}
+                                <p class="text-block-title">Existing stations</p>
+                                {% for candidate in existingStationSuggestions %}
+                                    <label class="label">
+                                        <span class="muted compact-note">
+                                            <input type="radio" name="selectedSuggestion" value="station:{{ candidate.sourceId }}">
+                                            <strong>Existing</strong> {{ candidate.name }} - {{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            {% endif %}
+                            {% if publicStationSuggestions is not empty %}
+                                <p class="text-block-title">Public station suggestions</p>
+                                {% for candidate in publicStationSuggestions %}
+                                    <label class="label">
+                                        <span class="muted compact-note">
+                                            <input type="radio" name="selectedSuggestion" value="public:{{ candidate.sourceId }}">
+                                            <strong>Public</strong> {{ candidate.name }}, {{ candidate.postalCode }} {{ candidate.city }}
+                                        </span>
+                                        <span class="muted compact-note">This will create or reuse an internal station when you finalize.</span>
+                                    </label>
+                                {% endfor %}
+                            {% endif %}
                             <label class="label">
                                 <span class="muted compact-note">
-                                    <input type="radio" name="selectedStationId" value="" checked>
+                                    <input type="radio" name="selectedSuggestion" value="" checked>
                                     Keep manual station fields
                                 </span>
                             </label>
                         </div>
                     {% else %}
+                        <input type="hidden" name="selectedSuggestion" value="">
                         <input type="hidden" name="selectedStationId" value="">
                     {% endif %}
 

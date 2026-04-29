@@ -15,6 +15,7 @@ namespace App\Tests\Functional\Receipt;
 
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventEntity;
+use App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Entity\PublicFuelStationEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -55,7 +56,7 @@ final class ReceiptWebUiTest extends WebTestCase
         }
         $this->passwordHasher = $passwordHasher;
 
-        $this->em->getConnection()->executeStatement('TRUNCATE TABLE analytics_projection_states, analytics_daily_fuel_kpis, maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
+        $this->em->getConnection()->executeStatement('TRUNCATE TABLE analytics_projection_states, analytics_daily_fuel_kpis, public_fuel_stations, maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
     }
 
     public function testUserCanEditReceiptLinesFromUi(): void
@@ -568,6 +569,77 @@ final class ReceiptWebUiTest extends WebTestCase
         $lookupContent = (string) $lookupFollowResponse->getContent();
         self::assertStringContainsString('name="latitudeMicroDegrees" value="49569000"', $lookupContent);
         self::assertStringContainsString('name="longitudeMicroDegrees" value="4230000"', $lookupContent);
+    }
+
+    public function testUserCanSelectPublicSuggestionWhenCreatingReceipt(): void
+    {
+        $email = 'receipt.ui.public-station-picker@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+        $this->persistPublicFuelStation('public-1', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $lookupPage = $this->request('POST', '/ui/receipts/new', [
+            '_token' => $this->extractFormCsrf((string) $this->request('GET', '/ui/receipts/new')->getContent()),
+            '_station_lookup' => '1',
+            '_station_lookup_requested' => '1',
+            'issuedAt' => '2026-04-29T12:00',
+            'vehicleId' => '',
+            'fuelType' => 'diesel',
+            'quantityLiters' => '40.000',
+            'unitPriceEurosPerLiter' => '1.700',
+            'vatRatePercent' => '20',
+            'stationSearch' => 'frisange',
+            'stationName' => '',
+            'stationStreetName' => '',
+            'stationPostalCode' => '5751',
+            'stationCity' => 'FRISANGE',
+            'latitudeMicroDegrees' => '',
+            'longitudeMicroDegrees' => '',
+            'odometerKilometers' => '',
+            'selectedSuggestion' => '',
+            'selectedStationId' => '',
+        ]);
+        self::assertSame(Response::HTTP_SEE_OTHER, $lookupPage->getStatusCode());
+
+        $lookupFollowResponse = $this->request('GET', $lookupPage->headers->get('Location') ?? '/ui/receipts/new');
+        self::assertSame(Response::HTTP_OK, $lookupFollowResponse->getStatusCode());
+        $lookupContent = (string) $lookupFollowResponse->getContent();
+        self::assertStringContainsString('Public station suggestions', $lookupContent);
+        self::assertStringContainsString('40 Rue Robert Schuman', $lookupContent);
+
+        $createResponse = $this->request('POST', '/ui/receipts/new', [
+            '_token' => $this->extractFormCsrf($lookupContent),
+            'issuedAt' => '2026-04-29T12:00',
+            'vehicleId' => '',
+            'fuelType' => 'diesel',
+            'quantityLiters' => '40.000',
+            'unitPriceEurosPerLiter' => '1.700',
+            'vatRatePercent' => '20',
+            'stationSearch' => 'frisange',
+            'selectedSuggestion' => 'public:public-1',
+            'selectedStationId' => '',
+            'stationName' => '',
+            'stationStreetName' => '',
+            'stationPostalCode' => '5751',
+            'stationCity' => 'FRISANGE',
+            'latitudeMicroDegrees' => '',
+            'longitudeMicroDegrees' => '',
+            'odometerKilometers' => '',
+        ]);
+        self::assertSame(Response::HTTP_SEE_OTHER, $createResponse->getStatusCode());
+
+        $this->em->clear();
+        $receipts = $this->em->getRepository(ReceiptEntity::class)->findBy(['owner' => $owner], ['issuedAt' => 'DESC']);
+        self::assertCount(1, $receipts);
+        $station = $receipts[0]->getStation();
+        self::assertInstanceOf(StationEntity::class, $station);
+        self::assertSame('40 Rue Robert Schuman', $station->getName());
+        self::assertSame('40 Rue Robert Schuman', $station->getStreetName());
+        self::assertSame('5751', $station->getPostalCode());
+        self::assertSame('FRISANGE', $station->getCity());
     }
 
     public function testReceiptIndexRowsUseSharedRowLinkNavigation(): void
@@ -1146,5 +1218,21 @@ final class ReceiptWebUiTest extends WebTestCase
         $receipt->addLine($line);
 
         return $receipt;
+    }
+
+    private function persistPublicFuelStation(string $sourceId, string $address, string $postalCode, string $city, int $latitudeMicroDegrees, int $longitudeMicroDegrees): void
+    {
+        $station = new PublicFuelStationEntity();
+        $station->setSourceId($sourceId);
+        $station->setAddress($address);
+        $station->setPostalCode($postalCode);
+        $station->setCity($city);
+        $station->setLatitudeMicroDegrees($latitudeMicroDegrees);
+        $station->setLongitudeMicroDegrees($longitudeMicroDegrees);
+        $station->setAutomate24(false);
+        $station->setServices([]);
+        $station->setFuels([]);
+        $station->setSourceUpdatedAt(new DateTimeImmutable('2026-04-29 12:00:00'));
+        $this->em->persist($station);
     }
 }

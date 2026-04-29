@@ -75,6 +75,35 @@ final class DoctrinePublicFuelStationSuggestionReaderTest extends KernelTestCase
         self::assertSame([], $results);
     }
 
+    public function testSearchScoresAllFilteredMatchesBeforeApplyingLimit(): void
+    {
+        for ($i = 0; $i < 60; ++$i) {
+            $this->persistPublicStation(
+                sprintf('public-%d', $i),
+                sprintf('Alpha %d Avenue', $i),
+                '59000',
+                'LILLE',
+                50500000 + $i,
+                3000000 + $i,
+            );
+        }
+
+        $this->persistPublicStation('public-best', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000);
+        $this->em->flush();
+
+        $results = $this->reader->search(new StationSuggestionQuery(
+            '40 Robert Schuman',
+            null,
+            null,
+            null,
+            null,
+            1,
+        ), 1);
+
+        self::assertCount(1, $results);
+        self::assertSame('public-best', $results[0]->sourceId);
+    }
+
     private function persistPublicStation(string $sourceId, string $address, string $postalCode, string $city, int $latitudeMicroDegrees, int $longitudeMicroDegrees): void
     {
         $station = new PublicFuelStationEntity();

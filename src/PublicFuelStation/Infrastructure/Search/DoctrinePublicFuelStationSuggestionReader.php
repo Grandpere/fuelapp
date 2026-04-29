@@ -73,8 +73,7 @@ final readonly class DoctrinePublicFuelStationSuggestionReader implements Public
             ->andWhere('longitude_micro_degrees IS NOT NULL')
             ->orderBy('city', 'ASC')
             ->addOrderBy('postal_code', 'ASC')
-            ->addOrderBy('address', 'ASC')
-            ->setMaxResults(max(50, $limit * 20));
+            ->addOrderBy('address', 'ASC');
 
         $conditions = [];
         foreach ($terms as $index => $term) {

@@ -90,6 +90,7 @@ final class CreateReceiptController extends AbstractController
         }
 
         $stationSuggestions = $this->stationSuggestions($formData);
+        $this->clearStaleSelectedSuggestion($formData, $stationSuggestions);
 
         $response = $this->render($isTurboFrameRequest ? 'receipt/_form.html.twig' : 'receipt/new.html.twig', [
             'formData' => $formData,
@@ -438,6 +439,21 @@ final class CreateReceiptController extends AbstractController
             $this->nullIfEmpty($formData['stationPostalCode']),
             $this->nullIfEmpty($formData['stationCity']),
         ));
+    }
+
+    /**
+     * @param array<string, string>   $formData
+     * @param list<StationSuggestion> $stationSuggestions
+     */
+    private function clearStaleSelectedSuggestion(array &$formData, array $stationSuggestions): void
+    {
+        if ([] !== $stationSuggestions) {
+            return;
+        }
+
+        if ('public' === $this->selectedSuggestionType($formData)) {
+            $formData['selectedSuggestion'] = '';
+        }
     }
 
     /**

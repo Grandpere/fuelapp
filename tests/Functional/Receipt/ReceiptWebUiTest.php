@@ -642,6 +642,22 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame('FRISANGE', $station->getCity());
     }
 
+    public function testPublicSelectedSuggestionIsClearedWhenNoChoicesAreRendered(): void
+    {
+        $email = 'receipt.ui.public-station-picker-stale@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/receipts/new?station_lookup=1&stationSearch=nowhere&selectedSuggestion=public:missing-public');
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+        self::assertStringContainsString('No station suggestion matched these terms closely enough.', $content);
+        self::assertStringContainsString('type="hidden" name="selectedSuggestion" value=""', $content);
+    }
+
     public function testReceiptIndexRowsUseSharedRowLinkNavigation(): void
     {
         $email = 'receipt.ui.list@example.com';

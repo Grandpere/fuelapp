@@ -784,6 +784,35 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame($station->getId()->toRfc4122(), $receipts[0]->getStation()?->getId()->toRfc4122());
     }
 
+    public function testFinalizeReviewWithInvalidSelectedStationShowsValidationError(): void
+    {
+        $email = 'import.web.invalid.selected.station@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = $this->createNeedsReviewJob($user, 'invalid-selected-station.jpg', '2026-04-29 10:00:00', 'q');
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $page = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $page->getStatusCode());
+        $csrf = $this->extractFinalizeCsrfToken((string) $page->getContent(), $jobId);
+
+        $response = $this->request('POST', '/ui/imports/'.$jobId.'/finalize', [
+            '_token' => $csrf,
+            'selectedStationId' => Uuid::v7()->toRfc4122(),
+        ], [], $sessionCookie);
+        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        self::assertSame('/ui/imports/'.$jobId.'?return_to=/ui/imports', $response->headers->get('Location'));
+
+        $follow = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $follow->getStatusCode());
+        self::assertStringContainsString('Selected station was not found.', (string) $follow->getContent());
+    }
+
     public function testUserCanDeleteOwnImportFromUiList(): void
     {
         $email = 'import.web.delete@example.com';

@@ -39,6 +39,7 @@ final readonly class DoctrineStationSearchReader implements StationSearchReader
 
         $this->applyReadableByCurrentUser($qb, 'r');
         $this->applyFreeTextFilter($qb, $query);
+        $qb->setMaxResults($this->fetchLimit($query));
 
         $entities = $qb->getQuery()->getResult();
         if (!is_iterable($entities)) {
@@ -230,5 +231,10 @@ final readonly class DoctrineStationSearchReader implements StationSearchReader
         }
 
         return $user->getId()->toRfc4122();
+    }
+
+    private function fetchLimit(StationSearchQuery $query): int
+    {
+        return max(50, $query->limit * 20);
     }
 }

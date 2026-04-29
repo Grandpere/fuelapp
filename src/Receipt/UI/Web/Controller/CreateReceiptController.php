@@ -125,8 +125,8 @@ final class CreateReceiptController extends AbstractController
             'stationCity' => $this->queryValue($request, 'stationCity', $prefilledStation?->city() ?? ''),
             'selectedStationId' => $this->queryValue($request, 'selectedStationId', $prefilledStation?->id()->toString() ?? ''),
             'stationSearch' => $this->queryValue($request, 'stationSearch', $prefilledStation?->name() ?? ''),
-            'latitudeMicroDegrees' => null !== $prefilledStation?->latitudeMicroDegrees() ? (string) $prefilledStation->latitudeMicroDegrees() : '',
-            'longitudeMicroDegrees' => null !== $prefilledStation?->longitudeMicroDegrees() ? (string) $prefilledStation->longitudeMicroDegrees() : '',
+            'latitudeMicroDegrees' => $this->queryValue($request, 'latitudeMicroDegrees', null !== $prefilledStation?->latitudeMicroDegrees() ? (string) $prefilledStation->latitudeMicroDegrees() : ''),
+            'longitudeMicroDegrees' => $this->queryValue($request, 'longitudeMicroDegrees', null !== $prefilledStation?->longitudeMicroDegrees() ? (string) $prefilledStation->longitudeMicroDegrees() : ''),
             'odometerKilometers' => $this->queryValue($request, 'odometerKilometers', ''),
             '_token' => '',
         ];

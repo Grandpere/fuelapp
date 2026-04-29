@@ -508,6 +508,68 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame($station->getId()->toRfc4122(), $receipts[0]->getStation()?->getId()->toRfc4122());
     }
 
+    public function testStationLookupKeepsTypedCoordinatesAcrossRedirect(): void
+    {
+        $email = 'receipt.ui.station-coordinates@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('TOTAL EXPRESS');
+        $station->setStreetName('40 Rue Robert Schuman');
+        $station->setPostalCode('5751');
+        $station->setCity('FRISANGE');
+        $this->em->persist($station);
+
+        $existingReceipt = new ReceiptEntity();
+        $existingReceipt->setId(Uuid::v7());
+        $existingReceipt->setOwner($owner);
+        $existingReceipt->setStation($station);
+        $existingReceipt->setIssuedAt(new DateTimeImmutable('2026-03-04 08:00:00'));
+        $existingReceipt->setTotalCents(1800);
+        $existingReceipt->setVatAmountCents(300);
+        $existingLine = new ReceiptLineEntity();
+        $existingLine->setId(Uuid::v7());
+        $existingLine->setFuelType('diesel');
+        $existingLine->setQuantityMilliLiters(10000);
+        $existingLine->setUnitPriceDeciCentsPerLiter(1800);
+        $existingLine->setVatRatePercent(20);
+        $existingReceipt->addLine($existingLine);
+        $this->em->persist($existingReceipt);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $lookupPage = $this->request('POST', '/ui/receipts/new', [
+            '_token' => $this->extractFormCsrf((string) $this->request('GET', '/ui/receipts/new')->getContent()),
+            '_station_lookup' => '1',
+            '_station_lookup_requested' => '1',
+            'issuedAt' => '2026-04-29T12:00',
+            'vehicleId' => '',
+            'fuelType' => 'diesel',
+            'quantityLiters' => '40.000',
+            'unitPriceEurosPerLiter' => '1.700',
+            'vatRatePercent' => '20',
+            'stationSearch' => 'frisange',
+            'stationName' => 'Typed Station',
+            'stationStreetName' => 'Typed Street',
+            'stationPostalCode' => '5751',
+            'stationCity' => 'FRISANGE',
+            'latitudeMicroDegrees' => '49569000',
+            'longitudeMicroDegrees' => '4230000',
+            'odometerKilometers' => '',
+            'selectedStationId' => '',
+        ]);
+        self::assertSame(Response::HTTP_SEE_OTHER, $lookupPage->getStatusCode());
+
+        $lookupFollowResponse = $this->request('GET', $lookupPage->headers->get('Location') ?? '/ui/receipts/new');
+        self::assertSame(Response::HTTP_OK, $lookupFollowResponse->getStatusCode());
+        $lookupContent = (string) $lookupFollowResponse->getContent();
+        self::assertStringContainsString('name="latitudeMicroDegrees" value="49569000"', $lookupContent);
+        self::assertStringContainsString('name="longitudeMicroDegrees" value="4230000"', $lookupContent);
+    }
+
     public function testReceiptIndexRowsUseSharedRowLinkNavigation(): void
     {
         $email = 'receipt.ui.list@example.com';

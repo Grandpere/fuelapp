@@ -364,9 +364,9 @@ final class UploadImportControllerTest extends KernelTestCase
         $this->em->flush();
 
         $token = $this->apiLogin($email, $password);
-        $oversizedPng = str_repeat('A', 8_600_000);
-        $zip = $this->createUploadedZipFile('oversized.zip', [
-            'too-big.png' => $oversizedPng,
+        $oversizedEntryPath = $this->createLargeTempFile(8_600_000);
+        $zip = $this->createUploadedZipFileFromPaths('oversized.zip', [
+            'too-big.png' => $oversizedEntryPath,
         ]);
 
         $response = $this->request(
@@ -555,6 +555,48 @@ final class UploadImportControllerTest extends KernelTestCase
         $zip->close();
 
         return new UploadedFile($path, $name, 'application/zip', null, true);
+    }
+
+    /**
+     * @param array<string, string> $entryPaths
+     */
+    private function createUploadedZipFileFromPaths(string $name, array $entryPaths): UploadedFile
+    {
+        if (!class_exists(ZipArchive::class)) {
+            throw new RuntimeException('ZipArchive extension is required for this test.');
+        }
+
+        $path = sys_get_temp_dir().'/fuelapp-import-upload-'.uniqid('', true).'.zip';
+        $zip = new ZipArchive();
+        if (true !== $zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
+            throw new RuntimeException('Unable to create zip fixture.');
+        }
+
+        foreach ($entryPaths as $entryName => $entryPath) {
+            $zip->addFile($entryPath, $entryName);
+        }
+        $zip->close();
+
+        return new UploadedFile($path, $name, 'application/zip', null, true);
+    }
+
+    private function createLargeTempFile(int $sizeBytes): string
+    {
+        $path = sys_get_temp_dir().'/fuelapp-import-large-'.uniqid('', true);
+        $handle = fopen($path, 'wb');
+        if (false === $handle) {
+            throw new RuntimeException('Unable to create large temp file.');
+        }
+
+        if (0 !== fseek($handle, $sizeBytes - 1)) {
+            fclose($handle);
+            throw new RuntimeException('Unable to seek in large temp file.');
+        }
+
+        fwrite($handle, 'A');
+        fclose($handle);
+
+        return $path;
     }
 
     private function resetDatabase(): void

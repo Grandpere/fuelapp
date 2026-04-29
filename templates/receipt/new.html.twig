@@ -23,9 +23,127 @@
             padding: 1rem;
         }
 
+        .station-lookup-block {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .station-lookup-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .station-lookup-button {
+            min-width: 10.5rem;
+        }
+
+        .station-lookup-hint {
+            margin: 0;
+            line-height: 1.45;
+        }
+
+        .station-lookup-feedback {
+            display: grid;
+            gap: 0.35rem;
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            border: 1px solid var(--surface-soft-border);
+            background: var(--surface-soft-bg);
+        }
+
+        .station-lookup-feedback-label {
+            color: var(--text-strong);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .station-lookup-feedback p {
+            margin: 0;
+            line-height: 1.45;
+        }
+
+        .station-lookup-results {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .station-lookup-results-title {
+            margin: 0 0 0.1rem;
+            color: var(--text-strong);
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        .station-lookup-option {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: start;
+            gap: 0.8rem;
+            padding: 1rem 1rem;
+            border-radius: 18px;
+            border: 1px solid var(--surface-soft-border);
+            background: var(--surface-soft-bg);
+            transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+        }
+
+        .station-lookup-option:hover {
+            border-color: var(--accent-border);
+            background: var(--surface-bg);
+        }
+
+        .station-lookup-option input {
+            margin-top: 0.15rem;
+        }
+
+        .station-lookup-option:has(input:checked) {
+            border-color: var(--accent-border);
+            background: color-mix(in srgb, var(--accent-soft-bg) 72%, white 28%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-border) 38%, transparent);
+        }
+
+        .station-lookup-option-content {
+            display: grid;
+            gap: 0.18rem;
+        }
+
+        .station-lookup-option strong {
+            color: var(--text-strong);
+            display: block;
+            font-size: 1rem;
+            line-height: 1.35;
+        }
+
+        .station-lookup-option span {
+            color: var(--text-soft);
+            line-height: 1.4;
+        }
+
+        .station-lookup-option-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .station-lookup-manual {
+            border-style: dashed;
+        }
+
         @media (max-width: 720px) {
             .new-header {
                 grid-template-columns: 1fr;
+            }
+
+            .station-lookup-actions {
+                align-items: start;
+                flex-direction: column;
+            }
+
+            .station-lookup-button {
+                min-width: 0;
             }
         }
     </style>

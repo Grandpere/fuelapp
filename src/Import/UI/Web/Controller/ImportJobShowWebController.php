@@ -19,6 +19,9 @@ use App\Import\Domain\ImportJob;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Shared\UI\Web\SafeReturnPathResolver;
 use App\Station\Application\Repository\StationRepository;
+use App\Station\Application\Search\StationSearchCandidate;
+use App\Station\Application\Search\StationSearchQuery;
+use App\Station\Application\Search\StationSearchReader;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -34,6 +37,7 @@ final class ImportJobShowWebController extends AbstractController
         private readonly ReceiptRepository $receiptRepository,
         private readonly VehicleRepository $vehicleRepository,
         private readonly StationRepository $stationRepository,
+        private readonly StationSearchReader $stationSearchReader,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
@@ -56,6 +60,7 @@ final class ImportJobShowWebController extends AbstractController
         $resolvedDuplicateOriginalImportId = $this->resolveExistingImportId($this->readStringValue($payloadData, 'duplicateOfImportJobId'));
         $creationPayload = $this->readCreationPayload($payloadData);
         $parsedDraft = $this->readParsedDraft($payloadData);
+        $stationCandidates = $this->stationCandidates($creationPayload, $parsedDraft);
         $backToImportsUrl = $this->safeReturnPathResolver->resolve(
             $request->query->get('return_to'),
             $this->generateUrl('ui_import_index'),
@@ -69,6 +74,8 @@ final class ImportJobShowWebController extends AbstractController
             'text' => $this->readPayloadText($payloadData),
             'creationPayload' => $creationPayload,
             'parsedDraft' => $parsedDraft,
+            'stationCandidates' => $stationCandidates,
+            'stationSearch' => $this->stationSearchString($creationPayload, $parsedDraft),
             'reviewLines' => $this->readLines($creationPayload, $parsedDraft),
             'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
             'resolvedDuplicateReceiptId' => $resolvedDuplicateReceiptId,
@@ -518,6 +525,65 @@ final class ImportJobShowWebController extends AbstractController
         }
 
         return sprintf('%s: %s', $label, $value);
+    }
+
+    /**
+     * @param array<string, mixed>|null $creationPayload
+     * @param array<string, mixed>|null $parsedDraft
+     *
+     * @return list<StationSearchCandidate>
+     */
+    private function stationCandidates(?array $creationPayload, ?array $parsedDraft): array
+    {
+        $stationName = $this->readNestedString($creationPayload, 'stationName') ?? $this->readNestedString($parsedDraft, 'stationName');
+        $streetName = $this->readNestedString($creationPayload, 'stationStreetName') ?? $this->readNestedString($parsedDraft, 'stationStreetName');
+        $postalCode = $this->readNestedString($creationPayload, 'stationPostalCode') ?? $this->readNestedString($parsedDraft, 'stationPostalCode');
+        $city = $this->readNestedString($creationPayload, 'stationCity') ?? $this->readNestedString($parsedDraft, 'stationCity');
+
+        if ([] === array_filter([$stationName, $streetName, $postalCode, $city], static fn (?string $value): bool => null !== $value && '' !== trim($value))) {
+            return [];
+        }
+
+        return $this->stationSearchReader->search(new StationSearchQuery(
+            implode(' ', array_filter([$stationName, $streetName, $postalCode, $city])),
+            $stationName,
+            $streetName,
+            $postalCode,
+            $city,
+        ));
+    }
+
+    /**
+     * @param array<string, mixed>|null $creationPayload
+     * @param array<string, mixed>|null $parsedDraft
+     */
+    private function stationSearchString(?array $creationPayload, ?array $parsedDraft): string
+    {
+        return implode(' ', array_filter([
+            $this->readNestedString($creationPayload, 'stationName') ?? $this->readNestedString($parsedDraft, 'stationName'),
+            $this->readNestedString($creationPayload, 'stationStreetName') ?? $this->readNestedString($parsedDraft, 'stationStreetName'),
+            $this->readNestedString($creationPayload, 'stationPostalCode') ?? $this->readNestedString($parsedDraft, 'stationPostalCode'),
+            $this->readNestedString($creationPayload, 'stationCity') ?? $this->readNestedString($parsedDraft, 'stationCity'),
+        ]));
+    }
+
+    /**
+     * @param array<string, mixed>|null $payload
+     */
+    private function readNestedString(?array $payload, string $key): ?string
+    {
+        if (null === $payload) {
+            return null;
+        }
+
+        $value = $payload[$key] ?? null;
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return '' === $trimmed ? null : $trimmed;
     }
 
     /**

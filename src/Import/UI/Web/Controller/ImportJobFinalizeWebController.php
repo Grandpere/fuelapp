@@ -23,6 +23,7 @@ use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\UI\Web\SafeReturnPathResolver;
 use DateTimeImmutable;
 use InvalidArgumentException;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -77,6 +78,7 @@ final class ImportJobFinalizeWebController extends AbstractController
                 $this->toNullableInt($request->request->get('latitudeMicroDegrees')),
                 $this->toNullableInt($request->request->get('longitudeMicroDegrees')),
                 $this->toNullableInt($request->request->get('odometerKilometers')),
+                $this->toNullableString($request->request->get('selectedStationId')),
             ));
             if (null !== $nextReviewId && $this->shouldContinueToNextReview($request)) {
                 $this->addFlash('success', 'Import finalized. Opened the next review item.');
@@ -91,7 +93,7 @@ final class ImportJobFinalizeWebController extends AbstractController
             }
 
             $this->addFlash('success', 'Import finalized and receipt created.');
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException|RuntimeException $e) {
             $this->addFlash('error', $e->getMessage());
         }
 

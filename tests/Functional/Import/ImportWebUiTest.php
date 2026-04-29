@@ -15,6 +15,7 @@ namespace App\Tests\Functional\Import;
 
 use App\Import\Domain\Enum\ImportJobStatus;
 use App\Import\Infrastructure\Persistence\Doctrine\Entity\ImportJobEntity;
+use App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Entity\PublicFuelStationEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
@@ -77,7 +78,7 @@ final class ImportWebUiTest extends WebTestCase
         }
         $this->asyncTransport = $transport;
 
-        $this->em->getConnection()->executeStatement('TRUNCATE TABLE import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
+        $this->em->getConnection()->executeStatement('TRUNCATE TABLE public_fuel_stations, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE');
         $filesystem = new Filesystem();
         if ($filesystem->exists($this->importStorageDir)) {
             $filesystem->remove($this->importStorageDir);
@@ -813,6 +814,63 @@ final class ImportWebUiTest extends WebTestCase
         self::assertStringContainsString('Selected station was not found.', (string) $follow->getContent());
     }
 
+    public function testUserCanFinalizeImportUsingSelectedPublicSuggestion(): void
+    {
+        $email = 'import.web.public-station-picker@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $this->persistPublicFuelStation('public-1', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000);
+
+        $job = $this->createNeedsReviewJob($user, 'public-picker-review.jpg', '2026-04-29 10:00:00', 'p');
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'creationPayload' => [
+                    'issuedAt' => '2026-04-29T11:20:00+00:00',
+                    'stationName' => 'TOTAL',
+                    'stationStreetName' => '40 Rue Robert Schuman',
+                    'stationPostalCode' => '5751',
+                    'stationCity' => 'FRISANGE',
+                    'lines' => [[
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 30000,
+                        'unitPriceDeciCentsPerLiter' => 1820,
+                        'vatRatePercent' => 20,
+                    ]],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $page = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $page->getStatusCode());
+        $content = (string) $page->getContent();
+        self::assertStringContainsString('Public station suggestions', $content);
+        self::assertStringContainsString('40 Rue Robert Schuman', $content);
+        $csrf = $this->extractFinalizeCsrfToken($content, $jobId);
+
+        $response = $this->request('POST', '/ui/imports/'.$jobId.'/finalize', [
+            '_token' => $csrf,
+            'selectedSuggestion' => 'public:public-1',
+            'selectedStationId' => '',
+        ], [], $sessionCookie);
+        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+
+        $this->em->clear();
+        $receipts = $this->em->getRepository(ReceiptEntity::class)->findBy(['owner' => $user], ['issuedAt' => 'DESC']);
+        self::assertCount(1, $receipts);
+        $station = $receipts[0]->getStation();
+        self::assertInstanceOf(StationEntity::class, $station);
+        self::assertSame('40 Rue Robert Schuman', $station->getName());
+        self::assertSame('40 Rue Robert Schuman', $station->getStreetName());
+        self::assertSame('5751', $station->getPostalCode());
+        self::assertSame('FRISANGE', $station->getCity());
+    }
+
     public function testUserCanDeleteOwnImportFromUiList(): void
     {
         $email = 'import.web.delete@example.com';
@@ -1449,6 +1507,22 @@ final class ImportWebUiTest extends WebTestCase
         $job->setRetentionUntil(new DateTimeImmutable($createdAt)->modify('+30 days'));
 
         return $job;
+    }
+
+    private function persistPublicFuelStation(string $sourceId, string $address, string $postalCode, string $city, int $latitudeMicroDegrees, int $longitudeMicroDegrees): void
+    {
+        $station = new PublicFuelStationEntity();
+        $station->setSourceId($sourceId);
+        $station->setAddress($address);
+        $station->setPostalCode($postalCode);
+        $station->setCity($city);
+        $station->setLatitudeMicroDegrees($latitudeMicroDegrees);
+        $station->setLongitudeMicroDegrees($longitudeMicroDegrees);
+        $station->setAutomate24(false);
+        $station->setServices([]);
+        $station->setFuels([]);
+        $station->setSourceUpdatedAt(new DateTimeImmutable('2026-04-29 12:00:00'));
+        $this->em->persist($station);
     }
 
     private function extractFinalizeCsrfToken(string $content, string $jobId): string

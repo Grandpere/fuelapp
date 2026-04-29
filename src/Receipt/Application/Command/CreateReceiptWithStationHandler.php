@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Receipt\Application\Command;
 
+use App\PublicFuelStation\Application\Search\PublicFuelStationSuggestion;
+use App\PublicFuelStation\Application\Search\PublicFuelStationSuggestionReader;
 use App\Receipt\Domain\Receipt;
 use App\Station\Application\Command\CreateStationCommand;
 use App\Station\Application\Command\CreateStationHandler;
@@ -28,6 +30,7 @@ final class CreateReceiptWithStationHandler
         private readonly CreateReceiptHandler $receiptHandler,
         private readonly StationRepository $stationRepository,
         private readonly CreateStationHandler $stationHandler,
+        private readonly PublicFuelStationSuggestionReader $publicFuelStationSuggestionReader,
     ) {
     }
 
@@ -35,7 +38,14 @@ final class CreateReceiptWithStationHandler
     {
         $station = null;
 
-        if (null !== $command->selectedStationId) {
+        if (null !== $command->selectedSuggestionType && null !== $command->selectedSuggestionId) {
+            $station = match ($command->selectedSuggestionType) {
+                'station' => $this->requireSelectedStation($command->selectedSuggestionId),
+                'public' => $this->resolveSelectedPublicSuggestion($command->selectedSuggestionId),
+                default => throw new RuntimeException('Selected station suggestion is invalid.'),
+            };
+        } elseif (null !== $command->selectedStationId) {
+            // Backward-compatible path kept while UI/controllers migrate to typed suggestions.
             $station = $this->stationRepository->get($command->selectedStationId);
             if (null === $station) {
                 throw new RuntimeException('Selected station was not found.');
@@ -84,5 +94,57 @@ final class CreateReceiptWithStationHandler
             $command->ownerId,
             $command->odometerKilometers,
         ));
+    }
+
+    private function requireSelectedStation(string $stationId): \App\Station\Domain\Station
+    {
+        $station = $this->stationRepository->get($stationId);
+        if (null === $station) {
+            throw new RuntimeException('Selected station was not found.');
+        }
+
+        return $station;
+    }
+
+    private function resolveSelectedPublicSuggestion(string $sourceId): \App\Station\Domain\Station
+    {
+        $publicStation = $this->publicFuelStationSuggestionReader->getBySourceId($sourceId);
+        if (!$publicStation instanceof PublicFuelStationSuggestion) {
+            throw new RuntimeException('Selected public station was not found.');
+        }
+
+        $station = $this->stationRepository->findByIdentity(
+            $publicStation->name,
+            $publicStation->streetName,
+            $publicStation->postalCode,
+            $publicStation->city,
+        );
+        if (null !== $station) {
+            return $station;
+        }
+
+        try {
+            return ($this->stationHandler)(new CreateStationCommand(
+                $publicStation->name,
+                $publicStation->streetName,
+                $publicStation->postalCode,
+                $publicStation->city,
+                $publicStation->latitudeMicroDegrees,
+                $publicStation->longitudeMicroDegrees,
+            ));
+        } catch (Throwable $e) {
+            $station = $this->stationRepository->findByIdentity(
+                $publicStation->name,
+                $publicStation->streetName,
+                $publicStation->postalCode,
+                $publicStation->city,
+            );
+
+            if (null === $station) {
+                throw $e;
+            }
+
+            return $station;
+        }
     }
 }

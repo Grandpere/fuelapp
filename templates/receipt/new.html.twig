@@ -111,6 +111,22 @@
             gap: 0.18rem;
         }
 
+        .station-lookup-option-badge {
+            width: fit-content;
+            padding: 0.18rem 0.5rem;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--surface-soft-border) 65%, white 35%);
+            color: var(--text-strong);
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .station-lookup-option-badge-public {
+            background: color-mix(in srgb, #f8b133 32%, white 68%);
+        }
+
         .station-lookup-option strong {
             color: var(--text-strong);
             display: block;
@@ -130,6 +146,15 @@
 
         .station-lookup-manual {
             border-style: dashed;
+        }
+
+        .station-manual-fields {
+            transition: opacity 160ms ease;
+        }
+
+        .form-block:has(input[name="selectedSuggestion"][value^="station:"]:checked) .station-manual-fields,
+        .form-block:has(input[name="selectedSuggestion"][value^="public:"]:checked) .station-manual-fields {
+            opacity: 0.58;
         }
 
         @media (max-width: 720px) {

@@ -31,6 +31,8 @@ final readonly class FinalizeImportJobCommand
         public ?int $longitudeMicroDegrees = null,
         public ?int $odometerKilometers = null,
         public ?string $selectedStationId = null,
+        public ?string $selectedSuggestionType = null,
+        public ?string $selectedSuggestionId = null,
     ) {
     }
 }

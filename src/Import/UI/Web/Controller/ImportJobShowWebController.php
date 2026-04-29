@@ -19,9 +19,9 @@ use App\Import\Domain\ImportJob;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Shared\UI\Web\SafeReturnPathResolver;
 use App\Station\Application\Repository\StationRepository;
-use App\Station\Application\Search\StationSearchCandidate;
-use App\Station\Application\Search\StationSearchQuery;
-use App\Station\Application\Search\StationSearchReader;
+use App\Station\Application\Suggestion\StationSuggestion;
+use App\Station\Application\Suggestion\StationSuggestionQuery;
+use App\Station\Application\Suggestion\StationSuggestionReader;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -37,7 +37,7 @@ final class ImportJobShowWebController extends AbstractController
         private readonly ReceiptRepository $receiptRepository,
         private readonly VehicleRepository $vehicleRepository,
         private readonly StationRepository $stationRepository,
-        private readonly StationSearchReader $stationSearchReader,
+        private readonly StationSuggestionReader $stationSuggestionReader,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
     ) {
     }
@@ -60,7 +60,7 @@ final class ImportJobShowWebController extends AbstractController
         $resolvedDuplicateOriginalImportId = $this->resolveExistingImportId($this->readStringValue($payloadData, 'duplicateOfImportJobId'));
         $creationPayload = $this->readCreationPayload($payloadData);
         $parsedDraft = $this->readParsedDraft($payloadData);
-        $stationCandidates = $this->stationCandidates($creationPayload, $parsedDraft);
+        $stationSuggestions = $this->stationSuggestions($creationPayload, $parsedDraft);
         $backToImportsUrl = $this->safeReturnPathResolver->resolve(
             $request->query->get('return_to'),
             $this->generateUrl('ui_import_index'),
@@ -74,7 +74,8 @@ final class ImportJobShowWebController extends AbstractController
             'text' => $this->readPayloadText($payloadData),
             'creationPayload' => $creationPayload,
             'parsedDraft' => $parsedDraft,
-            'stationCandidates' => $stationCandidates,
+            'existingStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'station' === $suggestion->sourceType)),
+            'publicStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'public' === $suggestion->sourceType)),
             'stationSearch' => $this->stationSearchString($creationPayload, $parsedDraft),
             'reviewLines' => $this->readLines($creationPayload, $parsedDraft),
             'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
@@ -531,9 +532,9 @@ final class ImportJobShowWebController extends AbstractController
      * @param array<string, mixed>|null $creationPayload
      * @param array<string, mixed>|null $parsedDraft
      *
-     * @return list<StationSearchCandidate>
+     * @return list<StationSuggestion>
      */
-    private function stationCandidates(?array $creationPayload, ?array $parsedDraft): array
+    private function stationSuggestions(?array $creationPayload, ?array $parsedDraft): array
     {
         $stationName = $this->readNestedString($creationPayload, 'stationName') ?? $this->readNestedString($parsedDraft, 'stationName');
         $streetName = $this->readNestedString($creationPayload, 'stationStreetName') ?? $this->readNestedString($parsedDraft, 'stationStreetName');
@@ -544,7 +545,7 @@ final class ImportJobShowWebController extends AbstractController
             return [];
         }
 
-        return $this->stationSearchReader->search(new StationSearchQuery(
+        return $this->stationSuggestionReader->search(new StationSuggestionQuery(
             implode(' ', array_filter([$stationName, $streetName, $postalCode, $city])),
             $stationName,
             $streetName,

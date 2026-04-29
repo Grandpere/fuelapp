@@ -79,6 +79,8 @@ final class ImportJobFinalizeWebController extends AbstractController
                 $this->toNullableInt($request->request->get('longitudeMicroDegrees')),
                 $this->toNullableInt($request->request->get('odometerKilometers')),
                 $this->toNullableString($request->request->get('selectedStationId')),
+                $this->selectedSuggestionType($request),
+                $this->selectedSuggestionId($request),
             ));
             if (null !== $nextReviewId && $this->shouldContinueToNextReview($request)) {
                 $this->addFlash('success', 'Import finalized. Opened the next review item.');
@@ -189,6 +191,32 @@ final class ImportJobFinalizeWebController extends AbstractController
         }
 
         return $parsed;
+    }
+
+    private function selectedSuggestionType(Request $request): ?string
+    {
+        $selectedSuggestion = $this->toNullableString($request->request->get('selectedSuggestion'));
+        if (null === $selectedSuggestion) {
+            return null;
+        }
+
+        [$type] = explode(':', $selectedSuggestion, 2);
+        $type = trim($type);
+
+        return '' === $type ? null : $type;
+    }
+
+    private function selectedSuggestionId(Request $request): ?string
+    {
+        $selectedSuggestion = $this->toNullableString($request->request->get('selectedSuggestion'));
+        if (null === $selectedSuggestion) {
+            return null;
+        }
+
+        $parts = explode(':', $selectedSuggestion, 2);
+        $id = trim((string) ($parts[1] ?? ''));
+
+        return '' === $id ? null : $id;
     }
 
     /** @return list<CreateReceiptLineCommand>|null */

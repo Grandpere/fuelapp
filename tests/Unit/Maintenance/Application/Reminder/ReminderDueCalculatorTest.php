@@ -94,7 +94,7 @@ final class ReminderDueCalculatorTest extends TestCase
         $states = $calculator->computeForVehicle($ownerId, $vehicleId, null, $now);
 
         self::assertCount(1, $states);
-        self::assertSame($now, $states[0]->dueAtDate);
+        self::assertSame('2026-01-01 10:00', $states[0]->dueAtDate?->format('Y-m-d H:i'));
         self::assertTrue($states[0]->dueByDate);
         self::assertTrue($states[0]->isDue);
     }

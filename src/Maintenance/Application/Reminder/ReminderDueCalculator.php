@@ -99,7 +99,7 @@ final readonly class ReminderDueCalculator
         }
 
         if (null === $lastEvent) {
-            return $now;
+            return $rule->createdAt();
         }
 
         return $lastEvent->occurredAt()->modify(sprintf('+%d days', $intervalDays));

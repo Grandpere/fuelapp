@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Receipt\Application\Command;
 
+use App\PublicFuelStation\Application\Search\PublicFuelStationSuggestion;
+use App\PublicFuelStation\Application\Search\PublicFuelStationSuggestionReader;
 use App\Receipt\Application\Command\CreateReceiptHandler;
 use App\Receipt\Application\Command\CreateReceiptLineCommand;
 use App\Receipt\Application\Command\CreateReceiptWithStationCommand;
@@ -51,7 +53,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         $receiptHandler = new CreateReceiptHandler($receiptRepo);
         $stationHandler = new CreateStationHandler($stationRepo, new NullMessageBus());
 
-        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler);
+        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler, new InMemoryPublicFuelStationSuggestionReader());
 
         $command = new CreateReceiptWithStationCommand(
             new DateTimeImmutable('2026-02-16T12:00:00+00:00'),
@@ -78,7 +80,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         $receiptHandler = new CreateReceiptHandler($receiptRepo);
         $stationHandler = new CreateStationHandler($stationRepo, new NullMessageBus());
 
-        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler);
+        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler, new InMemoryPublicFuelStationSuggestionReader());
 
         $command = new CreateReceiptWithStationCommand(
             new DateTimeImmutable('2026-02-16T12:00:00+00:00'),
@@ -117,6 +119,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
             new CreateReceiptHandler($receiptRepo),
             $stationRepo,
             new CreateStationHandler($stationRepo, new NullMessageBus()),
+            new InMemoryPublicFuelStationSuggestionReader(),
         );
 
         $receipt = $handler(new CreateReceiptWithStationCommand(
@@ -143,6 +146,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
             new CreateReceiptHandler($receiptRepo),
             $stationRepo,
             new CreateStationHandler($stationRepo, new NullMessageBus()),
+            new InMemoryPublicFuelStationSuggestionReader(),
         );
 
         $this->expectException(RuntimeException::class);
@@ -180,7 +184,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         $receiptHandler = new CreateReceiptHandler($receiptRepo);
         $stationHandler = new FailingCreateStationHandler($stationRepo);
 
-        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler);
+        $handler = new CreateReceiptWithStationHandler($receiptHandler, $stationRepo, $stationHandler, new InMemoryPublicFuelStationSuggestionReader());
 
         $command = new CreateReceiptWithStationCommand(
             new DateTimeImmutable('2026-02-16T12:00:00+00:00'),
@@ -196,6 +200,86 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         $receipt = ($handler)($command);
 
         self::assertSame('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01', $receipt->stationId()?->toString());
+    }
+
+    public function testItCreatesStationFromSelectedPublicSuggestionWhenNoInternalStationMatches(): void
+    {
+        $stationRepo = new InMemoryStationRepository(null);
+        $stationRepo->setIdentityResult(null);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $handler = new CreateReceiptWithStationHandler(
+            new CreateReceiptHandler($receiptRepo),
+            $stationRepo,
+            new CreateStationHandler($stationRepo, new NullMessageBus()),
+            new InMemoryPublicFuelStationSuggestionReader([
+                'public-1' => new PublicFuelStationSuggestion('public-1', '40 Rue Robert Schuman', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000),
+            ]),
+        );
+
+        $receipt = $handler(new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-04-29T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Typed Name',
+            'Typed Street',
+            '5751',
+            'FRISANGE',
+            null,
+            null,
+            selectedSuggestionType: 'public',
+            selectedSuggestionId: 'public-1',
+        ));
+
+        self::assertNotNull($receipt->stationId());
+        $stationId = $receipt->stationId();
+        self::assertSame('40 Rue Robert Schuman', $stationRepo->get($stationId->toString())?->name());
+    }
+
+    public function testItThrowsWhenSelectedPublicSuggestionDoesNotExist(): void
+    {
+        $stationRepo = new InMemoryStationRepository(null);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $handler = new CreateReceiptWithStationHandler(
+            new CreateReceiptHandler($receiptRepo),
+            $stationRepo,
+            new CreateStationHandler($stationRepo, new NullMessageBus()),
+            new InMemoryPublicFuelStationSuggestionReader(),
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Selected public station was not found.');
+
+        $handler(new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-04-29T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Typed Name',
+            'Typed Street',
+            '5751',
+            'FRISANGE',
+            null,
+            null,
+            selectedSuggestionType: 'public',
+            selectedSuggestionId: 'public-missing',
+        ));
+    }
+}
+
+final class InMemoryPublicFuelStationSuggestionReader implements PublicFuelStationSuggestionReader
+{
+    /** @param array<string, PublicFuelStationSuggestion> $items */
+    public function __construct(private array $items = [])
+    {
+    }
+
+    public function search(\App\Station\Application\Suggestion\StationSuggestionQuery $query, int $limit): array
+    {
+        return array_slice(array_values($this->items), 0, $limit);
+    }
+
+    public function getBySourceId(string $sourceId): ?PublicFuelStationSuggestion
+    {
+        return $this->items[$sourceId] ?? null;
     }
 }
 

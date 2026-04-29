@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-04-29 - Baseline-less maintenance reminders must use stable due dates
+- Symptom: reminder evaluation created duplicate reminders across repeated runs for the same untouched rule.
+- Root cause: when a date-based reminder rule had no matching maintenance event, the due calculator used `now` as `dueAtDate`, which changed the dedup key every run.
+- Fix: anchor baseline-less date reminders on `MaintenanceReminderRule::createdAt()` instead of runtime `now`.
+- Prevention: reminder dedup inputs must be deterministic across repeated evaluations; never derive them from the current clock when no business baseline exists.
+
 ## 2026-03-28 - OIDC email claims are not trustworthy unless explicitly verified
 - Symptom: OIDC login could link an external identity to an existing local user on email match alone.
 - Root cause: the linker trusted `email` without requiring an explicit `email_verified=true` claim from the provider.

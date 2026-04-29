@@ -63,6 +63,20 @@ final class DoctrinePublicFuelStationNearbyReaderTest extends KernelTestCase
         self::assertSame(['Gazole'], $results['station-1'][0]->availableFuelLabels);
     }
 
+    public function testItScalesPrefilterBoundsWhenCallerRequestsLargerRadius(): void
+    {
+        $this->persistPublicStation('wide-radius-public', 48856100, 2402200, '50 WIDE RADIUS ROAD', '75001', 'PARIS');
+        $this->em->flush();
+
+        $results = $this->reader->findNearby([
+            'station-1' => new NearbyPublicFuelStationQuery(48856100, 2352200),
+        ], [], 2, 5000);
+
+        self::assertCount(1, $results);
+        self::assertCount(1, $results['station-1']);
+        self::assertSame('wide-radius-public', $results['station-1'][0]->sourceId);
+    }
+
     private function persistPublicStation(string $sourceId, int $latitudeMicroDegrees, int $longitudeMicroDegrees, string $address, string $postalCode, string $city): void
     {
         $station = new PublicFuelStationEntity();

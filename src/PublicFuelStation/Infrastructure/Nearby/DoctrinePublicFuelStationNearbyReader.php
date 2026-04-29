@@ -50,6 +50,7 @@ final readonly class DoctrinePublicFuelStationNearbyReader implements PublicFuel
 
         $limitPerQuery = max(1, min($limitPerQuery, 4));
         $maxDistanceMeters = max(200, min($maxDistanceMeters, 5_000));
+        $latitudeDeltaMicroDegrees = (int) ceil($maxDistanceMeters / 0.11132);
 
         $excludedSql = '';
         if ([] !== $excludedSourceIds) {
@@ -57,6 +58,11 @@ final readonly class DoctrinePublicFuelStationNearbyReader implements PublicFuel
             $params['excluded_source_ids'] = array_values(array_unique($excludedSourceIds));
             $types['excluded_source_ids'] = ArrayParameterType::STRING;
         }
+
+        $params['latitude_delta_micro_degrees'] = $latitudeDeltaMicroDegrees;
+        $params['max_distance_meters'] = $maxDistanceMeters;
+        $types['latitude_delta_micro_degrees'] = ParameterType::INTEGER;
+        $types['max_distance_meters'] = ParameterType::INTEGER;
 
         $rows = $this->connection->fetchAllAssociative(
             sprintf(
@@ -90,8 +96,15 @@ final readonly class DoctrinePublicFuelStationNearbyReader implements PublicFuel
                         JOIN public_fuel_stations
                             ON public_fuel_stations.latitude_micro_degrees IS NOT NULL
                             AND public_fuel_stations.longitude_micro_degrees IS NOT NULL
-                            AND ABS(public_fuel_stations.latitude_micro_degrees - visited_points.latitude_micro_degrees) <= 25000
-                            AND ABS(public_fuel_stations.longitude_micro_degrees - visited_points.longitude_micro_degrees) <= 35000
+                            AND ABS(public_fuel_stations.latitude_micro_degrees - visited_points.latitude_micro_degrees) <= :latitude_delta_micro_degrees
+                            AND ABS(public_fuel_stations.longitude_micro_degrees - visited_points.longitude_micro_degrees) <= CEIL(
+                                :max_distance_meters / (
+                                    0.11132 * GREATEST(
+                                        0.2,
+                                        ABS(COS(RADIANS(visited_points.latitude_micro_degrees / 1000000.0)))
+                                    )
+                                )
+                            )
                             %s
                     )
                     SELECT query_key, source_id, address, postal_code, city, latitude_micro_degrees, longitude_micro_degrees, fuels, distance_meters

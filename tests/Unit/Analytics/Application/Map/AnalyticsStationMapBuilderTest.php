@@ -89,6 +89,65 @@ final class AnalyticsStationMapBuilderTest extends TestCase
             },
         );
 
+        /** @var array{
+         *     visitedPoints:list<array{
+         *         stationId:string,
+         *         stationName:string,
+         *         address:string,
+         *         latitude:float,
+         *         longitude:float,
+         *         receiptCount:int,
+         *         totalCostCents:int,
+         *         totalQuantityMilliLiters:int,
+         *         publicMatch:?array{
+         *             sourceId:string,
+         *             address:string,
+         *             city:string,
+         *             postalCode:string,
+         *             confidence:string,
+         *             distanceMeters:?int,
+         *             latitude:?float,
+         *             longitude:?float,
+         *             availableFuelLabels:list<string>
+         *         },
+         *         nearbyPublicStations:list<array{
+         *             sourceId:string,
+         *             address:string,
+         *             city:string,
+         *             postalCode:string,
+         *             distanceMeters:int,
+         *             latitude:float,
+         *             longitude:float,
+         *             availableFuelLabels:list<string>
+         *         }>
+         *     }>,
+         *     publicPoints:list<array{
+         *         sourceId:string,
+         *         address:string,
+         *         city:string,
+         *         postalCode:string,
+         *         confidence:string,
+         *         distanceMeters:?int,
+         *         latitude:float,
+         *         longitude:float,
+         *         availableFuelLabels:list<string>,
+         *         matchedStationNames:list<string>
+         *     }>,
+         *     nearbyPublicPoints:list<array{
+         *         sourceId:string,
+         *         address:string,
+         *         city:string,
+         *         postalCode:string,
+         *         distanceMeters:int,
+         *         latitude:float,
+         *         longitude:float,
+         *         availableFuelLabels:list<string>,
+         *         nearbyStationNames:list<string>
+         *     }>,
+         *     matchedVisitedCount:int,
+         *     nearbyVisitedCount:int
+         * } $map
+         */
         $map = $builder->build([
             new VisitedStationPointKpi('station-1', 'Visited Alpha', 'Visited A', '75001', 'Paris', 48856100, 2352200, 3, 4200, 2100),
             new VisitedStationPointKpi('station-2', 'Visited Beta', 'Visited B', '69001', 'Lyon', 45764000, 4835700, 1, 1800, 950),

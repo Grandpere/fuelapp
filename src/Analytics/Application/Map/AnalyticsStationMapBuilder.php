@@ -53,7 +53,17 @@ final readonly class AnalyticsStationMapBuilder
      *             latitude:?float,
      *             longitude:?float,
      *             availableFuelLabels:list<string>
-     *         }
+     *         },
+     *         nearbyPublicStations:list<array{
+     *             sourceId:string,
+     *             address:string,
+     *             city:string,
+     *             postalCode:string,
+     *             distanceMeters:int,
+     *             latitude:float,
+     *             longitude:float,
+     *             availableFuelLabels:list<string>
+     *         }>
      *     }>,
      *     publicPoints:list<array{
      *         sourceId:string,
@@ -78,7 +88,7 @@ final readonly class AnalyticsStationMapBuilder
      *         availableFuelLabels:list<string>,
      *         nearbyStationNames:list<string>
      *     }>,
-     *     matchedVisitedCount:int
+     *     matchedVisitedCount:int,
      *     nearbyVisitedCount:int
      * }
      */

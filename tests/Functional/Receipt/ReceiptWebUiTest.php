@@ -609,6 +609,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $lookupContent = (string) $lookupFollowResponse->getContent();
         self::assertStringContainsString('Public station suggestions', $lookupContent);
         self::assertStringContainsString('40 Rue Robert Schuman', $lookupContent);
+        self::assertStringContainsString('Switch back to manual entry', $lookupContent);
 
         $createResponse = $this->request('POST', '/ui/receipts/new', [
             '_token' => $this->extractFormCsrf($lookupContent),
@@ -690,6 +691,7 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $lookupFollowResponse->getStatusCode());
         $lookupContent = (string) $lookupFollowResponse->getContent();
         self::assertStringContainsString('Public station suggestions', $lookupContent);
+        self::assertStringContainsString('Selection active', $lookupContent);
 
         $createResponse = $this->request('POST', '/ui/receipts/new', [
             '_token' => $this->extractFormCsrf($lookupContent),

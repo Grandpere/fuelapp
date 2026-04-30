@@ -61,3 +61,10 @@
 - [completed] Persist the public source link when a public suggestion creates or reuses a station.
 - [completed] Reject conflicting public relinks instead of silently overwriting.
 - [pending] Finish manual functional validation of the new conflict/link flows and prepare the handover.
+
+# TODO - SP40-004 Station picker UX polish
+
+## Plan
+- [pending] Make the active suggestion state explicit in manual receipt creation.
+- [pending] Mirror the same clarity in import review without changing business behavior.
+- [pending] Add/update the most relevant coverage and run quality gates.

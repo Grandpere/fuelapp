@@ -148,13 +148,64 @@
             border-style: dashed;
         }
 
+        .station-selection-state {
+            display: none;
+            gap: 0.4rem;
+            padding: 1rem 1rem 1.05rem;
+            border-radius: 18px;
+            border: 1px solid color-mix(in srgb, var(--accent-border) 65%, white 35%);
+            background: color-mix(in srgb, var(--accent-soft-bg) 78%, white 22%);
+            margin-bottom: 0.4rem;
+        }
+
+        .station-selection-state.is-visible {
+            display: grid;
+        }
+
+        .station-selection-state-label {
+            color: var(--text-strong);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .station-selection-state-title {
+            margin: 0;
+            color: var(--text-strong);
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .station-selection-state-copy {
+            margin: 0;
+            color: var(--text-soft);
+            line-height: 1.5;
+        }
+
+        .station-selection-state-copy strong {
+            color: var(--text-strong);
+        }
+
+        .station-selection-reset {
+            width: fit-content;
+            margin-top: 0.15rem;
+        }
+
         .station-manual-fields {
-            transition: opacity 160ms ease;
+            overflow: hidden;
+            transition: opacity 160ms ease, max-height 220ms ease, transform 220ms ease, margin-top 220ms ease;
+            max-height: 40rem;
         }
 
         .form-block:has(input[name="selectedSuggestion"][value^="station:"]:checked) .station-manual-fields,
         .form-block:has(input[name="selectedSuggestion"][value^="public:"]:checked) .station-manual-fields {
-            opacity: 0.58;
+            opacity: 0.42;
+            max-height: 0;
+            margin-top: -0.2rem;
+            transform: translateY(-0.2rem);
+            pointer-events: none;
         }
 
         @media (max-width: 720px) {

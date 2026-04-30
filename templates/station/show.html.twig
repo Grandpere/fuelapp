@@ -31,6 +31,34 @@
             justify-content: flex-end;
         }
 
+        .station-favorite-summary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .favorite-toggle-form {
+            margin: 0;
+        }
+
+        .favorite-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .favorite-toggle-icon {
+            font-size: 0.95rem;
+            line-height: 1;
+        }
+
+        .favorite-pill {
+            background: rgba(247, 181, 0, 0.16);
+            border-color: rgba(247, 181, 0, 0.3);
+            color: var(--text-strong);
+        }
+
         .station-kpi-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -164,12 +192,27 @@
 
 {% block body %}
     <main class="app-shell station-show-page">
+        {% for message in app.flashes('success') %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="flash flash-error">{{ message }}</div>
+        {% endfor %}
+
         <header class="station-show-header">
             <div>
                 <h1 class="page-title">{{ station.name }}</h1>
                 <p class="muted section-lead">{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}. Use this page as the quick hub for receipts and analytics linked to this station.</p>
             </div>
             <div class="station-show-actions">
+                <form class="favorite-toggle-form" method="post" action="{{ path('ui_station_toggle_favorite', {id: station.id.toString()}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('station_favorite_toggle_' ~ station.id.toString()) }}">
+                    <input type="hidden" name="_redirect" value="{{ path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl}) }}">
+                    <button class="btn {{ isFavorite ? 'btn-primary' : 'btn-secondary' }} favorite-toggle-btn" type="submit">
+                        <span class="favorite-toggle-icon" aria-hidden="true">{{ isFavorite ? '★' : '☆' }}</span>
+                        {{ isFavorite ? 'Favorite station' : 'Add favorite' }}
+                    </button>
+                </form>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">Add receipt</a>
                 <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">View receipts</a>
                 <a class="btn btn-primary" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Open analytics</a>
@@ -235,6 +278,12 @@
             <aside class="card station-panel">
                 <div class="station-panel-head">
                     <h2>Station context</h2>
+                </div>
+                <div class="station-favorite-summary">
+                    <span class="pill favorite-pill">{{ isFavorite ? 'Favorite station' : 'Not in favorites yet' }}</span>
+                    {% if isFavorite %}
+                        <span class="muted compact-note">This station will stay easy to spot from your station index and analytics view.</span>
+                    {% endif %}
                 </div>
                 <div class="station-item-sub">{{ station.streetName }}</div>
                 <div class="station-item-sub">{{ station.postalCode }} {{ station.city }}</div>

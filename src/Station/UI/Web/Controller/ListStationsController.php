@@ -14,9 +14,12 @@ declare(strict_types=1);
 namespace App\Station\UI\Web\Controller;
 
 use App\Receipt\Application\Repository\ReceiptRepository;
+use App\Shared\Application\Security\AuthenticatedUserIdProvider;
+use App\Station\Application\Favorite\FavoriteStationRepository;
 use App\Station\Application\Repository\StationRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ListStationsController extends AbstractController
@@ -24,12 +27,19 @@ final class ListStationsController extends AbstractController
     public function __construct(
         private readonly StationRepository $stationRepository,
         private readonly ReceiptRepository $receiptRepository,
+        private readonly FavoriteStationRepository $favoriteStationRepository,
+        private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
     ) {
     }
 
     #[Route('/ui/stations', name: 'ui_station_list', methods: ['GET'])]
     public function __invoke(): Response
     {
+        $ownerId = $this->authenticatedUserIdProvider->getAuthenticatedUserId();
+        if (null === $ownerId) {
+            throw new NotFoundHttpException();
+        }
+
         $rowsByStationId = [];
 
         foreach ($this->receiptRepository->all() as $receipt) {
@@ -82,6 +92,16 @@ final class ListStationsController extends AbstractController
                 'latestOdometer' => $receiptStats['latestOdometer'],
             ];
         }
+
+        $favoriteStationIds = array_fill_keys(
+            $this->favoriteStationRepository->favoriteStationIds($ownerId, array_column($stationRows, 'id')),
+            true,
+        );
+
+        foreach ($stationRows as &$stationRow) {
+            $stationRow['isFavorite'] = isset($favoriteStationIds[$stationRow['id']]);
+        }
+        unset($stationRow);
 
         usort(
             $stationRows,

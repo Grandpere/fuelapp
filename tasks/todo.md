@@ -52,4 +52,12 @@
 - [completed] Add a unified suggestion flow that merges internal stations and cached public fuel stations.
 - [completed] Let receipt creation resolve a selected public suggestion into an internal `Station` on save.
 - [completed] Reuse the same public suggestion flow during import review finalization.
-- [in_progress] Run quality gates and prepare the manual functional validation handover.
+- [completed] Run quality gates and prepare the manual functional validation handover.
+
+# TODO - SP40-003 Durable link between Station and public source
+
+## Plan
+- [pending] Add nullable unique `publicSourceId` on `Station` with migration and persistence coverage.
+- [pending] Persist the public source link when a public suggestion creates or reuses a station.
+- [pending] Reject conflicting public relinks instead of silently overwriting.
+- [pending] Add or update unit/integration/functional coverage and run quality gates.

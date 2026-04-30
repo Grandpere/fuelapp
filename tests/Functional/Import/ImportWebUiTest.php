@@ -851,6 +851,7 @@ final class ImportWebUiTest extends WebTestCase
         $content = (string) $page->getContent();
         self::assertStringContainsString('Public station suggestions', $content);
         self::assertStringContainsString('40 Rue Robert Schuman', $content);
+        self::assertStringContainsString('Switch back to manual entry', $content);
         $csrf = $this->extractFinalizeCsrfToken($content, $jobId);
 
         $response = $this->request('POST', '/ui/imports/'.$jobId.'/finalize', [
@@ -917,6 +918,7 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $page->getStatusCode());
         $content = (string) $page->getContent();
         self::assertStringContainsString('Public station suggestions', $content);
+        self::assertStringContainsString('Selection active', $content);
         $csrf = $this->extractFinalizeCsrfToken($content, $jobId);
 
         $response = $this->request('POST', '/ui/imports/'.$jobId.'/finalize', [

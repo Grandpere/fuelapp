@@ -2,6 +2,69 @@
 
 {% block title %}Import Review{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .import-station-selection-state {
+            display: none;
+            gap: 0.4rem;
+            padding: 1rem 1rem 1.05rem;
+            border-radius: 18px;
+            border: 1px solid color-mix(in srgb, var(--accent-border) 65%, white 35%);
+            background: color-mix(in srgb, var(--accent-soft-bg) 78%, white 22%);
+        }
+
+        .import-station-selection-state.is-visible {
+            display: grid;
+        }
+
+        .import-station-selection-label {
+            color: var(--text-strong);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .import-station-selection-title {
+            margin: 0;
+            color: var(--text-strong);
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .import-station-selection-copy {
+            margin: 0;
+            color: var(--text-soft);
+            line-height: 1.5;
+        }
+
+        .import-station-selection-copy strong {
+            color: var(--text-strong);
+        }
+
+        .import-station-selection-reset {
+            width: fit-content;
+            margin-top: 0.15rem;
+        }
+
+        .import-station-manual-fields {
+            overflow: hidden;
+            transition: opacity 160ms ease, max-height 220ms ease, transform 220ms ease, margin-top 220ms ease;
+            max-height: 40rem;
+        }
+
+        .import-station-manual-fields.is-collapsed {
+            opacity: 0.42;
+            max-height: 0;
+            margin-top: -0.2rem;
+            transform: translateY(-0.2rem);
+            pointer-events: none;
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
     {% set backToImportsUrl = backToImportsUrl is defined and backToImportsUrl is not empty ? backToImportsUrl : path('ui_import_index') %}
     {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
@@ -217,10 +280,16 @@
                     {% set publicStationSuggestions = publicStationSuggestions|default([]) %}
                     {% if existingStationSuggestions is not empty or publicStationSuggestions is not empty %}
                         <div class="form-stack card-subtle card-subtle-block">
+                            <div class="import-station-selection-state" data-import-station-selection-state>
+                                <span class="import-station-selection-label">Selection active</span>
+                                <p class="import-station-selection-title" data-import-station-selection-title></p>
+                                <p class="import-station-selection-copy" data-import-station-selection-copy></p>
+                                <button class="btn btn-secondary btn-compact import-station-selection-reset" type="button" data-import-station-selection-reset>Switch back to manual entry</button>
+                            </div>
                             {% if existingStationSuggestions is not empty %}
                                 <p class="text-block-title">Existing stations</p>
                                 {% for candidate in existingStationSuggestions %}
-                                    <label class="label">
+                                    <label class="label" data-import-suggestion-kind="existing" data-import-suggestion-title="{{ candidate.name }}" data-import-suggestion-meta="{{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}">
                                         <span class="muted compact-note">
                                             <input type="radio" name="selectedSuggestion" value="station:{{ candidate.sourceId }}">
                                             <strong>Existing</strong> {{ candidate.name }} - {{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}
@@ -231,7 +300,7 @@
                             {% if publicStationSuggestions is not empty %}
                                 <p class="text-block-title">Public station suggestions</p>
                                 {% for candidate in publicStationSuggestions %}
-                                    <label class="label">
+                                    <label class="label" data-import-suggestion-kind="public" data-import-suggestion-title="{{ candidate.name }}" data-import-suggestion-meta="{{ candidate.postalCode }} {{ candidate.city }}">
                                         <span class="muted compact-note">
                                             <input type="radio" name="selectedSuggestion" value="public:{{ candidate.sourceId }}">
                                             <strong>Public</strong> {{ candidate.name }}, {{ candidate.postalCode }} {{ candidate.city }}
@@ -252,7 +321,7 @@
                         <input type="hidden" name="selectedStationId" value="">
                     {% endif %}
 
-                    <div class="form-grid-2">
+                    <div class="form-grid-2 import-station-manual-fields" data-import-station-manual-fields>
                         <label class="label">
                             Station name
                             <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : (parsedDraft is not null and parsedDraft.stationName is defined ? parsedDraft.stationName : '') }}">
@@ -412,6 +481,69 @@
                             window.location.assign(previousUrl);
                         }
                     }, { signal: abortController.signal });
+
+                    const radios = Array.from(document.querySelectorAll('#import-finalize-form input[name="selectedSuggestion"]'));
+                    const manualFieldsWrapper = document.querySelector('[data-import-station-manual-fields]');
+                    const state = document.querySelector('[data-import-station-selection-state]');
+                    const stateTitle = document.querySelector('[data-import-station-selection-title]');
+                    const stateCopy = document.querySelector('[data-import-station-selection-copy]');
+                    const resetButton = document.querySelector('[data-import-station-selection-reset]');
+                    const manualRadio = radios.find((radio) => radio.value === '') ?? null;
+
+                    const syncSelectedSuggestionState = () => {
+                        if (radios.length === 0 || !manualFieldsWrapper) {
+                            return;
+                        }
+
+                        const selected = radios.find((radio) => radio.checked);
+                        const useSuggestion = !!selected && selected.value !== '';
+                        const manualFields = Array.from(manualFieldsWrapper.querySelectorAll('input, select, textarea'));
+
+                        manualFieldsWrapper.classList.toggle('is-collapsed', useSuggestion);
+
+                        for (const field of manualFields) {
+                            field.disabled = useSuggestion;
+                        }
+
+                        if (!state || !stateTitle || !stateCopy) {
+                            return;
+                        }
+
+                        if (!useSuggestion) {
+                            state.classList.remove('is-visible');
+                            stateTitle.textContent = '';
+                            stateCopy.textContent = '';
+
+                            return;
+                        }
+
+                        const option = selected?.closest('[data-import-suggestion-kind]');
+                        const title = option?.dataset.importSuggestionTitle ?? '';
+                        const meta = option?.dataset.importSuggestionMeta ?? '';
+                        const kind = option?.dataset.importSuggestionKind ?? '';
+
+                        state.classList.add('is-visible');
+                        stateTitle.textContent = title;
+
+                        if (kind === 'public') {
+                            stateCopy.innerHTML = `<strong>Public suggestion selected.</strong> ${meta} will create or reuse an internal station when you finalize.`;
+                        } else {
+                            stateCopy.innerHTML = `<strong>Existing station selected.</strong> ${meta} will be used for this import.`;
+                        }
+                    };
+
+                    for (const radio of radios) {
+                        radio.addEventListener('change', syncSelectedSuggestionState);
+                    }
+
+                    resetButton?.addEventListener('click', () => {
+                        if (manualRadio) {
+                            manualRadio.checked = true;
+                            syncSelectedSuggestionState();
+                        }
+                    });
+
+                    syncSelectedSuggestionState();
 
                     document.addEventListener('turbo:before-cache', () => {
                         abortController.abort();

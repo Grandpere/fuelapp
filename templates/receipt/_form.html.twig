@@ -85,11 +85,17 @@
                 {% set existingStationSuggestions = existingStationSuggestions|default([]) %}
                 {% set publicStationSuggestions = publicStationSuggestions|default([]) %}
                 {% if existingStationSuggestions is not empty or publicStationSuggestions is not empty %}
+                    <div class="station-selection-state" data-station-selection-state>
+                        <span class="station-selection-state-label">Selection active</span>
+                        <p class="station-selection-state-title" data-station-selection-title></p>
+                        <p class="station-selection-state-copy" data-station-selection-copy></p>
+                        <button class="btn btn-secondary btn-compact station-selection-reset" type="button" data-station-selection-reset>Switch back to manual entry</button>
+                    </div>
                     <div class="station-lookup-results">
                         {% if existingStationSuggestions is not empty %}
                             <p class="station-lookup-results-title">Existing stations</p>
                             {% for candidate in existingStationSuggestions %}
-                                <label class="station-lookup-option">
+                                <label class="station-lookup-option" data-suggestion-kind="existing" data-suggestion-title="{{ candidate.name }}" data-suggestion-meta="{{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}">
                                     <input type="radio" name="selectedSuggestion" value="station:{{ candidate.sourceId }}" {% if formData.selectedSuggestion == 'station:' ~ candidate.sourceId or formData.selectedStationId == candidate.sourceId %}checked{% endif %}>
                                     <span class="station-lookup-option-content">
                                         <span class="station-lookup-option-badge">Existing</span>
@@ -103,7 +109,7 @@
                         {% if publicStationSuggestions is not empty %}
                             <p class="station-lookup-results-title">Public station suggestions</p>
                             {% for candidate in publicStationSuggestions %}
-                                <label class="station-lookup-option">
+                                <label class="station-lookup-option" data-suggestion-kind="public" data-suggestion-title="{{ candidate.name }}" data-suggestion-meta="{{ candidate.postalCode }} {{ candidate.city }}">
                                     <input type="radio" name="selectedSuggestion" value="public:{{ candidate.sourceId }}" {% if formData.selectedSuggestion == 'public:' ~ candidate.sourceId %}checked{% endif %}>
                                     <span class="station-lookup-option-content">
                                         <span class="station-lookup-option-badge station-lookup-option-badge-public">Public</span>
@@ -166,10 +172,16 @@
             const root = document.currentScript?.closest('turbo-frame') ?? document;
             const radios = Array.from(root.querySelectorAll('input[name="selectedSuggestion"]'));
             const manualFields = Array.from(root.querySelectorAll('[data-station-manual-fields] input, [data-station-manual-fields] select, [data-station-manual-fields] textarea'));
+            const state = root.querySelector('[data-station-selection-state]');
+            const stateTitle = root.querySelector('[data-station-selection-title]');
+            const stateCopy = root.querySelector('[data-station-selection-copy]');
+            const resetButton = root.querySelector('[data-station-selection-reset]');
 
             if (radios.length === 0 || manualFields.length === 0) {
                 return;
             }
+
+            const manualRadio = radios.find((radio) => radio.value === '') ?? null;
 
             const syncManualFields = () => {
                 const selected = radios.find((radio) => radio.checked);
@@ -179,11 +191,44 @@
                     field.disabled = useSuggestion;
                     field.required = !useSuggestion && field.dataset.manualRequired === '1';
                 }
+
+                if (!state || !stateTitle || !stateCopy) {
+                    return;
+                }
+
+                if (!useSuggestion) {
+                    state.classList.remove('is-visible');
+                    stateTitle.textContent = '';
+                    stateCopy.textContent = '';
+
+                    return;
+                }
+
+                const option = selected?.closest('[data-suggestion-kind]');
+                const title = option?.dataset.suggestionTitle ?? '';
+                const meta = option?.dataset.suggestionMeta ?? '';
+                const kind = option?.dataset.suggestionKind ?? '';
+
+                state.classList.add('is-visible');
+                stateTitle.textContent = title;
+
+                if (kind === 'public') {
+                    stateCopy.innerHTML = `<strong>Public suggestion selected.</strong> ${meta} will create or reuse an internal station when you save.`;
+                } else {
+                    stateCopy.innerHTML = `<strong>Existing station selected.</strong> ${meta} will be used for this receipt.`;
+                }
             };
 
             for (const radio of radios) {
                 radio.addEventListener('change', syncManualFields);
             }
+
+            resetButton?.addEventListener('click', () => {
+                if (manualRadio) {
+                    manualRadio.checked = true;
+                    syncManualFields();
+                }
+            });
 
             syncManualFields();
         })();

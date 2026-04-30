@@ -17,6 +17,8 @@ use App\PublicFuelStation\Application\Matching\PublicFuelStationMatcher;
 use App\PublicFuelStation\Application\Matching\VisitedStationPublicMatchQuery;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Security\Voter\StationVoter;
+use App\Shared\Application\Security\AuthenticatedUserIdProvider;
+use App\Station\Application\Favorite\FavoriteStationRepository;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\Station;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,6 +34,8 @@ final class ShowStationController extends AbstractController
         private readonly StationRepository $stationRepository,
         private readonly ReceiptRepository $receiptRepository,
         private readonly PublicFuelStationMatcher $publicFuelStationMatcher,
+        private readonly FavoriteStationRepository $favoriteStationRepository,
+        private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
     ) {
     }
 
@@ -44,6 +48,8 @@ final class ShowStationController extends AbstractController
         if (!$station instanceof Station) {
             throw $this->createNotFoundException('Station not found.');
         }
+        $ownerId = $this->authenticatedUserIdProvider->getAuthenticatedUserId();
+        $isFavorite = null !== $ownerId && null !== $this->favoriteStationRepository->findByOwnerAndStation($ownerId, $id);
 
         $backToListUrl = $this->safeReturnTarget($request->query->get('return_to'));
         $receiptRows = $this->receiptRepository->paginateFilteredListRows(
@@ -87,6 +93,7 @@ final class ShowStationController extends AbstractController
                 $station->postalCode(),
                 $station->city(),
             )),
+            'isFavorite' => $isFavorite,
             'backToListUrl' => $backToListUrl,
         ]);
     }

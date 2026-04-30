@@ -19,6 +19,7 @@ use App\Maintenance\Infrastructure\Persistence\Doctrine\Entity\MaintenanceEventE
 use App\PublicFuelStation\Infrastructure\Persistence\Doctrine\Entity\PublicFuelStationEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptEntity;
 use App\Receipt\Infrastructure\Persistence\Doctrine\Entity\ReceiptLineEntity;
+use App\Station\Infrastructure\Persistence\Doctrine\Entity\FavoriteStationEntity;
 use App\Station\Infrastructure\Persistence\Doctrine\Entity\StationEntity;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Vehicle\Infrastructure\Persistence\Doctrine\Entity\VehicleEntity;
@@ -74,7 +75,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $this->projectionRefresher = $refresher;
 
         $this->em->getConnection()->executeStatement(
-            'TRUNCATE TABLE analytics_projection_states, analytics_daily_fuel_kpis, public_fuel_stations, public_fuel_station_sync_runs, maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE',
+            'TRUNCATE TABLE favorite_stations, analytics_projection_states, analytics_daily_fuel_kpis, public_fuel_stations, public_fuel_station_sync_runs, maintenance_planned_costs, maintenance_reminders, maintenance_reminder_rules, maintenance_events, vehicles, import_jobs, user_identities, receipt_lines, receipts, stations, users CASCADE',
         );
     }
 
@@ -105,6 +106,12 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $this->createReceipt($owner, null, $stationB, new DateTimeImmutable('2026-02-01 10:00:00'), [
             ['unleaded95', 20000, 17000, 20],
         ]);
+        $favorite = new FavoriteStationEntity();
+        $favorite->setId(Uuid::v7());
+        $favorite->setOwner($owner);
+        $favorite->setStation($stationA);
+        $favorite->setCreatedAt(new DateTimeImmutable('2026-01-05 09:00:00'));
+        $this->em->persist($favorite);
         $this->createMaintenanceEvent($owner, $vehicle, new DateTimeImmutable('2026-01-12 10:00:00'), 5000);
         $this->createMaintenanceEvent($owner, $vehicle, new DateTimeImmutable('2026-02-08 10:00:00'), 2000);
         $this->em->flush();
@@ -136,6 +143,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('with public match', $content);
         self::assertStringContainsString('with nearby public', $content);
         self::assertStringContainsString('Station A', $content);
+        self::assertStringContainsString('Favorite', $content);
         self::assertStringContainsString('Public match · high', $content);
         self::assertStringContainsString('5 PUBLIC ROAD, 75001 PARIS', $content);
         self::assertStringContainsString('Nearby public:', $content);
@@ -183,6 +191,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('station_id='.$stationA->getId()->toRfc4122(), $stationFuelContent);
         self::assertStringContainsString('fuel_type=diesel', $stationFuelContent);
         self::assertStringContainsString('Fuel: DIESEL', $stationFuelContent);
+        self::assertStringContainsString('Selected station is in favorites', $stationFuelContent);
         self::assertStringContainsString('/ui/stations/'.$stationA->getId()->toRfc4122(), $stationFuelContent);
         self::assertStringContainsString('Exports keep the current analytics scope so shared files match the dashboard you are looking at.', $content);
 

@@ -44,12 +44,41 @@
             gap: 0.25rem;
         }
 
+        .station-summary-title-head {
+            display: flex;
+            gap: 0.55rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .station-summary-meta {
             display: flex;
             gap: 0.55rem;
             flex-wrap: wrap;
             color: var(--text-soft);
             font-size: 0.84rem;
+        }
+
+        .favorite-toggle-form {
+            margin: 0;
+        }
+
+        .favorite-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-height: 2rem;
+        }
+
+        .favorite-toggle-icon {
+            font-size: 0.92rem;
+            line-height: 1;
+        }
+
+        .favorite-pill {
+            background: rgba(247, 181, 0, 0.16);
+            border-color: rgba(247, 181, 0, 0.3);
+            color: var(--text-strong);
         }
 
     </style>
@@ -70,6 +99,9 @@
 
         {% for message in app.flashes('success') %}
             <div class="flash">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="flash flash-error">{{ message }}</div>
         {% endfor %}
 
         <section class="card stations-panel">
@@ -107,7 +139,12 @@
                                         <div class="station-summary">
                                             <div class="station-summary-main">
                                                 <div class="station-summary-title">
-                                                    <strong>{{ row.name }}</strong>
+                                                    <div class="station-summary-title-head">
+                                                        <strong>{{ row.name }}</strong>
+                                                        {% if row.isFavorite %}
+                                                            <span class="pill favorite-pill">Favorite</span>
+                                                        {% endif %}
+                                                    </div>
                                                     <span class="muted">{{ row.streetName }}</span>
                                                 </div>
                                             </div>
@@ -133,6 +170,14 @@
                                         {% endif %}
                                     </td>
                                     <td class="action-cell-flex">
+                                        <form class="favorite-toggle-form" method="post" action="{{ path('ui_station_toggle_favorite', {id: row.id}) }}" data-row-link-ignore>
+                                            <input type="hidden" name="_token" value="{{ csrf_token('station_favorite_toggle_' ~ row.id) }}">
+                                            <input type="hidden" name="_redirect" value="{{ path('ui_station_list') }}">
+                                            <button class="btn {{ row.isFavorite ? 'btn-primary' : 'btn-secondary' }} btn-compact favorite-toggle-btn" type="submit">
+                                                <span class="favorite-toggle-icon" aria-hidden="true">{{ row.isFavorite ? '★' : '☆' }}</span>
+                                                {{ row.isFavorite ? 'Favorite' : 'Add favorite' }}
+                                            </button>
+                                        </form>
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: row.id, return_to: path('ui_station_list')}) }}" data-row-link-ignore>Open</a>
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: row.id}) }}" data-row-link-ignore>Receipts</a>
                                         <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: row.id}) }}" data-row-link-ignore>Analytics</a>

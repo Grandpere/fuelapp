@@ -25,6 +25,7 @@ use App\Analytics\Application\Map\AnalyticsStationMapBuilder;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
+use App\Station\Application\Favorite\FavoriteStationRepository;
 use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
@@ -45,6 +46,7 @@ final class AnalyticsDashboardController extends AbstractController
         private readonly StationRepository $stationRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
         private readonly AnalyticsStationMapBuilder $analyticsStationMapBuilder,
+        private readonly FavoriteStationRepository $favoriteStationRepository,
     ) {
     }
 
@@ -74,6 +76,11 @@ final class AnalyticsDashboardController extends AbstractController
         $vehicleOptions = $this->vehicleOptions($ownerId);
         $stationOptions = $this->stationOptions();
         $stationMap = $this->analyticsStationMapBuilder->build($visitedStations);
+        $favoriteStationIds = array_fill_keys(
+            $this->favoriteStationRepository->favoriteStationIds($ownerId, array_map(static fn (VisitedStationPointKpi $point): string => $point->stationId, $visitedStations)),
+            true,
+        );
+        $stationMap = $this->attachFavoriteStateToMap($stationMap, $favoriteStationIds);
         $analyticsQueryParams = [
             'from' => $from?->format('Y-m-d'),
             'to' => $to?->format('Y-m-d'),
@@ -113,6 +120,7 @@ final class AnalyticsDashboardController extends AbstractController
             'activeFilterBadges' => $this->activeFilterBadges($vehicleOptions, $stationOptions, $vehicleId, $stationId, $fuelType, $from, $to),
             'selectedVehicleLabel' => null !== $vehicleId ? ($vehicleOptions[$vehicleId] ?? null) : null,
             'selectedStationLabel' => $this->selectedStationLabel($stationOptions, $stationId),
+            'selectedStationIsFavorite' => null !== $stationId && isset($favoriteStationIds[$stationId]),
             'analyticsQueryParams' => $analyticsQueryParams,
             'receiptQueryParams' => $receiptQueryParams,
             'exportQueryParams' => [
@@ -123,6 +131,140 @@ final class AnalyticsDashboardController extends AbstractController
                 'fuel_type' => $fuelType,
             ],
         ]);
+    }
+
+    /**
+     * @param array{
+     *     visitedPoints:list<array{
+     *         stationId:string,
+     *         stationName:string,
+     *         address:string,
+     *         latitude:float,
+     *         longitude:float,
+     *         receiptCount:int,
+     *         totalCostCents:int,
+     *         totalQuantityMilliLiters:int,
+     *         publicMatch:?array{
+     *             sourceId:string,
+     *             address:string,
+     *             city:string,
+     *             postalCode:string,
+     *             confidence:string,
+     *             distanceMeters:?int,
+     *             latitude:?float,
+     *             longitude:?float,
+     *             availableFuelLabels:list<string>
+     *         },
+     *         nearbyPublicStations:list<array{
+     *             sourceId:string,
+     *             address:string,
+     *             city:string,
+     *             postalCode:string,
+     *             distanceMeters:int,
+     *             latitude:float,
+     *             longitude:float,
+     *             availableFuelLabels:list<string>
+     *         }>
+     *     }>,
+     *     publicPoints:list<array{
+     *         sourceId:string,
+     *         address:string,
+     *         city:string,
+     *         postalCode:string,
+     *         confidence:string,
+     *         distanceMeters:?int,
+     *         latitude:float,
+     *         longitude:float,
+     *         availableFuelLabels:list<string>,
+     *         matchedStationNames:list<string>
+     *     }>,
+     *     nearbyPublicPoints:list<array{
+     *         sourceId:string,
+     *         address:string,
+     *         city:string,
+     *         postalCode:string,
+     *         distanceMeters:int,
+     *         latitude:float,
+     *         longitude:float,
+     *         availableFuelLabels:list<string>,
+     *         nearbyStationNames:list<string>
+     *     }>,
+     *     matchedVisitedCount:int,
+     *     nearbyVisitedCount:int
+     * } $stationMap
+     * @param array<string, bool> $favoriteStationIds
+     *
+     * @return array{
+     *     visitedPoints:list<array{
+     *         stationId:string,
+     *         stationName:string,
+     *         address:string,
+     *         latitude:float,
+     *         longitude:float,
+     *         receiptCount:int,
+     *         totalCostCents:int,
+     *         totalQuantityMilliLiters:int,
+     *         isFavorite:bool,
+     *         publicMatch:?array{
+     *             sourceId:string,
+     *             address:string,
+     *             city:string,
+     *             postalCode:string,
+     *             confidence:string,
+     *             distanceMeters:?int,
+     *             latitude:?float,
+     *             longitude:?float,
+     *             availableFuelLabels:list<string>
+     *         },
+     *         nearbyPublicStations:list<array{
+     *             sourceId:string,
+     *             address:string,
+     *             city:string,
+     *             postalCode:string,
+     *             distanceMeters:int,
+     *             latitude:float,
+     *             longitude:float,
+     *             availableFuelLabels:list<string>
+     *         }>
+     *     }>,
+     *     publicPoints:list<array{
+     *         sourceId:string,
+     *         address:string,
+     *         city:string,
+     *         postalCode:string,
+     *         confidence:string,
+     *         distanceMeters:?int,
+     *         latitude:float,
+     *         longitude:float,
+     *         availableFuelLabels:list<string>,
+     *         matchedStationNames:list<string>
+     *     }>,
+     *     nearbyPublicPoints:list<array{
+     *         sourceId:string,
+     *         address:string,
+     *         city:string,
+     *         postalCode:string,
+     *         distanceMeters:int,
+     *         latitude:float,
+     *         longitude:float,
+     *         availableFuelLabels:list<string>,
+     *         nearbyStationNames:list<string>
+     *     }>,
+     *     matchedVisitedCount:int,
+     *     nearbyVisitedCount:int
+     * }
+     */
+    private function attachFavoriteStateToMap(array $stationMap, array $favoriteStationIds): array
+    {
+        $visitedPoints = [];
+        foreach ($stationMap['visitedPoints'] as $point) {
+            $point['isFavorite'] = isset($favoriteStationIds[$point['stationId']]);
+            $visitedPoints[] = $point;
+        }
+
+        $stationMap['visitedPoints'] = $visitedPoints;
+
+        return $stationMap;
     }
 
     /**

@@ -869,6 +869,73 @@ final class ImportWebUiTest extends WebTestCase
         self::assertSame('40 Rue Robert Schuman', $station->getStreetName());
         self::assertSame('5751', $station->getPostalCode());
         self::assertSame('FRISANGE', $station->getCity());
+        self::assertSame('public-1', $station->getPublicSourceId());
+    }
+
+    public function testFinalizeImportWithConflictingPublicSuggestionShowsValidationError(): void
+    {
+        $email = 'import.web.public-station-conflict@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('40 Rue Robert Schuman');
+        $station->setStreetName('40 Rue Robert Schuman');
+        $station->setPostalCode('5751');
+        $station->setCity('FRISANGE');
+        $station->setPublicSourceId('public-legacy');
+        $this->em->persist($station);
+
+        $this->persistPublicFuelStation('public-1', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000);
+
+        $job = $this->createNeedsReviewJob($user, 'public-picker-conflict-review.jpg', '2026-04-29 10:00:00', 'p');
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'creationPayload' => [
+                    'issuedAt' => '2026-04-29T11:20:00+00:00',
+                    'stationName' => 'TOTAL',
+                    'stationStreetName' => '40 Rue Robert Schuman',
+                    'stationPostalCode' => '5751',
+                    'stationCity' => 'FRISANGE',
+                    'lines' => [[
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 30000,
+                        'unitPriceDeciCentsPerLiter' => 1820,
+                        'vatRatePercent' => 20,
+                    ]],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+        $jobId = $job->getId()->toRfc4122();
+
+        $page = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $page->getStatusCode());
+        $content = (string) $page->getContent();
+        self::assertStringContainsString('Public station suggestions', $content);
+        $csrf = $this->extractFinalizeCsrfToken($content, $jobId);
+
+        $response = $this->request('POST', '/ui/imports/'.$jobId.'/finalize', [
+            '_token' => $csrf,
+            'selectedSuggestion' => 'public:public-1',
+            'selectedStationId' => '',
+        ], [], $sessionCookie);
+        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        self::assertSame('/ui/imports/'.$jobId.'?return_to=/ui/imports', $response->headers->get('Location'));
+
+        $follow = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $follow->getStatusCode());
+        self::assertStringContainsString(
+            'Selected public station conflicts with the existing linked public source for this station.',
+            (string) $follow->getContent(),
+        );
+
+        $this->em->clear();
+        self::assertCount(0, $this->em->getRepository(ReceiptEntity::class)->findBy(['owner' => $user]));
     }
 
     public function testUserCanDeleteOwnImportFromUiList(): void

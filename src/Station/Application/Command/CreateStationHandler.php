@@ -36,6 +36,7 @@ readonly class CreateStationHandler
             $command->city,
             $command->latitudeMicroDegrees,
             $command->longitudeMicroDegrees,
+            $command->publicSourceId,
         );
 
         $this->repository->save($station);

@@ -18,9 +18,11 @@ use App\PublicFuelStation\Application\Search\PublicFuelStationSuggestionReader;
 use App\Receipt\Domain\Receipt;
 use App\Station\Application\Command\CreateStationCommand;
 use App\Station\Application\Command\CreateStationHandler;
+use App\Station\Application\Exception\StationPublicSourceConflict;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\ValueObject\StationId;
 use App\Vehicle\Domain\ValueObject\VehicleId;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use RuntimeException;
 use Throwable;
 
@@ -37,11 +39,12 @@ final class CreateReceiptWithStationHandler
     public function __invoke(CreateReceiptWithStationCommand $command): Receipt
     {
         $station = null;
+        $selectedPublicSourceId = null;
 
         if (null !== $command->selectedSuggestionType && null !== $command->selectedSuggestionId) {
             $station = match ($command->selectedSuggestionType) {
                 'station' => $this->requireSelectedStation($command->selectedSuggestionId),
-                'public' => $this->resolveSelectedPublicSuggestion($command->selectedSuggestionId),
+                'public' => $this->resolveSelectedPublicSuggestion($command->selectedSuggestionId, $selectedPublicSourceId),
                 default => throw new RuntimeException('Selected station suggestion is invalid.'),
             };
         } elseif (null !== $command->selectedStationId) {
@@ -86,6 +89,10 @@ final class CreateReceiptWithStationHandler
             }
         }
 
+        if (null !== $selectedPublicSourceId) {
+            $this->applyPublicSourceLink($station, $selectedPublicSourceId);
+        }
+
         return ($this->receiptHandler)(new CreateReceiptCommand(
             $command->issuedAt,
             $command->lines,
@@ -106,12 +113,17 @@ final class CreateReceiptWithStationHandler
         return $station;
     }
 
-    private function resolveSelectedPublicSuggestion(string $sourceId): \App\Station\Domain\Station
+    /**
+     * @param-out string $selectedPublicSourceId
+     */
+    private function resolveSelectedPublicSuggestion(string $sourceId, ?string &$selectedPublicSourceId): \App\Station\Domain\Station
     {
         $publicStation = $this->publicFuelStationSuggestionReader->getBySourceId($sourceId);
         if (!$publicStation instanceof PublicFuelStationSuggestion) {
             throw new RuntimeException('Selected public station was not found.');
         }
+
+        $selectedPublicSourceId = $publicStation->sourceId;
 
         $station = $this->stationRepository->findByIdentity(
             $publicStation->name,
@@ -131,6 +143,7 @@ final class CreateReceiptWithStationHandler
                 $publicStation->city,
                 $publicStation->latitudeMicroDegrees,
                 $publicStation->longitudeMicroDegrees,
+                $publicStation->sourceId,
             ));
         } catch (Throwable $e) {
             $station = $this->stationRepository->findByIdentity(
@@ -145,6 +158,22 @@ final class CreateReceiptWithStationHandler
             }
 
             return $station;
+        }
+    }
+
+    private function applyPublicSourceLink(\App\Station\Domain\Station $station, string $publicSourceId): void
+    {
+        $existingPublicSourceId = $station->publicSourceId();
+        if (null !== $existingPublicSourceId && $existingPublicSourceId !== $publicSourceId) {
+            throw StationPublicSourceConflict::forStation();
+        }
+
+        if ($station->attachPublicSourceId($publicSourceId)) {
+            try {
+                $this->stationRepository->save($station);
+            } catch (UniqueConstraintViolationException) {
+                throw StationPublicSourceConflict::forStation();
+            }
         }
     }
 }

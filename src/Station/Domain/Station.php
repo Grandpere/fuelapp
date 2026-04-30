@@ -26,6 +26,7 @@ final class Station
     private string $city;
     private ?int $latitudeMicroDegrees;
     private ?int $longitudeMicroDegrees;
+    private ?string $publicSourceId;
     private GeocodingStatus $geocodingStatus;
     private ?DateTimeImmutable $geocodingRequestedAt;
     private ?DateTimeImmutable $geocodedAt;
@@ -40,6 +41,7 @@ final class Station
         string $city,
         ?int $latitudeMicroDegrees,
         ?int $longitudeMicroDegrees,
+        ?string $publicSourceId,
         GeocodingStatus $geocodingStatus,
         ?DateTimeImmutable $geocodingRequestedAt,
         ?DateTimeImmutable $geocodedAt,
@@ -53,6 +55,7 @@ final class Station
         $this->city = $city;
         $this->latitudeMicroDegrees = $latitudeMicroDegrees;
         $this->longitudeMicroDegrees = $longitudeMicroDegrees;
+        $this->publicSourceId = null === $publicSourceId ? null : trim($publicSourceId);
         $this->geocodingStatus = $geocodingStatus;
         $this->geocodingRequestedAt = $geocodingRequestedAt;
         $this->geocodedAt = $geocodedAt;
@@ -67,6 +70,7 @@ final class Station
         string $city,
         ?int $latitudeMicroDegrees,
         ?int $longitudeMicroDegrees,
+        ?string $publicSourceId = null,
     ): self {
         $now = new DateTimeImmutable();
         $hasCoordinates = null !== $latitudeMicroDegrees && null !== $longitudeMicroDegrees;
@@ -79,6 +83,7 @@ final class Station
             $city,
             $latitudeMicroDegrees,
             $longitudeMicroDegrees,
+            $publicSourceId,
             $hasCoordinates ? GeocodingStatus::SUCCESS : GeocodingStatus::PENDING,
             $hasCoordinates ? null : $now,
             $hasCoordinates ? $now : null,
@@ -95,6 +100,7 @@ final class Station
         string $city,
         ?int $latitudeMicroDegrees,
         ?int $longitudeMicroDegrees,
+        ?string $publicSourceId = null,
         GeocodingStatus $geocodingStatus = GeocodingStatus::PENDING,
         ?DateTimeImmutable $geocodingRequestedAt = null,
         ?DateTimeImmutable $geocodedAt = null,
@@ -109,6 +115,7 @@ final class Station
             $city,
             $latitudeMicroDegrees,
             $longitudeMicroDegrees,
+            $publicSourceId,
             $geocodingStatus,
             $geocodingRequestedAt,
             $geocodedAt,
@@ -150,6 +157,23 @@ final class Station
     public function longitudeMicroDegrees(): ?int
     {
         return $this->longitudeMicroDegrees;
+    }
+
+    public function publicSourceId(): ?string
+    {
+        return $this->publicSourceId;
+    }
+
+    public function attachPublicSourceId(string $publicSourceId): bool
+    {
+        $normalized = trim($publicSourceId);
+        if ('' === $normalized || $this->publicSourceId === $normalized) {
+            return false;
+        }
+
+        $this->publicSourceId = $normalized;
+
+        return true;
     }
 
     public function geocodingStatus(): GeocodingStatus

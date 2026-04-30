@@ -42,6 +42,7 @@ final readonly class DoctrineStationRepository implements StationRepository
         $entity->setCity($station->city());
         $entity->setLatitudeMicroDegrees($station->latitudeMicroDegrees());
         $entity->setLongitudeMicroDegrees($station->longitudeMicroDegrees());
+        $entity->setPublicSourceId($station->publicSourceId());
         $entity->setGeocodingStatus($station->geocodingStatus());
         $entity->setGeocodingRequestedAt($station->geocodingRequestedAt());
         $entity->setGeocodedAt($station->geocodedAt());
@@ -278,6 +279,7 @@ final readonly class DoctrineStationRepository implements StationRepository
             $entity->getCity(),
             $entity->getLatitudeMicroDegrees(),
             $entity->getLongitudeMicroDegrees(),
+            $entity->getPublicSourceId(),
             $entity->getGeocodingStatus(),
             $entity->getGeocodingRequestedAt(),
             $entity->getGeocodedAt(),

@@ -608,3 +608,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the public fuel feed mixes decimal degrees, `degrees * 100000`, and already-microdegree values, and longitude alone is ambiguous because many valid microdegree longitudes stay below the `100k` upper bound.
 - Fix: infer reliable column hints first, then apply narrow row-level fallbacks only for still-ambiguous coordinates instead of scaling every candidate longitude the same way.
 - Prevention: for mixed coordinate feeds, avoid one-size-fits-all magnitude rules on a single coordinate; decide from the full row and preserve ambiguous values unless a stronger hint exists.
+
+## 2026-04-30 - Durable public station links must fail as validation errors, not hidden write-time crashes
+- Symptom: once `Station.publicSourceId` became durable, selecting a public suggestion that pointed to an internal station already linked to another source could throw during receipt/import finalization.
+- Root cause: the conflict rule lived correctly in the application write path, but the web flows did not yet consistently translate that business exception into user-facing validation feedback.
+- Fix: keep the conflict guard in `CreateReceiptWithStationHandler`, surface it as an inline validation error on `/ui/receipts/new`, and cover both receipt and import review flows with functional tests so conflicting relinks never regress into `500` responses.
+- Prevention: when turning a previously implicit match into a persisted unique link, add the conflict rule and the UI error-handling path in the same ticket; otherwise the first real mismatch becomes a production crash instead of a recoverable user decision.

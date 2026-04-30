@@ -640,6 +640,84 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame('40 Rue Robert Schuman', $station->getStreetName());
         self::assertSame('5751', $station->getPostalCode());
         self::assertSame('FRISANGE', $station->getCity());
+        self::assertSame('public-1', $station->getPublicSourceId());
+    }
+
+    public function testUserSeesValidationErrorWhenSelectedPublicSuggestionConflictsWithExistingLinkedStation(): void
+    {
+        $email = 'receipt.ui.public-station-conflict@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('40 Rue Robert Schuman');
+        $station->setStreetName('40 Rue Robert Schuman');
+        $station->setPostalCode('5751');
+        $station->setCity('FRISANGE');
+        $station->setPublicSourceId('public-legacy');
+        $this->em->persist($station);
+
+        $this->persistPublicFuelStation('public-1', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $lookupPage = $this->request('POST', '/ui/receipts/new', [
+            '_token' => $this->extractFormCsrf((string) $this->request('GET', '/ui/receipts/new')->getContent()),
+            '_station_lookup' => '1',
+            '_station_lookup_requested' => '1',
+            'issuedAt' => '2026-04-29T12:00',
+            'vehicleId' => '',
+            'fuelType' => 'diesel',
+            'quantityLiters' => '40.000',
+            'unitPriceEurosPerLiter' => '1.700',
+            'vatRatePercent' => '20',
+            'stationSearch' => 'frisange',
+            'stationName' => '',
+            'stationStreetName' => '',
+            'stationPostalCode' => '5751',
+            'stationCity' => 'FRISANGE',
+            'latitudeMicroDegrees' => '',
+            'longitudeMicroDegrees' => '',
+            'odometerKilometers' => '',
+            'selectedSuggestion' => '',
+            'selectedStationId' => '',
+        ]);
+        self::assertSame(Response::HTTP_SEE_OTHER, $lookupPage->getStatusCode());
+
+        $lookupFollowResponse = $this->request('GET', $lookupPage->headers->get('Location') ?? '/ui/receipts/new');
+        self::assertSame(Response::HTTP_OK, $lookupFollowResponse->getStatusCode());
+        $lookupContent = (string) $lookupFollowResponse->getContent();
+        self::assertStringContainsString('Public station suggestions', $lookupContent);
+
+        $createResponse = $this->request('POST', '/ui/receipts/new', [
+            '_token' => $this->extractFormCsrf($lookupContent),
+            'issuedAt' => '2026-04-29T12:00',
+            'vehicleId' => '',
+            'fuelType' => 'diesel',
+            'quantityLiters' => '40.000',
+            'unitPriceEurosPerLiter' => '1.700',
+            'vatRatePercent' => '20',
+            'stationSearch' => 'frisange',
+            'selectedSuggestion' => 'public:public-1',
+            'selectedStationId' => '',
+            'stationName' => '',
+            'stationStreetName' => '',
+            'stationPostalCode' => '5751',
+            'stationCity' => 'FRISANGE',
+            'latitudeMicroDegrees' => '',
+            'longitudeMicroDegrees' => '',
+            'odometerKilometers' => '',
+        ]);
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $createResponse->getStatusCode());
+        self::assertStringContainsString(
+            'Selected public station conflicts with the existing linked public source for this station.',
+            (string) $createResponse->getContent(),
+        );
+
+        $this->em->clear();
+        self::assertCount(0, $this->em->getRepository(ReceiptEntity::class)->findBy(['owner' => $owner]));
     }
 
     public function testPublicSelectedSuggestionIsClearedWhenNoChoicesAreRendered(): void

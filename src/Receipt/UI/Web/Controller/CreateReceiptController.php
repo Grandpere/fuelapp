@@ -22,6 +22,7 @@ use App\Receipt\UI\Api\Resource\Input\ReceiptInput;
 use App\Receipt\UI\Api\Resource\Input\ReceiptLineInput;
 use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Shared\Application\Security\AuthenticatedUserIdProvider;
+use App\Station\Application\Exception\StationPublicSourceConflict;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Application\Suggestion\StationSuggestion;
 use App\Station\Application\Suggestion\StationSuggestionQuery;
@@ -81,7 +82,14 @@ final class CreateReceiptController extends AbstractController
                 $this->hydrateSelectedStationFields($formData);
                 $errors = $this->validateFormData($formData, $ownerId);
                 if ([] === $errors) {
-                    $this->persistReceiptFromForm($formData, $ownerId);
+                    try {
+                        $this->persistReceiptFromForm($formData, $ownerId);
+                    } catch (StationPublicSourceConflict $e) {
+                        $errors[] = $e->getMessage();
+                    }
+                }
+
+                if ([] === $errors) {
                     $this->addFlash('success', 'Receipt created.');
 
                     return new RedirectResponse($this->generateUrl('ui_receipt_index'), Response::HTTP_SEE_OTHER);

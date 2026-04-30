@@ -46,6 +46,9 @@ class StationEntity
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $longitudeMicroDegrees = null;
 
+    #[ORM\Column(type: 'string', length: 120, nullable: true, unique: true)]
+    private ?string $publicSourceId = null;
+
     #[ORM\Column(type: 'string', enumType: GeocodingStatus::class, length: 16, options: ['default' => 'pending'])]
     private GeocodingStatus $geocodingStatus = GeocodingStatus::PENDING;
 
@@ -129,6 +132,16 @@ class StationEntity
     public function setLongitudeMicroDegrees(?int $longitudeMicroDegrees): void
     {
         $this->longitudeMicroDegrees = $longitudeMicroDegrees;
+    }
+
+    public function getPublicSourceId(): ?string
+    {
+        return $this->publicSourceId;
+    }
+
+    public function setPublicSourceId(?string $publicSourceId): void
+    {
+        $this->publicSourceId = $publicSourceId;
     }
 
     public function getGeocodingStatus(): GeocodingStatus

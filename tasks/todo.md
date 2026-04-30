@@ -57,7 +57,7 @@
 # TODO - SP40-003 Durable link between Station and public source
 
 ## Plan
-- [pending] Add nullable unique `publicSourceId` on `Station` with migration and persistence coverage.
-- [pending] Persist the public source link when a public suggestion creates or reuses a station.
-- [pending] Reject conflicting public relinks instead of silently overwriting.
-- [pending] Add or update unit/integration/functional coverage and run quality gates.
+- [completed] Add nullable unique `publicSourceId` on `Station` with migration and persistence coverage.
+- [completed] Persist the public source link when a public suggestion creates or reuses a station.
+- [completed] Reject conflicting public relinks instead of silently overwriting.
+- [pending] Finish manual functional validation of the new conflict/link flows and prepare the handover.

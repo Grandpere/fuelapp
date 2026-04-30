@@ -24,6 +24,7 @@ use App\Receipt\Domain\Enum\FuelType;
 use App\Receipt\Domain\Receipt;
 use App\Station\Application\Command\CreateStationCommand;
 use App\Station\Application\Command\CreateStationHandler;
+use App\Station\Application\Exception\StationPublicSourceConflict;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\Station;
 use App\Station\Domain\ValueObject\StationId;
@@ -232,7 +233,95 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
 
         self::assertNotNull($receipt->stationId());
         $stationId = $receipt->stationId();
-        self::assertSame('40 Rue Robert Schuman', $stationRepo->get($stationId->toString())?->name());
+        $savedStation = $stationRepo->get($stationId->toString());
+        self::assertNotNull($savedStation);
+        self::assertSame('40 Rue Robert Schuman', $savedStation->name());
+        self::assertSame('public-1', $savedStation->publicSourceId());
+    }
+
+    public function testItAttachesPublicSourceIdOnExistingMatchingStation(): void
+    {
+        $existingStation = Station::reconstitute(
+            StationId::fromString('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01'),
+            '40 Rue Robert Schuman',
+            '40 Rue Robert Schuman',
+            '5751',
+            'FRISANGE',
+            49569000,
+            4230000,
+            null,
+        );
+
+        $stationRepo = new InMemoryStationRepository($existingStation);
+        $stationRepo->setIdentityResult($existingStation);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $handler = new CreateReceiptWithStationHandler(
+            new CreateReceiptHandler($receiptRepo),
+            $stationRepo,
+            new CreateStationHandler($stationRepo, new NullMessageBus()),
+            new InMemoryPublicFuelStationSuggestionReader([
+                'public-1' => new PublicFuelStationSuggestion('public-1', '40 Rue Robert Schuman', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000),
+            ]),
+        );
+
+        $handler(new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-04-29T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Typed Name',
+            'Typed Street',
+            '5751',
+            'FRISANGE',
+            null,
+            null,
+            selectedSuggestionType: 'public',
+            selectedSuggestionId: 'public-1',
+        ));
+
+        self::assertSame('public-1', $stationRepo->get($existingStation->id()->toString())?->publicSourceId());
+    }
+
+    public function testItRejectsConflictingPublicSourceIdOnExistingStation(): void
+    {
+        $existingStation = Station::reconstitute(
+            StationId::fromString('018f1f8b-6d3c-7f11-8c0f-3c5f4d3e9b01'),
+            '40 Rue Robert Schuman',
+            '40 Rue Robert Schuman',
+            '5751',
+            'FRISANGE',
+            49569000,
+            4230000,
+            'public-legacy',
+        );
+
+        $stationRepo = new InMemoryStationRepository($existingStation);
+        $stationRepo->setIdentityResult($existingStation);
+        $receiptRepo = new InMemoryReceiptRepository();
+
+        $handler = new CreateReceiptWithStationHandler(
+            new CreateReceiptHandler($receiptRepo),
+            $stationRepo,
+            new CreateStationHandler($stationRepo, new NullMessageBus()),
+            new InMemoryPublicFuelStationSuggestionReader([
+                'public-1' => new PublicFuelStationSuggestion('public-1', '40 Rue Robert Schuman', '40 Rue Robert Schuman', '5751', 'FRISANGE', 49569000, 4230000),
+            ]),
+        );
+
+        $this->expectException(StationPublicSourceConflict::class);
+        $this->expectExceptionMessage('Selected public station conflicts with the existing linked public source for this station.');
+
+        $handler(new CreateReceiptWithStationCommand(
+            new DateTimeImmutable('2026-04-29T12:00:00+00:00'),
+            [new CreateReceiptLineCommand(FuelType::SP95, 1000, 180, 20)],
+            'Typed Name',
+            'Typed Street',
+            '5751',
+            'FRISANGE',
+            null,
+            null,
+            selectedSuggestionType: 'public',
+            selectedSuggestionId: 'public-1',
+        ));
     }
 
     public function testItThrowsWhenSelectedPublicSuggestionDoesNotExist(): void

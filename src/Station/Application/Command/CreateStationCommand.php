@@ -22,6 +22,7 @@ final readonly class CreateStationCommand
         public string $city,
         public ?int $latitudeMicroDegrees,
         public ?int $longitudeMicroDegrees,
+        public ?string $publicSourceId = null,
     ) {
     }
 }

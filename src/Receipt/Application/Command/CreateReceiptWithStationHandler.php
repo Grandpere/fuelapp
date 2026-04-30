@@ -22,6 +22,7 @@ use App\Station\Application\Exception\StationPublicSourceConflict;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\ValueObject\StationId;
 use App\Vehicle\Domain\ValueObject\VehicleId;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use RuntimeException;
 use Throwable;
 
@@ -168,7 +169,11 @@ final class CreateReceiptWithStationHandler
         }
 
         if ($station->attachPublicSourceId($publicSourceId)) {
-            $this->stationRepository->save($station);
+            try {
+                $this->stationRepository->save($station);
+            } catch (UniqueConstraintViolationException) {
+                throw StationPublicSourceConflict::forStation();
+            }
         }
     }
 }

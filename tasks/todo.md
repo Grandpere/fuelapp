@@ -68,3 +68,11 @@
 - [pending] Make the active suggestion state explicit in manual receipt creation.
 - [pending] Mirror the same clarity in import review without changing business behavior.
 - [pending] Add/update the most relevant coverage and run quality gates.
+
+# TODO - SP41-001 Favorite stations
+
+## Plan
+- [pending] Add a per-user favorite relation on internal stations with migration and repository support.
+- [pending] Expose favorite toggles on station list and station detail pages.
+- [pending] Surface favorite state in analytics station context.
+- [pending] Add/update unit, integration, and functional coverage and run quality gates.

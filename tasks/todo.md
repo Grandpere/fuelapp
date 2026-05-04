@@ -72,7 +72,14 @@
 # TODO - SP41-001 Favorite stations
 
 ## Plan
-- [pending] Add a per-user favorite relation on internal stations with migration and repository support.
-- [pending] Expose favorite toggles on station list and station detail pages.
-- [pending] Surface favorite state in analytics station context.
-- [pending] Add/update unit, integration, and functional coverage and run quality gates.
+- [completed] Add a per-user favorite relation on internal stations with migration and repository support.
+- [completed] Expose favorite toggles on station list and station detail pages.
+- [completed] Surface favorite state in analytics station context.
+- [completed] Add/update unit, integration, and functional coverage and run quality gates.
+
+# TODO - SP41-002 Favorite stations ranking and filtering
+
+## Plan
+- [pending] Make favorites rise to the top of the station index while preserving recent-visit ordering inside each group.
+- [pending] Add a lightweight `favorites only` filter on the station index with a dedicated empty state.
+- [pending] Add or update the relevant functional coverage and run quality gates.

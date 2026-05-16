@@ -219,6 +219,18 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-05-17 - Twig hash literals cannot contain nested `{{ ... }}` output strings
+- Symptom: analytics pages returned 500 with `Twig\Error\SyntaxError` complaining that a mapping value must be followed by a comma.
+- Root cause: translated labels were inserted inside Twig hash literals as quoted `{{ ... }}` strings while building JSON chart configs.
+- Fix: use plain Twig expressions inside the hash, for example `label: ('analytics.chart_cost_label'|trans)`, then `json_encode` the full hash.
+- Prevention: inside Twig arrays/hashes, never wrap translated expressions in nested `{{ ... }}` output syntax; keep them as expressions.
+
+## 2026-05-16 - Topbar account actions must not share the nav row
+- Symptom: the authenticated header could push the account email and `Sign out` action partially off-screen, forcing awkward scrolling on narrower viewports.
+- Root cause: navigation, theme toggle, email, and logout action all lived in a single inline row with no dedicated responsive structure.
+- Fix: split the header into a main brand/account row plus a wrapping nav row, and truncate the email while letting controls stack on small screens.
+- Prevention: when a shared shell mixes dense navigation and account actions, separate them into independent responsive groups instead of relying on one long flex row.
+
 ## 2026-04-29 - Baseline-less maintenance reminders must use stable due dates
 - Symptom: reminder evaluation created duplicate reminders across repeated runs for the same untouched rule.
 - Root cause: when a date-based reminder rule had no matching maintenance event, the due calculator used `now` as `dueAtDate`, which changed the dedup key every run.

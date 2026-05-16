@@ -830,7 +830,7 @@
                         labels: costChartLabels,
                         datasets: [
                             {
-                                label: '{{ 'analytics.chart_cost_label'|trans }}',
+                                label: ('analytics.chart_cost_label'|trans),
                                 data: costChartValues,
                                 borderColor: '#f7b500',
                                 fillColor: 'rgba(247, 181, 0, 0.16)',
@@ -882,7 +882,7 @@
                         labels: consumptionChartLabels,
                         datasets: [
                             {
-                                label: '{{ 'analytics.chart_consumption_label'|trans }}',
+                                label: ('analytics.chart_consumption_label'|trans),
                                 data: consumptionChartValues,
                                 borderColor: '#61ddff',
                                 fillColor: 'rgba(97, 221, 255, 0.16)',
@@ -934,7 +934,7 @@
                         labels: fuelPriceChartLabels,
                         datasets: [
                             {
-                                label: '{{ 'analytics.chart_fuel_price_label'|trans }}',
+                                label: ('analytics.chart_fuel_price_label'|trans),
                                 data: fuelPriceChartValues,
                                 borderColor: '#9bff76',
                                 fillColor: 'rgba(155, 255, 118, 0.12)',
@@ -997,7 +997,7 @@
                         labels: comparedLabels,
                         datasets: [
                             {
-                                label: '{{ 'analytics.chart_fuel_label'|trans }}',
+                                label: ('analytics.chart_fuel_label'|trans),
                                 data: comparedFuelValues,
                                 borderColor: '#f7b500',
                                 fillColor: 'rgba(247, 181, 0, 0.1)',
@@ -1006,7 +1006,7 @@
                                 subtlePoints: true
                             },
                             {
-                                label: '{{ 'analytics.chart_maintenance_label'|trans }}',
+                                label: ('analytics.chart_maintenance_label'|trans),
                                 data: comparedMaintenanceValues,
                                 borderColor: '#ff8faa',
                                 fillColor: 'rgba(255, 143, 170, 0.1)',
@@ -1015,7 +1015,7 @@
                                 subtlePoints: true
                             },
                             {
-                                label: '{{ 'analytics.chart_total_label'|trans }}',
+                                label: ('analytics.chart_total_label'|trans),
                                 data: comparedTotalValues,
                                 borderColor: '#4ccf4e',
                                 fillColor: 'rgba(76, 207, 78, 0.1)',

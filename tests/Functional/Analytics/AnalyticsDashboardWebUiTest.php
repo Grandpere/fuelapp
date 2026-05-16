@@ -148,7 +148,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('5 PUBLIC ROAD, 75001 PARIS', $content);
         self::assertStringContainsString('Public proche :', $content);
         self::assertStringContainsString('7 NEARBY ROAD, 75001 PARIS', $content);
-        self::assertStringContainsString('Nearby public stations', $content);
+        self::assertStringContainsString('Stations publiques proches', $content);
         self::assertStringContainsString('reçus', $content);
         self::assertStringContainsString('Tendance du prix carburant par mois', $content);
         self::assertStringContainsString('2026-01 · diesel', $content);

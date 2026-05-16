@@ -35,6 +35,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AnalyticsDashboardController extends AbstractController
 {
@@ -47,6 +48,7 @@ final class AnalyticsDashboardController extends AbstractController
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
         private readonly AnalyticsStationMapBuilder $analyticsStationMapBuilder,
         private readonly FavoriteStationRepository $favoriteStationRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -491,7 +493,7 @@ final class AnalyticsDashboardController extends AbstractController
 
         $shortcuts = [
             [
-                'label' => 'Last 30 days',
+                'label' => $this->t('analytics.shortcut_last_30_days'),
                 'params' => array_merge($baseParams, [
                     'from' => $today->modify('-29 days')->format('Y-m-d'),
                     'to' => $today->format('Y-m-d'),
@@ -499,7 +501,7 @@ final class AnalyticsDashboardController extends AbstractController
                 'isActive' => false,
             ],
             [
-                'label' => 'Last 90 days',
+                'label' => $this->t('analytics.shortcut_last_90_days'),
                 'params' => array_merge($baseParams, [
                     'from' => $today->modify('-89 days')->format('Y-m-d'),
                     'to' => $today->format('Y-m-d'),
@@ -507,7 +509,7 @@ final class AnalyticsDashboardController extends AbstractController
                 'isActive' => false,
             ],
             [
-                'label' => 'This month',
+                'label' => $this->t('analytics.shortcut_this_month'),
                 'params' => array_merge($baseParams, [
                     'from' => $thisMonthStart->format('Y-m-d'),
                     'to' => $thisMonthEnd->format('Y-m-d'),
@@ -535,27 +537,32 @@ final class AnalyticsDashboardController extends AbstractController
         $badges = [];
 
         if (null !== $from || null !== $to) {
-            $badges[] = sprintf(
-                'Period: %s -> %s',
-                $from?->format('d/m/Y') ?? 'start',
-                $to?->format('d/m/Y') ?? 'today',
-            );
+            $badges[] = $this->t('analytics.badge_period', [
+                '%from%' => $from?->format('d/m/Y') ?? $this->t('analytics.badge_period_start'),
+                '%to%' => $to?->format('d/m/Y') ?? $this->t('analytics.badge_period_today'),
+            ]);
         }
 
         if (null !== $vehicleId && isset($vehicleOptions[$vehicleId])) {
-            $badges[] = 'Vehicle: '.$vehicleOptions[$vehicleId];
+            $badges[] = $this->t('analytics.badge_vehicle', ['%label%' => $vehicleOptions[$vehicleId]]);
         }
 
         $stationLabel = $this->selectedStationLabel($stationOptions, $stationId);
         if (null !== $stationLabel) {
-            $badges[] = 'Station: '.$stationLabel;
+            $badges[] = $this->t('analytics.badge_station', ['%label%' => $stationLabel]);
         }
 
         if (null !== $fuelType) {
-            $badges[] = 'Fuel: '.strtoupper($fuelType);
+            $badges[] = $this->t('analytics.badge_fuel', ['%label%' => strtoupper($fuelType)]);
         }
 
         return $badges;
+    }
+
+    /** @param array<string, string> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 
     /**

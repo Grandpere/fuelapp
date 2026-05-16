@@ -119,14 +119,14 @@ final class StationWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
         self::assertStringContainsString('Hub Station', $content);
-        self::assertStringContainsString('Receipts tracked', $content);
-        self::assertStringContainsString('Latest receipts', $content);
+        self::assertStringContainsString('Reçus suivis', $content);
+        self::assertStringContainsString('Derniers reçus', $content);
         self::assertStringContainsString('/ui/receipts?station_id='.$stationId, $content);
         self::assertStringContainsString('/ui/analytics?station_id='.$stationId, $content);
         self::assertStringContainsString('/ui/receipts/new?station_id='.$stationId, $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $content);
         self::assertStringContainsString('145200 km', $content);
-        self::assertStringContainsString('Public station candidates', $content);
+        self::assertStringContainsString('Stations publiques candidates', $content);
         self::assertStringContainsString('public-hub-station', $content);
         self::assertStringContainsString('1.789 EUR/L', $content);
     }
@@ -317,7 +317,7 @@ final class StationWebUiTest extends WebTestCase
         $detailResponse = $this->request('GET', $detailPath);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Not in favorites yet', $detailContent);
+        self::assertStringContainsString('Pas encore en favorites', $detailContent);
         $csrfToken = $this->extractFavoriteToggleToken($detailContent, $stationId);
 
         $toggleResponse = $this->request('POST', '/ui/stations/'.$stationId.'/toggle-favorite', [

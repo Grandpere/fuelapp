@@ -69,8 +69,8 @@ final class PublicFuelStationWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
 
-        self::assertStringContainsString('Public Fuel Stations', $content);
-        self::assertStringContainsString('Station list', $content);
+        self::assertStringContainsString('Stations publiques', $content);
+        self::assertStringContainsString('Liste des stations', $content);
         self::assertStringContainsString('SAINT-DENIS-LÈS-BOURG', $content);
         self::assertStringContainsString('596 AVENUE DE TREVOUX', $content);
         self::assertStringContainsString('1.789 EUR/L', $content);

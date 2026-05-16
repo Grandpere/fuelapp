@@ -28,6 +28,7 @@ use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminDashboardController extends AbstractController
 {
@@ -39,6 +40,7 @@ final class AdminDashboardController extends AbstractController
         private readonly ImportJobRepository $importJobRepository,
         private readonly ReceiptRepository $receiptRepository,
         private readonly AdminUserManager $userManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -168,13 +170,13 @@ final class AdminDashboardController extends AbstractController
         $nextFailedJob = $this->firstImportByStatus($allImports, ImportJobStatus::FAILED);
         if ($importMetrics[ImportJobStatus::FAILED->value] > 0 && null !== $nextFailedJob) {
             $attentionCards[] = [
-                'title' => 'Failed imports',
+                'title' => $this->t('admin.dashboard.attention.failed_imports_title'),
                 'value' => $importMetrics[ImportJobStatus::FAILED->value],
-                'description' => 'Investigate OCR or parsing failures before they pile up.',
+                'description' => $this->t('admin.dashboard.attention.failed_imports_description'),
                 'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $nextFailedJob->id()->toString(), 'return_to' => $dashboardUrl]),
-                'action' => 'Open next failure',
+                'action' => $this->t('admin.dashboard.attention.failed_imports_action'),
                 'secondaryUrl' => $this->generateUrl('ui_admin_import_job_list', ['status' => ImportJobStatus::FAILED->value]),
-                'secondaryAction' => 'Open queue',
+                'secondaryAction' => $this->t('admin.dashboard.attention.open_queue'),
                 'statusClass' => 'failed',
             ];
         }
@@ -182,13 +184,13 @@ final class AdminDashboardController extends AbstractController
         $nextReviewJob = $this->firstImportByStatus($allImports, ImportJobStatus::NEEDS_REVIEW);
         if ($importMetrics[ImportJobStatus::NEEDS_REVIEW->value] > 0 && null !== $nextReviewJob) {
             $attentionCards[] = [
-                'title' => 'Needs review',
+                'title' => $this->t('admin.dashboard.attention.needs_review_title'),
                 'value' => $importMetrics[ImportJobStatus::NEEDS_REVIEW->value],
-                'description' => 'Manual review is still blocking import completion.',
+                'description' => $this->t('admin.dashboard.attention.needs_review_description'),
                 'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $nextReviewJob->id()->toString(), 'return_to' => $dashboardUrl]),
-                'action' => 'Open next review',
+                'action' => $this->t('admin.dashboard.attention.needs_review_action'),
                 'secondaryUrl' => $this->generateUrl('ui_admin_import_job_list', ['status' => ImportJobStatus::NEEDS_REVIEW->value]),
-                'secondaryAction' => 'Open queue',
+                'secondaryAction' => $this->t('admin.dashboard.attention.open_queue'),
                 'statusClass' => 'needs_review',
             ];
         }
@@ -196,37 +198,37 @@ final class AdminDashboardController extends AbstractController
         $nextDueReminder = $dueReminders[0] ?? null;
         if ($dueReminderCount > 0 && $nextDueReminder instanceof MaintenanceReminder) {
             $attentionCards[] = [
-                'title' => 'Due reminders',
+                'title' => $this->t('admin.dashboard.attention.due_reminders_title'),
                 'value' => $dueReminderCount,
-                'description' => 'Maintenance follow-up is already due for at least one vehicle.',
+                'description' => $this->t('admin.dashboard.attention.due_reminders_description'),
                 'url' => $this->generateUrl('ui_admin_maintenance_reminder_show', ['id' => $nextDueReminder->id()->toString(), 'return_to' => $dashboardUrl]),
-                'action' => 'Open next due reminder',
+                'action' => $this->t('admin.dashboard.attention.due_reminders_action'),
                 'secondaryUrl' => $this->generateUrl('ui_admin_maintenance_reminder_list'),
-                'secondaryAction' => 'Open queue',
+                'secondaryAction' => $this->t('admin.dashboard.attention.open_queue'),
                 'statusClass' => 'duplicate',
             ];
         }
 
         if ($userMetrics['missingIdentity'] > 0 && null !== $nextMissingIdentityUserId) {
             $attentionCards[] = [
-                'title' => 'Missing identities',
+                'title' => $this->t('admin.dashboard.attention.missing_identities_title'),
                 'value' => $userMetrics['missingIdentity'],
-                'description' => 'Account recovery will stall until the affected identity links are understood.',
+                'description' => $this->t('admin.dashboard.attention.missing_identities_description'),
                 'url' => $this->generateUrl('ui_admin_identity_list', ['user_id' => $nextMissingIdentityUserId]),
-                'action' => 'Open next missing identity',
+                'action' => $this->t('admin.dashboard.attention.missing_identities_action'),
                 'secondaryUrl' => $this->generateUrl('ui_admin_user_list', ['has_identity' => '0']),
-                'secondaryAction' => 'Open queue',
+                'secondaryAction' => $this->t('admin.dashboard.attention.open_queue'),
                 'statusClass' => 'queued',
             ];
         } elseif ($userMetrics['unverified'] > 0 && null !== $nextUnverifiedUserId) {
             $attentionCards[] = [
-                'title' => 'Unverified accounts',
+                'title' => $this->t('admin.dashboard.attention.unverified_accounts_title'),
                 'value' => $userMetrics['unverified'],
-                'description' => 'Verification issues still block support outcomes for active users.',
+                'description' => $this->t('admin.dashboard.attention.unverified_accounts_description'),
                 'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $nextUnverifiedUserId]),
-                'action' => 'Open next unverified account',
+                'action' => $this->t('admin.dashboard.attention.unverified_accounts_action'),
                 'secondaryUrl' => $this->generateUrl('ui_admin_user_list', ['verification' => 'unverified']),
-                'secondaryAction' => 'Open queue',
+                'secondaryAction' => $this->t('admin.dashboard.attention.open_queue'),
                 'statusClass' => 'processing',
             ];
         }
@@ -258,11 +260,11 @@ final class AdminDashboardController extends AbstractController
     private function dashboardImportActionLabel(ImportJobStatus $status): string
     {
         return match ($status) {
-            ImportJobStatus::NEEDS_REVIEW => 'Review',
-            ImportJobStatus::FAILED => 'Inspect failure',
-            ImportJobStatus::PROCESSED => 'Open receipt',
-            ImportJobStatus::DUPLICATE => 'Open original',
-            default => 'Detail',
+            ImportJobStatus::NEEDS_REVIEW => $this->t('import.action.review'),
+            ImportJobStatus::FAILED => $this->t('import.follow_up.inspect_failure'),
+            ImportJobStatus::PROCESSED => $this->t('import.action.open_receipt'),
+            ImportJobStatus::DUPLICATE => $this->t('import.action.open_original'),
+            default => $this->t('import.action.detail'),
         };
     }
 
@@ -300,16 +302,16 @@ final class AdminDashboardController extends AbstractController
         $primaryUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]);
         $primaryLabel = $this->dashboardImportActionLabel($job->status());
         $secondaryUrl = $this->generateUrl('ui_admin_import_job_list', ['status' => $job->status()->value]);
-        $secondaryLabel = 'Queue';
+        $secondaryLabel = $this->t('action.queue');
         $payload = $this->decodePayload($job);
 
         if (ImportJobStatus::PROCESSED === $job->status()) {
             $receiptId = $this->readPayloadString($payload, 'finalizedReceiptId');
             if (null !== $receiptId && null !== $this->receiptRepository->getForSystem($receiptId)) {
                 $primaryUrl = $this->generateUrl('ui_admin_receipt_show', ['id' => $receiptId, 'return_to' => $returnTo]);
-                $primaryLabel = 'Open receipt';
+                $primaryLabel = $this->t('import.action.open_receipt');
                 $secondaryUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]);
-                $secondaryLabel = 'Detail';
+                $secondaryLabel = $this->t('import.action.detail');
             }
         }
 
@@ -317,16 +319,16 @@ final class AdminDashboardController extends AbstractController
             $receiptId = $this->readPayloadString($payload, 'duplicateOfReceiptId');
             if (null !== $receiptId && null !== $this->receiptRepository->getForSystem($receiptId)) {
                 $primaryUrl = $this->generateUrl('ui_admin_receipt_show', ['id' => $receiptId, 'return_to' => $returnTo]);
-                $primaryLabel = 'Open receipt';
+                $primaryLabel = $this->t('import.action.open_receipt');
                 $secondaryUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]);
-                $secondaryLabel = 'Detail';
+                $secondaryLabel = $this->t('import.action.detail');
             } else {
                 $originalImportId = $this->readPayloadString($payload, 'duplicateOfImportJobId');
                 if (null !== $originalImportId) {
                     $primaryUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $originalImportId, 'return_to' => $returnTo]);
-                    $primaryLabel = 'Open original';
+                    $primaryLabel = $this->t('import.action.open_original');
                     $secondaryUrl = $this->generateUrl('ui_admin_import_job_show', ['id' => $job->id()->toString(), 'return_to' => $returnTo]);
-                    $secondaryLabel = 'Detail';
+                    $secondaryLabel = $this->t('import.action.detail');
                 }
             }
         }
@@ -393,6 +395,12 @@ final class AdminDashboardController extends AbstractController
         $owner = $this->userManager->getUser($ownerId);
 
         return null !== $owner ? sprintf('%s (%s)', $owner->email, $ownerId) : $ownerId;
+    }
+
+    /** @param array<string, scalar> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 
     /**

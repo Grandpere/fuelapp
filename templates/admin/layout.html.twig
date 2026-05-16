@@ -354,48 +354,48 @@
                     type="button"
                     data-admin-sidebar-toggle
                     aria-expanded="false"
-                    aria-label="Show admin menu"
-                    title="Show admin menu"
+                    aria-label="{{ 'admin.shell.show_menu'|trans }}"
+                    title="{{ 'admin.shell.show_menu'|trans }}"
                 >
                     <span aria-hidden="true">▶</span>
                 </button>
-                <span class="admin-sidebar-collapsed-label">Admin</span>
+                <span class="admin-sidebar-collapsed-label">{{ 'admin.shell.rail_label'|trans }}</span>
             </div>
         </div>
 
-        <aside class="admin-sidebar card" aria-label="Navigation admin">
+        <aside class="admin-sidebar card" aria-label="{{ 'admin.shell.nav_label'|trans }}">
             <div class="admin-sidebar-head">
                 <div class="admin-sidebar-title-block">
-                    <h1 class="admin-title">Back-office</h1>
-                    <p class="admin-subtitle">Operations and system management</p>
+                    <h1 class="admin-title">{{ 'admin.shell.title'|trans }}</h1>
+                    <p class="admin-subtitle">{{ 'admin.shell.subtitle'|trans }}</p>
                 </div>
                 <button
                     class="btn btn-secondary btn-compact admin-sidebar-toggle"
                     type="button"
                     data-admin-sidebar-toggle
                     aria-expanded="true"
-                    aria-label="Hide admin menu"
-                    title="Hide admin menu"
+                    aria-label="{{ 'admin.shell.hide_menu'|trans }}"
+                    title="{{ 'admin.shell.hide_menu'|trans }}"
                 >
                     <span aria-hidden="true">◀</span>
                 </button>
             </div>
             <div class="admin-sidebar-actions">
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}">Back to app</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}">{{ 'admin.shell.back_to_app'|trans }}</a>
             </div>
             <nav class="admin-nav">
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'dashboard' ? 'is-active' : '' }}" href="{{ path('ui_admin_dashboard') }}">Dashboard</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'users' ? 'is-active' : '' }}" href="{{ path('ui_admin_user_list') }}">Users</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'identities' ? 'is-active' : '' }}" href="{{ path('ui_admin_identity_list') }}">Identities</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'stations' ? 'is-active' : '' }}" href="{{ path('ui_admin_station_list') }}">Stations</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'public_fuel_stations' ? 'is-active' : '' }}" href="{{ path('ui_admin_public_fuel_station_diagnostics') }}">Public Fuel Stations</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'receipts' ? 'is-active' : '' }}" href="{{ path('ui_admin_receipt_list') }}">Receipts</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'vehicles' ? 'is-active' : '' }}" href="{{ path('ui_admin_vehicle_list') }}">Vehicles</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'maintenance_events' ? 'is-active' : '' }}" href="{{ path('ui_admin_maintenance_event_list') }}">Maintenance Events</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'maintenance_reminders' ? 'is-active' : '' }}" href="{{ path('ui_admin_maintenance_reminder_list') }}">Maintenance Reminders</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'imports' ? 'is-active' : '' }}" href="{{ path('ui_admin_import_job_list') }}">Imports</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'security_activities' ? 'is-active' : '' }}" href="{{ path('ui_admin_security_activity_list') }}">Security Activities</a>
-                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'audit' ? 'is-active' : '' }}" href="{{ path('ui_admin_audit_log_list') }}">Audit Logs</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'dashboard' ? 'is-active' : '' }}" href="{{ path('ui_admin_dashboard') }}">{{ 'admin.shell.nav.dashboard'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'users' ? 'is-active' : '' }}" href="{{ path('ui_admin_user_list') }}">{{ 'admin.shell.nav.users'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'identities' ? 'is-active' : '' }}" href="{{ path('ui_admin_identity_list') }}">{{ 'admin.shell.nav.identities'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'stations' ? 'is-active' : '' }}" href="{{ path('ui_admin_station_list') }}">{{ 'admin.shell.nav.stations'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'public_fuel_stations' ? 'is-active' : '' }}" href="{{ path('ui_admin_public_fuel_station_diagnostics') }}">{{ 'admin.shell.nav.public_fuel_stations'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'receipts' ? 'is-active' : '' }}" href="{{ path('ui_admin_receipt_list') }}">{{ 'admin.shell.nav.receipts'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'vehicles' ? 'is-active' : '' }}" href="{{ path('ui_admin_vehicle_list') }}">{{ 'admin.shell.nav.vehicles'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'maintenance_events' ? 'is-active' : '' }}" href="{{ path('ui_admin_maintenance_event_list') }}">{{ 'admin.shell.nav.maintenance_events'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'maintenance_reminders' ? 'is-active' : '' }}" href="{{ path('ui_admin_maintenance_reminder_list') }}">{{ 'admin.shell.nav.maintenance_reminders'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'imports' ? 'is-active' : '' }}" href="{{ path('ui_admin_import_job_list') }}">{{ 'admin.shell.nav.imports'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'security_activities' ? 'is-active' : '' }}" href="{{ path('ui_admin_security_activity_list') }}">{{ 'admin.shell.nav.security_activities'|trans }}</a>
+                <a class="admin-nav-link {{ admin_section is defined and admin_section == 'audit' ? 'is-active' : '' }}" href="{{ path('ui_admin_audit_log_list') }}">{{ 'admin.shell.nav.audit_logs'|trans }}</a>
             </nav>
         </aside>
 
@@ -405,11 +405,11 @@
                 <section class="card card-subtle admin-request-correlation">
                     <div class="admin-page-head">
                         <div class="admin-page-header">
-                            <strong>Request correlation</strong>
-                            <p class="muted compact-note">Keep this id when a support action or rendering issue needs log or audit follow-up.</p>
+                            <strong>{{ 'admin.shell.request_correlation_title'|trans }}</strong>
+                            <p class="muted compact-note">{{ 'admin.shell.request_correlation_lead'|trans }}</p>
                         </div>
                         <div class="admin-page-actions">
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list', {correlationId: requestCorrelationId}) }}">Audit trail</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list', {correlationId: requestCorrelationId}) }}">{{ 'admin.shell.request_correlation_action'|trans }}</a>
                         </div>
                     </div>
                     <code>{{ requestCorrelationId }}</code>
@@ -418,7 +418,7 @@
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
                     <div class="flash{{ label == 'error' ? ' flash-error' : '' }}">
-                        {{ message }}
+                        {{ message|trans }}
                     </div>
                 {% endfor %}
             {% endfor %}
@@ -431,6 +431,8 @@
             const storageKey = 'fuelapp.adminSidebarCollapsed';
             const shell = document.querySelector('[data-admin-shell]');
             const toggles = Array.from(document.querySelectorAll('[data-admin-sidebar-toggle]'));
+            const showMenuLabel = {{ 'admin.shell.show_menu'|trans|json_encode|raw }};
+            const hideMenuLabel = {{ 'admin.shell.hide_menu'|trans|json_encode|raw }};
 
             if (!shell || toggles.length === 0) {
                 return;
@@ -441,8 +443,8 @@
                 toggles.forEach((toggle) => {
                     toggle.innerHTML = '<span aria-hidden="true">' + (collapsed ? '▶' : '◀') + '</span>';
                     toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-                    toggle.setAttribute('aria-label', collapsed ? 'Show admin menu' : 'Hide admin menu');
-                    toggle.setAttribute('title', collapsed ? 'Show admin menu' : 'Hide admin menu');
+                    toggle.setAttribute('aria-label', collapsed ? showMenuLabel : hideMenuLabel);
+                    toggle.setAttribute('title', collapsed ? showMenuLabel : hideMenuLabel);
                 });
             };
 

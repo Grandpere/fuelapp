@@ -1,46 +1,46 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}{{ 'admin.dashboard.title'|trans }}{% endblock %}
 
 {% set admin_section = 'dashboard' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Admin Dashboard</h2>
-            <p class="muted">Triage first, then drill straight into the support queue that needs attention.</p>
+            <h2 class="page-title">{{ 'admin.dashboard.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.dashboard.lead'|trans }}</p>
         </div>
 
         <div class="admin-metric-grid metric-grid-spaced">
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Failed imports</p>
+                <p class="admin-metric-label">{{ 'admin.dashboard.metrics.failed_imports'|trans }}</p>
                 <p class="admin-metric-value">{{ importMetrics['failed']|default(0) }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Needs review</p>
+                <p class="admin-metric-label">{{ 'admin.dashboard.metrics.needs_review'|trans }}</p>
                 <p class="admin-metric-value">{{ importMetrics['needs_review']|default(0) }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Due reminders</p>
+                <p class="admin-metric-label">{{ 'admin.dashboard.metrics.due_reminders'|trans }}</p>
                 <p class="admin-metric-value">{{ dueReminderCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Receipts</p>
+                <p class="admin-metric-label">{{ 'admin.dashboard.metrics.receipts'|trans }}</p>
                 <p class="admin-metric-value">{{ receiptCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Vehicles</p>
+                <p class="admin-metric-label">{{ 'admin.dashboard.metrics.vehicles'|trans }}</p>
                 <p class="admin-metric-value">{{ vehicleCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Stations</p>
+                <p class="admin-metric-label">{{ 'admin.dashboard.metrics.stations'|trans }}</p>
                 <p class="admin-metric-value">{{ stationCount }}</p>
             </article>
         </div>
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Needs attention now</h3>
+        <h3 class="section-title">{{ 'admin.dashboard.attention_title'|trans }}</h3>
         {% if attentionCards is not empty %}
             <div class="admin-dashboard-columns">
                 {% for card in attentionCards %}
@@ -58,12 +58,12 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p class="muted">No import or maintenance triage queue is currently asking for immediate admin follow-up.</p>
+            <p class="muted">{{ 'admin.dashboard.attention_empty'|trans }}</p>
         {% endif %}
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Recent receipts</h3>
+        <h3 class="section-title">{{ 'admin.dashboard.recent_receipts_title'|trans }}</h3>
         {% if recentReceipts is not empty %}
             <div class="admin-dashboard-list">
                 {% for receipt in recentReceipts %}
@@ -75,46 +75,46 @@
                         <p class="muted compact-note">{{ receipt.id }}</p>
                         <div class="compact-note">
                             {% if receipt.vehicleId %}
-                                Vehicle: {{ vehicleNames[receipt.vehicleId]|default(receipt.vehicleId) }}
+                                {{ 'admin.dashboard.receipt_vehicle'|trans }}: {{ vehicleNames[receipt.vehicleId]|default(receipt.vehicleId) }}
                             {% else %}
-                                Vehicle: n/a
+                                {{ 'admin.dashboard.receipt_vehicle'|trans }}: {{ 'common.na'|trans }}
                             {% endif %}
                             ·
                             {% if receipt.stationId %}
-                                Station: {{ stationNames[receipt.stationId]|default(receipt.stationId) }}
+                                {{ 'admin.dashboard.receipt_station'|trans }}: {{ stationNames[receipt.stationId]|default(receipt.stationId) }}
                             {% else %}
-                                Station: n/a
+                                {{ 'admin.dashboard.receipt_station'|trans }}: {{ 'common.na'|trans }}
                             {% endif %}
                         </div>
                         <div class="action-row">
-                            <a class="btn btn-secondary btn-compact" href="{{ receipt.showUrl }}">Open</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ receipt.editUrl }}">Edit</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ receipt.showUrl }}">{{ 'action.open'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ receipt.editUrl }}">{{ 'action.edit'|trans }}</a>
                             {% if receipt.vehicleId %}
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicleId, return_to: app.request.requestUri}) }}">Vehicle</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicleId, return_to: app.request.requestUri}) }}">{{ 'admin.dashboard.receipt_vehicle'|trans }}</a>
                             {% endif %}
                             {% if receipt.stationId %}
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: receipt.stationId, return_to: app.request.requestUri}) }}">Station</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: receipt.stationId, return_to: app.request.requestUri}) }}">{{ 'admin.dashboard.receipt_station'|trans }}</a>
                             {% endif %}
                             {% if receipt.importUrl %}
-                                <a class="btn btn-secondary btn-compact" href="{{ receipt.importUrl }}">Import</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ receipt.importUrl }}">{{ 'admin.shell.nav.imports'|trans }}</a>
                             {% endif %}
                         </div>
                     </article>
                 {% endfor %}
             </div>
         {% else %}
-            <p class="muted">No receipts are available yet in the admin ledger.</p>
+            <p class="muted">{{ 'admin.dashboard.recent_receipts_empty'|trans }}</p>
         {% endif %}
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Import queue snapshot</h3>
+        <h3 class="section-title">{{ 'admin.dashboard.import_snapshot_title'|trans }}</h3>
         {% if recentImports is not empty %}
             <div class="admin-dashboard-list">
                 {% for job in recentImports %}
                     <article class="card-subtle card-subtle-block admin-dashboard-item">
                         <div class="admin-dashboard-item-head">
-                            <span class="pill status-pill status-{{ job.status }}">{{ job.status|replace({'_': ' '}) }}</span>
+                            <span class="pill status-pill status-{{ job.status }}">{{ ('import.status.' ~ job.status)|trans }}</span>
                             <span class="muted">{{ job.createdAt|date('Y-m-d H:i') }}</span>
                         </div>
                         <strong>{{ job.file }}</strong>
@@ -127,85 +127,85 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p class="muted">No imports have been recorded yet.</p>
+            <p class="muted">{{ 'admin.dashboard.imports_empty'|trans }}</p>
         {% endif %}
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Support hub</h3>
+        <h3 class="section-title">{{ 'admin.dashboard.support_hub_title'|trans }}</h3>
         <div class="admin-dashboard-columns">
             <article class="card-subtle card-subtle-block admin-dashboard-item">
                 <div class="admin-dashboard-item-head">
-                    <strong>Import recovery</strong>
-                    <span class="muted compact-note">{{ importMetrics['failed']|default(0) }} failed · {{ importMetrics['needs_review']|default(0) }} needs review</span>
+                    <strong>{{ 'admin.dashboard.support.import_recovery_title'|trans }}</strong>
+                    <span class="muted compact-note">{{ 'admin.dashboard.support.import_recovery_counts'|trans({'%failed%': importMetrics['failed']|default(0), '%review%': importMetrics['needs_review']|default(0)}) }}</span>
                 </div>
-                <p class="muted">Start from the queue that is blocking support, then jump into the right receipt or original import dossier.</p>
+                <p class="muted">{{ 'admin.dashboard.support.import_recovery_lead'|trans }}</p>
                 <div class="action-row">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'failed'}) }}">Failed imports</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'needs_review'}) }}">Needs review</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'processed'}) }}">Processed imports</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'duplicate'}) }}">Duplicate imports</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'failed'}) }}">{{ 'admin.dashboard.metrics.failed_imports'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'needs_review'}) }}">{{ 'admin.dashboard.metrics.needs_review'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'processed'}) }}">{{ 'import.status.processed'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_import_job_list', {status: 'duplicate'}) }}">{{ 'import.status.duplicate'|trans }}</a>
                 </div>
             </article>
 
             <article class="card-subtle card-subtle-block admin-dashboard-item">
                 <div class="admin-dashboard-item-head">
-                    <strong>Maintenance investigation</strong>
-                    <span class="muted compact-note">{{ dueReminderCount }} due now · {{ maintenanceReminderCount }} reminders · {{ maintenanceEventCount }} events</span>
+                    <strong>{{ 'admin.dashboard.support.maintenance_investigation_title'|trans }}</strong>
+                    <span class="muted compact-note">{{ 'admin.dashboard.support.maintenance_investigation_counts'|trans({'%due%': dueReminderCount, '%reminders%': maintenanceReminderCount, '%events%': maintenanceEventCount}) }}</span>
                 </div>
-                <p class="muted">Keep reminder, event, receipt, and vehicle context close while reconstructing a maintenance case.</p>
+                <p class="muted">{{ 'admin.dashboard.support.maintenance_investigation_lead'|trans }}</p>
                 <div class="action-row">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Browse reminders</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list') }}">Browse events</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Browse receipts</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">{{ 'admin.shell.nav.maintenance_reminders'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list') }}">{{ 'admin.shell.nav.maintenance_events'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">{{ 'admin.shell.nav.receipts'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">{{ 'admin.shell.nav.vehicles'|trans }}</a>
                 </div>
             </article>
 
             <article class="card-subtle card-subtle-block admin-dashboard-item">
                 <div class="admin-dashboard-item-head">
-                    <strong>Vehicle queues</strong>
-                    <span class="muted compact-note">{{ supportSignals.vehicleDueCount }} due now · {{ supportSignals.vehiclesWithoutReceipts }} without receipts</span>
+                    <strong>{{ 'admin.dashboard.support.vehicle_queues_title'|trans }}</strong>
+                    <span class="muted compact-note">{{ 'admin.dashboard.support.vehicle_queues_counts'|trans({'%due%': supportSignals.vehicleDueCount, '%without_receipts%': supportSignals.vehiclesWithoutReceipts}) }}</span>
                 </div>
-                <p class="muted">Use the vehicle queue when support needs the next maintenance-heavy or still-unlinked vehicle dossier.</p>
+                <p class="muted">{{ 'admin.dashboard.support.vehicle_queues_lead'|trans }}</p>
                 <div class="action-row">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">Browse vehicles</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Due reminders</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Receipt queue</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">{{ 'admin.shell.nav.vehicles'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">{{ 'admin.dashboard.metrics.due_reminders'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">{{ 'admin.shell.nav.receipts'|trans }}</a>
                 </div>
             </article>
 
             <article class="card-subtle card-subtle-block admin-dashboard-item">
                 <div class="admin-dashboard-item-head">
-                    <strong>Station queues</strong>
-                    <span class="muted compact-note">{{ supportSignals.stationsWithoutReceipts }} without receipts · {{ supportSignals.pendingStationCount }} pending geocoding</span>
+                    <strong>{{ 'admin.dashboard.support.station_queues_title'|trans }}</strong>
+                    <span class="muted compact-note">{{ 'admin.dashboard.support.station_queues_counts'|trans({'%without_receipts%': supportSignals.stationsWithoutReceipts, '%pending%': supportSignals.pendingStationCount}) }}</span>
                 </div>
-                <p class="muted">Use the station queue to resolve address quality and receipt-linking gaps before they spill into support follow-up.</p>
+                <p class="muted">{{ 'admin.dashboard.support.station_queues_lead'|trans }}</p>
                 <div class="action-row">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">Browse stations</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Receipt queue</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">{{ 'admin.shell.nav.stations'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">{{ 'admin.shell.nav.receipts'|trans }}</a>
                 </div>
             </article>
 
             <article class="card-subtle card-subtle-block admin-dashboard-item">
                 <div class="admin-dashboard-item-head">
-                    <strong>Account recovery</strong>
-                    <span class="muted compact-note">{{ supportSignals.missingIdentityCount }} missing identities · {{ supportSignals.unverifiedUserCount }} unverified users</span>
+                    <strong>{{ 'admin.dashboard.support.account_recovery_title'|trans }}</strong>
+                    <span class="muted compact-note">{{ 'admin.dashboard.support.account_recovery_counts'|trans({'%missing_identities%': supportSignals.missingIdentityCount, '%unverified%': supportSignals.unverifiedUserCount}) }}</span>
                 </div>
-                <p class="muted">Use the support investigation screens together when a login, verification, or account-state problem needs a full timeline.</p>
+                <p class="muted">{{ 'admin.dashboard.support.account_recovery_lead'|trans }}</p>
                 <div class="action-row">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {has_identity: '0'}) }}">Missing identities</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {verification: 'unverified'}) }}">Unverified users</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_security_activity_list') }}">Security activities</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list') }}">Audit logs</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {has_identity: '0'}) }}">{{ 'admin.dashboard.attention.missing_identities_title'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {verification: 'unverified'}) }}">{{ 'admin.dashboard.attention.unverified_accounts_title'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_security_activity_list') }}">{{ 'admin.shell.nav.security_activities'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list') }}">{{ 'admin.shell.nav.audit_logs'|trans }}</a>
                 </div>
             </article>
         </div>
 
         <div class="actions-wrap admin-table-top">
-            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">Browse stations</a>
-            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_identity_list') }}">Browse identities</a>
-            <a class="btn btn-secondary btn-compact" href="/api/docs">Open API docs</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">{{ 'admin.shell.nav.stations'|trans }}</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_identity_list') }}">{{ 'admin.shell.nav.identities'|trans }}</a>
+            <a class="btn btn-secondary btn-compact" href="/api/docs">{{ 'admin.dashboard.support.open_api_docs'|trans }}</a>
         </div>
     </section>
 {% endblock %}

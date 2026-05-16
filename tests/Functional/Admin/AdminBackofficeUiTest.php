@@ -296,27 +296,27 @@ final class AdminBackofficeUiTest extends WebTestCase
         $dashboardResponse = $this->request('GET', '/ui/admin', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $dashboardResponse->getStatusCode());
         self::assertStringContainsString('Back-office', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Needs attention now', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Open next failure', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Open next review', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Open next due reminder', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Open queue', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Recent receipts', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Import queue snapshot', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Support hub', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Request correlation', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Import recovery', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Maintenance investigation', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Vehicle queues', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Station queues', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Account recovery', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Duplicate imports', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Security activities', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('À traiter maintenant', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Ouvrir le prochain échec', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Ouvrir la prochaine relecture', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Ouvrir le prochain rappel dû', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Ouvrir la file', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Reçus récents', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Instantané de la file d’import', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Hub support', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Corrélation de requête', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Récupération des imports', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Investigation entretien', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Files véhicules', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Files stations', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Récupération de compte', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Doublon', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Activités de sécurité', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('ui-import.pdf', (string) $dashboardResponse->getContent());
         self::assertStringContainsString('ui-import-failed.pdf', (string) $dashboardResponse->getContent());
         self::assertStringContainsString((string) $receipt->getId(), (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Edit', (string) $dashboardResponse->getContent());
-        self::assertStringContainsString('Import', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Modifier', (string) $dashboardResponse->getContent());
+        self::assertStringContainsString('Imports', (string) $dashboardResponse->getContent());
 
         $stationsResponse = $this->request('GET', '/ui/admin/stations', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $stationsResponse->getStatusCode());
@@ -365,18 +365,18 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $importsResponse->getStatusCode());
         $importsContent = (string) $importsResponse->getContent();
         self::assertStringContainsString('data-admin-sidebar-toggle', $importsContent);
-        self::assertStringContainsString('aria-label="Hide admin menu"', $importsContent);
+        self::assertStringContainsString('aria-label="Masquer le menu admin"', $importsContent);
         self::assertStringContainsString('admin-sidebar-collapsed-rail', $importsContent);
         self::assertStringContainsString('ui-import.pdf', $importsContent);
-        self::assertStringContainsString('needs_review', $importsContent);
+        self::assertStringContainsString('À relire', $importsContent);
         self::assertStringContainsString('data-controller="row-link"', $importsContent);
-        self::assertStringContainsString('Queue decision speed', $importsContent);
-        self::assertStringContainsString('Review next pending', $importsContent);
-        self::assertStringContainsString('Manual review needed', $importsContent);
-        self::assertStringContainsString('Cause:', $importsContent);
-        self::assertStringContainsString('Next:', $importsContent);
-        self::assertStringContainsString('Active filters', $importsContent);
-        self::assertStringContainsString('Status: needs_review', $importsContent);
+        self::assertStringContainsString('Décision rapide sur la file', $importsContent);
+        self::assertStringContainsString('Relire le prochain en attente', $importsContent);
+        self::assertStringContainsString('Relecture manuelle nécessaire', $importsContent);
+        self::assertStringContainsString('Cause', $importsContent);
+        self::assertStringContainsString('Suite', $importsContent);
+        self::assertStringContainsString('Filtres actifs', $importsContent);
+        self::assertStringContainsString('Statut: À relire', $importsContent);
 
         $securityResponse = $this->request('GET', '/ui/admin/security-activities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $securityResponse->getStatusCode());
@@ -974,8 +974,8 @@ final class AdminBackofficeUiTest extends WebTestCase
         $reviewResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $reviewResponse->getStatusCode());
         $reviewContent = (string) $reviewResponse->getContent();
-        self::assertStringContainsString('Date required before finalization', $reviewContent);
-        self::assertStringContainsString('Required for this import: OCR did not detect the receipt date.', $reviewContent);
+        self::assertStringContainsString('Date requise avant finalisation', $reviewContent);
+        self::assertStringContainsString('Obligatoire pour cet import : l’OCR n’a pas détecté la date du reçu.', $reviewContent);
         self::assertStringContainsString('name="issuedAt"', $reviewContent);
     }
 
@@ -1032,7 +1032,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $reviewResponse = $this->request('GET', '/ui/admin/imports/'.$jobId.'?return_to=%2Fui%2Fadmin%2Fimports%3Fstatus%3Dneeds_review', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $reviewResponse->getStatusCode());
         $reviewContent = (string) $reviewResponse->getContent();
-        self::assertStringContainsString('Receipt lines', $reviewContent);
+        self::assertStringContainsString('Lignes du reçu', $reviewContent);
         self::assertStringContainsString('name="lines[0][fuelType]"', $reviewContent);
         self::assertStringContainsString('name="lines[1][fuelType]"', $reviewContent);
         self::assertStringContainsString('name="_redirect"', $reviewContent);
@@ -1112,10 +1112,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId.'?return_to=%2Fui%2Fadmin%2Fimports%3Fstatus%3Dfailed', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Retry Failed Job', $detailContent);
+        self::assertStringContainsString('Relancer la tâche en échec', $detailContent);
         self::assertStringContainsString('name="_redirect"', $detailContent);
         self::assertStringContainsString('status%3Dfailed', $detailContent);
-        preg_match('#name="_token" value="([^"]+)".*?Retry job#s', $detailContent, $matches);
+        preg_match('#name="_token" value="([^"]+)".*?Relancer la tâche#s', $detailContent, $matches);
         self::assertArrayHasKey(1, $matches);
 
         $retryResponse = $this->request(
@@ -1516,13 +1516,13 @@ final class AdminBackofficeUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Import completed', $detailContent);
+        self::assertStringContainsString('Import terminé', $detailContent);
         self::assertStringContainsString('/ui/admin/receipts/'.$receiptId, $detailContent);
-        self::assertStringContainsString('Open created receipt', $detailContent);
-        self::assertStringContainsString('Receipt continuity', $detailContent);
-        self::assertStringContainsString('Support diagnostics', $detailContent);
-        self::assertStringContainsString('Owner security', $detailContent);
-        self::assertStringContainsString('Request audit trail', $detailContent);
+        self::assertStringContainsString('Ouvrir le reçu créé', $detailContent);
+        self::assertStringContainsString('Continuité du reçu', $detailContent);
+        self::assertStringContainsString('Diagnostic support', $detailContent);
+        self::assertStringContainsString('Sécurité du propriétaire', $detailContent);
+        self::assertStringContainsString('Piste d’audit de la requête', $detailContent);
         self::assertStringContainsString('/ui/admin/vehicles/'.$vehicle->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('/ui/admin/stations/'.$station->getId()->toRfc4122(), $detailContent);
     }
@@ -1693,10 +1693,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/admin/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('Import en doublon', $detailContent);
         self::assertStringContainsString('/ui/admin/imports/'.$originalJobId, $detailContent);
-        self::assertStringContainsString('Open original import', $detailContent);
-        self::assertStringContainsString('Back to queue', $detailContent);
+        self::assertStringContainsString('Ouvrir l’import d’origine', $detailContent);
+        self::assertStringContainsString('Retour aux imports', $detailContent);
     }
 
     public function testAdminStationListAndDetailExposeReceiptShortcuts(): void
@@ -1826,9 +1826,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Duplicate import', $detailContent);
+        self::assertStringContainsString('Import en doublon', $detailContent);
         self::assertStringContainsString('/ui/admin/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
-        self::assertStringContainsString('Open existing receipt', $detailContent);
+        self::assertStringContainsString('Ouvrir le reçu existant', $detailContent);
     }
 
     public function testAdminDuplicateImportDetailDoesNotShowDeadLinksWhenTargetsAreGone(): void
@@ -1867,10 +1867,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Duplicate import', $detailContent);
-        self::assertStringContainsString('The linked receipt or original import is no longer available.', $detailContent);
-        self::assertStringNotContainsString('Open existing receipt', $detailContent);
-        self::assertStringNotContainsString('Open original import', $detailContent);
+        self::assertStringContainsString('Import en doublon', $detailContent);
+        self::assertStringContainsString('Le reçu lié ou l’import d’origine n’est plus disponible.', $detailContent);
+        self::assertStringNotContainsString('Ouvrir le reçu existant', $detailContent);
+        self::assertStringNotContainsString('Ouvrir l’import d’origine', $detailContent);
         self::assertStringNotContainsString('/ui/admin/receipts/'.$missingReceiptId, $detailContent);
         self::assertStringNotContainsString('/ui/admin/imports/'.$missingImportId, $detailContent);
     }
@@ -1919,14 +1919,14 @@ final class AdminBackofficeUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Triage summary', $detailContent);
-        self::assertStringContainsString('Triage readout', $detailContent);
-        self::assertStringContainsString('Retry count at terminal state', $detailContent);
+        self::assertStringContainsString('Résumé de triage', $detailContent);
+        self::assertStringContainsString('Lecture de triage', $detailContent);
+        self::assertStringContainsString('Nombre de tentatives à l’état terminal', $detailContent);
         self::assertStringContainsString('ocr_provider_retryable_exhausted', $detailContent);
-        self::assertStringContainsString('Detected issues', $detailContent);
+        self::assertStringContainsString('Problèmes détectés', $detailContent);
         self::assertStringContainsString('2', $detailContent);
-        self::assertStringContainsString('Review the parsed payload and finalize the receipt', $detailContent);
-        self::assertStringContainsString('Current fallback strategy: manual review.', $detailContent);
+        self::assertStringContainsString('Relisez la charge utile analysée puis finalisez le reçu lorsque les champs manquants semblent fiables.', $detailContent);
+        self::assertStringContainsString('Stratégie de repli actuelle : manual review.', $detailContent);
     }
 
     public function testAdminFailedImportDetailShowsTriageSummaryFromRawFailurePayload(): void
@@ -1960,13 +1960,13 @@ final class AdminBackofficeUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/admin/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Triage summary', $detailContent);
-        self::assertStringContainsString('Triage readout', $detailContent);
-        self::assertStringContainsString('Terminal detail', $detailContent);
+        self::assertStringContainsString('Résumé de triage', $detailContent);
+        self::assertStringContainsString('Lecture de triage', $detailContent);
+        self::assertStringContainsString('Détail terminal', $detailContent);
         self::assertStringContainsString('ocr_provider_permanent: provider quota exceeded', $detailContent);
-        self::assertStringContainsString('OCR retry count', $detailContent);
+        self::assertStringContainsString('Nombre de tentatives OCR', $detailContent);
         self::assertStringContainsString('2', $detailContent);
-        self::assertStringContainsString('Inspect the failure, then retry only if the underlying provider or input issue has been addressed.', $detailContent);
+        self::assertStringContainsString('Inspectez l’échec, puis ne relancez que si le problème de fournisseur ou d’entrée a été traité.', $detailContent);
     }
 
     /**

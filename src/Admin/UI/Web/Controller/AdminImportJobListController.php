@@ -24,6 +24,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminImportJobListController extends AbstractController
 {
@@ -31,6 +32,7 @@ final class AdminImportJobListController extends AbstractController
         private readonly AdminUserManager $userManager,
         private readonly ImportJobRepository $importJobRepository,
         private readonly ReceiptRepository $receiptRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -148,29 +150,29 @@ final class AdminImportJobListController extends AbstractController
     {
         return match ($job->status()) {
             ImportJobStatus::QUEUED => [
-                'headline' => 'Waiting in queue',
-                'detail' => 'Still queued before OCR starts.',
+                'headline' => $this->t('import.list.summary.queued_headline'),
+                'detail' => $this->t('import.list.summary.queued_detail'),
             ],
             ImportJobStatus::PROCESSING => [
-                'headline' => 'OCR running',
-                'detail' => 'The file is still being processed.',
+                'headline' => $this->t('import.list.summary.processing_headline'),
+                'detail' => $this->t('import.list.summary.processing_detail'),
             ],
             ImportJobStatus::NEEDS_REVIEW => [
-                'headline' => 'Manual review needed',
+                'headline' => $this->t('import.list.summary.needs_review_headline'),
                 'detail' => $this->readNeedsReviewDetail($payload),
             ],
             ImportJobStatus::FAILED => [
-                'headline' => 'Processing failed',
+                'headline' => $this->t('import.list.summary.failed_headline'),
                 'detail' => $this->readFailedDetail($payload, $job->errorPayload()),
             ],
             ImportJobStatus::PROCESSED => [
-                'headline' => 'Receipt already created',
+                'headline' => $this->t('admin.import.index.summary.receipt_created'),
                 'detail' => null !== $this->resolveExistingReceiptId($this->readStringValue($payload, 'finalizedReceiptId'))
-                    ? 'You can jump straight to the created receipt.'
-                    : 'Processing completed, but the linked receipt is no longer available.',
+                    ? $this->t('import.list.summary.processed_detail_receipt')
+                    : $this->t('import.list.summary.processed_detail'),
             ],
             ImportJobStatus::DUPLICATE => [
-                'headline' => 'Duplicate already handled',
+                'headline' => $this->t('import.list.summary.duplicate_headline'),
                 'detail' => $this->readDuplicateDetail($payload),
             ],
         };
@@ -186,29 +188,29 @@ final class AdminImportJobListController extends AbstractController
         return match ($job->status()) {
             ImportJobStatus::NEEDS_REVIEW => [
                 'cause' => $this->readNeedsReviewDetail($payload),
-                'nextStep' => 'Review extracted values, fix gaps, then finalize.',
+                'nextStep' => $this->t('admin.import.index.summary.review_fix_finalize'),
             ],
             ImportJobStatus::FAILED => [
                 'cause' => $this->readFailedDetail($payload, $job->errorPayload()),
                 'nextStep' => $job->ocrRetryCount() > 0
-                    ? 'Retry only after checking the provider or input issue.'
-                    : 'Inspect the failure details, then decide whether a retry is safe.',
+                    ? $this->t('admin.import.index.summary.retry_after_check')
+                    : $this->t('admin.import.index.summary.inspect_then_retry'),
             ],
             ImportJobStatus::PROCESSED => [
-                'cause' => 'A receipt was already created for this import.',
-                'nextStep' => 'Jump straight to the resulting receipt if support continues there.',
+                'cause' => $this->t('admin.import.index.summary.receipt_created'),
+                'nextStep' => $this->t('admin.import.index.summary.continue_on_receipt'),
             ],
             ImportJobStatus::DUPLICATE => [
                 'cause' => $this->readDuplicateDetail($payload),
-                'nextStep' => 'Open the linked receipt or original import before taking action.',
+                'nextStep' => $this->t('admin.import.index.summary.open_linked_before_action'),
             ],
             ImportJobStatus::PROCESSING => [
-                'cause' => 'OCR is still running for this upload.',
-                'nextStep' => 'Wait for a terminal state before intervening.',
+                'cause' => $this->t('admin.import.index.summary.ocr_running'),
+                'nextStep' => $this->t('admin.import.index.summary.wait_terminal_state'),
             ],
             ImportJobStatus::QUEUED => [
-                'cause' => 'The job has not started processing yet.',
-                'nextStep' => 'Keep the queue moving unless it stalls unexpectedly.',
+                'cause' => $this->t('admin.import.index.summary.not_started'),
+                'nextStep' => $this->t('admin.import.index.summary.keep_queue_moving'),
             ],
         };
     }
@@ -224,29 +226,29 @@ final class AdminImportJobListController extends AbstractController
 
         return match ($job->status()) {
             ImportJobStatus::NEEDS_REVIEW => [
-                'label' => 'Review',
+                'label' => $this->t('import.action.review'),
                 'url' => $detailUrl,
                 'variant' => 'primary',
             ],
             ImportJobStatus::FAILED => [
-                'label' => 'Inspect failure',
+                'label' => $this->t('import.follow_up.inspect_failure'),
                 'url' => $detailUrl,
                 'variant' => 'secondary',
             ],
             ImportJobStatus::PROCESSED => null !== ($receiptId = $this->resolveExistingReceiptId($this->readStringValue($payload, 'finalizedReceiptId')))
                 ? [
-                    'label' => 'Open receipt',
+                    'label' => $this->t('import.action.open_receipt'),
                     'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $receiptId]),
                     'variant' => 'secondary',
                 ]
                 : [
-                    'label' => 'Detail',
+                    'label' => $this->t('import.action.detail'),
                     'url' => $detailUrl,
                     'variant' => 'secondary',
                 ],
             ImportJobStatus::DUPLICATE => $this->buildDuplicatePrimaryAction($payload, $returnTo, $detailUrl),
             default => [
-                'label' => 'Detail',
+                'label' => $this->t('import.action.detail'),
                 'url' => $detailUrl,
                 'variant' => 'secondary',
             ],
@@ -263,7 +265,7 @@ final class AdminImportJobListController extends AbstractController
         $receiptId = $this->resolveExistingReceiptId($this->readStringValue($payload, 'duplicateOfReceiptId'));
         if (null !== $receiptId) {
             return [
-                'label' => 'Open receipt',
+                'label' => $this->t('import.action.open_receipt'),
                 'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $receiptId]),
                 'variant' => 'secondary',
             ];
@@ -272,14 +274,14 @@ final class AdminImportJobListController extends AbstractController
         $importId = $this->resolveExistingImportId($this->readStringValue($payload, 'duplicateOfImportJobId'));
         if (null !== $importId) {
             return [
-                'label' => 'Open original',
+                'label' => $this->t('import.action.open_original'),
                 'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $importId, 'return_to' => $returnTo]),
                 'variant' => 'secondary',
             ];
         }
 
         return [
-            'label' => 'Detail',
+            'label' => $this->t('import.action.detail'),
             'url' => $detailUrl,
             'variant' => 'secondary',
         ];
@@ -297,12 +299,12 @@ final class AdminImportJobListController extends AbstractController
         return match ($job->status()) {
             ImportJobStatus::PROCESSED,
             ImportJobStatus::DUPLICATE => [
-                'label' => 'Detail',
+                'label' => $this->t('import.action.detail'),
                 'url' => $detailUrl,
                 'variant' => 'secondary',
             ],
             ImportJobStatus::FAILED => [
-                'label' => 'Detail',
+                'label' => $this->t('import.action.detail'),
                 'url' => $detailUrl,
                 'variant' => 'secondary',
             ],
@@ -318,28 +320,28 @@ final class AdminImportJobListController extends AbstractController
         $summary = [];
 
         if (null !== $status) {
-            $summary[] = ['label' => 'Status', 'value' => $status];
+            $summary[] = ['label' => $this->t('admin.import.index.active_filter.status'), 'value' => $this->t('import.status.'.$status)];
         }
 
         if (null !== $ownerId) {
             $user = $this->userManager->getUser($ownerId);
-            $summary[] = ['label' => 'Owner', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $ownerId) : $ownerId];
+            $summary[] = ['label' => $this->t('admin.import.index.active_filter.owner'), 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $ownerId) : $ownerId];
         }
 
         if (null !== $source) {
-            $summary[] = ['label' => 'Source', 'value' => $source];
+            $summary[] = ['label' => $this->t('admin.import.index.active_filter.source'), 'value' => $source];
         }
 
         if (null !== $query) {
-            $summary[] = ['label' => 'Search', 'value' => $query];
+            $summary[] = ['label' => $this->t('admin.import.index.active_filter.search'), 'value' => $query];
         }
 
         if (null !== $createdFrom) {
-            $summary[] = ['label' => 'Created from', 'value' => $createdFrom->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.import.index.active_filter.created_from'), 'value' => $createdFrom->format('Y-m-d')];
         }
 
         if (null !== $createdTo) {
-            $summary[] = ['label' => 'Created to', 'value' => $createdTo->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.import.index.active_filter.created_to'), 'value' => $createdTo->format('Y-m-d')];
         }
 
         return $summary;
@@ -361,7 +363,7 @@ final class AdminImportJobListController extends AbstractController
         }
 
         $filters = [[
-            'label' => 'All',
+            'label' => $this->t('import.filter.all'),
             'count' => $allCount,
             'url' => $this->generateUrl('ui_admin_import_job_list', $query),
             'isActive' => null === $statusFilter,
@@ -369,14 +371,7 @@ final class AdminImportJobListController extends AbstractController
 
         foreach (ImportJobStatus::cases() as $status) {
             $filters[] = [
-                'label' => match ($status) {
-                    ImportJobStatus::NEEDS_REVIEW => 'Needs review',
-                    ImportJobStatus::PROCESSED => 'Processed',
-                    ImportJobStatus::PROCESSING => 'Processing',
-                    ImportJobStatus::QUEUED => 'Queued',
-                    ImportJobStatus::FAILED => 'Failed',
-                    ImportJobStatus::DUPLICATE => 'Duplicate',
-                },
+                'label' => $this->t('import.status.'.$status->value),
                 'count' => $metrics[$status->value] ?? 0,
                 'url' => $this->generateUrl('ui_admin_import_job_list', [...$query, 'status' => $status->value]),
                 'isActive' => $statusFilter === $status->value,
@@ -404,7 +399,7 @@ final class AdminImportJobListController extends AbstractController
         foreach ($rows as $row) {
             if (ImportJobStatus::NEEDS_REVIEW === $row['job']->status()) {
                 $shortcuts[] = [
-                    'label' => 'Review next pending',
+                    'label' => $this->t('admin.import.index.follow_up.review_next'),
                     'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
                     'variant' => 'primary',
                 ];
@@ -415,7 +410,7 @@ final class AdminImportJobListController extends AbstractController
         foreach ($rows as $row) {
             if (ImportJobStatus::FAILED === $row['job']->status()) {
                 $shortcuts[] = [
-                    'label' => 'Inspect latest failure',
+                    'label' => $this->t('admin.import.index.follow_up.inspect_latest_failure'),
                     'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
                     'variant' => 'secondary',
                 ];
@@ -424,9 +419,9 @@ final class AdminImportJobListController extends AbstractController
         }
 
         foreach ($rows as $row) {
-            if (ImportJobStatus::PROCESSED === $row['job']->status() && 'Open receipt' === $row['primaryAction']['label']) {
+            if (ImportJobStatus::PROCESSED === $row['job']->status() && $this->t('import.action.open_receipt') === $row['primaryAction']['label']) {
                 $shortcuts[] = [
-                    'label' => 'Open latest created receipt',
+                    'label' => $this->t('admin.import.index.follow_up.open_latest_created_receipt'),
                     'url' => $row['primaryAction']['url'],
                     'variant' => 'secondary',
                 ];
@@ -435,9 +430,9 @@ final class AdminImportJobListController extends AbstractController
         }
 
         foreach ($rows as $row) {
-            if (ImportJobStatus::DUPLICATE === $row['job']->status() && in_array($row['primaryAction']['label'], ['Open receipt', 'Open original'], true)) {
+            if (ImportJobStatus::DUPLICATE === $row['job']->status() && in_array($row['primaryAction']['label'], [$this->t('import.action.open_receipt'), $this->t('import.action.open_original')], true)) {
                 $shortcuts[] = [
-                    'label' => 'Check latest duplicate',
+                    'label' => $this->t('admin.import.index.follow_up.check_latest_duplicate'),
                     'url' => $row['primaryAction']['url'],
                     'variant' => 'secondary',
                 ];
@@ -573,17 +568,17 @@ final class AdminImportJobListController extends AbstractController
     {
         $fallbackReason = $this->readStringValue($payload, 'fallbackReason');
         if (null !== $fallbackReason) {
-            return sprintf('Fallback: %s.', $fallbackReason);
+            return $this->t('admin.import.index.summary.fallback_reason', ['%reason%' => $fallbackReason]);
         }
 
         $parsedDraft = $payload['parsedDraft'] ?? null;
         if (!is_array($parsedDraft)) {
-            return 'Open the detail page to review and finalize the extracted values.';
+            return $this->t('admin.import.index.summary.open_detail_review');
         }
 
         $issues = $parsedDraft['issues'] ?? null;
         if (!is_array($issues) || [] === $issues) {
-            return 'Open the detail page to review and finalize the extracted values.';
+            return $this->t('admin.import.index.summary.open_detail_review');
         }
 
         $normalized = [];
@@ -596,10 +591,10 @@ final class AdminImportJobListController extends AbstractController
         }
 
         if ([] === $normalized) {
-            return 'Open the detail page to review and finalize the extracted values.';
+            return $this->t('admin.import.index.summary.open_detail_review');
         }
 
-        return sprintf('Check: %s.', implode(', ', $normalized));
+        return $this->t('admin.import.index.summary.check_issues', ['%issues%' => implode(', ', $normalized)]);
     }
 
     /**
@@ -608,14 +603,14 @@ final class AdminImportJobListController extends AbstractController
     private function readDuplicateDetail(?array $payload): string
     {
         if (null !== $this->resolveExistingReceiptId($this->readStringValue($payload, 'duplicateOfReceiptId'))) {
-            return 'Matches an existing receipt that can still be opened.';
+            return $this->t('admin.import.index.summary.duplicate_receipt');
         }
 
         if (null !== $this->resolveExistingImportId($this->readStringValue($payload, 'duplicateOfImportJobId'))) {
-            return 'Matches an older import that still exists.';
+            return $this->t('admin.import.index.summary.duplicate_import');
         }
 
-        return 'The duplicate target no longer exists, so use detail for triage or cleanup.';
+        return $this->t('admin.import.index.summary.duplicate_missing_target');
     }
 
     /**
@@ -625,13 +620,19 @@ final class AdminImportJobListController extends AbstractController
     {
         $fallbackReason = $this->readStringValue($payload, 'fallbackReason');
         if (null !== $fallbackReason) {
-            return sprintf('Reason: %s.', $fallbackReason);
+            return $this->t('import.list.summary.failed_reason', ['%reason%' => $fallbackReason]);
         }
 
         if (is_string($rawPayload) && '' !== trim($rawPayload) && null === $payload) {
             return trim($rawPayload);
         }
 
-        return 'Open detail to inspect the failure payload and retry options.';
+        return $this->t('import.list.summary.failed_default');
+    }
+
+    /** @param array<string, scalar> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

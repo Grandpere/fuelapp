@@ -4,6 +4,9 @@
 - [completed] Define the translation strategy and migration scope with the user.
 - [completed] Write the design spec for progressive Symfony translations with `fr` default and `en` fallback.
 - [completed] Review the written spec with the user before turning it into an implementation plan.
+- [completed] Translate the admin/back-office shell, dashboard, and import workflows.
+- [pending] Translate the remaining admin resource screens (users, identities, security, audit, vehicles, stations, receipts, maintenance, diagnostics).
+- [pending] Re-run quality gates and hand over the manual functional admin validation.
 
 # TODO - SP41-003 Topbar account actions responsiveness
 

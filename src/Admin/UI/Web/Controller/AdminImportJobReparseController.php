@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminImportJobReparseController extends AbstractController
 {
@@ -31,6 +32,7 @@ final class AdminImportJobReparseController extends AbstractController
         private readonly ImportJobPayloadReparser $importJobPayloadReparser,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -48,7 +50,7 @@ final class AdminImportJobReparseController extends AbstractController
         );
 
         if (!$this->isCsrfTokenValid('admin_import_reparse_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
             return new RedirectResponse($redirectTarget);
         }
@@ -67,9 +69,9 @@ final class AdminImportJobReparseController extends AbstractController
                 $id,
                 ['after' => ['status' => $job->status()->value]],
             );
-            $this->addFlash('success', 'Import payload reparsed with current parser rules.');
+            $this->addFlash('success', 'admin.import.flash.reparsed');
         } catch (InvalidArgumentException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
         }
 
         return new RedirectResponse($redirectTarget);

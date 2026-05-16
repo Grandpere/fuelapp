@@ -910,8 +910,8 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('Shortcut Car (SC-100-AA)', $content);
         self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('Vehicle:</strong> Shortcut Car (SC-100-AA)', $content);
-        self::assertStringContainsString('30 derniers jours', $content);
-        self::assertStringContainsString('Ce mois-ci', $content);
+        self::assertStringContainsString('Last 30 days', $content);
+        self::assertStringContainsString('This month', $content);
         self::assertStringContainsString('Exports keep the current filters and visible columns.', $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122().'/edit-metadata', $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122().'/edit', $content);

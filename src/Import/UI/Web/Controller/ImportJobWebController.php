@@ -49,7 +49,7 @@ final class ImportJobWebController extends AbstractController
 
             $uploadedFiles = $this->readUploadedFiles($request);
             if ([] === $uploadedFiles) {
-                $this->addFlash('error', 'At least one file is required.');
+                $this->addFlash('error', 'import.flash.file_required');
 
                 return $this->redirectToRoute('ui_import_index');
             }

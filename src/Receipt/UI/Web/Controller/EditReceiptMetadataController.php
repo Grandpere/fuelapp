@@ -81,28 +81,28 @@ final class EditReceiptMetadataController extends AbstractController
             $formData['odometerKilometers'] = trim((string) $request->request->get('odometerKilometers', ''));
 
             if (!$this->isCsrfTokenValid('receipt_edit_metadata_'.$id, $formData['_token'])) {
-                $errors[] = 'Invalid CSRF token.';
+                $errors[] = 'receipt.validation.invalid_csrf';
             }
 
             $issuedAt = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $formData['issuedAt']) ?: null;
             if (null === $issuedAt) {
-                $errors[] = 'Invalid issue date.';
+                $errors[] = 'receipt.validation.invalid_issue_date';
             }
 
             $vehicleId = $this->nullIfEmpty($formData['vehicleId']);
             $ownerId = $this->authenticatedUserIdProvider->getAuthenticatedUserId();
             if (null !== $vehicleId && (null === $ownerId || !$this->vehicleRepository->belongsToOwner($vehicleId, $ownerId))) {
-                $errors[] = 'Vehicle not found.';
+                $errors[] = 'receipt.validation.vehicle_not_found';
             }
 
             $stationId = $this->nullIfEmpty($formData['stationId']);
             if (null !== $stationId && null === $this->stationRepository->getForSystem($stationId)) {
-                $errors[] = 'Station not found.';
+                $errors[] = 'receipt.validation.station_not_found';
             }
 
             $odometerKilometers = $this->toNullableInt($formData['odometerKilometers']);
             if ('' !== $formData['odometerKilometers'] && null === $odometerKilometers) {
-                $errors[] = 'Odometer must be a positive integer.';
+                $errors[] = 'receipt.validation.odometer_positive_integer';
             }
 
             if ([] === $errors && $issuedAt instanceof DateTimeImmutable) {
@@ -118,7 +118,7 @@ final class EditReceiptMetadataController extends AbstractController
                     throw $this->createNotFoundException('Receipt not found.');
                 }
 
-                $this->addFlash('success', 'Receipt details updated.');
+                $this->addFlash('success', 'receipt.flash.details_updated');
 
                 return new RedirectResponse($this->generateUrl('ui_receipt_show', [
                     'id' => $id,

@@ -45,13 +45,13 @@
     {% if 'vat_amount_cents' in visibleColumns %}<td class="text-right">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} €</td>{% endif %}
     <td class="text-right action-cell">
         <div class="receipt-row-actions" data-row-link-ignore>
-            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id, return_to: redirect}) }}">Open</a>
-            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id, return_to: redirect}) }}">Details</a>
-            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id, return_to: redirect}) }}">Lines</a>
-            <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id}) }}" onsubmit="return confirm('Delete this receipt?');">
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: receipt.id, return_to: redirect}) }}">{{ 'receipt.action.open'|trans }}</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id, return_to: redirect}) }}">{{ 'receipt.action.details'|trans }}</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id, return_to: redirect}) }}">{{ 'receipt.action.lines'|trans }}</a>
+            <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id}) }}" onsubmit="return confirm('{{ 'receipt.confirm.delete'|trans|e('js') }}');">
                 <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id) }}">
                 <input type="hidden" name="_redirect" value="{{ redirect }}">
-                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                <button class="btn btn-danger btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
             </form>
         </div>
     </td>

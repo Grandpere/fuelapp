@@ -3,7 +3,7 @@
 ## Plan
 - [completed] Define the translation strategy and migration scope with the user.
 - [completed] Write the design spec for progressive Symfony translations with `fr` default and `en` fallback.
-- [pending] Review the written spec with the user before turning it into an implementation plan.
+- [completed] Review the written spec with the user before turning it into an implementation plan.
 
 # TODO - SP41-003 Topbar account actions responsiveness
 

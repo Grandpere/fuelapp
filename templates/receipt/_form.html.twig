@@ -3,7 +3,7 @@
         <div class="flash flash-error">
             <ul class="flash-list">
                 {% for error in errors %}
-                    <li>{{ error }}</li>
+                    <li>{{ error|trans }}</li>
                 {% endfor %}
             </ul>
         </div>
@@ -14,28 +14,28 @@
         <input type="hidden" name="_station_lookup_requested" id="receipt_station_lookup_requested" value="0">
 
         <label class="label">
-            Date
+            {{ 'receipt.form.date'|trans }}
             <input class="input" type="text" name="issuedAt" value="{{ formData.issuedAt }}" data-datepicker="datetime" autocomplete="off" required>
         </label>
         <label class="label">
-            Vehicle (optional)
+            {{ 'receipt.form.vehicle_optional'|trans }}
             <select class="select" name="vehicleId">
-                <option value="">No linked vehicle</option>
+                <option value="">{{ 'receipt.form.no_linked_vehicle'|trans }}</option>
                 {% for optionId, optionLabel in vehicleOptions %}
                     <option value="{{ optionId }}" {% if formData.vehicleId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
                 {% endfor %}
             </select>
         </label>
         <label class="label">
-            Odometer (km, optional)
+            {{ 'receipt.form.odometer_optional'|trans }}
             <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
         </label>
 
         <fieldset class="card-subtle form-block">
-            <legend class="muted">Fuel line</legend>
+            <legend class="muted">{{ 'receipt.form.fuel_line'|trans }}</legend>
             <div class="form-grid-2">
                 <label class="label">
-                    Fuel type
+                    {{ 'receipt.form.fuel_type'|trans }}
                     <select class="select" name="fuelType">
                         {% for fuelType in fuelTypes %}
                             <option value="{{ fuelType }}" {% if formData.fuelType == fuelType %}selected{% endif %}>{{ fuelType|upper }}</option>
@@ -43,41 +43,41 @@
                     </select>
                 </label>
                 <label class="label">
-                    Quantity (L)
+                    {{ 'receipt.form.quantity'|trans }}
                     <input class="input" type="text" inputmode="decimal" name="quantityLiters" value="{{ formData.quantityLiters }}" placeholder="40.40" required>
-                    <small class="muted">Use liters, for example <code>40.40</code>.</small>
+                    <small class="muted">{{ 'receipt.form.quantity_help'|trans|raw }}</small>
                 </label>
                 <label class="label">
-                    Unit price (€/L)
+                    {{ 'receipt.form.unit_price'|trans }}
                     <input class="input" type="text" inputmode="decimal" name="unitPriceEurosPerLiter" value="{{ formData.unitPriceEurosPerLiter }}" placeholder="1.769" required>
-                    <small class="muted">Use euros per liter, for example <code>1.769</code>.</small>
+                    <small class="muted">{{ 'receipt.form.unit_price_help'|trans|raw }}</small>
                 </label>
                 <label class="label">
-                    VAT (%)
+                    {{ 'receipt.form.vat'|trans }}
                     <input class="input" type="number" min="0" max="100" step="1" name="vatRatePercent" value="{{ formData.vatRatePercent }}" required>
                 </label>
             </div>
         </fieldset>
 
         <fieldset class="card-subtle form-block">
-            <legend class="muted">Station</legend>
+            <legend class="muted">{{ 'receipt.form.station_section'|trans }}</legend>
             <div class="station-lookup-block">
                 <label class="label">
-                    Existing station (optional)
-                    <input class="input" type="text" name="stationSearch" value="{{ formData.stationSearch }}" placeholder="Search by name, street, postal code, or city">
+                    {{ 'receipt.form.existing_station_optional'|trans }}
+                    <input class="input" type="text" name="stationSearch" value="{{ formData.stationSearch }}" placeholder="{{ 'receipt.form.station_search_placeholder'|trans }}">
                 </label>
                 <div class="actions-wrap station-lookup-actions">
-                    <button class="btn btn-secondary btn-compact station-lookup-button" type="submit" name="_station_lookup" value="1" formnovalidate onclick="document.getElementById('receipt_station_lookup_requested').value='1';">Find matches</button>
-                    <p class="muted station-lookup-hint">Type a station clue here, or fill the station name/address fields below, then use <code>Find matches</code>.</p>
+                    <button class="btn btn-secondary btn-compact station-lookup-button" type="submit" name="_station_lookup" value="1" formnovalidate onclick="document.getElementById('receipt_station_lookup_requested').value='1';">{{ 'receipt.form.station_lookup'|trans }}</button>
+                    <p class="muted station-lookup-hint">{{ 'receipt.form.station_lookup_hint'|trans|raw }}</p>
                 </div>
                 {% if stationLookupPerformed %}
                     <div class="station-lookup-feedback">
-                        <span class="station-lookup-feedback-label">Search result</span>
+                        <span class="station-lookup-feedback-label">{{ 'receipt.form.station_lookup_result'|trans }}</span>
                         <p class="muted compact-note">
                         {% if stationLookupCount > 0 %}
-                            {{ stationLookupCount }} station suggestion{{ stationLookupCount > 1 ? 's' : '' }} matched these terms.
+                            {{ (stationLookupCount == 1 ? 'receipt.form.station_lookup_matches_single' : 'receipt.form.station_lookup_matches_plural')|trans({'%count%': stationLookupCount}) }}
                         {% else %}
-                            No station suggestion matched these terms closely enough.
+                            {{ 'receipt.form.station_lookup_no_match'|trans }}
                         {% endif %}
                         </p>
                     </div>
@@ -86,19 +86,19 @@
                 {% set publicStationSuggestions = publicStationSuggestions|default([]) %}
                 {% if existingStationSuggestions is not empty or publicStationSuggestions is not empty %}
                     <div class="station-selection-state" data-station-selection-state>
-                        <span class="station-selection-state-label">Selection active</span>
+                        <span class="station-selection-state-label">{{ 'receipt.form.station_selection_active'|trans }}</span>
                         <p class="station-selection-state-title" data-station-selection-title></p>
                         <p class="station-selection-state-copy" data-station-selection-copy></p>
-                        <button class="btn btn-secondary btn-compact station-selection-reset" type="button" data-station-selection-reset>Switch back to manual entry</button>
+                        <button class="btn btn-secondary btn-compact station-selection-reset" type="button" data-station-selection-reset>{{ 'receipt.form.station_selection_reset'|trans }}</button>
                     </div>
                     <div class="station-lookup-results">
                         {% if existingStationSuggestions is not empty %}
-                            <p class="station-lookup-results-title">Existing stations</p>
+                            <p class="station-lookup-results-title">{{ 'receipt.form.station_suggestions_existing'|trans }}</p>
                             {% for candidate in existingStationSuggestions %}
                                 <label class="station-lookup-option" data-suggestion-kind="existing" data-suggestion-title="{{ candidate.name }}" data-suggestion-meta="{{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}">
                                     <input type="radio" name="selectedSuggestion" value="station:{{ candidate.sourceId }}" {% if formData.selectedSuggestion == 'station:' ~ candidate.sourceId or formData.selectedStationId == candidate.sourceId %}checked{% endif %}>
                                     <span class="station-lookup-option-content">
-                                        <span class="station-lookup-option-badge">Existing</span>
+                                        <span class="station-lookup-option-badge">{{ 'receipt.form.station_suggestion_existing_badge'|trans }}</span>
                                         <strong>{{ candidate.name }}</strong>
                                         <span>{{ candidate.streetName }}</span>
                                         <span class="station-lookup-option-meta">{{ candidate.postalCode }} {{ candidate.city }}</span>
@@ -107,15 +107,15 @@
                             {% endfor %}
                         {% endif %}
                         {% if publicStationSuggestions is not empty %}
-                            <p class="station-lookup-results-title">Public station suggestions</p>
+                            <p class="station-lookup-results-title">{{ 'receipt.form.station_suggestions_public'|trans }}</p>
                             {% for candidate in publicStationSuggestions %}
                                 <label class="station-lookup-option" data-suggestion-kind="public" data-suggestion-title="{{ candidate.name }}" data-suggestion-meta="{{ candidate.postalCode }} {{ candidate.city }}">
                                     <input type="radio" name="selectedSuggestion" value="public:{{ candidate.sourceId }}" {% if formData.selectedSuggestion == 'public:' ~ candidate.sourceId %}checked{% endif %}>
                                     <span class="station-lookup-option-content">
-                                        <span class="station-lookup-option-badge station-lookup-option-badge-public">Public</span>
+                                        <span class="station-lookup-option-badge station-lookup-option-badge-public">{{ 'receipt.form.station_suggestion_public_badge'|trans }}</span>
                                         <strong>{{ candidate.name }}</strong>
                                         <span class="station-lookup-option-meta">{{ candidate.postalCode }} {{ candidate.city }}</span>
-                                        <span class="muted compact-note">This will create or reuse an internal station when you save.</span>
+                                        <span class="muted compact-note">{{ 'receipt.form.station_suggestion_public_help'|trans }}</span>
                                     </span>
                                 </label>
                             {% endfor %}
@@ -123,8 +123,8 @@
                         <label class="station-lookup-option station-lookup-manual">
                             <input type="radio" name="selectedSuggestion" value="" {% if formData.selectedSuggestion == '' and formData.selectedStationId == '' %}checked{% endif %}>
                             <span class="station-lookup-option-content">
-                                <strong>Do not use a suggestion</strong>
-                                <span>Keep the manual station fields below.</span>
+                                <strong>{{ 'receipt.form.station_suggestion_manual_title'|trans }}</strong>
+                                <span>{{ 'receipt.form.station_suggestion_manual_help'|trans }}</span>
                             </span>
                         </label>
                     </div>
@@ -135,35 +135,35 @@
             </div>
             <div class="form-grid-2 station-manual-fields" data-station-manual-fields>
                 <label class="label">
-                    Name
+                    {{ 'receipt.form.station_name'|trans }}
                     <input class="input" type="text" name="stationName" value="{{ formData.stationName }}" required data-manual-required="1">
                 </label>
                 <label class="label">
-                    Street name
+                    {{ 'receipt.form.station_street_name'|trans }}
                     <input class="input" type="text" name="stationStreetName" value="{{ formData.stationStreetName }}" required data-manual-required="1">
                 </label>
                 <label class="label">
-                    Postal code
+                    {{ 'receipt.form.station_postal_code'|trans }}
                     <input class="input" type="text" name="stationPostalCode" value="{{ formData.stationPostalCode }}" required data-manual-required="1">
                 </label>
                 <label class="label">
-                    City
+                    {{ 'receipt.form.station_city'|trans }}
                     <input class="input" type="text" name="stationCity" value="{{ formData.stationCity }}" required data-manual-required="1">
                 </label>
                 <label class="label">
-                    Latitude (micro-degrees, optional)
+                    {{ 'receipt.form.station_latitude_optional'|trans }}
                     <input class="input" type="number" name="latitudeMicroDegrees" value="{{ formData.latitudeMicroDegrees }}">
                 </label>
                 <label class="label">
-                    Longitude (micro-degrees, optional)
+                    {{ 'receipt.form.station_longitude_optional'|trans }}
                     <input class="input" type="number" name="longitudeMicroDegrees" value="{{ formData.longitudeMicroDegrees }}">
                 </label>
             </div>
         </fieldset>
 
         <div class="actions-wrap">
-            <button class="btn btn-primary" type="submit" onclick="document.getElementById('receipt_station_lookup_requested').value='0';">Save receipt</button>
-            <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Cancel</a>
+            <button class="btn btn-primary" type="submit" onclick="document.getElementById('receipt_station_lookup_requested').value='0';">{{ 'receipt.form.save'|trans }}</button>
+            <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">{{ 'action.cancel'|trans }}</a>
         </div>
     </form>
 
@@ -176,6 +176,10 @@
             const stateTitle = root.querySelector('[data-station-selection-title]');
             const stateCopy = root.querySelector('[data-station-selection-copy]');
             const resetButton = root.querySelector('[data-station-selection-reset]');
+            const publicSelectionPrefix = {{ 'receipt.form.station_selection_public_prefix'|trans|json_encode|raw }};
+            const publicSelectionSuffix = {{ 'receipt.form.station_selection_public_suffix'|trans|json_encode|raw }};
+            const existingSelectionPrefix = {{ 'receipt.form.station_selection_existing_prefix'|trans|json_encode|raw }};
+            const existingSelectionSuffix = {{ 'receipt.form.station_selection_existing_suffix'|trans|json_encode|raw }};
 
             if (radios.length === 0 || manualFields.length === 0) {
                 return;
@@ -213,9 +217,9 @@
                 stateTitle.textContent = title;
 
                 if (kind === 'public') {
-                    stateCopy.innerHTML = `<strong>Public suggestion selected.</strong> ${meta} will create or reuse an internal station when you save.`;
+                    stateCopy.innerHTML = `<strong>${publicSelectionPrefix}</strong> ${meta} ${publicSelectionSuffix}`;
                 } else {
-                    stateCopy.innerHTML = `<strong>Existing station selected.</strong> ${meta} will be used for this receipt.`;
+                    stateCopy.innerHTML = `<strong>${existingSelectionPrefix}</strong> ${meta} ${existingSelectionSuffix}`;
                 }
             };
 

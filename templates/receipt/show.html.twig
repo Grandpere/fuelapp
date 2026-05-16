@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Receipt {{ receipt.id.toString() }}{% endblock %}
+{% block title %}{{ 'receipt.show.title'|trans }} {{ receipt.id.toString() }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -94,42 +94,42 @@
     <main class="app-shell show-page">
         <header class="show-header">
             <div>
-                <h1 class="page-title">Receipt detail</h1>
-                <p class="muted section-lead">Traceable fuel purchase snapshot.</p>
+                <h1 class="page-title">{{ 'receipt.show.title'|trans }}</h1>
+                <p class="muted section-lead">{{ 'receipt.show.lead'|trans }}</p>
             </div>
             <div class="show-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Edit details</a>
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Edit lines</a>
-                <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">{{ 'receipt.action.details'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}">{{ 'receipt.show.edit_lines'|trans }}</a>
+                <form method="post" action="{{ path('ui_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('{{ 'receipt.confirm.delete'|trans|e('js') }}');">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete_receipt_' ~ receipt.id.toString()) }}">
                     <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
-                    <button class="btn btn-danger" type="submit">Delete</button>
+                    <button class="btn btn-danger" type="submit">{{ 'action.delete'|trans }}</button>
                 </form>
-                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back to list</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}">{{ 'receipt.index.back_to_list'|trans }}</a>
             </div>
         </header>
 
         <section class="card show-card">
             <div class="show-card-head">
-                <h2 class="section-title">Quick corrections</h2>
+                <h2 class="section-title">{{ 'receipt.show.quick_corrections'|trans }}</h2>
             </div>
-            <p class="muted section-lead show-helper">Use the closest correction flow without leaving the receipt context.</p>
+            <p class="muted section-lead show-helper">{{ 'receipt.show.quick_corrections_lead'|trans }}</p>
             <div class="show-action-list">
                 {% if vehicle is null %}
-                    <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Link vehicle</a>
+                    <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">{{ 'receipt.show.link_vehicle'|trans }}</a>
                 {% endif %}
                 {% if station is null %}
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Link station</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">{{ 'receipt.show.link_station'|trans }}</a>
                 {% endif %}
                 {% if receipt.odometerKilometers is null %}
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Add odometer</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: backToListUrl}) }}">{{ 'receipt.show.add_odometer'|trans }}</a>
                 {% endif %}
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Adjust fuel lines</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}">{{ 'receipt.show.adjust_lines'|trans }}</a>
                 {% if latestMaintenanceEvent %}
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: latestMaintenanceEvent.id.toString(), return_to: receiptShowUrl}) }}">Edit last maintenance</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: latestMaintenanceEvent.id.toString(), return_to: receiptShowUrl}) }}">{{ 'receipt.show.edit_last_maintenance'|trans }}</a>
                 {% endif %}
                 {% if station %}
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: receiptShowUrl}) }}">Edit station</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: receiptShowUrl}) }}">{{ 'receipt.show.edit_station'|trans }}</a>
                 {% endif %}
             </div>
         </section>
@@ -137,31 +137,31 @@
         {% if listFlow %}
             <section class="card show-card">
                 <div class="show-card-head">
-                    <h2 class="section-title">List flow</h2>
+                    <h2 class="section-title">{{ 'receipt.show.list_flow'|trans }}</h2>
                 </div>
-                <p class="muted section-lead show-helper">Stay inside the current receipt batch without rebuilding the same filters.</p>
+                <p class="muted section-lead show-helper">{{ 'receipt.show.list_flow_lead'|trans }}</p>
                 <div class="show-action-list">
                     {% if listFlow.previousReceiptId %}
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: listFlow.previousReceiptId, return_to: listFlow.backToListUrl}) }}">Previous in list</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: listFlow.previousReceiptId, return_to: listFlow.backToListUrl}) }}">{{ 'receipt.show.previous_in_list'|trans }}</a>
                     {% endif %}
                     {% if listFlow.nextReceiptId %}
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: listFlow.nextReceiptId, return_to: listFlow.backToListUrl}) }}">Next in list</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: listFlow.nextReceiptId, return_to: listFlow.backToListUrl}) }}">{{ 'receipt.show.next_in_list'|trans }}</a>
                     {% endif %}
-                    <a class="btn btn-secondary btn-compact" href="{{ listFlow.backToListUrl }}">Back to filtered list</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: listFlow.backToListUrl}) }}">Edit details</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: listFlow.backToListUrl}) }}">Edit lines</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ listFlow.backToListUrl }}">{{ 'receipt.show.back_to_filtered_list'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: receipt.id.toString(), return_to: listFlow.backToListUrl}) }}">{{ 'receipt.action.details'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: listFlow.backToListUrl}) }}">{{ 'receipt.show.edit_lines'|trans }}</a>
                 </div>
             </section>
         {% endif %}
 
         <section class="show-grid">
             <article class="card show-card">
-                <h2>Summary</h2>
+                <h2>{{ 'receipt.show.summary'|trans }}</h2>
                 <div class="show-kv">
                     <div><strong>ID:</strong> {{ receipt.id.toString() }}</div>
                     <div><strong>Date:</strong> {{ receipt.issuedAt|date('d/m/Y H:i') }}</div>
-                    <div><strong>Vehicle:</strong> {{ vehicle ? vehicle.name ~ ' (' ~ vehicle.plateNumber ~ ')' : 'n/a' }}</div>
-                    <div><strong>Odometer:</strong> {{ receipt.odometerKilometers is not null ? receipt.odometerKilometers ~ ' km' : 'n/a' }}</div>
+                    <div><strong>{{ 'receipt.show.vehicle'|trans }}:</strong> {{ vehicle ? vehicle.name ~ ' (' ~ vehicle.plateNumber ~ ')' : 'n/a' }}</div>
+                    <div><strong>{{ 'receipt.show.odometer'|trans }}:</strong> {{ receipt.odometerKilometers is not null ? receipt.odometerKilometers ~ ' km' : 'n/a' }}</div>
                     <div><strong>Total:</strong> {{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</div>
                     <div><strong>VAT:</strong> {{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</div>
                 </div>
@@ -169,56 +169,56 @@
 
             <article class="card show-card">
                 <div class="show-card-head">
-                    <h2 class="section-title">Vehicle context</h2>
+                    <h2 class="section-title">{{ 'receipt.show.vehicle_context'|trans }}</h2>
                     {% if vehicle %}
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: vehicle.id.toString()}) }}">Open vehicle</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: vehicle.id.toString()}) }}">{{ 'receipt.show.open_vehicle'|trans }}</a>
                     {% endif %}
                 </div>
                 {% if vehicle %}
                     <div class="show-kv">
                         <div><strong>{{ vehicle.name }}</strong></div>
-                        <div>Plate {{ vehicle.plateNumber }}</div>
+                        <div>{{ 'receipt.show.plate'|trans }} {{ vehicle.plateNumber }}</div>
                         {% if latestMaintenanceEvent %}
-                            <div><strong>Last maintenance:</strong> {{ latestMaintenanceEvent.eventType.value|upper }} on {{ latestMaintenanceEvent.occurredAt|date('d/m/Y H:i') }}</div>
+                            <div><strong>{{ 'receipt.show.last_maintenance'|trans }}:</strong> {{ latestMaintenanceEvent.eventType.value|upper }} on {{ latestMaintenanceEvent.occurredAt|date('d/m/Y H:i') }}</div>
                             {% if latestMaintenanceEvent.description %}
-                                <div><strong>Maintenance note:</strong> {{ latestMaintenanceEvent.description }}</div>
+                                <div><strong>{{ 'receipt.show.maintenance_note'|trans }}:</strong> {{ latestMaintenanceEvent.description }}</div>
                             {% endif %}
                             {% if latestMaintenanceEvent.totalCostCents is not null %}
-                                <div><strong>Maintenance cost:</strong> {{ (latestMaintenanceEvent.totalCostCents / 100)|number_format(2, ',', ' ') }} {{ latestMaintenanceEvent.currencyCode }}</div>
+                                <div><strong>{{ 'receipt.show.maintenance_cost'|trans }}:</strong> {{ (latestMaintenanceEvent.totalCostCents / 100)|number_format(2, ',', ' ') }} {{ latestMaintenanceEvent.currencyCode }}</div>
                             {% endif %}
                             {% if latestMaintenanceEvent.odometerKilometers is not null %}
-                                <div><strong>Maintenance odometer:</strong> {{ latestMaintenanceEvent.odometerKilometers }} km</div>
+                                <div><strong>{{ 'receipt.show.maintenance_odometer'|trans }}:</strong> {{ latestMaintenanceEvent.odometerKilometers }} km</div>
                             {% endif %}
                         {% else %}
-                            <div class="muted">No maintenance event tracked yet for this vehicle.</div>
+                            <div class="muted">{{ 'receipt.show.no_maintenance'|trans }}</div>
                         {% endif %}
                         {% if maintenanceOdometerDelta is not null %}
-                            <div><strong>Distance since last maintenance:</strong> {{ maintenanceOdometerDelta }} km</div>
+                            <div><strong>{{ 'receipt.show.distance_since_last_maintenance'|trans }}:</strong> {{ maintenanceOdometerDelta }} km</div>
                         {% endif %}
                     </div>
                     <div class="show-action-list">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">Vehicle receipts</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Maintenance</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: vehicle.id.toString()}) }}">Analytics</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'receipt.show.vehicle_receipts'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'receipt.show.maintenance'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: vehicle.id.toString()}) }}">{{ 'receipt.show.analytics'|trans }}</a>
                         {% if latestMaintenanceEvent %}
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: latestMaintenanceEvent.id.toString(), return_to: receiptShowUrl}) }}">Edit last maintenance</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: latestMaintenanceEvent.id.toString(), return_to: receiptShowUrl}) }}">{{ 'receipt.show.edit_last_maintenance'|trans }}</a>
                         {% endif %}
-                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString()}) }}">Add maintenance event</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString()}) }}">{{ 'receipt.show.add_maintenance_event'|trans }}</a>
                     </div>
                 {% else %}
-                    <p class="muted section-lead">No vehicle linked to this receipt yet.</p>
+                    <p class="muted section-lead">{{ 'receipt.show.no_vehicle'|trans }}</p>
                 {% endif %}
             </article>
 
             <article class="card show-card">
                 <div class="show-card-head">
-                    <h2 class="section-title">Station</h2>
+                    <h2 class="section-title">{{ 'receipt.show.station'|trans }}</h2>
                     {% if station %}
                         <div class="show-action-list">
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: station.id.toString(), return_to: receiptShowUrl}) }}">Open station</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">Station receipts</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Analytics</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: receiptShowUrl}) }}">Edit station</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: station.id.toString(), return_to: receiptShowUrl}) }}">{{ 'receipt.show.open_station'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">{{ 'receipt.show.station_receipts'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">{{ 'receipt.show.analytics'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: receiptShowUrl}) }}">{{ 'receipt.show.edit_station'|trans }}</a>
                         </div>
                     {% endif %}
                 </div>
@@ -229,19 +229,19 @@
                         <div>{{ station.postalCode }} {{ station.city }}</div>
                     </div>
                 {% else %}
-                    <p class="muted section-lead">No station associated.</p>
+                    <p class="muted section-lead">{{ 'receipt.show.no_station'|trans }}</p>
                 {% endif %}
             </article>
         </section>
 
         <section class="card show-card">
             <div class="show-card-head">
-                <h2 class="section-title">Lines</h2>
+                <h2 class="section-title">{{ 'receipt.show.line_section'|trans }}</h2>
                 <a
                     class="btn btn-secondary icon-btn"
                     href="{{ path('ui_receipt_edit_lines', {id: receipt.id.toString(), return_to: backToListUrl}) }}"
-                    aria-label="Edit lines"
-                    title="Edit lines"
+                    aria-label="{{ 'receipt.show.edit_lines'|trans }}"
+                    title="{{ 'receipt.show.edit_lines'|trans }}"
                 >
                     ✎
                 </a>
@@ -250,12 +250,12 @@
                 <table class="app-table">
                     <thead>
                         <tr>
-                            <th>Fuel</th>
-                            <th class="text-right">Quantity</th>
-                            <th class="text-right">Unit price</th>
-                            <th class="text-right">VAT %</th>
-                            <th class="text-right">VAT</th>
-                            <th class="text-right">Line total</th>
+                            <th>{{ 'receipt.show.col_fuel'|trans }}</th>
+                            <th class="text-right">{{ 'receipt.show.col_quantity'|trans }}</th>
+                            <th class="text-right">{{ 'receipt.show.col_unit_price'|trans }}</th>
+                            <th class="text-right">{{ 'receipt.show.col_vat_rate'|trans }}</th>
+                            <th class="text-right">{{ 'receipt.show.col_vat'|trans }}</th>
+                            <th class="text-right">{{ 'receipt.show.col_line_total'|trans }}</th>
                         </tr>
                     </thead>
                     <tbody>

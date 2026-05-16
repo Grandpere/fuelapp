@@ -61,7 +61,7 @@ final class ImportJobFinalizeWebController extends AbstractController
             : null;
 
         if (!$this->isCsrfTokenValid('ui_import_finalize_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
             return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
         }
@@ -83,18 +83,18 @@ final class ImportJobFinalizeWebController extends AbstractController
                 $this->selectedSuggestionId($request),
             ));
             if (null !== $nextReviewId && $this->shouldContinueToNextReview($request)) {
-                $this->addFlash('success', 'Import finalized. Opened the next review item.');
+                $this->addFlash('success', 'import.flash.finalized_next');
 
                 return $this->redirectToRoute('ui_import_show', ['id' => $nextReviewId, 'return_to' => $returnTo]);
             }
 
             if ($this->shouldContinueToNextReview($request)) {
-                $this->addFlash('success', 'Import finalized. Review queue completed for now.');
+                $this->addFlash('success', 'import.flash.finalized_done');
 
                 return $this->redirect($returnTo);
             }
 
-            $this->addFlash('success', 'Import finalized and receipt created.');
+            $this->addFlash('success', 'import.flash.finalized_created');
         } catch (InvalidArgumentException|RuntimeException $e) {
             $this->addFlash('error', $e->getMessage());
         }

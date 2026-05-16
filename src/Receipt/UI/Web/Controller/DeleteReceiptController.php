@@ -45,7 +45,7 @@ final class DeleteReceiptController extends AbstractController
 
         $this->receiptRepository->delete($id);
         $this->streamPublisher->publishDeleted($id);
-        $this->addFlash('success', 'Receipt deleted.');
+        $this->addFlash('success', 'receipt.flash.deleted');
 
         $redirectUrl = $this->safeReturnPathResolver->resolve(
             $request->request->get('_redirect'),

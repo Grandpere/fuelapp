@@ -195,7 +195,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $editPage = $this->request('GET', '/ui/receipts/'.$receiptId.'/edit-metadata');
         self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
         $content = (string) $editPage->getContent();
-        self::assertStringContainsString('Edit receipt details', $content);
+        self::assertStringContainsString('Modifier les détails du reçu', $content);
         self::assertStringContainsString('option value="'.$vehicleA->getId()->toRfc4122().'" selected', $content);
         self::assertStringContainsString('option value="'.$stationA->getId()->toRfc4122().'" selected', $content);
         $csrf = $this->extractFormCsrf($content);
@@ -380,8 +380,8 @@ final class ReceiptWebUiTest extends WebTestCase
         $createPage = $this->request('GET', '/ui/receipts/new?vehicle_id='.$vehicle->getId()->toRfc4122());
         self::assertSame(Response::HTTP_OK, $createPage->getStatusCode());
         $createContent = (string) $createPage->getContent();
-        self::assertStringContainsString('Quantity (L)', $createContent);
-        self::assertStringContainsString('Unit price (€/L)', $createContent);
+        self::assertStringContainsString('Quantité (L)', $createContent);
+        self::assertStringContainsString('Prix unitaire (€/L)', $createContent);
         self::assertStringContainsString('option value="'.$vehicle->getId()->toRfc4122().'" selected', $createContent);
         $csrf = $this->extractFormCsrf($createContent);
 
@@ -478,7 +478,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $lookupFollowResponse = $this->request('GET', $lookupPage->headers->get('Location') ?? '/ui/receipts/new');
         self::assertSame(Response::HTTP_OK, $lookupFollowResponse->getStatusCode());
         $lookupContent = (string) $lookupFollowResponse->getContent();
-        self::assertStringContainsString('Existing station', $lookupContent);
+        self::assertStringContainsString('Stations existantes', $lookupContent);
         self::assertStringContainsString('PETRO EST', $lookupContent);
         self::assertStringContainsString('LECLERC SEZANNE HYPER', $lookupContent);
         self::assertStringContainsString('51120 SEZANNE', $lookupContent);
@@ -607,9 +607,9 @@ final class ReceiptWebUiTest extends WebTestCase
         $lookupFollowResponse = $this->request('GET', $lookupPage->headers->get('Location') ?? '/ui/receipts/new');
         self::assertSame(Response::HTTP_OK, $lookupFollowResponse->getStatusCode());
         $lookupContent = (string) $lookupFollowResponse->getContent();
-        self::assertStringContainsString('Public station suggestions', $lookupContent);
+        self::assertStringContainsString('Stations publiques', $lookupContent);
         self::assertStringContainsString('40 Rue Robert Schuman', $lookupContent);
-        self::assertStringContainsString('Switch back to manual entry', $lookupContent);
+        self::assertStringContainsString('Revenir à la saisie manuelle', $lookupContent);
 
         $createResponse = $this->request('POST', '/ui/receipts/new', [
             '_token' => $this->extractFormCsrf($lookupContent),
@@ -690,8 +690,8 @@ final class ReceiptWebUiTest extends WebTestCase
         $lookupFollowResponse = $this->request('GET', $lookupPage->headers->get('Location') ?? '/ui/receipts/new');
         self::assertSame(Response::HTTP_OK, $lookupFollowResponse->getStatusCode());
         $lookupContent = (string) $lookupFollowResponse->getContent();
-        self::assertStringContainsString('Public station suggestions', $lookupContent);
-        self::assertStringContainsString('Selection active', $lookupContent);
+        self::assertStringContainsString('Stations publiques', $lookupContent);
+        self::assertStringContainsString('Sélection active', $lookupContent);
 
         $createResponse = $this->request('POST', '/ui/receipts/new', [
             '_token' => $this->extractFormCsrf($lookupContent),
@@ -714,7 +714,7 @@ final class ReceiptWebUiTest extends WebTestCase
         ]);
         self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $createResponse->getStatusCode());
         self::assertStringContainsString(
-            'Selected public station conflicts with the existing linked public source for this station.',
+            'La station publique sélectionnée est en conflit avec la source publique déjà liée à cette station.',
             (string) $createResponse->getContent(),
         );
 
@@ -734,7 +734,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $response = $this->request('GET', '/ui/receipts/new?station_lookup=1&stationSearch=nowhere&selectedSuggestion=public:missing-public');
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
-        self::assertStringContainsString('No station suggestion matched these terms closely enough.', $content);
+        self::assertStringContainsString('Aucune suggestion de station ne correspond suffisamment à ces termes.', $content);
         self::assertStringContainsString('type="hidden" name="selectedSuggestion" value=""', $content);
     }
 
@@ -997,7 +997,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $vehicleResponse = $this->request('GET', '/ui/receipts?vehicle_id='.$vehicleId);
         self::assertSame(Response::HTTP_OK, $vehicleResponse->getStatusCode());
         $vehicleContent = (string) $vehicleResponse->getContent();
-        self::assertStringContainsString('No receipt yet.', $vehicleContent);
+        self::assertStringContainsString('Aucun reçu pour le moment.', $vehicleContent);
         self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $vehicleContent);
         self::assertStringNotContainsString('receipt_form_frame', $vehicleContent);
         self::assertStringContainsString('/ui/imports', $vehicleContent);
@@ -1007,7 +1007,7 @@ final class ReceiptWebUiTest extends WebTestCase
         $stationResponse = $this->request('GET', '/ui/receipts?station_id='.$stationId);
         self::assertSame(Response::HTTP_OK, $stationResponse->getStatusCode());
         $stationContent = (string) $stationResponse->getContent();
-        self::assertStringContainsString('No receipt yet.', $stationContent);
+        self::assertStringContainsString('Aucun reçu pour le moment.', $stationContent);
         self::assertStringContainsString('/ui/receipts/new?station_id='.$stationId, $stationContent);
         self::assertStringNotContainsString('receipt_form_frame', $stationContent);
         self::assertStringContainsString('/ui/imports', $stationContent);
@@ -1122,7 +1122,7 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
         $vehicleId = $vehicle->getId()->toRfc4122();
-        self::assertStringContainsString('Vehicle context', $content);
+        self::assertStringContainsString('Contexte véhicule', $content);
         self::assertStringContainsString('Context Car (CC-300-CC)', $content);
         self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
         self::assertStringContainsString('/ui/receipts?vehicle_id='.$vehicleId, $content);
@@ -1131,11 +1131,11 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/events/'.$event->getId()->toRfc4122().'/edit', $content);
         self::assertStringContainsString('Recent maintenance', $content);
-        self::assertStringContainsString('Distance since last maintenance:</strong> 650 km', $content);
-        self::assertStringContainsString('Quick corrections', $content);
-        self::assertStringContainsString('Adjust fuel lines', $content);
-        self::assertStringContainsString('Edit last maintenance', $content);
-        self::assertStringContainsString('Edit station', $content);
+        self::assertStringContainsString('Distance depuis le dernier entretien:</strong> 650 km', $content);
+        self::assertStringContainsString('Corrections rapides', $content);
+        self::assertStringContainsString('Ajuster les lignes carburant', $content);
+        self::assertStringContainsString('Modifier le dernier entretien', $content);
+        self::assertStringContainsString('Modifier la station', $content);
     }
 
     public function testReceiptDetailCanNavigateWithinFilteredListContext(): void
@@ -1177,12 +1177,12 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
 
-        self::assertStringContainsString('List flow', $content);
-        self::assertStringContainsString('Previous in list', $content);
-        self::assertStringContainsString('Next in list', $content);
+        self::assertStringContainsString('Navigation dans la liste', $content);
+        self::assertStringContainsString('Précédent dans la liste', $content);
+        self::assertStringContainsString('Suivant dans la liste', $content);
         self::assertStringContainsString($receiptA->getId()->toRfc4122(), $content);
         self::assertStringContainsString($receiptC->getId()->toRfc4122(), $content);
-        self::assertStringContainsString('Back to filtered list', $content);
+        self::assertStringContainsString('Retour à la liste filtrée', $content);
         self::assertStringContainsString(htmlspecialchars($returnTo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), $content);
     }
 
@@ -1216,12 +1216,12 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
 
-        self::assertStringContainsString('Quick corrections', $content);
-        self::assertStringContainsString('Link vehicle', $content);
-        self::assertStringContainsString('Link station', $content);
-        self::assertStringContainsString('Add odometer', $content);
-        self::assertStringContainsString('Adjust fuel lines', $content);
-        self::assertStringNotContainsString('Edit last maintenance', $content);
+        self::assertStringContainsString('Corrections rapides', $content);
+        self::assertStringContainsString('Lier un véhicule', $content);
+        self::assertStringContainsString('Lier une station', $content);
+        self::assertStringContainsString('Ajouter le kilométrage', $content);
+        self::assertStringContainsString('Ajuster les lignes carburant', $content);
+        self::assertStringNotContainsString('Modifier le dernier entretien', $content);
     }
 
     /**

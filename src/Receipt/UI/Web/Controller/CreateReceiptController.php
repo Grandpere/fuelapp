@@ -70,10 +70,10 @@ final class CreateReceiptController extends AbstractController
         if ($request->isMethod('POST')) {
             $formData = $this->extractFormData($request, $ownerId);
             if (!$this->isCsrfTokenValid('receipt_new', $formData['_token'])) {
-                $errors[] = 'Jeton CSRF invalide.';
+                $errors[] = 'receipt.validation.invalid_csrf';
             } elseif ($this->isStationLookupRequest($request)) {
                 if (!$this->hasStationSearchContext($formData)) {
-                    $errors[] = 'Enter a station search term or fill at least one station field before looking for matches.';
+                    $errors[] = 'receipt.validation.station_lookup_context_required';
                 } else {
                     return new RedirectResponse($this->generateUrl('ui_receipt_new', $this->stationLookupQueryParams($formData)), Response::HTTP_SEE_OTHER);
                 }
@@ -85,12 +85,12 @@ final class CreateReceiptController extends AbstractController
                     try {
                         $this->persistReceiptFromForm($formData, $ownerId);
                     } catch (StationPublicSourceConflict $e) {
-                        $errors[] = $e->getMessage();
+                        $errors[] = 'receipt.validation.station_public_source_conflict';
                     }
                 }
 
                 if ([] === $errors) {
-                    $this->addFlash('success', 'Receipt created.');
+                    $this->addFlash('success', 'receipt.flash.created');
 
                     return new RedirectResponse($this->generateUrl('ui_receipt_index'), Response::HTTP_SEE_OTHER);
                 }
@@ -196,19 +196,19 @@ final class CreateReceiptController extends AbstractController
 
         $errors = [];
         if (null === $issuedAt) {
-            $errors[] = 'Invalid issue date.';
+            $errors[] = 'receipt.validation.invalid_issue_date';
         }
         if (null === $quantityMilliLiters) {
-            $errors[] = 'Quantity must be a valid liters value, for example 40.40.';
+            $errors[] = 'receipt.validation.quantity_invalid';
         }
         if (null === $unitPriceDeciCentsPerLiter) {
-            $errors[] = 'Unit price must be a valid €/L value, for example 1.769.';
+            $errors[] = 'receipt.validation.unit_price_invalid';
         }
         if (null === $vatRatePercent) {
-            $errors[] = 'VAT must be an integer percentage.';
+            $errors[] = 'receipt.validation.vat_invalid';
         }
         if (null !== $vehicleId && !$this->vehicleRepository->belongsToOwner($vehicleId, $ownerId)) {
-            $errors[] = 'Vehicle not found.';
+            $errors[] = 'receipt.validation.vehicle_not_found';
         }
 
         foreach ($this->validator->validate($receiptInput) as $violation) {

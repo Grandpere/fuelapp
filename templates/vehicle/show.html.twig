@@ -165,108 +165,108 @@
         <header class="vehicle-show-header">
             <div>
                 <h1 class="page-title">{{ vehicle.name }}</h1>
-                <p class="muted section-lead">Plate {{ vehicle.plateNumber }}. Use this page as the quick hub for receipts and maintenance attached to this vehicle.</p>
+                <p class="muted section-lead">{{ 'vehicle.show.lead'|trans({'%plate%': vehicle.plateNumber}) }}</p>
             </div>
             <div class="vehicle-show-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">Add receipt</a>
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">View receipts</a>
-                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Maintenance</a>
-                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">Add plan</a>
-                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString()}) }}">Add event</a>
-                <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit vehicle</a>
-                <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}">Back to vehicles</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">{{ 'receipt.form.action_create'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'nav.receipts'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'nav.maintenance'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">{{ 'maintenance.plan_form.title_new'|trans }}</a>
+                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString()}) }}">{{ 'maintenance.event_form.title_new'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'vehicle.form.title_edit'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_vehicle_list') }}">{{ 'action.back_to_list'|trans }}</a>
             </div>
         </header>
 
         <section class="vehicle-kpi-grid">
             <article class="card-subtle vehicle-kpi-card">
-                <div class="vehicle-kpi-label">Receipts tracked</div>
+                <div class="vehicle-kpi-label">{{ 'vehicle.show.receipts_tracked'|trans }}</div>
                 <div class="vehicle-kpi-value">{{ receiptCount }}</div>
             </article>
             <article class="card-subtle vehicle-kpi-card">
-                <div class="vehicle-kpi-label">Maintenance events</div>
+                <div class="vehicle-kpi-label">{{ 'vehicle.show.maintenance_events'|trans }}</div>
                 <div class="vehicle-kpi-value">{{ maintenanceEventCount }}</div>
             </article>
             <article class="card-subtle vehicle-kpi-card">
-                <div class="vehicle-kpi-label">Upcoming plans</div>
+                <div class="vehicle-kpi-label">{{ 'vehicle.show.upcoming_plans'|trans }}</div>
                 <div class="vehicle-kpi-value">{{ upcomingMaintenancePlanCount }}</div>
             </article>
             <article class="card-subtle vehicle-kpi-card">
-                <div class="vehicle-kpi-label">Latest odometer seen</div>
-                <div class="vehicle-kpi-value">{{ latestReceiptOdometer ?? latestMaintenanceOdometer ?? 'n/a' }}{% if latestReceiptOdometer is not null or latestMaintenanceOdometer is not null %} km{% endif %}</div>
+                <div class="vehicle-kpi-label">{{ 'vehicle.show.latest_odometer_seen'|trans }}</div>
+                <div class="vehicle-kpi-value">{{ latestReceiptOdometer ?? latestMaintenanceOdometer ?? ('common.na'|trans) }}{% if latestReceiptOdometer is not null or latestMaintenanceOdometer is not null %} km{% endif %}</div>
             </article>
         </section>
 
         <section class="vehicle-insights">
             <article class="card vehicle-insight">
-                <h2>Latest fuel snapshot</h2>
+                <h2>{{ 'vehicle.show.latest_fuel_snapshot'|trans }}</h2>
                 {% if latestReceipt %}
                     <div class="vehicle-item-sub">{{ latestReceipt.issuedAt|date('d/m/Y H:i') }}</div>
                     <div class="vehicle-item-meta">
-                        <span>Total: {{ (latestReceipt.totalCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                        <span>{{ 'vehicle.show.total'|trans }}: {{ (latestReceipt.totalCents / 100)|number_format(2, '.', ' ') }} EUR</span>
                         {% if latestReceipt.stationName %}<span>{{ latestReceipt.stationName }}</span>{% endif %}
                     </div>
                     <div class="actions-wrap">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: latestReceipt.id, return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Open receipt</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: latestReceipt.id, return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit details</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">All receipts</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: latestReceipt.id, return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'receipt.action.open'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_edit_metadata', {id: latestReceipt.id, return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'receipt.action.edit_details'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'vehicle.show.all_receipts'|trans }}</a>
                     </div>
                 {% else %}
-                    <div class="vehicle-empty">No receipt linked to this vehicle yet.</div>
+                    <div class="vehicle-empty">{{ 'vehicle.show.no_receipt_yet'|trans }}</div>
                 {% endif %}
             </article>
 
             <article class="card vehicle-insight">
-                <h2>Maintenance watch</h2>
+                <h2>{{ 'vehicle.show.maintenance_watch'|trans }}</h2>
                 {% if nextMaintenancePlan %}
-                    <div class="vehicle-item-sub">Next plan: {{ nextMaintenancePlan.label }}</div>
+                    <div class="vehicle-item-sub">{{ 'vehicle.show.next_plan'|trans({'%label%': nextMaintenancePlan.label}) }}</div>
                     <div class="vehicle-item-meta">
                         <span>{{ nextMaintenancePlan.plannedFor|date('d/m/Y') }}</span>
-                        <span>{{ (nextMaintenancePlan.plannedCostCents / 100)|number_format(2, '.', ' ') }} {{ nextMaintenancePlan.currencyCode }}</span>
+                        <span>{{ 'vehicle.show.budget'|trans({'%amount%': (nextMaintenancePlan.plannedCostCents / 100)|number_format(2, '.', ' '), '%currency%': nextMaintenancePlan.currencyCode}) }}</span>
                     </div>
                     <div class="actions-wrap">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_edit', {id: nextMaintenancePlan.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit plan</a>
-                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Log event</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_edit', {id: nextMaintenancePlan.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'dashboard.edit_next_plan'|trans }}</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'maintenance_dashboard.log_event_now'|trans }}</a>
                     </div>
                 {% elseif latestMaintenanceEvent %}
-                    <div class="vehicle-item-sub">Last event: {{ latestMaintenanceEvent.eventType.value|upper }}</div>
+                    <div class="vehicle-item-sub">{{ 'vehicle.show.last_event'|trans({'%type%': latestMaintenanceEvent.eventType.value|upper}) }}</div>
                     <div class="vehicle-item-meta">
                         <span>{{ latestMaintenanceEvent.occurredAt|date('d/m/Y H:i') }}</span>
-                        {% if latestMaintenanceEvent.totalCostCents is not null %}<span>{{ (latestMaintenanceEvent.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ latestMaintenanceEvent.currencyCode }}</span>{% endif %}
+                        {% if latestMaintenanceEvent.totalCostCents is not null %}<span>{{ 'vehicle.show.cost'|trans({'%amount%': (latestMaintenanceEvent.totalCostCents / 100)|number_format(2, '.', ' '), '%currency%': latestMaintenanceEvent.currencyCode}) }}</span>{% endif %}
                     </div>
                     <div class="actions-wrap">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Open maintenance</a>
-                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add event</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'analytics.open_maintenance'|trans }}</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'maintenance.event_form.title_new'|trans }}</a>
                     </div>
                 {% else %}
                     <div class="vehicle-empty">
-                        <p>No maintenance signal yet for this vehicle.</p>
+                        <p>{{ 'vehicle.show.no_maintenance_signal'|trans }}</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add first event</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add first plan</a>
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'vehicle.show.add_first_event'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'vehicle.show.add_first_plan'|trans }}</a>
                         </div>
                     </div>
                 {% endif %}
             </article>
 
             <article class="card vehicle-insight">
-                <h2>Quick attention point</h2>
+                <h2>{{ 'vehicle.show.quick_attention'|trans }}</h2>
                 {% if attentionSummary %}
                     <div class="vehicle-item-sub">{{ attentionSummary }}</div>
                     <div class="vehicle-item-meta">
-                        <span>Recent fuel spend: {{ (fuelSpendTotalCents / 100)|number_format(2, '.', ' ') }} EUR</span>
-                        <span>{{ receiptCount }} receipt{% if receiptCount > 1 %}s{% endif %} tracked</span>
+                        <span>{{ 'vehicle.show.recent_fuel_spend'|trans({'%amount%': (fuelSpendTotalCents / 100)|number_format(2, '.', ' ')}) }}</span>
+                        <span>{{ (receiptCount > 1 ? 'vehicle.show.receipt_count_plural' : 'vehicle.show.receipt_count')|trans({'%count%': receiptCount}) }}</span>
                     </div>
                     <div class="actions-wrap">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: vehicle.id.toString()}) }}">Open analytics</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Vehicle timeline</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: vehicle.id.toString()}) }}">{{ 'nav.analytics'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'vehicle.show.vehicle_timeline'|trans }}</a>
                     </div>
                 {% else %}
                     <div class="vehicle-empty">
-                        <p>Start by adding a receipt or maintenance event for this vehicle.</p>
+                        <p>{{ 'vehicle.show.start_hint'|trans }}</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">Add receipt</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add maintenance event</a>
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">{{ 'receipt.form.action_create'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'maintenance.event_form.title_new'|trans }}</a>
                         </div>
                     </div>
                 {% endif %}
@@ -276,16 +276,16 @@
         <section class="vehicle-grid">
             <article class="card vehicle-panel">
                 <div class="vehicle-panel-head">
-                    <h2>Recent receipts</h2>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">Open filtered list</a>
+                    <h2>{{ 'vehicle.show.recent_receipts'|trans }}</h2>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'vehicle.show.open_filtered_list'|trans }}</a>
                 </div>
 
                 {% if receiptRows is empty %}
                     <div class="vehicle-empty">
-                        <p>No receipt linked to this vehicle yet.</p>
+                        <p>{{ 'vehicle.show.no_receipt_yet'|trans }}</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">Add first receipt</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString()}) }}">{{ 'receipt.form.action_create'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">{{ 'nav.imports'|trans }}</a>
                         </div>
                     </div>
                 {% else %}
@@ -293,12 +293,12 @@
                         <table class="app-table">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Station</th>
-                                    <th class="text-right">Odometer</th>
-                                    <th>Fuel</th>
-                                    <th class="text-right">Total</th>
-                                    <th>Action</th>
+                                    <th>{{ 'receipt.form.date'|trans }}</th>
+                                    <th>{{ 'analytics.station'|trans }}</th>
+                                    <th class="text-right">{{ 'maintenance.event_form.odometer'|trans }}</th>
+                                    <th>{{ 'receipt.form.fuel_type'|trans }}</th>
+                                    <th class="text-right">{{ 'analytics.total_cost'|trans }}</th>
+                                    <th>{{ 'common.actions'|trans }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -318,16 +318,16 @@
             <div class="vehicle-list">
                 <article class="card vehicle-panel">
                     <div class="vehicle-panel-head">
-                        <h2>Recent maintenance events</h2>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Open maintenance</a>
+                        <h2>{{ 'vehicle.show.recent_maintenance_events'|trans }}</h2>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'analytics.open_maintenance'|trans }}</a>
                     </div>
 
                     {% if recentMaintenanceEvents is empty %}
                         <div class="vehicle-empty">
-                            <p>No maintenance event recorded for this vehicle yet.</p>
+                            <p>{{ 'vehicle.show.no_maintenance_event_yet'|trans }}</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add first event</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Plan maintenance</a>
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'vehicle.show.add_first_event'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'maintenance.plan_form.title_new'|trans }}</a>
                             </div>
                         </div>
                     {% else %}
@@ -340,12 +340,12 @@
                                     </div>
                                     {% if event.description %}<div class="vehicle-item-sub">{{ event.description }}</div>{% endif %}
                                     <div class="vehicle-item-meta">
-                                        {% if event.odometerKilometers is not null %}<span>Odometer: {{ event.odometerKilometers }} km</span>{% endif %}
-                                        {% if event.totalCostCents is not null %}<span>Cost: {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}</span>{% endif %}
+                                        {% if event.odometerKilometers is not null %}<span>{{ 'vehicle.show.odometer'|trans({'%odometer%': event.odometerKilometers}) }}</span>{% endif %}
+                                        {% if event.totalCostCents is not null %}<span>{{ 'vehicle.show.cost'|trans({'%amount%': (event.totalCostCents / 100)|number_format(2, '.', ' '), '%currency%': event.currencyCode}) }}</span>{% endif %}
                                     </div>
                                     <div class="actions-wrap">
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: event.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit event</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Timeline</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: event.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'maintenance.event_form.title_edit'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'vehicle.show.vehicle_timeline'|trans }}</a>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -355,16 +355,16 @@
 
                 <article class="card vehicle-panel">
                     <div class="vehicle-panel-head">
-                        <h2>Upcoming maintenance plans</h2>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">Add plan</a>
+                        <h2>{{ 'vehicle.show.upcoming_maintenance_plans'|trans }}</h2>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString()}) }}">{{ 'maintenance.plan_form.title_new'|trans }}</a>
                     </div>
 
                     {% if upcomingMaintenancePlans is empty %}
                         <div class="vehicle-empty">
-                            <p>No upcoming maintenance plan for this vehicle.</p>
+                            <p>{{ 'vehicle.show.no_upcoming_plan'|trans }}</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Add first plan</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Open maintenance</a>
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_plan_new', {vehicle_id: vehicle.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'vehicle.show.add_first_plan'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'analytics.open_maintenance'|trans }}</a>
                             </div>
                         </div>
                     {% else %}
@@ -377,12 +377,12 @@
                                     </div>
                                     <div class="vehicle-item-meta">
                                         {% if plan.eventType is not null %}<span>{{ plan.eventType.value|upper }}</span>{% endif %}
-                                        <span>Budget: {{ (plan.plannedCostCents / 100)|number_format(2, '.', ' ') }} {{ plan.currencyCode }}</span>
+                                        <span>{{ 'vehicle.show.budget'|trans({'%amount%': (plan.plannedCostCents / 100)|number_format(2, '.', ' '), '%currency%': plan.currencyCode}) }}</span>
                                     </div>
                                     {% if plan.notes %}<div class="vehicle-item-sub">{{ plan.notes }}</div>{% endif %}
                                     <div class="actions-wrap">
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_edit', {id: plan.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">Edit plan</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">Timeline</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_edit', {id: plan.id.toString(), return_to: path('ui_vehicle_show', {id: vehicle.id.toString()})}) }}">{{ 'maintenance.plan_form.title_edit'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString()}) }}">{{ 'vehicle.show.vehicle_timeline'|trans }}</a>
                                     </div>
                                 </div>
                             {% endfor %}

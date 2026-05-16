@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-05-17 - Translation catalogs must keep a single top-level key per domain
+- Symptom: every translated page returned 500 with `Duplicate key "vehicle"` after an i18n migration pass.
+- Root cause: `messages.*.yaml` defined `vehicle:` twice (`vehicle.show` and later `vehicle.form`/`vehicle.validation`) instead of merging them under one top-level node.
+- Fix: group `show`, `form`, and `validation` under a single `vehicle:` block and re-run targeted functional tests.
+- Prevention: when extending translation catalogs, search for the existing top-level namespace first and append nested keys there instead of re-declaring the namespace.
+
 ## 2026-05-17 - Twig hash literals cannot contain nested `{{ ... }}` output strings
 - Symptom: analytics pages returned 500 with `Twig\Error\SyntaxError` complaining that a mapping value must be followed by a comma.
 - Root cause: translated labels were inserted inside Twig hash literals as quoted `{{ ... }}` strings while building JSON chart configs.

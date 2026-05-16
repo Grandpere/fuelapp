@@ -296,18 +296,18 @@ final class VehicleWebUiTest extends KernelTestCase
 
         $content = (string) $response->getContent();
         self::assertStringContainsString('Travel Car', $content);
-        self::assertStringContainsString('Plate TR-900-AA', $content);
-        self::assertStringContainsString('View receipts', $content);
+        self::assertStringContainsString('Plaque TR-900-AA', $content);
+        self::assertStringContainsString('Reçus', $content);
         self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
         self::assertStringNotContainsString('receipt_form_frame', $content);
         self::assertStringContainsString('/ui/receipts?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance/plans/new?vehicle_id='.$vehicleId, $content);
-        self::assertStringContainsString('Latest fuel snapshot', $content);
-        self::assertStringContainsString('Maintenance watch', $content);
-        self::assertStringContainsString('Quick attention point', $content);
-        self::assertStringContainsString('Recent fuel spend: 22.00 EUR', $content);
+        self::assertStringContainsString('Dernier instantané carburant', $content);
+        self::assertStringContainsString('Veille entretien', $content);
+        self::assertStringContainsString('Point d’attention rapide', $content);
+        self::assertStringContainsString('Dépense carburant récente : 22.00 EUR', $content);
         self::assertStringContainsString('/ui/analytics?vehicle_id='.$vehicleId, $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122().'/edit-metadata', $content);
@@ -343,11 +343,11 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         $content = (string) $response->getContent();
-        self::assertStringContainsString('No maintenance signal yet for this vehicle.', $content);
-        self::assertStringContainsString('Start by adding a receipt or maintenance event for this vehicle.', $content);
-        self::assertStringContainsString('No receipt linked to this vehicle yet.', $content);
-        self::assertStringContainsString('No maintenance event recorded for this vehicle yet.', $content);
-        self::assertStringContainsString('No upcoming maintenance plan for this vehicle.', $content);
+        self::assertStringContainsString('Aucun signal d’entretien pour ce véhicule pour le moment.', $content);
+        self::assertStringContainsString('Commencez par ajouter un reçu ou un événement d’entretien pour ce véhicule.', $content);
+        self::assertStringContainsString('Aucun reçu lié à ce véhicule pour le moment.', $content);
+        self::assertStringContainsString('Aucun événement d’entretien enregistré pour ce véhicule pour le moment.', $content);
+        self::assertStringContainsString('Aucun plan d’entretien à venir pour ce véhicule.', $content);
         self::assertStringContainsString('/ui/receipts/new?vehicle_id='.$vehicleId, $content);
         self::assertStringNotContainsString('receipt_form_frame', $content);
         self::assertStringContainsString('/ui/imports', $content);

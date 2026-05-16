@@ -108,16 +108,16 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $response = $this->request('GET', '/ui/maintenance', [], [], $sessionCookie);
 
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
-        self::assertStringContainsString('Maintenance', (string) $response->getContent());
-        self::assertStringContainsString('Timeline events', (string) $response->getContent());
-        self::assertStringContainsString('Planner (upcoming)', (string) $response->getContent());
-        self::assertStringContainsString('Attention now', (string) $response->getContent());
-        self::assertStringContainsString('Due soon', (string) $response->getContent());
-        self::assertStringContainsString('Recently handled', (string) $response->getContent());
-        self::assertStringContainsString('Configured', (string) $response->getContent());
-        self::assertStringContainsString('Watching', (string) $response->getContent());
-        self::assertStringContainsString('Add first event', (string) $response->getContent());
-        self::assertStringContainsString('Add first plan', (string) $response->getContent());
+        self::assertStringContainsString('Entretien', (string) $response->getContent());
+        self::assertStringContainsString('Événements de chronologie', (string) $response->getContent());
+        self::assertStringContainsString('Planificateur (à venir)', (string) $response->getContent());
+        self::assertStringContainsString('Attention maintenant', (string) $response->getContent());
+        self::assertStringContainsString('Bientôt dû', (string) $response->getContent());
+        self::assertStringContainsString('Récemment traité', (string) $response->getContent());
+        self::assertStringContainsString('Configuré', (string) $response->getContent());
+        self::assertStringContainsString('Surveillance', (string) $response->getContent());
+        self::assertStringContainsString('Ajouter le premier événement', (string) $response->getContent());
+        self::assertStringContainsString('Ajouter le premier plan', (string) $response->getContent());
     }
 
     public function testUserCanCreateAndEditMaintenanceEventAndPlan(): void
@@ -249,8 +249,8 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $dashboardContent = (string) $dashboardResponse->getContent();
         self::assertStringContainsString('Updated repair entry', $dashboardContent);
         self::assertStringContainsString('Front + rear brake replacement', $dashboardContent);
-        self::assertStringContainsString('Handled recently', $dashboardContent);
-        self::assertStringContainsString('Due soon', $dashboardContent);
+        self::assertStringContainsString('Traité récemment', $dashboardContent);
+        self::assertStringContainsString('Bientôt dû', $dashboardContent);
     }
 
     public function testCreateFormsCanPreselectVehicleFromQueryString(): void
@@ -332,11 +332,11 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $content = (string) $dashboard->getContent();
         $vehicleId = $vehicle->getId()->toRfc4122();
         self::assertStringContainsString('Oil service', $content);
-        self::assertStringContainsString('Trigger: WHICHEVER FIRST', $content);
-        self::assertStringContainsString('every 180 days', $content);
-        self::assertStringContainsString('every 12000 km', $content);
-        self::assertStringContainsString('Due now', $content);
-        self::assertStringContainsString('A triggered reminder is ready for follow-up.', $content);
+        self::assertStringContainsString('Déclencheur : WHICHEVER FIRST', $content);
+        self::assertStringContainsString('Tous les 180 jours', $content);
+        self::assertStringContainsString('Tous les 12000 km', $content);
+        self::assertStringContainsString('Dû maintenant', $content);
+        self::assertStringContainsString('Un rappel déclenché est prêt à être traité.', $content);
         self::assertStringContainsString('/ui/maintenance/events/new?vehicle_id='.$vehicleId.'&amp;event_type=service', $content);
         self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicleId, $content);
@@ -471,11 +471,11 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $dashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
         $dashboardContent = (string) $dashboard->getContent();
-        self::assertStringContainsString('Reminder rules', $dashboardContent);
+        self::assertStringContainsString('Règles de rappel', $dashboardContent);
         self::assertStringContainsString('Oil service', $dashboardContent);
-        self::assertStringContainsString('Every 180 days', $dashboardContent);
-        self::assertStringContainsString('Every 12000 km', $dashboardContent);
-        self::assertStringContainsString('Configured', $dashboardContent);
+        self::assertStringContainsString('Tous les 180 jours', $dashboardContent);
+        self::assertStringContainsString('Tous les 12000 km', $dashboardContent);
+        self::assertStringContainsString('Configuré', $dashboardContent);
 
         $ruleId = $rule->getId()->toRfc4122();
         $editPage = $this->request('GET', '/ui/maintenance/rules/'.$ruleId.'/edit', [], [], $sessionCookie);
@@ -532,7 +532,7 @@ final class MaintenanceWebUiTest extends KernelTestCase
 
         $finalDashboard = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $finalDashboard->getStatusCode());
-        self::assertStringContainsString('No reminder rule yet.', (string) $finalDashboard->getContent());
+        self::assertStringContainsString('Aucune règle de rappel pour le moment.', (string) $finalDashboard->getContent());
     }
 
     public function testReminderDashboardExplainsWhyNothingIsTriggeredYet(): void
@@ -569,10 +569,10 @@ final class MaintenanceWebUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_OK, $dashboard->getStatusCode());
         $content = (string) $dashboard->getContent();
         self::assertStringContainsString('Brake inspection', $content);
-        self::assertStringContainsString('Configured', $content);
-        self::assertStringContainsString('Waiting for odometer data before mileage-based tracking can start.', $content);
-        self::assertStringContainsString('Waiting for odometer data from a receipt or maintenance event to evaluate this rule.', $content);
-        self::assertStringContainsString('No triggered reminder yet. Your rules are being tracked, but none is due right now.', $content);
+        self::assertStringContainsString('Configuré', $content);
+        self::assertStringContainsString('En attente de données kilométriques avant de pouvoir démarrer le suivi basé sur le kilométrage.', $content);
+        self::assertStringContainsString('En attente de données kilométriques depuis un reçu ou un événement d’entretien pour évaluer cette règle.', $content);
+        self::assertStringContainsString('Aucun rappel déclenché pour le moment. Vos règles sont suivies, mais aucune n’est due actuellement.', $content);
     }
 
     public function testVehicleFilteredMaintenanceEmptyStatesLinkBackToVehicle(): void
@@ -597,8 +597,8 @@ final class MaintenanceWebUiTest extends KernelTestCase
         $response = $this->request('GET', '/ui/maintenance?vehicle_id='.$vehicleId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
-        self::assertStringContainsString('No maintenance event yet.', $content);
-        self::assertStringContainsString('No reminder rule yet.', $content);
+        self::assertStringContainsString('Aucun événement d’entretien pour le moment.', $content);
+        self::assertStringContainsString('Aucune règle de rappel pour le moment.', $content);
         self::assertStringContainsString('/ui/vehicles/'.$vehicleId, $content);
     }
 

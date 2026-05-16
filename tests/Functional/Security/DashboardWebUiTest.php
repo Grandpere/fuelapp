@@ -126,23 +126,23 @@ final class DashboardWebUiTest extends WebTestCase
         $this->client->request('GET', '/ui/dashboard');
         self::assertResponseStatusCodeSame(Response::HTTP_OK);
         $content = (string) $this->client->getResponse()->getContent();
-        self::assertStringContainsString('Dashboard', $content);
-        self::assertStringContainsString('Needs attention now', $content);
-        self::assertStringContainsString('Review import', $content);
-        self::assertStringContainsString('Upload replacement', $content);
-        self::assertStringContainsString('Planned maintenance is coming up', $content);
-        self::assertStringContainsString('Recent receipts', $content);
+        self::assertStringContainsString('Tableau de bord', $content);
+        self::assertStringContainsString('À traiter maintenant', $content);
+        self::assertStringContainsString('Relire le prochain en attente', $content);
+        self::assertStringContainsString('Téléverser un remplacement', $content);
+        self::assertStringContainsString('Un entretien planifié approche', $content);
+        self::assertStringContainsString('Reçus récents', $content);
         self::assertStringContainsString('Fuel Corner', $content);
-        self::assertStringContainsString('Edit details', $content);
-        self::assertStringContainsString('Open vehicle', $content);
-        self::assertStringContainsString('Analytics', $content);
-        self::assertStringContainsString('Import queue snapshot', $content);
+        self::assertStringContainsString('Modifier les détails', $content);
+        self::assertStringContainsString('Ouvrir le véhicule', $content);
+        self::assertStringContainsString('Analyses', $content);
+        self::assertStringContainsString('Instantané de la file d’import', $content);
         self::assertStringContainsString('needs-review.jpg', $content);
         self::assertStringContainsString('failed-upload.jpg', $content);
-        self::assertStringContainsString('Drill down by area', $content);
-        self::assertStringContainsString('Open follow-up now', $content);
-        self::assertStringContainsString('Edit next plan', $content);
-        self::assertStringContainsString('Open month view', $content);
+        self::assertStringContainsString('Explorer par zone', $content);
+        self::assertStringContainsString('Traiter maintenant', $content);
+        self::assertStringContainsString('Modifier le prochain plan', $content);
+        self::assertStringContainsString('Ouvrir la vue du mois', $content);
         self::assertStringContainsString('/ui/imports?status=needs_review', $content);
         self::assertStringContainsString('/ui/imports?status=failed', $content);
         self::assertStringContainsString('/ui/maintenance/plans/'.$plan->getId()->toRfc4122().'/edit', $content);
@@ -161,14 +161,14 @@ final class DashboardWebUiTest extends WebTestCase
         $this->client->request('GET', '/ui/dashboard');
         self::assertResponseStatusCodeSame(Response::HTTP_OK);
         $content = (string) $this->client->getResponse()->getContent();
-        self::assertStringContainsString('No urgent follow-up is waiting right now.', $content);
-        self::assertStringContainsString('Add first receipt', $content);
+        self::assertStringContainsString('Aucun suivi urgent n’attend pour le moment.', $content);
+        self::assertStringContainsString('Ajouter un reçu', $content);
         self::assertStringContainsString('/ui/receipts/new', $content);
         self::assertStringNotContainsString('receipt_form_frame', $content);
-        self::assertStringContainsString('Upload first file', $content);
-        self::assertStringContainsString('0 vehicles tracked so far.', $content);
-        self::assertStringContainsString('Drill down by area', $content);
-        self::assertStringContainsString('Open month view', $content);
+        self::assertStringContainsString('Téléverser des fichiers', $content);
+        self::assertStringContainsString('0 véhicules suivis pour le moment.', $content);
+        self::assertStringContainsString('Explorer par zone', $content);
+        self::assertStringContainsString('Ouvrir la vue du mois', $content);
     }
 
     private function createUser(string $email, string $password): UserEntity

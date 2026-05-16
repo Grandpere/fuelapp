@@ -6,8 +6,10 @@
 - [completed] Review the written spec with the user before turning it into an implementation plan.
 - [completed] Translate the main user-facing shell plus receipt, import, station, public fuel map, and analytics flows.
 - [completed] Translate the admin/back-office shell, dashboard, and import workflows.
+- [completed] Translate the remaining user-facing dashboard, vehicle, and maintenance screens plus their tests.
+- [completed] Re-run quality gates and prepare the manual functional validation handover.
 - [pending] Translate the remaining admin resource screens (users, identities, security, audit, vehicles, stations, receipts, maintenance, diagnostics).
-- [pending] Re-run quality gates and hand over the remaining manual functional admin validation.
+- [pending] Hand over the remaining manual functional admin validation.
 
 # TODO - SP41-003 Topbar account actions responsiveness
 

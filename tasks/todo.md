@@ -1,3 +1,17 @@
+# TODO - UI i18n migration (fr default, en fallback)
+
+## Plan
+- [completed] Define the translation strategy and migration scope with the user.
+- [completed] Write the design spec for progressive Symfony translations with `fr` default and `en` fallback.
+- [pending] Review the written spec with the user before turning it into an implementation plan.
+
+# TODO - SP41-003 Topbar account actions responsiveness
+
+## Plan
+- [completed] Inspect the shared authenticated shell and confirm why the account controls overflow.
+- [completed] Rework the topbar layout so navigation and account actions remain visible without awkward scrolling.
+- [completed] Verify the header on desktop and mobile-sized viewports, then run the relevant quality checks.
+
 # TODO - SP38-001 Public fuel station import and cache
 
 ## Plan

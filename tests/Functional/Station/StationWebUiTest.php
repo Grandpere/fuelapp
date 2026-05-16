@@ -331,7 +331,7 @@ final class StationWebUiTest extends WebTestCase
         $afterToggle = $this->request('GET', $detailPath);
         self::assertSame(Response::HTTP_OK, $afterToggle->getStatusCode());
         $afterToggleContent = (string) $afterToggle->getContent();
-        self::assertStringContainsString('Favorite station', $afterToggleContent);
+        self::assertStringContainsString('Station favorite', $afterToggleContent);
         self::assertStringContainsString('Station ajoutée aux favoris.', $afterToggleContent);
     }
 

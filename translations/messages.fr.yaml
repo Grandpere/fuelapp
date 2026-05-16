@@ -48,3 +48,117 @@ contact:
     suggested_user_email: 'Votre e-mail utilisateur'
     suggested_job_or_receipt: 'Identifiant d’import ou de reçu si pertinent'
     suggested_issue_summary: 'Brève description du problème et du comportement attendu'
+
+common:
+    back: 'Retour'
+    not_linked: 'Non lié'
+
+flash:
+    csrf:
+        invalid: 'Jeton CSRF invalide.'
+    vehicle:
+        created: 'Véhicule créé.'
+        updated: 'Véhicule mis à jour.'
+        deleted: 'Véhicule supprimé.'
+    station:
+        updated: 'Station mise à jour.'
+        favorite_added: 'Station ajoutée aux favoris.'
+        favorite_removed: 'Station retirée des favoris.'
+    maintenance:
+        event_created: 'Événement d’entretien créé.'
+        event_updated: 'Événement d’entretien mis à jour.'
+        plan_created: 'Plan d’entretien créé.'
+        plan_updated: 'Plan d’entretien mis à jour.'
+        rule_created: 'Règle de rappel créée.'
+        rule_updated: 'Règle de rappel mise à jour.'
+        rule_deleted: 'Règle de rappel supprimée.'
+
+vehicle:
+    form:
+        title_new: 'Ajouter un véhicule'
+        title_edit: 'Modifier le véhicule'
+        lead_new: 'Créez un véhicule pour regrouper les reçus, coûts d’entretien et rappels au même endroit.'
+        lead_edit: 'Mettez à jour le profil du véhicule utilisé pour regrouper les reçus et les coûts d’entretien.'
+        name: 'Nom'
+        plate_number: 'Immatriculation'
+        action_create: 'Créer le véhicule'
+        action_save: 'Enregistrer les modifications'
+    validation:
+        name_required: 'Le nom est obligatoire.'
+        plate_required: 'L’immatriculation est obligatoire.'
+        duplicate_plate: 'Un véhicule avec cette immatriculation existe déjà pour ce propriétaire.'
+
+station:
+    form:
+        title_edit: 'Modifier la station'
+        lead_edit: 'Mettez à jour l’adresse de la station et relancez le géocodage si nécessaire.'
+        name: 'Nom'
+        street_name: 'Rue'
+        postal_code: 'Code postal'
+        city: 'Ville'
+        action_save: 'Enregistrer la station'
+    validation:
+        invalid_csrf: 'Jeton CSRF invalide.'
+
+maintenance:
+    form:
+        vehicle: 'Véhicule'
+        select_vehicle: 'Sélectionner un véhicule'
+        currency: 'Devise'
+        notes: 'Notes'
+        description: 'Description'
+    event_form:
+        title_new: 'Ajouter un événement d’entretien'
+        title_edit: 'Modifier l’événement d’entretien'
+        lead: 'Enregistrez une opération d’entretien avec le véhicule, la date, le kilométrage et le coût.'
+        event_type: 'Type d’événement'
+        occurred_at: 'Date/heure'
+        odometer: 'Kilométrage (km)'
+        total_cost: 'Coût total (EUR)'
+        total_cost_help: 'Utilisez un montant en euros, par exemple <code>189.90</code>.'
+        action_create: 'Créer l’événement'
+        action_save: 'Enregistrer les modifications'
+    plan_form:
+        title_new: 'Ajouter un plan d’entretien'
+        title_edit: 'Modifier le plan d’entretien'
+        lead: 'Planifiez une future opération d’entretien avec une date, un budget et un lien éventuel avec un type d’événement.'
+        label: 'Libellé'
+        event_type_optional: 'Type d’événement (optionnel)'
+        planned_date: 'Date prévue'
+        planned_cost: 'Coût prévu (EUR)'
+        planned_cost_help: 'Utilisez un montant en euros, par exemple <code>320.00</code>.'
+        action_create: 'Créer le plan'
+        action_save: 'Enregistrer les modifications'
+    rule_form:
+        title_new: 'Ajouter une règle de rappel'
+        title_edit: 'Modifier la règle de rappel'
+        lead: 'Définissez quand un véhicule doit faire remonter un rappel d’entretien selon le temps, le kilométrage, ou le premier des deux.'
+        rule_name: 'Nom de la règle'
+        rule_name_placeholder: 'Vidange'
+        trigger_mode: 'Mode de déclenchement'
+        suggested_event_type: 'Type d’événement conseillé (optionnel)'
+        interval_days: 'Intervalle en jours'
+        interval_days_help: 'Obligatoire pour <code>DATE</code> et <code>WHICHEVER FIRST</code>.'
+        interval_kilometers: 'Intervalle en kilomètres'
+        interval_kilometers_help: 'Obligatoire pour <code>ODOMETER</code> et <code>WHICHEVER FIRST</code>.'
+        action_create: 'Créer la règle'
+        action_save: 'Enregistrer les modifications'
+    validation:
+        vehicle_not_found: 'Véhicule introuvable.'
+        invalid_event_type: 'Type d’événement invalide.'
+        invalid_event_date: 'Date d’événement invalide.'
+        invalid_planned_date: 'Date prévue invalide.'
+        odometer_integer: 'Le kilométrage doit être un entier.'
+        odometer_non_negative: 'Le kilométrage doit être positif ou nul.'
+        total_cost_invalid: 'Le coût total doit être un montant EUR valide, par exemple 189.90.'
+        total_cost_non_negative: 'Le coût total doit être positif ou nul.'
+        currency_code: 'Le code devise doit contenir exactement 3 lettres.'
+        label_required: 'Le libellé est obligatoire.'
+        planned_cost_invalid: 'Le coût prévu doit être un montant EUR positif.'
+        rule_name_required: 'Le nom de la règle est obligatoire.'
+        invalid_trigger_mode: 'Mode de déclenchement invalide.'
+        interval_days_positive: 'L’intervalle en jours doit être un entier positif.'
+        interval_kilometers_positive: 'L’intervalle en kilomètres doit être un entier positif.'
+        date_requires_days: 'Le déclencheur DATE nécessite un intervalle en jours.'
+        odometer_requires_kilometers: 'Le déclencheur ODOMETER nécessite un intervalle en kilomètres.'
+        whichever_requires_both: 'Le déclencheur WHICHEVER_FIRST nécessite les deux intervalles jours et kilomètres.'

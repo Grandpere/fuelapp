@@ -48,3 +48,117 @@ contact:
     suggested_user_email: 'Your user email'
     suggested_job_or_receipt: 'Import job ID or receipt ID when relevant'
     suggested_issue_summary: 'Short description of the issue and expected behavior'
+
+common:
+    back: 'Back'
+    not_linked: 'Not linked'
+
+flash:
+    csrf:
+        invalid: 'Invalid CSRF token.'
+    vehicle:
+        created: 'Vehicle created.'
+        updated: 'Vehicle updated.'
+        deleted: 'Vehicle deleted.'
+    station:
+        updated: 'Station updated.'
+        favorite_added: 'Station added to favorites.'
+        favorite_removed: 'Station removed from favorites.'
+    maintenance:
+        event_created: 'Maintenance event created.'
+        event_updated: 'Maintenance event updated.'
+        plan_created: 'Planned cost created.'
+        plan_updated: 'Planned cost updated.'
+        rule_created: 'Reminder rule created.'
+        rule_updated: 'Reminder rule updated.'
+        rule_deleted: 'Reminder rule deleted.'
+
+vehicle:
+    form:
+        title_new: 'Add vehicle'
+        title_edit: 'Edit vehicle'
+        lead_new: 'Create a vehicle to group receipts, maintenance costs and reminders in one place.'
+        lead_edit: 'Update the vehicle profile used to group receipts and maintenance costs.'
+        name: 'Name'
+        plate_number: 'Plate number'
+        action_create: 'Create vehicle'
+        action_save: 'Save changes'
+    validation:
+        name_required: 'Name is required.'
+        plate_required: 'Plate number is required.'
+        duplicate_plate: 'A vehicle with this plate already exists for this owner.'
+
+station:
+    form:
+        title_edit: 'Edit station'
+        lead_edit: 'Update station address and retrigger geocoding when needed.'
+        name: 'Name'
+        street_name: 'Street name'
+        postal_code: 'Postal code'
+        city: 'City'
+        action_save: 'Save station'
+    validation:
+        invalid_csrf: 'Invalid CSRF token.'
+
+maintenance:
+    form:
+        vehicle: 'Vehicle'
+        select_vehicle: 'Select vehicle'
+        currency: 'Currency'
+        notes: 'Notes'
+        description: 'Description'
+    event_form:
+        title_new: 'Add maintenance event'
+        title_edit: 'Edit maintenance event'
+        lead: 'Record a maintenance operation with vehicle, timing, odometer and cost context.'
+        event_type: 'Event type'
+        occurred_at: 'Date/time'
+        odometer: 'Odometer (km)'
+        total_cost: 'Total cost (EUR)'
+        total_cost_help: 'Use an amount in euros, for example <code>189.90</code>.'
+        action_create: 'Create event'
+        action_save: 'Save changes'
+    plan_form:
+        title_new: 'Add maintenance plan'
+        title_edit: 'Edit maintenance plan'
+        lead: 'Plan a future maintenance operation with date, budget and optional event type linkage.'
+        label: 'Label'
+        event_type_optional: 'Event type (optional)'
+        planned_date: 'Planned date'
+        planned_cost: 'Planned cost (EUR)'
+        planned_cost_help: 'Use an amount in euros, for example <code>320.00</code>.'
+        action_create: 'Create plan'
+        action_save: 'Save changes'
+    rule_form:
+        title_new: 'Add reminder rule'
+        title_edit: 'Edit reminder rule'
+        lead: 'Define when a vehicle should surface a maintenance reminder based on time, mileage, or whichever comes first.'
+        rule_name: 'Rule name'
+        rule_name_placeholder: 'Oil service'
+        trigger_mode: 'Trigger mode'
+        suggested_event_type: 'Suggested event type (optional)'
+        interval_days: 'Interval days'
+        interval_days_help: 'Required for <code>DATE</code> and <code>WHICHEVER FIRST</code>.'
+        interval_kilometers: 'Interval kilometers'
+        interval_kilometers_help: 'Required for <code>ODOMETER</code> and <code>WHICHEVER FIRST</code>.'
+        action_create: 'Create rule'
+        action_save: 'Save changes'
+    validation:
+        vehicle_not_found: 'Vehicle not found.'
+        invalid_event_type: 'Invalid event type.'
+        invalid_event_date: 'Invalid event date.'
+        invalid_planned_date: 'Invalid planned date.'
+        odometer_integer: 'Odometer must be an integer.'
+        odometer_non_negative: 'Odometer must be non-negative.'
+        total_cost_invalid: 'Total cost must be a valid EUR amount, for example 189.90.'
+        total_cost_non_negative: 'Total cost must be non-negative.'
+        currency_code: 'Currency code must contain exactly 3 letters.'
+        label_required: 'Label is required.'
+        planned_cost_invalid: 'Planned cost must be a positive EUR amount.'
+        rule_name_required: 'Rule name is required.'
+        invalid_trigger_mode: 'Invalid trigger mode.'
+        interval_days_positive: 'Days interval must be a positive integer.'
+        interval_kilometers_positive: 'Kilometers interval must be a positive integer.'
+        date_requires_days: 'DATE trigger requires a days interval.'
+        odometer_requires_kilometers: 'ODOMETER trigger requires a kilometers interval.'
+        whichever_requires_both: 'WHICHEVER_FIRST trigger requires both days and kilometers intervals.'

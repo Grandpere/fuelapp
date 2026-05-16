@@ -261,7 +261,7 @@ final class StationWebUiTest extends WebTestCase
         $afterToggleOn = $this->request('GET', '/ui/stations');
         self::assertSame(Response::HTTP_OK, $afterToggleOn->getStatusCode());
         $afterToggleOnContent = (string) $afterToggleOn->getContent();
-        self::assertStringContainsString('Station added to favorites.', $afterToggleOnContent);
+        self::assertStringContainsString('Station ajoutée aux favoris.', $afterToggleOnContent);
         self::assertStringContainsString('Favorite List Station', $afterToggleOnContent);
         self::assertStringContainsString('Favorite</span>', $afterToggleOnContent);
 
@@ -276,7 +276,7 @@ final class StationWebUiTest extends WebTestCase
 
         $afterToggleOff = $this->request('GET', '/ui/stations');
         self::assertSame(Response::HTTP_OK, $afterToggleOff->getStatusCode());
-        self::assertStringContainsString('Station removed from favorites.', (string) $afterToggleOff->getContent());
+        self::assertStringContainsString('Station retirée des favoris.', (string) $afterToggleOff->getContent());
     }
 
     public function testStationDetailCanToggleFavoriteState(): void
@@ -332,7 +332,7 @@ final class StationWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $afterToggle->getStatusCode());
         $afterToggleContent = (string) $afterToggle->getContent();
         self::assertStringContainsString('Favorite station', $afterToggleContent);
-        self::assertStringContainsString('Station added to favorites.', $afterToggleContent);
+        self::assertStringContainsString('Station ajoutée aux favoris.', $afterToggleContent);
     }
 
     public function testStationToggleFavoriteRejectsInvalidCsrfAndInaccessibleStation(): void
@@ -403,7 +403,7 @@ final class StationWebUiTest extends WebTestCase
 
         $afterInvalidCsrf = $this->request('GET', '/ui/stations');
         self::assertSame(Response::HTTP_OK, $afterInvalidCsrf->getStatusCode());
-        self::assertStringContainsString('Invalid CSRF token.', (string) $afterInvalidCsrf->getContent());
+        self::assertStringContainsString('Jeton CSRF invalide.', (string) $afterInvalidCsrf->getContent());
 
         $pageResponse = $this->request('GET', '/ui/stations');
         self::assertSame(Response::HTTP_OK, $pageResponse->getStatusCode());

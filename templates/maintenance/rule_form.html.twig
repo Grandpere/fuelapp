@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{% if isEdit %}Edit reminder rule{% else %}New reminder rule{% endif %}{% endblock %}
+{% block title %}{% if isEdit %}{{ 'maintenance.rule_form.title_edit'|trans }}{% else %}{{ 'maintenance.rule_form.title_new'|trans }}{% endif %}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -30,10 +30,10 @@
     <main class="app-shell maintenance-form-page">
         <header class="maintenance-form-header">
             <div class="page-header">
-                <h1 class="page-title">{% if isEdit %}Edit reminder rule{% else %}Add reminder rule{% endif %}</h1>
-                <p class="muted section-lead">Define when a vehicle should surface a maintenance reminder based on time, mileage, or whichever comes first.</p>
+                <h1 class="page-title">{% if isEdit %}{{ 'maintenance.rule_form.title_edit'|trans }}{% else %}{{ 'maintenance.rule_form.title_new'|trans }}{% endif %}</h1>
+                <p class="muted section-lead">{{ 'maintenance.rule_form.lead'|trans }}</p>
             </div>
-            <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', formData.vehicleId ? {vehicle_id: formData.vehicleId} : {}) }}" data-turbo-frame="_top">Back</a>
+            <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', formData.vehicleId ? {vehicle_id: formData.vehicleId} : {}) }}" data-turbo-frame="_top">{{ 'common.back'|trans }}</a>
         </header>
 
         <section class="card maintenance-form-card">
@@ -41,7 +41,7 @@
                 <div class="flash flash-error">
                     <ul class="flash-list">
                         {% for error in errors %}
-                            <li>{{ error }}</li>
+                            <li>{{ error|trans }}</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -52,20 +52,20 @@
 
                 <div class="form-grid-2">
                     <label class="label">
-                        Vehicle
+                        {{ 'maintenance.form.vehicle'|trans }}
                         <select class="select" name="vehicleId" required>
-                            <option value="">Select vehicle</option>
+                            <option value="">{{ 'maintenance.form.select_vehicle'|trans }}</option>
                             {% for optionId, optionLabel in vehicleOptions %}
                                 <option value="{{ optionId }}" {% if formData.vehicleId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
                             {% endfor %}
                         </select>
                     </label>
                     <label class="label">
-                        Rule name
-                        <input class="input" type="text" name="name" maxlength="120" value="{{ formData.name }}" placeholder="Oil service" required>
+                        {{ 'maintenance.rule_form.rule_name'|trans }}
+                        <input class="input" type="text" name="name" maxlength="120" value="{{ formData.name }}" placeholder="{{ 'maintenance.rule_form.rule_name_placeholder'|trans }}" required>
                     </label>
                     <label class="label">
-                        Trigger mode
+                        {{ 'maintenance.rule_form.trigger_mode'|trans }}
                         <select class="select" name="triggerMode" required>
                             {% for triggerMode in triggerModes %}
                                 <option value="{{ triggerMode }}" {% if formData.triggerMode == triggerMode %}selected{% endif %}>{{ triggerMode|replace({'_': ' '})|upper }}</option>
@@ -73,29 +73,29 @@
                         </select>
                     </label>
                     <label class="label">
-                        Suggested event type (optional)
+                        {{ 'maintenance.rule_form.suggested_event_type'|trans }}
                         <select class="select" name="eventType">
-                            <option value="">Not linked</option>
+                            <option value="">{{ 'common.not_linked'|trans }}</option>
                             {% for eventType in eventTypes %}
                                 <option value="{{ eventType }}" {% if formData.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
                             {% endfor %}
                         </select>
                     </label>
                     <label class="label">
-                        Interval days
+                        {{ 'maintenance.rule_form.interval_days'|trans }}
                         <input class="input" type="number" min="1" step="1" name="intervalDays" value="{{ formData.intervalDays }}" placeholder="180">
-                        <small class="muted">Required for <code>DATE</code> and <code>WHICHEVER FIRST</code>.</small>
+                        <small class="muted">{{ 'maintenance.rule_form.interval_days_help'|trans|raw }}</small>
                     </label>
                     <label class="label">
-                        Interval kilometers
+                        {{ 'maintenance.rule_form.interval_kilometers'|trans }}
                         <input class="input" type="number" min="1" step="1" name="intervalKilometers" value="{{ formData.intervalKilometers }}" placeholder="12000">
-                        <small class="muted">Required for <code>ODOMETER</code> and <code>WHICHEVER FIRST</code>.</small>
+                        <small class="muted">{{ 'maintenance.rule_form.interval_kilometers_help'|trans|raw }}</small>
                     </label>
                 </div>
 
                 <div class="actions-wrap">
-                    <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create rule{% endif %}</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', formData.vehicleId ? {vehicle_id: formData.vehicleId} : {}) }}" data-turbo-frame="_top">Cancel</a>
+                    <button class="btn btn-primary" type="submit">{% if isEdit %}{{ 'maintenance.rule_form.action_save'|trans }}{% else %}{{ 'maintenance.rule_form.action_create'|trans }}{% endif %}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_maintenance_index', formData.vehicleId ? {vehicle_id: formData.vehicleId} : {}) }}" data-turbo-frame="_top">{{ 'action.cancel'|trans }}</a>
                 </div>
             </form>
         </section>

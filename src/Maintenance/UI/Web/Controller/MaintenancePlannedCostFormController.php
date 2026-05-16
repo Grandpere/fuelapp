@@ -94,7 +94,7 @@ final class MaintenancePlannedCostFormController extends AbstractController
                 }
 
                 $this->plannedCostRepository->save($plan);
-                $this->addFlash('success', null === $id ? 'Planned cost created.' : 'Planned cost updated.');
+                $this->addFlash('success', null === $id ? 'flash.maintenance.plan_created' : 'flash.maintenance.plan_updated');
 
                 return new RedirectResponse($backToListUrl, Response::HTTP_SEE_OTHER);
             }
@@ -184,36 +184,36 @@ final class MaintenancePlannedCostFormController extends AbstractController
         $errors = [];
 
         if (!$this->isCsrfTokenValid('maintenance_plan_form', $formData['_token'])) {
-            $errors[] = 'Jeton CSRF invalide.';
+            $errors[] = 'flash.csrf.invalid';
         }
 
         $vehicleId = trim($formData['vehicleId']);
         if (!Uuid::isValid($vehicleId) || !$this->vehicleRepository->belongsToOwner($vehicleId, $ownerId)) {
-            $errors[] = 'Vehicle not found.';
+            $errors[] = 'maintenance.validation.vehicle_not_found';
         }
 
         $label = trim($formData['label']);
         if ('' === $label) {
-            $errors[] = 'Label is required.';
+            $errors[] = 'maintenance.validation.label_required';
         }
 
         if ('' !== trim($formData['eventType']) && !in_array($formData['eventType'], array_map(static fn (MaintenanceEventType $type): string => $type->value, MaintenanceEventType::cases()), true)) {
-            $errors[] = 'Invalid event type.';
+            $errors[] = 'maintenance.validation.invalid_event_type';
         }
 
         $plannedFor = DateTimeImmutable::createFromFormat('Y-m-d', $formData['plannedFor']);
         if (false === $plannedFor) {
-            $errors[] = 'Invalid planned date.';
+            $errors[] = 'maintenance.validation.invalid_planned_date';
         }
 
         $plannedCost = $this->nullableMoneyCents($formData['plannedCostEuros']);
         if (null === $plannedCost || $plannedCost <= 0) {
-            $errors[] = 'Planned cost must be a positive EUR amount.';
+            $errors[] = 'maintenance.validation.planned_cost_invalid';
         }
 
         $currencyCode = strtoupper(trim($formData['currencyCode']));
         if (3 !== strlen($currencyCode)) {
-            $errors[] = 'Currency code must contain exactly 3 letters.';
+            $errors[] = 'maintenance.validation.currency_code';
         }
 
         return array_values(array_unique($errors));

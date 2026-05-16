@@ -1,19 +1,19 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit station{% endblock %}
+{% block title %}{{ 'station.form.title_edit'|trans }}{% endblock %}
 
 {% block body %}
     <main class="app-shell page-stack page-narrow shell-compact">
         <header class="page-header">
-            <h1 class="page-title">Edit station</h1>
-            <p class="muted section-lead">Update station address and retrigger geocoding when needed.</p>
+            <h1 class="page-title">{{ 'station.form.title_edit'|trans }}</h1>
+            <p class="muted section-lead">{{ 'station.form.lead_edit'|trans }}</p>
         </header>
 
         {% if errors is not empty %}
             <div class="flash flash-error">
                 <ul class="flash-list">
                     {% for error in errors %}
-                        <li>{{ error }}</li>
+                        <li>{{ error|trans }}</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -24,26 +24,26 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('station_edit_' ~ stationId) }}">
                 <div class="form-grid-2">
                     <label class="label">
-                        Name
+                        {{ 'station.form.name'|trans }}
                         <input class="input" type="text" name="name" value="{{ formData.name }}" required>
                     </label>
                     <label class="label">
-                        Street name
+                        {{ 'station.form.street_name'|trans }}
                         <input class="input" type="text" name="streetName" value="{{ formData.streetName }}" required>
                     </label>
                     <label class="label">
-                        Postal code
+                        {{ 'station.form.postal_code'|trans }}
                         <input class="input" type="text" name="postalCode" value="{{ formData.postalCode }}" required>
                     </label>
                     <label class="label">
-                        City
+                        {{ 'station.form.city'|trans }}
                         <input class="input" type="text" name="city" value="{{ formData.city }}" required>
                     </label>
                 </div>
 
                 <div class="actions-wrap">
-                    <button class="btn btn-primary" type="submit">Save station</button>
-                    <a class="btn btn-secondary" href="{{ redirect }}">Cancel</a>
+                    <button class="btn btn-primary" type="submit">{{ 'station.form.action_save'|trans }}</button>
+                    <a class="btn btn-secondary" href="{{ redirect }}">{{ 'action.cancel'|trans }}</a>
                 </div>
             </form>
         </section>

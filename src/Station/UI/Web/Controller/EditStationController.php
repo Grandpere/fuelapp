@@ -63,7 +63,7 @@ final class EditStationController extends AbstractController
             ];
 
             if (!$this->isCsrfTokenValid('station_edit_'.$id, $formData['_token'])) {
-                $errors[] = 'Invalid CSRF token.';
+                $errors[] = 'station.validation.invalid_csrf';
             }
 
             foreach (['name', 'streetName', 'postalCode', 'city'] as $field) {
@@ -81,7 +81,7 @@ final class EditStationController extends AbstractController
                     $formData['city'],
                 ));
 
-                $this->addFlash('success', 'Station updated.');
+                $this->addFlash('success', 'flash.station.updated');
 
                 return new RedirectResponse($redirect, Response::HTTP_SEE_OTHER);
             }

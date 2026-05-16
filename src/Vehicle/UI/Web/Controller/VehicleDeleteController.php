@@ -53,7 +53,7 @@ final class VehicleDeleteController extends AbstractController
         }
 
         $this->vehicleRepository->delete($id);
-        $this->addFlash('success', 'Vehicle deleted.');
+        $this->addFlash('success', 'flash.vehicle.deleted');
 
         return new RedirectResponse($this->generateUrl('ui_vehicle_list'), Response::HTTP_SEE_OTHER);
     }

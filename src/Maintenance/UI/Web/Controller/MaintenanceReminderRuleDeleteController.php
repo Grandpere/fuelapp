@@ -53,7 +53,7 @@ final class MaintenanceReminderRuleDeleteController extends AbstractController
         }
 
         $this->ruleRepository->delete($id);
-        $this->addFlash('success', 'Reminder rule deleted.');
+        $this->addFlash('success', 'flash.maintenance.rule_deleted');
 
         return new RedirectResponse($this->generateUrl('ui_maintenance_index', ['vehicle_id' => $rule->vehicleId()]), Response::HTTP_SEE_OTHER);
     }

@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{% if isEdit %}Edit Vehicle{% else %}New Vehicle{% endif %}{% endblock %}
+{% block title %}{% if isEdit %}{{ 'vehicle.form.title_edit'|trans }}{% else %}{{ 'vehicle.form.title_new'|trans }}{% endif %}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -29,10 +29,10 @@
     <main class="app-shell vehicle-form-page">
         <header class="vehicle-form-header">
             <div class="page-header">
-                <h1 class="page-title">{% if isEdit %}Edit vehicle{% else %}Add vehicle{% endif %}</h1>
-                <p class="muted section-lead">{% if isEdit %}Update the vehicle profile used to group receipts and maintenance costs.{% else %}Create a vehicle to group receipts, maintenance costs and reminders in one place.{% endif %}</p>
+                <h1 class="page-title">{% if isEdit %}{{ 'vehicle.form.title_edit'|trans }}{% else %}{{ 'vehicle.form.title_new'|trans }}{% endif %}</h1>
+                <p class="muted section-lead">{% if isEdit %}{{ 'vehicle.form.lead_edit'|trans }}{% else %}{{ 'vehicle.form.lead_new'|trans }}{% endif %}</p>
             </div>
-            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back</a>
+            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">{{ 'common.back'|trans }}</a>
         </header>
 
         <section class="card vehicle-form-card">
@@ -40,7 +40,7 @@
                 <div class="flash flash-error">
                     <ul class="flash-list">
                         {% for error in errors %}
-                            <li>{{ error }}</li>
+                            <li>{{ error|trans }}</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -50,17 +50,17 @@
                 <input type="hidden" name="_token" value="{{ csrfToken }}">
                 <input type="hidden" name="_return_to" value="{{ backToListUrl }}">
                 <label class="label">
-                    Name
+                    {{ 'vehicle.form.name'|trans }}
                     <input class="input" type="text" name="name" maxlength="120" value="{{ formData.name }}" required>
                 </label>
                 <label class="label">
-                    Plate number
+                    {{ 'vehicle.form.plate_number'|trans }}
                     <input class="input" type="text" name="plateNumber" maxlength="40" value="{{ formData.plateNumber }}" required>
                 </label>
 
                 <div class="actions-wrap">
-                    <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create vehicle{% endif %}</button>
-                    <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Cancel</a>
+                    <button class="btn btn-primary" type="submit">{% if isEdit %}{{ 'vehicle.form.action_save'|trans }}{% else %}{{ 'vehicle.form.action_create'|trans }}{% endif %}</button>
+                    <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">{{ 'action.cancel'|trans }}</a>
                 </div>
             </form>
         </section>

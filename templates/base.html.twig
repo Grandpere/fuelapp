@@ -227,10 +227,15 @@
                     max-width: 1360px;
                     margin: 0 auto;
                     padding: 0.75rem 1rem 0;
+                    display: grid;
+                    gap: 0.75rem;
+                }
+
+                .topbar-main {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    gap: 0.8rem;
+                    gap: 0.9rem;
                 }
 
                 .topbar-brand {
@@ -241,21 +246,24 @@
                     text-decoration: none;
                 }
 
-                .topbar-right {
+                .topbar-account {
                     display: inline-flex;
                     align-items: center;
                     gap: 0.6rem;
                     color: var(--text-soft);
                     font-size: 0.82rem;
+                    min-width: 0;
                 }
 
                 .topbar-nav {
-                    display: inline-flex;
+                    display: flex;
                     align-items: center;
+                    justify-content: flex-start;
+                    flex-wrap: wrap;
                     gap: 0.35rem;
                     padding: 0.2rem;
                     border: 1px solid var(--nav-border);
-                    border-radius: 999px;
+                    border-radius: 1.2rem;
                     background: var(--nav-surface);
                 }
 
@@ -283,6 +291,19 @@
                     color: var(--nav-active-text);
                     background: linear-gradient(120deg, var(--primary) 0%, var(--primary-strong) 100%);
                     border-color: rgba(240, 138, 0, 0.42);
+                }
+
+                .topbar-user-email {
+                    display: inline-block;
+                    max-width: min(30vw, 15rem);
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    font-weight: 600;
+                }
+
+                .topbar-signout-form {
+                    display: inline-flex;
                 }
 
                 .page-title {
@@ -836,13 +857,14 @@
                         padding-top: 0.85rem;
                     }
 
-                    .topbar {
+                    .topbar-main {
                         flex-direction: column;
                         align-items: flex-start;
                     }
 
-                    .topbar-right {
+                    .topbar-account {
                         flex-wrap: wrap;
+                        width: 100%;
                     }
 
                     .theme-toggle-floating {
@@ -864,6 +886,21 @@
                         flex-direction: column;
                         align-items: stretch;
                     }
+
+                    .topbar-account {
+                        gap: 0.45rem;
+                    }
+
+                    .topbar-user-email {
+                        flex: 1 1 100%;
+                        max-width: 100%;
+                    }
+
+                    .topbar-signout-form,
+                    .topbar-signout-form .btn,
+                    .topbar-account .theme-toggle {
+                        width: 100%;
+                    }
                 }
             </style>
         {% endblock %}
@@ -872,48 +909,55 @@
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
-    <body>
+    <body
+        data-theme-label-dark="{{ 'theme.dark'|trans }}"
+        data-theme-label-light="{{ 'theme.light'|trans }}"
+        data-theme-switch-to-dark="{{ 'theme.switch_to_dark'|trans }}"
+        data-theme-switch-to-light="{{ 'theme.switch_to_light'|trans }}"
+    >
         {% if app.user %}
             {% set currentRoute = app.request.attributes.get('_route')|default('') %}
             <header class="topbar">
-                <a class="topbar-brand" href="{{ path('ui_dashboard') }}">FuelApp</a>
-                <div class="topbar-right">
-                    <nav class="topbar-nav">
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_dashboard' ? 'is-active' : '' }}" href="{{ path('ui_dashboard') }}">Dashboard</a>
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_receipt_' ? 'is-active' : '' }}" href="{{ path('ui_receipt_index') }}">Receipts</a>
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_import_' ? 'is-active' : '' }}" href="{{ path('ui_import_index') }}">Import</a>
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_vehicle_' ? 'is-active' : '' }}" href="{{ path('ui_vehicle_list') }}">Vehicles</a>
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_station_' ? 'is-active' : '' }}" href="{{ path('ui_station_list') }}">Stations</a>
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_public_fuel_station_' ? 'is-active' : '' }}" href="{{ path('ui_public_fuel_station_map') }}">Fuel Map</a>
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_maintenance_' ? 'is-active' : '' }}" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_analytics_' ? 'is-active' : '' }}" href="{{ path('ui_analytics_dashboard') }}">Analytics</a>
-                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_contact' ? 'is-active' : '' }}" href="{{ path('ui_contact') }}">Contact</a>
-                        {% if is_granted('ROLE_ADMIN') %}
-                            <a class="topbar-nav-link {{ currentRoute starts with 'ui_admin_' ? 'is-active' : '' }}" href="{{ path('ui_admin_dashboard') }}">Back-office</a>
-                        {% endif %}
-                    </nav>
-                    <button class="btn btn-secondary btn-compact theme-toggle" type="button" data-theme-toggle>
-                        <span class="theme-toggle-icon" data-theme-toggle-icon>🌙</span>
-                        <span class="theme-toggle-label" data-theme-toggle-label>Dark</span>
-                    </button>
-                    <span>{{ app.user.userIdentifier }}</span>
-                    <form method="post" action="{{ path('ui_logout') }}">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
-                        <button class="btn btn-secondary btn-compact" type="submit">Sign out</button>
-                    </form>
+                <div class="topbar-main">
+                    <a class="topbar-brand" href="{{ path('ui_dashboard') }}">FuelApp</a>
+                    <div class="topbar-account">
+                        <span class="topbar-user-email" title="{{ app.user.userIdentifier }}">{{ app.user.userIdentifier }}</span>
+                        <button class="btn btn-secondary btn-compact theme-toggle" type="button" data-theme-toggle>
+                            <span class="theme-toggle-icon" data-theme-toggle-icon>🌙</span>
+                            <span class="theme-toggle-label" data-theme-toggle-label>{{ 'theme.dark'|trans }}</span>
+                        </button>
+                        <form class="topbar-signout-form" method="post" action="{{ path('ui_logout') }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                            <button class="btn btn-secondary btn-compact" type="submit">{{ 'action.sign_out'|trans }}</button>
+                        </form>
+                    </div>
                 </div>
+                <nav class="topbar-nav">
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_dashboard' ? 'is-active' : '' }}" href="{{ path('ui_dashboard') }}">{{ 'nav.dashboard'|trans }}</a>
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_receipt_' ? 'is-active' : '' }}" href="{{ path('ui_receipt_index') }}">{{ 'nav.receipts'|trans }}</a>
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_import_' ? 'is-active' : '' }}" href="{{ path('ui_import_index') }}">{{ 'nav.imports'|trans }}</a>
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_vehicle_' ? 'is-active' : '' }}" href="{{ path('ui_vehicle_list') }}">{{ 'nav.vehicles'|trans }}</a>
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_station_' ? 'is-active' : '' }}" href="{{ path('ui_station_list') }}">{{ 'nav.stations'|trans }}</a>
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_public_fuel_station_' ? 'is-active' : '' }}" href="{{ path('ui_public_fuel_station_map') }}">{{ 'nav.public_fuel_map'|trans }}</a>
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_maintenance_' ? 'is-active' : '' }}" href="{{ path('ui_maintenance_index') }}">{{ 'nav.maintenance'|trans }}</a>
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_analytics_' ? 'is-active' : '' }}" href="{{ path('ui_analytics_dashboard') }}">{{ 'nav.analytics'|trans }}</a>
+                    <a class="topbar-nav-link {{ currentRoute starts with 'ui_contact' ? 'is-active' : '' }}" href="{{ path('ui_contact') }}">{{ 'nav.contact'|trans }}</a>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a class="topbar-nav-link {{ currentRoute starts with 'ui_admin_' ? 'is-active' : '' }}" href="{{ path('ui_admin_dashboard') }}">{{ 'nav.admin'|trans }}</a>
+                    {% endif %}
+                </nav>
             </header>
         {% else %}
             <button class="btn btn-secondary btn-compact theme-toggle theme-toggle-floating" type="button" data-theme-toggle>
                 <span class="theme-toggle-icon" data-theme-toggle-icon>🌙</span>
-                <span class="theme-toggle-label" data-theme-toggle-label>Dark</span>
+                <span class="theme-toggle-label" data-theme-toggle-label>{{ 'theme.dark'|trans }}</span>
             </button>
         {% endif %}
 
         {% for label in ['success', 'error'] %}
             {% for message in app.flashes(label) %}
                 <section class="app-shell flash-shell">
-                    <div class="flash {{ label == 'error' ? 'flash-error' : '' }}">{{ message }}</div>
+                    <div class="flash {{ label == 'error' ? 'flash-error' : '' }}">{{ message|trans }}</div>
                 </section>
             {% endfor %}
         {% endfor %}
@@ -923,6 +967,7 @@
             (function () {
                 const storageKey = 'fuelapp-theme';
                 const root = document.documentElement;
+                const body = document.body;
                 const buttons = document.querySelectorAll('[data-theme-toggle]');
                 const prefersDarkMedia = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
@@ -953,6 +998,10 @@
                     root.dataset.theme = theme;
                     root.dataset.themeReady = '1';
                     root.style.colorScheme = theme;
+                    const darkLabel = body.dataset.themeLabelDark || 'Dark';
+                    const lightLabel = body.dataset.themeLabelLight || 'Light';
+                    const switchToDarkLabel = body.dataset.themeSwitchToDark || 'Switch to dark theme';
+                    const switchToLightLabel = body.dataset.themeSwitchToLight || 'Switch to light theme';
 
                     buttons.forEach(function (button) {
                         const icon = button.querySelector('[data-theme-toggle-icon]');
@@ -964,10 +1013,10 @@
                         }
 
                         if (label) {
-                            label.textContent = isDark ? 'Dark' : 'Light';
+                            label.textContent = isDark ? darkLabel : lightLabel;
                         }
 
-                        button.title = isDark ? 'Switch to light theme' : 'Switch to dark theme';
+                        button.title = isDark ? switchToLightLabel : switchToDarkLabel;
                         button.setAttribute('aria-label', button.title);
                     });
 

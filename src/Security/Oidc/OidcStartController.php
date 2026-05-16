@@ -34,7 +34,7 @@ final class OidcStartController extends AbstractController
     {
         $config = $this->providerRegistry->get($provider);
         if (null === $config) {
-            $this->addFlash('error', 'Unknown OIDC provider.');
+            $this->addFlash('error', 'security.oidc.unknown_provider');
 
             return $this->redirectToRoute('ui_login');
         }

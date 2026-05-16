@@ -1,0 +1,50 @@
+nav:
+    dashboard: 'Dashboard'
+    receipts: 'Receipts'
+    imports: 'Import'
+    vehicles: 'Vehicles'
+    stations: 'Stations'
+    public_fuel_map: 'Fuel Map'
+    maintenance: 'Maintenance'
+    analytics: 'Analytics'
+    contact: 'Contact'
+    admin: 'Back-office'
+
+action:
+    save: 'Save'
+    reset: 'Reset'
+    apply: 'Apply'
+    cancel: 'Cancel'
+    sign_out: 'Sign out'
+    back_to_receipts: 'Back to receipts'
+
+theme:
+    dark: 'Dark'
+    light: 'Light'
+    switch_to_dark: 'Switch to dark theme'
+    switch_to_light: 'Switch to light theme'
+
+security:
+    login:
+        title: 'Sign in'
+        lead: 'Use your FuelApp account credentials.'
+        email: 'Email'
+        password: 'Password'
+        invalid_credentials: 'Invalid credentials.'
+        continue_with: 'or continue with'
+        provider_continue_with: 'Continue with %provider%'
+    oidc:
+        unknown_provider: 'Unknown OIDC provider.'
+        missing_parameters: 'OIDC callback is missing required parameters.'
+        invalid_state: 'OIDC state validation failed.'
+        login_failed: 'OIDC login failed. Please contact support if the issue persists.'
+        account_disabled: 'Account disabled.'
+
+contact:
+    title: 'Contact'
+    lead: 'Need help with imports, receipts or account access? Use the direct contact details below.'
+    support_email: 'Support email'
+    suggested_information: 'Suggested information'
+    suggested_user_email: 'Your user email'
+    suggested_job_or_receipt: 'Import job ID or receipt ID when relevant'
+    suggested_issue_summary: 'Short description of the issue and expected behavior'

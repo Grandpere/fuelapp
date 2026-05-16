@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Sign in{% endblock %}
+{% block title %}{{ 'security.login.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -56,39 +56,39 @@
 {% block body %}
     <main class="app-shell login-shell">
         <section class="card login-card">
-            <h1>Sign in</h1>
-            <p class="muted login-lead">Use your FuelApp account credentials.</p>
+            <h1>{{ 'security.login.title'|trans }}</h1>
+            <p class="muted login-lead">{{ 'security.login.lead'|trans }}</p>
 
             {% if error %}
                 <div class="flash flash-error-soft">
-                    Invalid credentials.
+                    {{ 'security.login.invalid_credentials'|trans }}
                 </div>
             {% endif %}
 
             <form method="post" class="login-form">
                 <label class="label">
-                    Email
+                    {{ 'security.login.email'|trans }}
                     <input class="input" type="email" name="email" value="{{ lastUsername }}" autocomplete="email" required autofocus>
                 </label>
 
                 <label class="label">
-                    Password
+                    {{ 'security.login.password'|trans }}
                     <input class="input" type="password" name="password" autocomplete="current-password" required>
                 </label>
 
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-                <button class="btn btn-primary" type="submit">Sign in</button>
+                <button class="btn btn-primary" type="submit">{{ 'security.login.title'|trans }}</button>
             </form>
 
             {% if oidcProviders is not empty %}
                 <div class="muted login-divider">
-                    <span>or continue with</span>
+                    <span>{{ 'security.login.continue_with'|trans }}</span>
                 </div>
                 <div class="login-provider-list">
                     {% for provider in oidcProviders %}
                         <a class="btn btn-secondary" href="{{ path('ui_oidc_start', {provider: provider.name}) }}">
-                            Continue with {{ provider.label }}
+                            {{ 'security.login.provider_continue_with'|trans({'%provider%': provider.label}) }}
                         </a>
                     {% endfor %}
                 </div>

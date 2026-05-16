@@ -39,7 +39,7 @@ final class OidcCallbackController extends AbstractController
     {
         $config = $this->providerRegistry->get($provider);
         if (null === $config) {
-            $this->addFlash('error', 'Unknown OIDC provider.');
+            $this->addFlash('error', 'security.oidc.unknown_provider');
 
             return $this->redirectToRoute('ui_login');
         }
@@ -47,7 +47,7 @@ final class OidcCallbackController extends AbstractController
         $code = $request->query->getString('code');
         $state = $request->query->getString('state');
         if ('' === $code || '' === $state) {
-            $this->addFlash('error', 'OIDC callback is missing required parameters.');
+            $this->addFlash('error', 'security.oidc.missing_parameters');
 
             return $this->redirectToRoute('ui_login');
         }
@@ -58,7 +58,7 @@ final class OidcCallbackController extends AbstractController
         $session->remove(sprintf('oidc_nonce_%s', $provider));
 
         if (!is_string($expectedState) || '' === $expectedState || !hash_equals($expectedState, $state)) {
-            $this->addFlash('error', 'OIDC state validation failed.');
+            $this->addFlash('error', 'security.oidc.invalid_state');
 
             return $this->redirectToRoute('ui_login');
         }
@@ -77,13 +77,13 @@ final class OidcCallbackController extends AbstractController
                 $claims['email_verified'],
             );
         } catch (RuntimeException) {
-            $this->addFlash('error', 'OIDC login failed. Please contact support if the issue persists.');
+            $this->addFlash('error', 'security.oidc.login_failed');
 
             return $this->redirectToRoute('ui_login');
         }
 
         if (!$user->isActive()) {
-            $this->addFlash('error', 'Account disabled.');
+            $this->addFlash('error', 'security.oidc.account_disabled');
 
             return $this->redirectToRoute('ui_login');
         }

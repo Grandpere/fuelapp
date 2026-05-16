@@ -208,7 +208,7 @@ final class DashboardWebUiTest extends WebTestCase
         $crawler = $this->client->request('GET', '/ui/login');
         self::assertResponseStatusCodeSame(Response::HTTP_OK);
 
-        $form = $crawler->selectButton('Sign in')->form([
+        $form = $crawler->selectButton('Connexion')->form([
             'email' => $email,
             'password' => $password,
         ]);

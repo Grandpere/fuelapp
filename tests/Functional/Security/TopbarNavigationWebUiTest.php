@@ -74,13 +74,20 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         $receiptsResponse = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptsResponse->getStatusCode());
         $receiptsContent = (string) $receiptsResponse->getContent();
-        self::assertStringContainsString('>Dashboard<', $receiptsContent);
+        self::assertStringContainsString('>Tableau de bord<', $receiptsContent);
         self::assertStringContainsString('>Contact<', $receiptsContent);
+        self::assertStringContainsString('>Carte carburants<', $receiptsContent);
         self::assertStringNotContainsString('>Back-office<', $receiptsContent);
+        self::assertStringContainsString('>Déconnexion<', $receiptsContent);
+        self::assertStringContainsString('class="topbar-main"', $receiptsContent);
+        self::assertStringContainsString('class="topbar-account"', $receiptsContent);
+        self::assertStringContainsString('class="topbar-user-email"', $receiptsContent);
+        self::assertStringContainsString(sprintf('title="%s"', $email), $receiptsContent);
+        self::assertStringContainsString('class="topbar-signout-form"', $receiptsContent);
 
         $contactResponse = $this->request('GET', '/ui/contact', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $contactResponse->getStatusCode());
-        self::assertStringContainsString('Support email', (string) $contactResponse->getContent());
+        self::assertStringContainsString('E-mail de support', (string) $contactResponse->getContent());
     }
 
     public function testAdminSeesBackofficeShortcutInTopbar(): void
@@ -95,7 +102,7 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         $receiptsResponse = $this->request('GET', '/ui/receipts', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $receiptsResponse->getStatusCode());
         $content = (string) $receiptsResponse->getContent();
-        self::assertStringContainsString('>Dashboard<', $content);
+        self::assertStringContainsString('>Tableau de bord<', $content);
         self::assertStringContainsString('>Contact<', $content);
         self::assertStringContainsString('>Back-office<', $content);
     }

@@ -1,0 +1,50 @@
+nav:
+    dashboard: 'Tableau de bord'
+    receipts: 'Reçus'
+    imports: 'Imports'
+    vehicles: 'Véhicules'
+    stations: 'Stations'
+    public_fuel_map: 'Carte carburants'
+    maintenance: 'Entretien'
+    analytics: 'Analyses'
+    contact: 'Contact'
+    admin: 'Back-office'
+
+action:
+    save: 'Enregistrer'
+    reset: 'Réinitialiser'
+    apply: 'Appliquer'
+    cancel: 'Annuler'
+    sign_out: 'Déconnexion'
+    back_to_receipts: 'Retour aux reçus'
+
+theme:
+    dark: 'Sombre'
+    light: 'Clair'
+    switch_to_dark: 'Passer au thème sombre'
+    switch_to_light: 'Passer au thème clair'
+
+security:
+    login:
+        title: 'Connexion'
+        lead: 'Utilisez les identifiants de votre compte FuelApp.'
+        email: 'E-mail'
+        password: 'Mot de passe'
+        invalid_credentials: 'Identifiants invalides.'
+        continue_with: 'ou continuer avec'
+        provider_continue_with: 'Continuer avec %provider%'
+    oidc:
+        unknown_provider: 'Fournisseur OIDC inconnu.'
+        missing_parameters: 'La réponse OIDC ne contient pas les paramètres requis.'
+        invalid_state: 'La validation de l’état OIDC a échoué.'
+        login_failed: 'La connexion OIDC a échoué. Contactez le support si le problème persiste.'
+        account_disabled: 'Compte désactivé.'
+
+contact:
+    title: 'Contact'
+    lead: 'Besoin d’aide pour les imports, les reçus ou l’accès au compte ? Utilisez les coordonnées ci-dessous.'
+    support_email: 'E-mail de support'
+    suggested_information: 'Informations conseillées'
+    suggested_user_email: 'Votre e-mail utilisateur'
+    suggested_job_or_receipt: 'Identifiant d’import ou de reçu si pertinent'
+    suggested_issue_summary: 'Brève description du problème et du comportement attendu'

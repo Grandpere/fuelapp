@@ -1,6 +1,8 @@
 # see https://symfony.com/doc/current/reference/configuration/framework.html
 framework:
     secret: '%env(APP_SECRET)%'
+    default_locale: 'fr'
+    enabled_locales: ['fr', 'en']
     rate_limiter:
         nominatim_geocoding:
             policy: 'fixed_window'

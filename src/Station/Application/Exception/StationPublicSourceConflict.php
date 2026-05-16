@@ -19,6 +19,6 @@ final class StationPublicSourceConflict extends RuntimeException
 {
     public static function forStation(): self
     {
-        return new self('Selected public station conflicts with the existing linked public source for this station.');
+        return new self('receipt.validation.station_public_source_conflict');
     }
 }

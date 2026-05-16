@@ -25,12 +25,14 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class ImportJobWebController extends AbstractController
 {
     public function __construct(
         private readonly BulkImportUploadProcessor $bulkImportUploadProcessor,
         private readonly ImportJobRepository $importJobRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -95,12 +97,12 @@ final class ImportJobWebController extends AbstractController
             'statusQuickFilters' => $this->buildStatusQuickFilters($statusCounts, $statusFilter),
             'followUpShortcuts' => $followUpShortcuts,
             'statusLabels' => [
-                'queued' => 'Queued',
-                'processing' => 'Processing',
-                'needs_review' => 'Needs review',
-                'failed' => 'Failed',
-                'processed' => 'Processed',
-                'duplicate' => 'Duplicate',
+                'queued' => $this->translator->trans('import.status.queued'),
+                'processing' => $this->translator->trans('import.status.processing'),
+                'needs_review' => $this->translator->trans('import.status.needs_review'),
+                'failed' => $this->translator->trans('import.status.failed'),
+                'processed' => $this->translator->trans('import.status.processed'),
+                'duplicate' => $this->translator->trans('import.status.duplicate'),
             ],
         ]);
     }
@@ -135,29 +137,31 @@ final class ImportJobWebController extends AbstractController
 
         return match ($job->status()) {
             ImportJobStatus::QUEUED => [
-                'headline' => 'Waiting in queue',
-                'detail' => 'OCR has not started yet.',
+                'headline' => $this->translator->trans('import.list.summary.queued_headline'),
+                'detail' => $this->translator->trans('import.list.summary.queued_detail'),
             ],
             ImportJobStatus::PROCESSING => [
-                'headline' => 'OCR running',
-                'detail' => 'The file is currently being parsed.',
+                'headline' => $this->translator->trans('import.list.summary.processing_headline'),
+                'detail' => $this->translator->trans('import.list.summary.processing_detail'),
             ],
             ImportJobStatus::NEEDS_REVIEW => [
-                'headline' => $this->canAutoFinalize($job) ? 'Almost ready to finalize' : 'Manual review needed',
+                'headline' => $this->translator->trans($this->canAutoFinalize($job)
+                    ? 'import.list.summary.needs_review_auto_headline'
+                    : 'import.list.summary.needs_review_headline'),
                 'detail' => $this->readNeedsReviewDetail($payload),
             ],
             ImportJobStatus::PROCESSED => [
-                'headline' => 'Receipt created',
+                'headline' => $this->translator->trans('import.list.summary.processed_headline'),
                 'detail' => null !== $this->readStringValue($payload, 'finalizedReceiptId')
-                    ? 'You can open the created receipt directly.'
-                    : 'The import completed successfully.',
+                    ? $this->translator->trans('import.list.summary.processed_detail_receipt')
+                    : $this->translator->trans('import.list.summary.processed_detail'),
             ],
             ImportJobStatus::DUPLICATE => [
-                'headline' => 'Already handled elsewhere',
+                'headline' => $this->translator->trans('import.list.summary.duplicate_headline'),
                 'detail' => $this->readDuplicateDetail($payload),
             ],
             ImportJobStatus::FAILED => [
-                'headline' => 'Processing stopped',
+                'headline' => $this->translator->trans('import.list.summary.failed_headline'),
                 'detail' => $this->readFailedDetail($payload, $job->errorPayload()),
             ],
         };
@@ -175,7 +179,7 @@ final class ImportJobWebController extends AbstractController
             $receiptId = $this->readStringValue($payload, 'finalizedReceiptId');
             if (null !== $receiptId) {
                 return [
-                    'label' => 'Open receipt',
+                    'label' => $this->translator->trans('import.action.open_receipt'),
                     'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId]),
                     'variant' => 'secondary',
                 ];
@@ -186,7 +190,7 @@ final class ImportJobWebController extends AbstractController
             $receiptId = $this->readStringValue($payload, 'duplicateOfReceiptId');
             if (null !== $receiptId) {
                 return [
-                    'label' => 'Open receipt',
+                    'label' => $this->translator->trans('import.action.open_receipt'),
                     'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId]),
                     'variant' => 'secondary',
                 ];
@@ -195,7 +199,7 @@ final class ImportJobWebController extends AbstractController
             $originalImportId = $this->readStringValue($payload, 'duplicateOfImportJobId');
             if (null !== $originalImportId) {
                 return [
-                    'label' => 'Open original',
+                    'label' => $this->translator->trans('import.action.open_original'),
                     'url' => $this->generateUrl('ui_import_show', ['id' => $originalImportId, 'return_to' => $returnTo]),
                     'variant' => 'secondary',
                 ];
@@ -204,14 +208,14 @@ final class ImportJobWebController extends AbstractController
 
         if ('needs_review' === $job->status()->value) {
             return [
-                'label' => 'Review',
+                'label' => $this->translator->trans('import.action.review'),
                 'url' => $detailUrl,
                 'variant' => 'primary',
             ];
         }
 
         return [
-            'label' => 'Detail',
+            'label' => $this->translator->trans('import.action.detail'),
             'url' => $detailUrl,
             'variant' => 'secondary',
         ];
@@ -227,12 +231,14 @@ final class ImportJobWebController extends AbstractController
         return match ($job->status()) {
             ImportJobStatus::PROCESSED,
             ImportJobStatus::DUPLICATE => [
-                'label' => ImportJobStatus::DUPLICATE === $job->status() ? 'Upload another' : 'Detail',
+                'label' => ImportJobStatus::DUPLICATE === $job->status()
+                    ? $this->translator->trans('import.action.upload_another')
+                    : $this->translator->trans('import.action.detail'),
                 'url' => ImportJobStatus::DUPLICATE === $job->status() ? $uploadUrl : $detailUrl,
                 'variant' => 'secondary',
             ],
             ImportJobStatus::FAILED => [
-                'label' => 'Re-upload',
+                'label' => $this->translator->trans('import.action.reupload'),
                 'url' => $uploadUrl,
                 'variant' => 'secondary',
             ],
@@ -267,7 +273,7 @@ final class ImportJobWebController extends AbstractController
     private function buildStatusQuickFilters(array $statusCounts, ?string $statusFilter): array
     {
         $filters = [[
-            'label' => 'All',
+            'label' => $this->translator->trans('import.filter.all'),
             'count' => $statusCounts['all'] ?? 0,
             'url' => $this->generateUrl('ui_import_index'),
             'isActive' => null === $statusFilter,
@@ -276,12 +282,12 @@ final class ImportJobWebController extends AbstractController
         foreach (ImportJobStatus::cases() as $status) {
             $filters[] = [
                 'label' => match ($status) {
-                    ImportJobStatus::NEEDS_REVIEW => 'Needs review',
-                    ImportJobStatus::PROCESSED => 'Processed',
-                    ImportJobStatus::PROCESSING => 'Processing',
-                    ImportJobStatus::QUEUED => 'Queued',
-                    ImportJobStatus::FAILED => 'Failed',
-                    ImportJobStatus::DUPLICATE => 'Duplicate',
+                    ImportJobStatus::NEEDS_REVIEW => $this->translator->trans('import.status.needs_review'),
+                    ImportJobStatus::PROCESSED => $this->translator->trans('import.status.processed'),
+                    ImportJobStatus::PROCESSING => $this->translator->trans('import.status.processing'),
+                    ImportJobStatus::QUEUED => $this->translator->trans('import.status.queued'),
+                    ImportJobStatus::FAILED => $this->translator->trans('import.status.failed'),
+                    ImportJobStatus::DUPLICATE => $this->translator->trans('import.status.duplicate'),
                 },
                 'count' => $statusCounts[$status->value] ?? 0,
                 'url' => $this->generateUrl('ui_import_index', ['status' => $status->value]),
@@ -304,7 +310,7 @@ final class ImportJobWebController extends AbstractController
         foreach ($jobs as $row) {
             if (ImportJobStatus::NEEDS_REVIEW === $row['job']->status()) {
                 $shortcuts[] = [
-                    'label' => 'Review next pending',
+                    'label' => $this->translator->trans('import.follow_up.review_next'),
                     'url' => $this->generateUrl('ui_import_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
                     'variant' => 'primary',
                 ];
@@ -315,12 +321,12 @@ final class ImportJobWebController extends AbstractController
         foreach ($jobs as $row) {
             if (ImportJobStatus::FAILED === $row['job']->status()) {
                 $shortcuts[] = [
-                    'label' => 'Inspect latest failure',
+                    'label' => $this->translator->trans('import.follow_up.inspect_failure'),
                     'url' => $this->generateUrl('ui_import_show', ['id' => $row['job']->id()->toString(), 'return_to' => $returnTo]),
                     'variant' => 'secondary',
                 ];
                 $shortcuts[] = [
-                    'label' => 'Upload replacement',
+                    'label' => $this->translator->trans('import.follow_up.upload_replacement'),
                     'url' => $uploadUrl,
                     'variant' => 'secondary',
                 ];
@@ -402,19 +408,21 @@ final class ImportJobWebController extends AbstractController
         if (null !== $payload) {
             $fallbackReason = $this->readStringValue($payload, 'fallbackReason');
             if (null !== $fallbackReason) {
-                return sprintf('OCR fallback: %s.', $fallbackReason);
+                return $this->translator->trans('import.list.summary.needs_review_fallback_reason', ['%reason%' => $fallbackReason]);
             }
 
             $parsedDraft = $payload['parsedDraft'] ?? null;
             if (is_array($parsedDraft) && isset($parsedDraft['issues']) && is_array($parsedDraft['issues']) && [] !== $parsedDraft['issues']) {
                 $issues = array_values(array_filter($parsedDraft['issues'], static fn (mixed $issue): bool => is_string($issue) && '' !== trim($issue)));
                 if ([] !== $issues) {
-                    return sprintf('Check: %s.', implode(', ', array_map(static fn (string $issue): string => str_replace('_', ' ', $issue), $issues)));
+                    return $this->translator->trans('import.list.summary.needs_review_issues', [
+                        '%issues%' => implode(', ', array_map(static fn (string $issue): string => str_replace('_', ' ', $issue), $issues)),
+                    ]);
                 }
             }
         }
 
-        return 'Open review to confirm the extracted fields.';
+        return $this->translator->trans('import.list.summary.needs_review_default');
     }
 
     /**
@@ -424,15 +432,15 @@ final class ImportJobWebController extends AbstractController
     {
         $receiptId = $this->readStringValue($payload, 'duplicateOfReceiptId');
         if (null !== $receiptId) {
-            return 'Matches an existing receipt.';
+            return $this->translator->trans('import.list.summary.duplicate_receipt_detail');
         }
 
         $importId = $this->readStringValue($payload, 'duplicateOfImportJobId');
         if (null !== $importId) {
-            return 'Matches an already uploaded import.';
+            return $this->translator->trans('import.list.summary.duplicate_import_detail');
         }
 
-        return 'Open the existing record instead of reviewing this file again.';
+        return $this->translator->trans('import.list.summary.duplicate_default_detail');
     }
 
     /**
@@ -442,14 +450,14 @@ final class ImportJobWebController extends AbstractController
     {
         $fallbackReason = $this->readStringValue($payload, 'fallbackReason');
         if (null !== $fallbackReason) {
-            return sprintf('Reason: %s.', $fallbackReason);
+            return $this->translator->trans('import.list.summary.failed_reason', ['%reason%' => $fallbackReason]);
         }
 
         if (is_string($rawPayload) && '' !== trim($rawPayload) && null === $payload) {
             return trim($rawPayload);
         }
 
-        return 'Open detail to inspect the failure payload.';
+        return $this->translator->trans('import.list.summary.failed_default');
     }
 
     /**

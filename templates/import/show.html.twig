@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Import Review{% endblock %}
+{% block title %}{{ 'import.show.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -77,36 +77,36 @@
         <section class="card section-card">
             <div class="section-header">
                 <div>
-                    <h1 class="page-title">Import Review</h1>
-                    <p class="muted section-lead">Review extracted values, optionally correct fields, then finalize to create the receipt.</p>
+                    <h1 class="page-title">{{ 'import.show.title'|trans }}</h1>
+                    <p class="muted section-lead">{{ 'import.show.lead'|trans }}</p>
                 </div>
                 <div class="actions-wrap">
-                    <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
+                    <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">{{ 'import.action.back_to_imports'|trans }}</a>
                     {% if job.status.value == 'needs_review' %}
                         <form id="import-reparse-form" method="post" action="{{ path('ui_import_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
                             <input type="hidden" name="_token" value="{{ csrf_token('ui_import_reparse_' ~ job.id.toString) }}">
                             <input type="hidden" name="_return_to" value="{{ backToImportsUrl }}">
-                            <button class="btn btn-secondary" type="submit">Reparse</button>
+                            <button class="btn btn-secondary" type="submit">{{ 'import.show.reparse'|trans }}</button>
                         </form>
                     {% endif %}
-                    <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
+                    <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('{{ 'import.confirm.delete'|trans|e('js') }}');">
                         <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
                         <input type="hidden" name="_redirect" value="{{ backToImportsUrl }}">
-                        <button class="btn btn-danger" type="submit">Delete import</button>
+                        <button class="btn btn-danger" type="submit">{{ 'import.show.delete_import'|trans }}</button>
                     </form>
                 </div>
             </div>
 
             <dl class="kv-grid">
-                <dt class="muted">Import ID</dt>
+                <dt class="muted">{{ 'import.show.import_id'|trans }}</dt>
                 <dd>{{ job.id.toString }}</dd>
-                <dt class="muted">Status</dt>
+                <dt class="muted">{{ 'import.index.col_status'|trans }}</dt>
                 <dd>
                     <span class="pill status-pill status-{{ job.status.value }}">
-                        {{ job.status.value }}
+                        {{ ('import.status.' ~ job.status.value)|trans }}
                     </span>
                 </dd>
-                <dt class="muted">Filename</dt>
+                <dt class="muted">{{ 'import.index.col_filename'|trans }}</dt>
                 <dd>{{ job.originalFilename }}</dd>
             </dl>
         </section>
@@ -114,14 +114,14 @@
         <section class="card section-card">
             <div class="section-header">
                 <div>
-                    <p class="text-block-title">What happened</p>
+                    <p class="text-block-title">{{ 'import.show.what_happened'|trans }}</p>
                     <p class="muted section-lead">{{ statusSummary.lead }}</p>
                 </div>
                 <span class="pill status-pill status-{{ statusSummary.badge }}">{{ statusSummary.title }}</span>
             </div>
             {% if statusSummary.keyDetails is not empty %}
                 <div class="form-stack">
-                    <p class="text-block-title">Key details</p>
+                    <p class="text-block-title">{{ 'import.show.key_details'|trans }}</p>
                     <ul class="flash-list compact-list">
                         {% for detail in statusSummary.keyDetails %}
                             <li>{{ detail }}</li>
@@ -131,7 +131,7 @@
             {% endif %}
             {% if statusSummary.nextSteps is not empty %}
                 <div class="form-stack">
-                    <p class="text-block-title">What you can do now</p>
+                    <p class="text-block-title">{{ 'import.show.what_you_can_do_now'|trans }}</p>
                     <ul class="flash-list compact-list">
                         {% for step in statusSummary.nextSteps %}
                             <li>{{ step }}</li>
@@ -173,29 +173,28 @@
             <section class="card section-card" data-import-review-shortcuts data-previous-url="{{ reviewQueue.previousUrl ?? '' }}" data-next-url="{{ reviewQueue.nextUrl ?? '' }}">
                 <div class="section-header">
                     <div>
-                        <p class="text-block-title">Review queue</p>
-                        <p class="muted section-lead">Import {{ reviewQueue.position }} of {{ reviewQueue.total }} that still need manual review.</p>
+                        <p class="text-block-title">{{ 'import.show.review_queue'|trans }}</p>
+                        <p class="muted section-lead">{{ 'import.show.review_queue_lead'|trans({'%position%': reviewQueue.position, '%total%': reviewQueue.total}) }}</p>
                     </div>
                     <div class="actions-wrap">
                         {% if reviewQueue.previousUrl is not null %}
-                            <a class="btn btn-secondary btn-compact" href="{{ reviewQueue.previousUrl }}" data-turbo-frame="_top">Previous review</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ reviewQueue.previousUrl }}" data-turbo-frame="_top">{{ 'import.show.previous_review'|trans }}</a>
                         {% endif %}
                         {% if reviewQueue.nextUrl is not null %}
-                            <a class="btn btn-secondary btn-compact" href="{{ reviewQueue.nextUrl }}" data-turbo-frame="_top">Next review</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ reviewQueue.nextUrl }}" data-turbo-frame="_top">{{ 'import.show.next_review'|trans }}</a>
                         {% endif %}
                     </div>
                 </div>
                 <p class="muted compact-note">
-                    Shortcuts: <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to finalize, <kbd>Shift</kbd> + <kbd>R</kbd> to reparse,
-                    <kbd>J</kbd>/<kbd>K</kbd> to move through the review queue.
+                    {{ 'import.show.shortcuts'|trans|raw }}
                 </p>
                 {% if reviewQueue.previousLabel is not null or reviewQueue.nextLabel is not null %}
                     <div class="actions-wrap">
                         {% if reviewQueue.previousLabel is not null %}
-                            <span class="muted compact-note">Previous: {{ reviewQueue.previousLabel }}</span>
+                            <span class="muted compact-note">{{ 'import.show.previous_label'|trans({'%label%': reviewQueue.previousLabel}) }}</span>
                         {% endif %}
                         {% if reviewQueue.nextLabel is not null %}
-                            <span class="muted compact-note">Next: {{ reviewQueue.nextLabel }}</span>
+                            <span class="muted compact-note">{{ 'import.show.next_label'|trans({'%label%': reviewQueue.nextLabel}) }}</span>
                         {% endif %}
                     </div>
                 {% endif %}
@@ -204,26 +203,26 @@
 
         {% if issueList|length > 0 %}
             <section class="card section-card">
-                <p class="text-block-title">Detected issues</p>
+                <p class="text-block-title">{{ 'import.show.detected_issues'|trans }}</p>
                 <p class="muted section-lead">{{ issueList|join(', ') }}</p>
             </section>
         {% endif %}
 
         {% if issuedAtMissing %}
             <section class="card section-card">
-                <p class="text-block-title">Date required before finalization</p>
-                <p class="muted section-lead">OCR could not read the receipt date. Enter the receipt date and time below before finalizing this import.</p>
+                <p class="text-block-title">{{ 'import.show.date_required'|trans }}</p>
+                <p class="muted section-lead">{{ 'import.show.date_required_lead'|trans }}</p>
             </section>
         {% endif %}
 
         {% if payloadData is not null and payloadData.fallbackReason is defined %}
             <section class="card section-card">
-                <p class="text-block-title">OCR fallback</p>
+                <p class="text-block-title">{{ 'import.show.ocr_fallback'|trans }}</p>
                 <p class="muted section-lead">
-                    {{ payloadData.fallbackNotice is defined ? payloadData.fallbackNotice : 'Automatic OCR is temporarily unavailable. Manual review remains available with the original uploaded file.' }}
+                    {{ payloadData.fallbackNotice is defined ? payloadData.fallbackNotice : ('import.show.ocr_fallback_default'|trans) }}
                 </p>
                 <div class="actions-wrap">
-                    <span class="pill status-pill status-needs_review">{{ payloadData.fallbackStrategy is defined ? payloadData.fallbackStrategy|replace({'_': ' '}) : 'manual review' }}</span>
+                    <span class="pill status-pill status-needs_review">{{ payloadData.fallbackStrategy is defined ? payloadData.fallbackStrategy|replace({'_': ' '}) : ('import.show.manual_review'|trans) }}</span>
                     <span class="muted compact-note">{{ payloadData.fallbackReason }}</span>
                 </div>
             </section>
@@ -231,48 +230,48 @@
 
         {% if job.status.value == 'processed' %}
             <section class="card section-card">
-                <p class="text-block-title">Import completed</p>
-                <p class="muted section-lead">This import already created a receipt. You can open it directly instead of going back through the list.</p>
+                <p class="text-block-title">{{ 'import.show.import_completed'|trans }}</p>
+                <p class="muted section-lead">{{ 'import.show.import_completed_lead'|trans }}</p>
                 <div class="actions-wrap">
                     {% if resolvedFinalizedReceiptId is not null %}
-                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_show', {id: resolvedFinalizedReceiptId}) }}" data-turbo-frame="_top">Open created receipt</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_show', {id: resolvedFinalizedReceiptId}) }}" data-turbo-frame="_top">{{ 'import.action.open_created_receipt'|trans }}</a>
                     {% endif %}
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Back to receipts</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">{{ 'action.back_to_receipts'|trans }}</a>
                 </div>
             </section>
         {% elseif job.status.value == 'duplicate' %}
             <section class="card section-card">
-                <p class="text-block-title">Duplicate import</p>
-                <p class="muted section-lead">This file matches an existing receipt or previously uploaded import. You can open the existing record directly from here.</p>
+                <p class="text-block-title">{{ 'import.show.duplicate_import'|trans }}</p>
+                <p class="muted section-lead">{{ 'import.show.duplicate_import_lead'|trans }}</p>
                 <div class="actions-wrap">
                     {% if resolvedDuplicateReceiptId is not null %}
-                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_show', {id: resolvedDuplicateReceiptId}) }}" data-turbo-frame="_top">Open existing receipt</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_show', {id: resolvedDuplicateReceiptId}) }}" data-turbo-frame="_top">{{ 'import.action.open_existing_receipt'|trans }}</a>
                     {% elseif resolvedDuplicateOriginalImportId is not null %}
-                        <a class="btn btn-primary btn-compact" href="{{ path('ui_import_show', {id: resolvedDuplicateOriginalImportId}) }}" data-turbo-frame="_top">{{ duplicateOfReceiptId is not null ? 'Open original import instead' : 'Open original import' }}</a>
+                        <a class="btn btn-primary btn-compact" href="{{ path('ui_import_show', {id: resolvedDuplicateOriginalImportId}) }}" data-turbo-frame="_top">{{ (duplicateOfReceiptId is not null ? 'import.action.open_original_import_instead' : 'import.action.open_original_import')|trans }}</a>
                     {% endif %}
-                    <a class="btn btn-secondary btn-compact" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Back to imports</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ backToImportsUrl }}" data-turbo-frame="_top">{{ 'import.action.back_to_imports'|trans }}</a>
                 </div>
             </section>
         {% endif %}
 
         {% if job.status.value == 'needs_review' %}
             <section class="card section-card">
-                <h2 class="section-title">Fix And Finalize</h2>
-                <p class="muted section-lead">Leave empty to use extracted values when available.</p>
+                <h2 class="section-title">{{ 'import.show.fix_and_finalize'|trans }}</h2>
+                <p class="muted section-lead">{{ 'import.show.fix_and_finalize_lead'|trans }}</p>
                 <form id="import-finalize-form" method="post" action="{{ path('ui_import_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="form-stack">
                     <input type="hidden" name="_token" value="{{ csrf_token('ui_import_finalize_' ~ job.id.toString) }}">
                     <input type="hidden" name="_return_to" value="{{ backToImportsUrl }}">
 
                     <div class="form-grid-2">
                         <label class="label">
-                            Issued at
-                            <span class="muted compact-note">{{ issuedAtMissing ? 'Required for this import: OCR did not detect the receipt date.' : 'Use the receipt date/time. Leave empty only when OCR already filled it.' }}</span>
+                            {{ 'import.show.issued_at'|trans }}
+                            <span class="muted compact-note">{{ (issuedAtMissing ? 'import.show.issued_at_required_hint' : 'import.show.issued_at_hint')|trans }}</span>
                             <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\TH:i') : (parsedDraft is not null and parsedDraft.issuedAt is defined and parsedDraft.issuedAt is not null ? parsedDraft.issuedAt|date('Y-m-d\\TH:i') : '') }}">
                         </label>
                         <label class="label">
-                            Existing station (optional)
+                            {{ 'import.show.existing_station_optional'|trans }}
                             <input class="input" type="text" name="stationSearch" value="{{ stationSearch|default('') }}" readonly>
-                            <span class="muted compact-note">Pick an existing station when OCR is close but not exact.</span>
+                            <span class="muted compact-note">{{ 'import.show.station_hint'|trans }}</span>
                         </label>
                     </div>
 
@@ -281,38 +280,38 @@
                     {% if existingStationSuggestions is not empty or publicStationSuggestions is not empty %}
                         <div class="form-stack card-subtle card-subtle-block">
                             <div class="import-station-selection-state" data-import-station-selection-state>
-                                <span class="import-station-selection-label">Selection active</span>
+                                <span class="import-station-selection-label">{{ 'receipt.form.station_selection_active'|trans }}</span>
                                 <p class="import-station-selection-title" data-import-station-selection-title></p>
                                 <p class="import-station-selection-copy" data-import-station-selection-copy></p>
-                                <button class="btn btn-secondary btn-compact import-station-selection-reset" type="button" data-import-station-selection-reset>Switch back to manual entry</button>
+                                <button class="btn btn-secondary btn-compact import-station-selection-reset" type="button" data-import-station-selection-reset>{{ 'receipt.form.station_selection_reset'|trans }}</button>
                             </div>
                             {% if existingStationSuggestions is not empty %}
-                                <p class="text-block-title">Existing stations</p>
+                                <p class="text-block-title">{{ 'receipt.form.station_suggestions_existing'|trans }}</p>
                                 {% for candidate in existingStationSuggestions %}
                                     <label class="label" data-import-suggestion-kind="existing" data-import-suggestion-title="{{ candidate.name }}" data-import-suggestion-meta="{{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}">
                                         <span class="muted compact-note">
                                             <input type="radio" name="selectedSuggestion" value="station:{{ candidate.sourceId }}">
-                                            <strong>Existing</strong> {{ candidate.name }} - {{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}
+                                            <strong>{{ 'receipt.form.station_suggestion_existing_badge'|trans }}</strong> {{ candidate.name }} - {{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}
                                         </span>
                                     </label>
                                 {% endfor %}
                             {% endif %}
                             {% if publicStationSuggestions is not empty %}
-                                <p class="text-block-title">Public station suggestions</p>
+                                <p class="text-block-title">{{ 'receipt.form.station_suggestions_public'|trans }}</p>
                                 {% for candidate in publicStationSuggestions %}
                                     <label class="label" data-import-suggestion-kind="public" data-import-suggestion-title="{{ candidate.name }}" data-import-suggestion-meta="{{ candidate.postalCode }} {{ candidate.city }}">
                                         <span class="muted compact-note">
                                             <input type="radio" name="selectedSuggestion" value="public:{{ candidate.sourceId }}">
-                                            <strong>Public</strong> {{ candidate.name }}, {{ candidate.postalCode }} {{ candidate.city }}
+                                            <strong>{{ 'receipt.form.station_suggestion_public_badge'|trans }}</strong> {{ candidate.name }}, {{ candidate.postalCode }} {{ candidate.city }}
                                         </span>
-                                        <span class="muted compact-note">This will create or reuse an internal station when you finalize.</span>
+                                        <span class="muted compact-note">{{ 'import.show.public_station_help'|trans }}</span>
                                     </label>
                                 {% endfor %}
                             {% endif %}
                             <label class="label">
                                 <span class="muted compact-note">
                                     <input type="radio" name="selectedSuggestion" value="" checked>
-                                    Keep manual station fields
+                                    {{ 'import.show.keep_manual_station_fields'|trans }}
                                 </span>
                             </label>
                         </div>
@@ -323,56 +322,56 @@
 
                     <div class="form-grid-2 import-station-manual-fields" data-import-station-manual-fields>
                         <label class="label">
-                            Station name
+                            {{ 'receipt.form.station_name'|trans }}
                             <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : (parsedDraft is not null and parsedDraft.stationName is defined ? parsedDraft.stationName : '') }}">
                         </label>
                         <label class="label">
-                            Station street
+                            {{ 'receipt.form.station_street_name'|trans }}
                             <input class="input" type="text" name="stationStreetName" value="{{ creationPayload is not null and creationPayload.stationStreetName is defined ? creationPayload.stationStreetName : (parsedDraft is not null and parsedDraft.stationStreetName is defined ? parsedDraft.stationStreetName : '') }}">
                         </label>
                         <label class="label">
-                            Station postal code
+                            {{ 'receipt.form.station_postal_code'|trans }}
                             <input class="input" type="text" name="stationPostalCode" value="{{ creationPayload is not null and creationPayload.stationPostalCode is defined ? creationPayload.stationPostalCode : (parsedDraft is not null and parsedDraft.stationPostalCode is defined ? parsedDraft.stationPostalCode : '') }}">
                         </label>
                         <label class="label">
-                            Station city
+                            {{ 'receipt.form.station_city'|trans }}
                             <input class="input" type="text" name="stationCity" value="{{ creationPayload is not null and creationPayload.stationCity is defined ? creationPayload.stationCity : (parsedDraft is not null and parsedDraft.stationCity is defined ? parsedDraft.stationCity : '') }}">
                         </label>
                         <label class="label">
-                            Latitude (micro degrees)
+                            {{ 'import.show.latitude_micro_degrees'|trans }}
                             <input class="input" type="number" name="latitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.latitudeMicroDegrees is defined ? creationPayload.latitudeMicroDegrees : '' }}" step="1">
                         </label>
                         <label class="label">
-                            Longitude (micro degrees)
+                            {{ 'import.show.longitude_micro_degrees'|trans }}
                             <input class="input" type="number" name="longitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.longitudeMicroDegrees is defined ? creationPayload.longitudeMicroDegrees : '' }}" step="1">
                         </label>
                         <label class="label">
-                            Odometer (km)
+                            {{ 'receipt.form.odometer'|trans }}
                             <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : (parsedDraft is not null and parsedDraft.odometerKilometers is defined ? parsedDraft.odometerKilometers : '') }}" min="0" step="1">
                         </label>
                     </div>
 
                     <div class="form-stack">
-                        <p class="text-block-title">Receipt lines</p>
+                        <p class="text-block-title">{{ 'import.show.receipt_lines'|trans }}</p>
                         {% if reviewLines|length > 0 %}
                             {% for line in reviewLines %}
                                 <section class="card-subtle card-subtle-block">
-                                    <p class="compact-note muted">Line {{ loop.index }}</p>
+                                    <p class="compact-note muted">{{ 'import.show.line_number'|trans({'%index%': loop.index}) }}</p>
                                     <div class="form-grid-2">
                                         <label class="label">
-                                            Fuel type
+                                            {{ 'receipt.form.fuel_type'|trans }}
                                             <input class="input" type="text" name="lines[{{ loop.index0 }}][fuelType]" value="{{ line.fuelType is defined ? line.fuelType : '' }}" placeholder="diesel">
                                         </label>
                                         <label class="label">
-                                            Quantity (mL)
+                                            {{ 'import.show.quantity_ml'|trans }}
                                             <input class="input" type="number" name="lines[{{ loop.index0 }}][quantityMilliLiters]" value="{{ line.quantityMilliLiters is defined and line.quantityMilliLiters is not null ? line.quantityMilliLiters : '' }}" min="1" step="1">
                                         </label>
                                         <label class="label">
-                                            Unit price (deci-cents/L)
+                                            {{ 'import.show.unit_price_deci_cents'|trans }}
                                             <input class="input" type="number" name="lines[{{ loop.index0 }}][unitPriceDeciCentsPerLiter]" value="{{ line.unitPriceDeciCentsPerLiter is defined and line.unitPriceDeciCentsPerLiter is not null ? line.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
                                         </label>
                                         <label class="label">
-                                            VAT rate (%)
+                                            {{ 'import.show.vat_rate'|trans }}
                                             <input class="input" type="number" name="lines[{{ loop.index0 }}][vatRatePercent]" value="{{ line.vatRatePercent is defined and line.vatRatePercent is not null ? line.vatRatePercent : '' }}" min="0" max="100" step="1">
                                         </label>
                                     </div>
@@ -380,22 +379,22 @@
                             {% endfor %}
                         {% else %}
                             <section class="card-subtle card-subtle-block">
-                                <p class="muted section-lead">No fuel lines were parsed. Add one manually below if you want to finalize this import.</p>
+                                <p class="muted section-lead">{{ 'import.show.no_fuel_lines'|trans }}</p>
                                 <div class="form-grid-2">
                                     <label class="label">
-                                        Fuel type
+                                        {{ 'receipt.form.fuel_type'|trans }}
                                         <input class="input" type="text" name="lines[0][fuelType]" value="" placeholder="diesel">
                                     </label>
                                     <label class="label">
-                                        Quantity (mL)
+                                        {{ 'import.show.quantity_ml'|trans }}
                                         <input class="input" type="number" name="lines[0][quantityMilliLiters]" value="" min="1" step="1">
                                     </label>
                                     <label class="label">
-                                        Unit price (deci-cents/L)
+                                        {{ 'import.show.unit_price_deci_cents'|trans }}
                                         <input class="input" type="number" name="lines[0][unitPriceDeciCentsPerLiter]" value="" min="0" step="1">
                                     </label>
                                     <label class="label">
-                                        VAT rate (%)
+                                        {{ 'import.show.vat_rate'|trans }}
                                         <input class="input" type="number" name="lines[0][vatRatePercent]" value="" min="0" max="100" step="1">
                                     </label>
                                 </div>
@@ -404,30 +403,30 @@
                     </div>
 
                     <div class="actions-wrap">
-                        <button class="btn btn-primary" type="submit">Finalize import</button>
+                        <button class="btn btn-primary" type="submit">{{ 'import.show.finalize_import'|trans }}</button>
                         {% if reviewQueue is not null and reviewQueue.nextUrl is not null %}
-                            <button class="btn btn-secondary" type="submit" name="_continue" value="1">Finalize and open next</button>
+                            <button class="btn btn-secondary" type="submit" name="_continue" value="1">{{ 'import.show.finalize_and_open_next'|trans }}</button>
                         {% endif %}
-                        <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">Cancel</a>
+                        <a class="btn btn-secondary" href="{{ backToImportsUrl }}" data-turbo-frame="_top">{{ 'action.cancel'|trans }}</a>
                     </div>
                 </form>
             </section>
         {% else %}
             <section class="card section-card">
-                <p class="muted section-lead">This import is no longer reviewable.</p>
+                <p class="muted section-lead">{{ 'import.show.not_reviewable'|trans }}</p>
             </section>
         {% endif %}
 
         {% if payloadData is not null %}
             {% if text is not null %}
                 <section class="card section-card">
-                    <p class="text-block-title">text</p>
+                    <p class="text-block-title">{{ 'import.show.text'|trans }}</p>
                     <pre class="preformatted-block">{{ text }}</pre>
                 </section>
             {% endif %}
 
             <section class="card section-card">
-                <p class="text-block-title">Raw payload (debug)</p>
+                <p class="text-block-title">{{ 'import.show.raw_payload'|trans }}</p>
                 <pre class="preformatted-block">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
             </section>
         {% endif %}
@@ -489,6 +488,10 @@
                     const stateCopy = document.querySelector('[data-import-station-selection-copy]');
                     const resetButton = document.querySelector('[data-import-station-selection-reset]');
                     const manualRadio = radios.find((radio) => radio.value === '') ?? null;
+                    const publicSelectionPrefix = {{ 'import.show.public_selection_prefix'|trans|json_encode|raw }};
+                    const publicSelectionSuffix = {{ 'import.show.public_selection_suffix'|trans|json_encode|raw }};
+                    const existingSelectionPrefix = {{ 'import.show.existing_selection_prefix'|trans|json_encode|raw }};
+                    const existingSelectionSuffix = {{ 'import.show.existing_selection_suffix'|trans|json_encode|raw }};
 
                     const syncSelectedSuggestionState = () => {
                         if (radios.length === 0 || !manualFieldsWrapper) {
@@ -526,9 +529,9 @@
                         stateTitle.textContent = title;
 
                         if (kind === 'public') {
-                            stateCopy.innerHTML = `<strong>Public suggestion selected.</strong> ${meta} will create or reuse an internal station when you finalize.`;
+                            stateCopy.innerHTML = `<strong>${publicSelectionPrefix}</strong> ${meta} ${publicSelectionSuffix}`;
                         } else {
-                            stateCopy.innerHTML = `<strong>Existing station selected.</strong> ${meta} will be used for this import.`;
+                            stateCopy.innerHTML = `<strong>${existingSelectionPrefix}</strong> ${meta} ${existingSelectionSuffix}`;
                         }
                     };
 

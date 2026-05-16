@@ -51,7 +51,7 @@ final class CreateReceiptWithStationHandler
             // Backward-compatible path kept while UI/controllers migrate to typed suggestions.
             $station = $this->stationRepository->get($command->selectedStationId);
             if (null === $station) {
-                throw new RuntimeException('Selected station was not found.');
+                throw new RuntimeException('receipt.validation.station_not_found');
             }
         }
 
@@ -107,7 +107,7 @@ final class CreateReceiptWithStationHandler
     {
         $station = $this->stationRepository->get($stationId);
         if (null === $station) {
-            throw new RuntimeException('Selected station was not found.');
+            throw new RuntimeException('receipt.validation.station_not_found');
         }
 
         return $station;

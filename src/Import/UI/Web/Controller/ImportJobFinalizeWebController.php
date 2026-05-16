@@ -256,13 +256,13 @@ final class ImportJobFinalizeWebController extends AbstractController
             }
 
             if (null === $fuelType || null === $quantity || null === $unitPrice || null === $vatRate) {
-                throw new InvalidArgumentException(sprintf('Line %d is incomplete. Fuel type, quantity, unit price, and VAT rate are all required.', $lineNumber));
+                throw new InvalidArgumentException(strtr('import.validation.line_incomplete', ['%index%' => (string) $lineNumber]));
             }
 
             try {
                 $lines[] = new CreateReceiptLineCommand(FuelType::from($fuelType), $quantity, $unitPrice, $vatRate);
             } catch (ValueError) {
-                throw new InvalidArgumentException(sprintf('Line %d has an invalid fuel type.', $lineNumber));
+                throw new InvalidArgumentException(strtr('import.validation.line_invalid_fuel_type', ['%index%' => (string) $lineNumber]));
             }
         }
 
@@ -282,13 +282,13 @@ final class ImportJobFinalizeWebController extends AbstractController
         }
 
         if (null === $fuelType || null === $quantity || null === $unitPrice || null === $vatRate) {
-            throw new InvalidArgumentException('If one line field is provided, all line fields are required.');
+            throw new InvalidArgumentException('import.validation.legacy_line_incomplete');
         }
 
         try {
             $line = new CreateReceiptLineCommand(FuelType::from($fuelType), $quantity, $unitPrice, $vatRate);
         } catch (ValueError) {
-            throw new InvalidArgumentException('Invalid fuel type provided.');
+            throw new InvalidArgumentException('import.validation.legacy_line_invalid_fuel_type');
         }
 
         return [$line];

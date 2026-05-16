@@ -154,7 +154,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         );
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Selected station was not found.');
+        $this->expectExceptionMessage('receipt.validation.station_not_found');
 
         $handler(new CreateReceiptWithStationCommand(
             new DateTimeImmutable('2026-04-29T12:00:00+00:00'),
@@ -311,7 +311,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         );
 
         $this->expectException(StationPublicSourceConflict::class);
-        $this->expectExceptionMessage('Selected public station conflicts with the existing linked public source for this station.');
+        $this->expectExceptionMessage('receipt.validation.station_public_source_conflict');
 
         $handler(new CreateReceiptWithStationCommand(
             new DateTimeImmutable('2026-04-29T12:00:00+00:00'),
@@ -355,7 +355,7 @@ final class CreateReceiptWithStationHandlerTest extends TestCase
         );
 
         $this->expectException(StationPublicSourceConflict::class);
-        $this->expectExceptionMessage('Selected public station conflicts with the existing linked public source for this station.');
+        $this->expectExceptionMessage('receipt.validation.station_public_source_conflict');
 
         $handler(new CreateReceiptWithStationCommand(
             new DateTimeImmutable('2026-04-29T12:00:00+00:00'),

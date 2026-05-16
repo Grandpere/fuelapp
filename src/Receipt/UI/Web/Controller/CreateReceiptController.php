@@ -368,7 +368,7 @@ final class CreateReceiptController extends AbstractController
 
         if ('station' === $selectedSuggestionType) {
             if (!Uuid::isValid($selectedSuggestionId) || null === $this->stationRepository->get($selectedSuggestionId)) {
-                return ['Selected station was not found.'];
+                return ['receipt.validation.station_not_found'];
             }
 
             return [];

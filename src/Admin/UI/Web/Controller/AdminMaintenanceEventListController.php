@@ -18,11 +18,13 @@ use App\Maintenance\Application\Repository\MaintenanceEventRepository;
 use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use ValueError;
 
 final class AdminMaintenanceEventListController extends AbstractController
@@ -31,6 +33,7 @@ final class AdminMaintenanceEventListController extends AbstractController
         private readonly AdminUserManager $userManager,
         private readonly MaintenanceEventRepository $eventRepository,
         private readonly VehicleRepository $vehicleRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -92,27 +95,27 @@ final class AdminMaintenanceEventListController extends AbstractController
 
         if (null !== $ownerId) {
             $user = $this->userManager->getUser($ownerId);
-            $summary[] = ['label' => 'Owner', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $ownerId) : $ownerId];
+            $summary[] = ['label' => $this->t('admin.maintenance_events.filters.owner'), 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $ownerId) : $ownerId];
         }
 
         if (null !== $vehicleId) {
             $vehicle = $this->vehicleRepository->get($vehicleId);
             $summary[] = [
-                'label' => 'Vehicle',
+                'label' => $this->t('admin.maintenance_events.filters.vehicle'),
                 'value' => null !== $vehicle ? sprintf('%s (%s)', $vehicle->name(), $vehicleId) : $vehicleId,
             ];
         }
 
         if (null !== $eventType) {
-            $summary[] = ['label' => 'Event type', 'value' => $eventType->value];
+            $summary[] = ['label' => $this->t('admin.maintenance_events.filters.event_type'), 'value' => $eventType->value];
         }
 
         if (null !== $occurredFrom) {
-            $summary[] = ['label' => 'Occurred from', 'value' => $occurredFrom->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.maintenance_events.filters.occurred_from'), 'value' => $occurredFrom->format('Y-m-d')];
         }
 
         if (null !== $occurredTo) {
-            $summary[] = ['label' => 'Occurred to', 'value' => $occurredTo->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.maintenance_events.filters.occurred_to'), 'value' => $occurredTo->format('Y-m-d')];
         }
 
         return $summary;
@@ -207,5 +210,13 @@ final class AdminMaintenanceEventListController extends AbstractController
         usort($options, static fn (array $left, array $right): int => $left['label'] <=> $right['label']);
 
         return $options;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

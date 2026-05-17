@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Receipt Detail{% endblock %}
+{% block title %}{{ 'receipt.show.title'|trans }}{% endblock %}
 
 {% set admin_section = 'receipts' %}
 
@@ -8,43 +8,43 @@
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
-                <h2 class="page-title">Receipt Detail</h2>
-                <p class="muted">Inspect and control this receipt from back-office.</p>
+                <h2 class="page-title">{{ 'receipt.show.title'|trans }}</h2>
+                <p class="muted">{{ 'admin.receipts.detail.lead'|trans }}</p>
             </div>
             <div class="admin-page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_edit', {id: receipt.id.toString(), return_to: app.request.requestUri}) }}">Edit</a>
-                <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
+                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_edit', {id: receipt.id.toString(), return_to: app.request.requestUri}) }}">{{ 'action.edit'|trans }}</a>
+                <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.id.toString()}) }}" onsubmit="return confirm('{{ 'receipt.confirm.delete'|trans }}');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_receipt_delete_' ~ receipt.id.toString()) }}">
                     <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
-                    <button class="btn btn-danger" type="submit">Delete</button>
+                    <button class="btn btn-danger" type="submit">{{ 'action.delete'|trans }}</button>
                 </form>
-                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}">{{ 'common.back'|trans }}</a>
             </div>
         </div>
 
         <dl class="admin-dl admin-detail-stack">
-            <dt class="admin-dt">Receipt ID</dt>
+            <dt class="admin-dt">{{ 'admin.receipts.table.id'|trans }}</dt>
             <dd class="admin-dd">{{ receipt.id.toString() }}</dd>
-            <dt class="admin-dt">Issued At</dt>
+            <dt class="admin-dt">{{ 'admin.receipts.table.issued_at'|trans }}</dt>
             <dd class="admin-dd">{{ receipt.issuedAt|date('Y-m-d H:i:s') }}</dd>
-            <dt class="admin-dt">Total</dt>
+            <dt class="admin-dt">{{ 'admin.receipts.table.total'|trans }}</dt>
             <dd class="admin-dd">{{ (receipt.totalCents / 100)|number_format(2, ',', ' ') }} EUR</dd>
-            <dt class="admin-dt">VAT</dt>
+            <dt class="admin-dt">{{ 'admin.receipts.table.vat'|trans }}</dt>
             <dd class="admin-dd">{{ (receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</dd>
-            <dt class="admin-dt">Station</dt>
+            <dt class="admin-dt">{{ 'receipt.show.station'|trans }}</dt>
             <dd class="admin-dd">
                 {% if station %}
                     <a href="{{ path('ui_admin_station_show', {id: station.id().toString(), return_to: backToListUrl}) }}">{{ station.name }}</a> - {{ station.streetName }}, {{ station.postalCode }} {{ station.city }}
                 {% else %}
-                    n/a
+                    {{ 'common.na'|trans }}
                 {% endif %}
             </dd>
-            <dt class="admin-dt">Vehicle</dt>
+            <dt class="admin-dt">{{ 'receipt.show.vehicle'|trans }}</dt>
             <dd class="admin-dd">
                 {% if vehicle %}
                     <a href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">{{ vehicle.name() }}</a>
                 {% else %}
-                    n/a
+                    {{ 'common.na'|trans }}
                 {% endif %}
             </dd>
         </dl>
@@ -52,7 +52,7 @@
 
     {% if supportShortcuts is not empty %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Support continuity</h3>
+            <h3 class="section-title">{{ 'admin.receipts.support_continuity_title'|trans }}</h3>
             <div class="actions-wrap admin-table-top">
                 {% for item in supportShortcuts %}
                     <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
@@ -63,8 +63,8 @@
 
     {% if relatedImports is not empty %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Related imports</h3>
-            <p class="muted">These imports already point to this receipt, so support can jump back into the originating import flow when needed.</p>
+            <h3 class="section-title">{{ 'admin.receipts.related_imports_title'|trans }}</h3>
+            <p class="muted">{{ 'admin.receipts.related_imports_lead'|trans }}</p>
             <div class="actions-wrap admin-table-top">
                 {% for item in relatedImports %}
                     <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.filename }} · {{ item.status }}</a>
@@ -74,17 +74,17 @@
     {% endif %}
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Lines</h3>
+        <h3 class="section-title">{{ 'receipt.show.line_section'|trans }}</h3>
         <div class="table-wrap admin-table-top table-min-860">
             <table class="app-table">
                 <thead>
                 <tr>
-                    <th>Fuel Type</th>
-                    <th class="text-right">Quantity (L)</th>
-                    <th class="text-right">Unit Price (EUR/L)</th>
-                    <th class="text-right">VAT %</th>
-                    <th class="text-right">VAT</th>
-                    <th class="text-right">Line Total</th>
+                    <th>{{ 'receipt.show.col_fuel'|trans }}</th>
+                    <th class="text-right">{{ 'receipt.show.col_quantity'|trans }} (L)</th>
+                    <th class="text-right">{{ 'receipt.show.col_unit_price'|trans }} (EUR/L)</th>
+                    <th class="text-right">{{ 'receipt.show.col_vat_rate'|trans }}</th>
+                    <th class="text-right">{{ 'receipt.show.col_vat'|trans }}</th>
+                    <th class="text-right">{{ 'receipt.show.col_line_total'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>

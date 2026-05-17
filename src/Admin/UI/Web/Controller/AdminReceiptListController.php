@@ -17,11 +17,13 @@ use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminReceiptListController extends AbstractController
 {
@@ -29,6 +31,7 @@ final class AdminReceiptListController extends AbstractController
         private readonly ReceiptRepository $receiptRepository,
         private readonly VehicleRepository $vehicleRepository,
         private readonly StationRepository $stationRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -119,13 +122,13 @@ final class AdminReceiptListController extends AbstractController
         $summary = [];
 
         if (null !== $query) {
-            $summary[] = ['label' => 'Search', 'value' => $query];
+            $summary[] = ['label' => $this->t('admin.receipts.filters.search'), 'value' => $query];
         }
 
         if (null !== $vehicleId) {
             $vehicle = $this->vehicleRepository->get($vehicleId);
             $summary[] = [
-                'label' => 'Vehicle',
+                'label' => $this->t('admin.receipts.filters.vehicle'),
                 'value' => null !== $vehicle ? sprintf('%s (%s)', $vehicle->name(), $vehicleId) : $vehicleId,
             ];
         }
@@ -133,17 +136,17 @@ final class AdminReceiptListController extends AbstractController
         if (null !== $stationId) {
             $station = $this->stationRepository->getForSystem($stationId);
             $summary[] = [
-                'label' => 'Station',
+                'label' => $this->t('admin.receipts.filters.station'),
                 'value' => null !== $station ? sprintf('%s (%s)', $station->name(), $stationId) : $stationId,
             ];
         }
 
         if (null !== $issuedFrom) {
-            $summary[] = ['label' => 'Issued from', 'value' => $issuedFrom->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.receipts.filters.issued_from'), 'value' => $issuedFrom->format('Y-m-d')];
         }
 
         if (null !== $issuedTo) {
-            $summary[] = ['label' => 'Issued to', 'value' => $issuedTo->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.receipts.filters.issued_to'), 'value' => $issuedTo->format('Y-m-d')];
         }
 
         return $summary;
@@ -213,19 +216,19 @@ final class AdminReceiptListController extends AbstractController
 
         $latest = $receipts[0] ?? null;
         if (is_array($latest)) {
-            $shortcuts[] = ['label' => 'Open latest receipt', 'url' => $latest['showUrl']];
+            $shortcuts[] = ['label' => $this->t('admin.receipts.shortcuts.latest_receipt'), 'url' => $latest['showUrl']];
         }
 
         foreach ($receipts as $receipt) {
             if (null !== $receipt['vehicle']) {
-                $shortcuts[] = ['label' => 'Open latest vehicle-linked receipt', 'url' => $receipt['showUrl']];
+                $shortcuts[] = ['label' => $this->t('admin.receipts.shortcuts.latest_vehicle_receipt'), 'url' => $receipt['showUrl']];
                 break;
             }
         }
 
         foreach ($receipts as $receipt) {
             if (null !== $receipt['station']) {
-                $shortcuts[] = ['label' => 'Open latest station-linked receipt', 'url' => $receipt['showUrl']];
+                $shortcuts[] = ['label' => $this->t('admin.receipts.shortcuts.latest_station_receipt'), 'url' => $receipt['showUrl']];
                 break;
             }
         }
@@ -267,5 +270,13 @@ final class AdminReceiptListController extends AbstractController
         usort($options, static fn (array $left, array $right): int => $left['label'] <=> $right['label']);
 
         return $options;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Receipts{% endblock %}
+{% block title %}{{ 'admin.receipts.title'|trans }}{% endblock %}
 
 {% set admin_section = 'receipts' %}
 
@@ -8,21 +8,21 @@
     {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Receipts</h2>
-            <p class="muted">System-wide receipt ledger with full back-office controls.</p>
+            <h2 class="page-title">{{ 'admin.receipts.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.receipts.lead'|trans }}</p>
         </div>
 
         <div class="admin-metric-grid admin-table-top">
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Total receipts</p>
+                <p class="admin-metric-label">{{ 'admin.receipts.metrics.total'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.total }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Vehicle linked</p>
+                <p class="admin-metric-label">{{ 'admin.receipts.metrics.with_vehicle'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.withVehicle }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Station linked</p>
+                <p class="admin-metric-label">{{ 'admin.receipts.metrics.with_station'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.withStation }}</p>
             </article>
         </div>
@@ -31,8 +31,8 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Support shortcuts</strong>
-                        <p class="muted compact-note">Jump to the freshest receipt dossier instead of scanning the whole ledger first.</p>
+                        <strong>{{ 'admin.receipts.support_shortcuts_title'|trans }}</strong>
+                        <p class="muted compact-note">{{ 'admin.receipts.support_shortcuts_lead'|trans }}</p>
                     </div>
                     <div class="actions-wrap">
                         {% for shortcut in supportShortcuts %}
@@ -46,39 +46,39 @@
         <form method="get" action="{{ path('ui_admin_receipt_list') }}" class="admin-filters-form admin-table-top">
             <div class="form-grid-2">
                 <label class="label">
-                    Search
-                    <input class="input" type="text" name="q" value="{{ filters.q ?? '' }}" placeholder="receipt id, vehicle, station">
+                    {{ 'admin.receipts.filters.search'|trans }}
+                    <input class="input" type="text" name="q" value="{{ filters.q ?? '' }}" placeholder="{{ 'admin.receipts.filters.search_placeholder'|trans }}">
                 </label>
                 <label class="label">
-                    Vehicle
+                    {{ 'admin.receipts.filters.vehicle'|trans }}
                     <select class="select" name="vehicle_id">
-                        <option value="">All vehicles</option>
+                        <option value="">{{ 'admin.receipts.filters.all_vehicles'|trans }}</option>
                         {% for vehicle in vehicleOptions %}
                             <option value="{{ vehicle.id }}" {{ filters.vehicleId == vehicle.id ? 'selected' : '' }}>{{ vehicle.label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Station
+                    {{ 'admin.receipts.filters.station'|trans }}
                     <select class="select" name="station_id">
-                        <option value="">All stations</option>
+                        <option value="">{{ 'admin.receipts.filters.all_stations'|trans }}</option>
                         {% for station in stationOptions %}
                             <option value="{{ station.id }}" {{ filters.stationId == station.id ? 'selected' : '' }}>{{ station.label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Issued from
+                    {{ 'admin.receipts.filters.issued_from'|trans }}
                     <input class="input" type="text" name="issued_from" value="{{ filters.issuedFrom ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
                 <label class="label">
-                    Issued to
+                    {{ 'admin.receipts.filters.issued_to'|trans }}
                     <input class="input" type="text" name="issued_to" value="{{ filters.issuedTo ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
             </div>
             <div class="actions-wrap">
-                <button class="btn btn-primary" type="submit">Apply filters</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_list') }}">Reset</a>
+                <button class="btn btn-primary" type="submit">{{ 'admin.receipts.apply_filters'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_receipt_list') }}">{{ 'action.reset'|trans }}</a>
             </div>
         </form>
 
@@ -86,7 +86,7 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Context filter active</strong>
+                        <strong>{{ 'admin.receipts.active_filters_title'|trans }}</strong>
                         <p class="muted compact-note">
                             {% for item in activeFilterSummary %}
                                 {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
@@ -94,7 +94,7 @@
                         </p>
                     </div>
                     <div class="admin-page-actions">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">Reset</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list') }}">{{ 'action.reset'|trans }}</a>
                     </div>
                 </div>
             </div>
@@ -104,13 +104,13 @@
             <table class="app-table">
                 <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Issued At</th>
-                    <th>Context</th>
-                    <th class="text-right">Lines</th>
-                    <th class="text-right">Total</th>
-                    <th class="text-right">VAT</th>
-                    <th>Actions</th>
+                    <th>{{ 'admin.receipts.table.id'|trans }}</th>
+                    <th>{{ 'admin.receipts.table.issued_at'|trans }}</th>
+                    <th>{{ 'admin.receipts.table.context'|trans }}</th>
+                    <th class="text-right">{{ 'receipt.action.lines'|trans }}</th>
+                    <th class="text-right">{{ 'admin.receipts.table.total'|trans }}</th>
+                    <th class="text-right">{{ 'admin.receipts.table.vat'|trans }}</th>
+                    <th>{{ 'common.actions'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -133,7 +133,7 @@
                                     <div class="muted compact-note">{{ receipt.station.name() }}</div>
                                 {% endif %}
                             {% else %}
-                                <span class="muted">No vehicle or station linked.</span>
+                                <span class="muted">{{ 'admin.receipts.no_context'|trans }}</span>
                             {% endif %}
                         </td>
                         <td class="text-right">{{ receipt.receipt.lines|length }}</td>
@@ -141,25 +141,25 @@
                         <td class="text-right">{{ (receipt.receipt.vatAmountCents / 100)|number_format(2, ',', ' ') }} EUR</td>
                         <td>
                             <div class="action-cell-flex" data-row-link-ignore>
-                                <a class="btn btn-secondary btn-compact" href="{{ receipt.showUrl }}">Open</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ receipt.editUrl }}">Edit</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ receipt.showUrl }}">{{ 'action.open'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ receipt.editUrl }}">{{ 'action.edit'|trans }}</a>
                                 {% if receipt.vehicle %}
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicle.id().toString(), return_to: returnTo}) }}">Vehicle</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicle.id().toString(), return_to: returnTo}) }}">{{ 'nav.vehicles'|trans }}</a>
                                 {% endif %}
                                 {% if receipt.station %}
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: receipt.station.id().toString(), return_to: returnTo}) }}">Station</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: receipt.station.id().toString(), return_to: returnTo}) }}">{{ 'nav.stations'|trans }}</a>
                                 {% endif %}
-                                <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.receipt.id.toString()}) }}" onsubmit="return confirm('Delete this receipt?');">
+                                <form method="post" action="{{ path('ui_admin_receipt_delete', {id: receipt.receipt.id.toString()}) }}" onsubmit="return confirm('{{ 'receipt.confirm.delete'|trans }}');">
                                     <input type="hidden" name="_token" value="{{ csrf_token('admin_receipt_delete_' ~ receipt.receipt.id.toString()) }}">
                                     <input type="hidden" name="_redirect" value="{{ returnTo }}">
-                                    <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                                    <button class="btn btn-danger btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="7" class="muted">No receipts found.</td>
+                        <td colspan="7" class="muted">{{ 'admin.receipts.empty'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

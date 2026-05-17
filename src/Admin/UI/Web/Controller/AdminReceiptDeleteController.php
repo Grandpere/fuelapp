@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminReceiptDeleteController extends AbstractController
 {
@@ -30,6 +31,7 @@ final class AdminReceiptDeleteController extends AbstractController
         private readonly ReceiptRepository $receiptRepository,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -41,7 +43,7 @@ final class AdminReceiptDeleteController extends AbstractController
         }
 
         if (!$this->isCsrfTokenValid('admin_receipt_delete_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', $this->translator->trans('receipt.validation.invalid_csrf'));
 
             return $this->redirectToRoute('ui_admin_receipt_show', ['id' => $id]);
         }
@@ -58,7 +60,7 @@ final class AdminReceiptDeleteController extends AbstractController
             $id,
             ['after' => ['deleted' => true]],
         );
-        $this->addFlash('success', 'Receipt deleted.');
+        $this->addFlash('success', $this->translator->trans('receipt.flash.deleted'));
 
         return new RedirectResponse(
             $this->safeReturnPathResolver->resolve(

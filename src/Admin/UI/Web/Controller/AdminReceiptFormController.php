@@ -24,6 +24,7 @@ use App\Receipt\Domain\Receipt;
 use App\Shared\UI\Web\SafeReturnPathResolver;
 use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,6 +33,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use ValueError;
 
 final class AdminReceiptFormController extends AbstractController
@@ -47,6 +49,7 @@ final class AdminReceiptFormController extends AbstractController
         private readonly VehicleRepository $vehicleRepository,
         private readonly StationRepository $stationRepository,
         private readonly ImportJobRepository $importJobRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -79,11 +82,11 @@ final class AdminReceiptFormController extends AbstractController
             $rawLines = $request->request->all('lines');
             $token = (string) $request->request->get('_token', '');
             if (!$this->isCsrfTokenValid('admin_receipt_form_'.$id, $token)) {
-                $errors[] = 'Invalid CSRF token.';
+                $errors[] = $this->t('receipt.validation.invalid_csrf');
             }
 
             if ([] === $rawLines) {
-                $errors[] = 'At least one line is required.';
+                $errors[] = $this->t('receipt.validation.at_least_one_line');
             } else {
                 $formLines = [];
                 foreach ($rawLines as $rawLine) {
@@ -132,7 +135,7 @@ final class AdminReceiptFormController extends AbstractController
                     ],
                 );
 
-                $this->addFlash('success', 'Receipt updated.');
+                $this->addFlash('success', $this->t('receipt.flash.lines_updated'));
 
                 return new RedirectResponse($backToReceiptUrl, Response::HTTP_SEE_OTHER);
             }
@@ -172,7 +175,7 @@ final class AdminReceiptFormController extends AbstractController
             try {
                 $fuelType = FuelType::from($line['fuelType']);
             } catch (ValueError) {
-                $errors[] = sprintf('Line %d: invalid fuel type.', $index + 1);
+                $errors[] = $this->t('receipt.validation.line_invalid_fuel_type', ['%index%' => $index + 1]);
                 continue;
             }
 
@@ -181,13 +184,13 @@ final class AdminReceiptFormController extends AbstractController
             $vatRate = filter_var($line['vatRatePercent'], FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
 
             if (null === $quantity || $quantity <= 0) {
-                $errors[] = sprintf('Line %d: quantity must be a positive integer.', $index + 1);
+                $errors[] = $this->t('receipt.validation.line_invalid_quantity', ['%index%' => $index + 1]);
             }
             if (null === $unitPrice || $unitPrice < 0) {
-                $errors[] = sprintf('Line %d: unit price must be an integer >= 0.', $index + 1);
+                $errors[] = $this->t('receipt.validation.line_invalid_unit_price', ['%index%' => $index + 1]);
             }
             if (null === $vatRate || $vatRate < 0 || $vatRate > 100) {
-                $errors[] = sprintf('Line %d: VAT rate must be between 0 and 100.', $index + 1);
+                $errors[] = $this->t('receipt.validation.line_invalid_vat', ['%index%' => $index + 1]);
             }
 
             if (null !== $quantity && $quantity > 0 && null !== $unitPrice && $unitPrice >= 0 && null !== $vatRate && $vatRate >= 0 && $vatRate <= 100) {
@@ -196,7 +199,7 @@ final class AdminReceiptFormController extends AbstractController
         }
 
         if ([] === $commands) {
-            $errors[] = 'At least one valid line is required.';
+            $errors[] = $this->t('receipt.validation.at_least_one_valid_line');
         }
 
         return [$commands, array_values(array_unique($errors))];
@@ -296,40 +299,48 @@ final class AdminReceiptFormController extends AbstractController
     private function buildSupportShortcuts(?string $vehicleId, ?string $stationId, string $backToReceiptUrl, array $relatedImports): array
     {
         $shortcuts = [[
-            'label' => 'Back to receipt',
+            'label' => $this->t('admin.receipts.shortcuts.back_to_receipt'),
             'url' => $backToReceiptUrl,
         ]];
 
         if (null !== $vehicleId) {
             $shortcuts[] = [
-                'label' => 'Open vehicle',
+                'label' => $this->t('admin.receipts.shortcuts.open_vehicle'),
                 'url' => $this->generateUrl('ui_admin_vehicle_show', ['id' => $vehicleId, 'return_to' => $backToReceiptUrl]),
             ];
             $shortcuts[] = [
-                'label' => 'Vehicle receipts',
+                'label' => $this->t('admin.receipts.shortcuts.vehicle_receipts'),
                 'url' => $this->generateUrl('ui_admin_receipt_list', ['vehicle_id' => $vehicleId]),
             ];
         }
 
         if (null !== $stationId) {
             $shortcuts[] = [
-                'label' => 'Open station',
+                'label' => $this->t('admin.receipts.shortcuts.open_station'),
                 'url' => $this->generateUrl('ui_admin_station_show', ['id' => $stationId, 'return_to' => $backToReceiptUrl]),
             ];
             $shortcuts[] = [
-                'label' => 'Station receipts',
+                'label' => $this->t('admin.receipts.shortcuts.station_receipts'),
                 'url' => $this->generateUrl('ui_admin_receipt_list', ['station_id' => $stationId]),
             ];
         }
 
         foreach ($relatedImports as $relatedImport) {
             $shortcuts[] = [
-                'label' => 'Open related import',
+                'label' => $this->t('admin.receipts.shortcuts.open_related_import'),
                 'url' => $relatedImport['url'],
             ];
             break;
         }
 
         return $shortcuts;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

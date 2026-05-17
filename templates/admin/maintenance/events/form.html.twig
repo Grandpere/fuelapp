@@ -1,14 +1,14 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Edit Admin Maintenance Event{% endblock %}
+{% block title %}{{ 'maintenance.event_form.title_edit'|trans }}{% endblock %}
 
 {% set admin_section = 'maintenance_events' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Edit maintenance event</h2>
-            <p class="muted">Back-office update flow for recorded maintenance operations.</p>
+            <h2 class="page-title">{{ 'maintenance.event_form.title_edit'|trans }}</h2>
+            <p class="muted">{{ 'maintenance.event_form.lead'|trans }}</p>
         </div>
 
         {% if errors is not empty %}
@@ -26,16 +26,16 @@
             <input type="hidden" name="_return_to" value="{{ backToListUrl }}">
             <div class="form-grid-2">
                 <label class="label">
-                    Vehicle
+                    {{ 'maintenance.form.vehicle'|trans }}
                     <select class="select" name="vehicleId" required>
-                        <option value="">Select vehicle</option>
+                        <option value="">{{ 'maintenance.form.select_vehicle'|trans }}</option>
                         {% for id, label in vehicleOptions %}
                             <option value="{{ id }}" {% if formData.vehicleId == id %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Event type
+                    {{ 'maintenance.event_form.event_type'|trans }}
                     <select class="select" name="eventType" required>
                         {% for eventType in eventTypes %}
                             <option value="{{ eventType }}" {% if formData.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
@@ -43,30 +43,30 @@
                     </select>
                 </label>
                 <label class="label">
-                    Occurred at
+                    {{ 'maintenance.event_form.occurred_at'|trans }}
                     <input class="input" type="datetime-local" name="occurredAt" value="{{ formData.occurredAt }}" required>
                 </label>
                 <label class="label">
-                    Odometer (km)
+                    {{ 'maintenance.event_form.odometer'|trans }}
                     <input class="input" type="number" name="odometerKilometers" value="{{ formData.odometerKilometers }}" min="0" step="1">
                 </label>
                 <label class="label">
-                    Total cost (cents)
+                    {{ 'admin.maintenance_events.form.total_cost_cents'|trans }}
                     <input class="input" type="number" name="totalCostCents" value="{{ formData.totalCostCents }}" min="0" step="1">
                 </label>
                 <label class="label">
-                    Currency
+                    {{ 'maintenance.form.currency'|trans }}
                     <input class="input" type="text" name="currencyCode" value="{{ formData.currencyCode }}" maxlength="3" required>
                 </label>
             </div>
             <label class="label">
-                Description
+                {{ 'maintenance.form.description'|trans }}
                 <textarea class="input" name="description" rows="4">{{ formData.description }}</textarea>
             </label>
 
             <div class="actions-wrap">
-                <button class="btn btn-primary" type="submit">Save changes</button>
-                <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to list</a>
+                <button class="btn btn-primary" type="submit">{{ 'maintenance.event_form.action_save'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">{{ 'action.back_to_list'|trans }}</a>
             </div>
         </form>
     </section>

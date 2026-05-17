@@ -18,12 +18,14 @@ use App\Maintenance\Application\Repository\MaintenanceReminderRuleRepository;
 use App\Maintenance\Domain\MaintenanceReminder;
 use App\Maintenance\Domain\MaintenanceReminderRule;
 use App\Vehicle\Application\Repository\VehicleRepository;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminMaintenanceReminderShowController extends AbstractController
 {
@@ -31,6 +33,7 @@ final class AdminMaintenanceReminderShowController extends AbstractController
         private readonly MaintenanceReminderRepository $reminderRepository,
         private readonly MaintenanceReminderRuleRepository $ruleRepository,
         private readonly VehicleRepository $vehicleRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -124,16 +127,24 @@ final class AdminMaintenanceReminderShowController extends AbstractController
         $kilometers = $rule->intervalKilometers();
 
         return match ($rule->triggerMode()->value) {
-            'date' => null === $days ? null : sprintf('Every %d day%s', $days, 1 === $days ? '' : 's'),
-            'odometer' => null === $kilometers ? null : sprintf('Every %d km', $kilometers),
+            'date' => null === $days ? null : $this->t('admin.maintenance_reminders.cadence.every_days', ['%days%' => $days]),
+            'odometer' => null === $kilometers ? null : $this->t('admin.maintenance_reminders.cadence.every_kilometers', ['%kilometers%' => $kilometers]),
             default => match (true) {
-                null !== $days && null !== $kilometers => sprintf('Every %d day%s or %d km', $days, 1 === $days ? '' : 's', $kilometers),
-                null !== $days => sprintf('Every %d day%s', $days, 1 === $days ? '' : 's'),
-                null !== $kilometers => sprintf('Every %d km', $kilometers),
+                null !== $days && null !== $kilometers => $this->t('admin.maintenance_reminders.cadence.every_days_or_kilometers', ['%days%' => $days, '%kilometers%' => $kilometers]),
+                null !== $days => $this->t('admin.maintenance_reminders.cadence.every_days', ['%days%' => $days]),
+                null !== $kilometers => $this->t('admin.maintenance_reminders.cadence.every_kilometers', ['%kilometers%' => $kilometers]),
                 default => null,
             },
         };
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F\\-]{36}';
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
+    }
 }

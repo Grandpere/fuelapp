@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Maintenance Event Detail{% endblock %}
+{% block title %}{{ 'admin.maintenance_events.detail.title'|trans }}{% endblock %}
 
 {% set admin_section = 'maintenance_events' %}
 
@@ -8,26 +8,26 @@
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
-                <h2 class="page-title">Maintenance Event Detail</h2>
-                <p class="muted">Back-office detail view with direct mutation actions.</p>
+                <h2 class="page-title">{{ 'admin.maintenance_events.detail.title'|trans }}</h2>
+                <p class="muted">{{ 'admin.maintenance_events.detail.lead'|trans }}</p>
             </div>
             <div class="admin-page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString, return_to: app.request.requestUri}) }}">Edit event</a>
-                <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" onsubmit="return confirm('Delete this maintenance event?');">
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_edit', {id: event.id.toString, return_to: app.request.requestUri}) }}">{{ 'admin.maintenance_events.detail.edit'|trans }}</a>
+                <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.id.toString}) }}" onsubmit="return confirm('{{ 'admin.maintenance_events.confirm_delete'|trans }}');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.id.toString) }}">
                     <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
-                    <button class="btn btn-danger" type="submit">Delete</button>
+                    <button class="btn btn-danger" type="submit">{{ 'action.delete'|trans }}</button>
                 </form>
-                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back to list</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}">{{ 'action.back_to_list'|trans }}</a>
             </div>
         </div>
 
         <dl class="admin-dl admin-detail-stack">
             <dt class="admin-dt">ID</dt>
             <dd class="admin-dd">{{ event.id.toString }}</dd>
-            <dt class="admin-dt">Owner ID</dt>
+            <dt class="admin-dt">{{ 'admin.maintenance_events.table.owner_id'|trans }}</dt>
             <dd class="admin-dd">{{ event.ownerId }}</dd>
-            <dt class="admin-dt">Vehicle ID</dt>
+            <dt class="admin-dt">{{ 'admin.maintenance_events.detail.vehicle_id'|trans }}</dt>
             <dd class="admin-dd">
                 {% if vehicle %}
                     <a href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">{{ vehicle.name() }}</a>
@@ -36,43 +36,43 @@
                     {{ event.vehicleId }}
                 {% endif %}
             </dd>
-            <dt class="admin-dt">Type</dt>
+            <dt class="admin-dt">{{ 'admin.maintenance_events.table.event_type'|trans }}</dt>
             <dd class="admin-dd">{{ event.eventType.value }}</dd>
-            <dt class="admin-dt">Occurred at</dt>
+            <dt class="admin-dt">{{ 'admin.maintenance_events.table.occurred_at'|trans }}</dt>
             <dd class="admin-dd">{{ event.occurredAt|date('Y-m-d H:i:s') }}</dd>
-            <dt class="admin-dt">Description</dt>
-            <dd class="admin-dd">{{ event.description ?? 'n/a' }}</dd>
-            <dt class="admin-dt">Odometer</dt>
-            <dd class="admin-dd">{{ event.odometerKilometers ?? 'n/a' }}</dd>
-            <dt class="admin-dt">Total cost</dt>
+            <dt class="admin-dt">{{ 'maintenance.form.description'|trans }}</dt>
+            <dd class="admin-dd">{{ event.description ?? ('common.na'|trans) }}</dd>
+            <dt class="admin-dt">{{ 'receipt.show.odometer'|trans }}</dt>
+            <dd class="admin-dd">{{ event.odometerKilometers ?? ('common.na'|trans) }}</dd>
+            <dt class="admin-dt">{{ 'admin.maintenance_events.table.cost'|trans }}</dt>
             <dd class="admin-dd">
                 {% if event.totalCostCents is not null %}
                     {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}
                 {% else %}
-                    n/a
+                    {{ 'common.na'|trans }}
                 {% endif %}
             </dd>
-            <dt class="admin-dt">Created at</dt>
+            <dt class="admin-dt">{{ 'admin.maintenance_events.detail.created_at'|trans }}</dt>
             <dd class="admin-dd">{{ event.createdAt|date('Y-m-d H:i:s') }}</dd>
-            <dt class="admin-dt">Updated at</dt>
+            <dt class="admin-dt">{{ 'admin.maintenance_events.detail.updated_at'|trans }}</dt>
             <dd class="admin-dd">{{ event.updatedAt|date('Y-m-d H:i:s') }}</dd>
         </dl>
 
         <div class="card-subtle card-subtle-block admin-detail-stack">
             <div class="admin-page-header">
-                <strong>Support continuity</strong>
-                <p class="muted compact-note">Use the vehicle anchor to compare receipts and reminder rules that could explain or validate this maintenance event.</p>
+                <strong>{{ 'admin.maintenance_events.support_continuity_title'|trans }}</strong>
+                <p class="muted compact-note">{{ 'admin.maintenance_events.support_continuity_lead'|trans }}</p>
             </div>
         </div>
 
         <div class="admin-page-actions admin-detail-stack">
             {% if vehicle %}
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">Open vehicle</a>
-                <a class="btn btn-secondary btn-compact" href="{{ matchingReceiptsUrl }}">Open vehicle receipts</a>
-                <a class="btn btn-secondary btn-compact" href="{{ matchingRemindersUrl }}">Open matching reminders</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id().toString(), return_to: backToListUrl}) }}">{{ 'admin.maintenance_events.shortcuts.open_vehicle'|trans }}</a>
+                <a class="btn btn-secondary btn-compact" href="{{ matchingReceiptsUrl }}">{{ 'admin.maintenance_events.shortcuts.vehicle_receipts'|trans }}</a>
+                <a class="btn btn-secondary btn-compact" href="{{ matchingRemindersUrl }}">{{ 'admin.maintenance_events.shortcuts.matching_reminders'|trans }}</a>
             {% endif %}
-            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: event.vehicleId}) }}">Open vehicle events</a>
-            <a class="btn btn-secondary" href="/api/admin/maintenance/events/{{ event.id.toString }}">Open API resource</a>
+            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: event.vehicleId}) }}">{{ 'admin.maintenance_events.shortcuts.vehicle_events'|trans }}</a>
+            <a class="btn btn-secondary" href="/api/admin/maintenance/events/{{ event.id.toString }}">{{ 'admin.maintenance_events.shortcuts.open_api'|trans }}</a>
         </div>
     </section>
 {% endblock %}

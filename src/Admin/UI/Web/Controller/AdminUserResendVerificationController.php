@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminUserResendVerificationController extends AbstractController
 {
@@ -31,6 +32,7 @@ final class AdminUserResendVerificationController extends AbstractController
     public function __construct(
         private readonly AdminUserManager $userManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -53,7 +55,7 @@ final class AdminUserResendVerificationController extends AbstractController
                 throw new NotFoundHttpException();
             }
 
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
 
             return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
         }
@@ -66,7 +68,9 @@ final class AdminUserResendVerificationController extends AbstractController
             ['channel' => 'admin_ui', 'mailer' => 'not_configured'],
         );
 
-        $this->addFlash('success', sprintf('Verification resend requested for %s (mailer not configured in local).', $user->email));
+        $this->addFlash('success', $this->translator->trans('admin.users.flash.verification_resent', [
+            '%email%' => $user->email,
+        ]));
 
         return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
     }

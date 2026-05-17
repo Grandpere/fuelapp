@@ -485,6 +485,215 @@ admin:
                 next_action_processed: 'Ouvrez le reçu créé si le support doit continuer sur l’enregistrement métier résultant.'
                 probable_default: 'L’import est actuellement dans l’état %status%.'
                 next_action_default: 'Ouvrez la bonne file ou le bon détail et continuez avec l’étape suivante propre à cet état.'
+    common:
+        active_filters: 'Filtres actifs'
+        all: 'Tous'
+    users:
+        title: 'Utilisateurs'
+        lead: 'Filtrez les utilisateurs, activez ou désactivez les comptes et gérez les accès admin.'
+        metrics:
+            inactive_accounts: 'Comptes inactifs'
+            unverified_emails: 'E-mails non vérifiés'
+            missing_identities: 'Identités manquantes'
+            admins: 'Admins'
+        attention_title: 'Priorités immédiates'
+        attention_lead: 'Allez directement sur la tranche de comptes qui demande le plus souvent une action support en premier.'
+        triage_speed_title: 'Accélérateurs de tri'
+        triage_speed_lead: 'Ouvrez directement le prochain compte fragile au lieu de balayer toute la table.'
+        filters:
+            search: 'Recherche'
+            search_placeholder: 'e-mail'
+            role: 'Rôle'
+            all_roles: 'Tous les rôles'
+            role_option_admin: 'Admin'
+            role_option_user: 'Utilisateur'
+            status: 'Statut'
+            verification: 'Vérification'
+            identities: 'Identités'
+        filter_summary:
+            search: 'Recherche'
+            role: 'Rôle'
+            status: 'Statut'
+            verification: 'Vérification'
+            identities: 'Identités'
+        table:
+            email: 'E-mail'
+            signal: 'Signal'
+            status: 'Statut'
+            email_verification: 'Vérification e-mail'
+            roles: 'Rôles'
+            identities: 'Identités'
+        status:
+            active: 'actif'
+            inactive: 'inactive'
+        verification:
+            verified: 'vérifié'
+            unverified: 'non vérifié'
+        identities:
+            linked: 'liées'
+            missing: 'manquantes'
+        roles:
+            admin: 'admin'
+            standard: 'standard'
+            admin_plural: 'Admins'
+        actions:
+            deactivate: 'Désactiver'
+            activate: 'Activer'
+            remove_admin: 'Retirer admin'
+            make_admin: 'Promouvoir admin'
+            mark_unverified: 'Marquer non vérifié'
+            mark_verified: 'Marquer vérifié'
+            resend_verification: 'Renvoyer la vérification'
+            reset_password: 'Réinitialiser le mot de passe'
+            identities: 'Identités'
+            security: 'Sécurité'
+            audit: 'Audit'
+        shortcuts:
+            open_next_missing_identity: 'Ouvrir la prochaine identité manquante'
+            open_next_unverified_account: 'Ouvrir le prochain compte non vérifié'
+            open_next_inactive_account: 'Ouvrir le prochain compte inactif'
+        signal:
+            inactive_and_unverified:
+                headline: 'Inactif et non vérifié'
+                detail: 'Le compte demande à la fois une revue d’activation et de vérification.'
+            missing_identities:
+                headline: 'Identités manquantes'
+                detail: 'La récupération peut dépendre d’un rattachement ou d’une revue des identités externes.'
+            email_not_verified:
+                headline: 'E-mail non vérifié'
+                detail: 'La vérification ou son renvoi est probablement la prochaine étape support.'
+            inactive_account:
+                headline: 'Compte inactif'
+                detail: 'Le support devra peut-être réactiver l’utilisateur avant qu’une connexion réussisse.'
+            admin_account:
+                headline: 'Compte admin'
+                detail: 'Gardez les changements réservés aux admins auditables et délibérés.'
+            healthy_account:
+                headline: 'Compte sain'
+                detail: 'Aucun problème support immédiat ne ressort sur cette ligne.'
+        flash:
+            status_updated: 'L’utilisateur %email% est maintenant %status%.'
+            role_updated: 'L’utilisateur %email% est maintenant %role%.'
+            verification_updated: 'L’utilisateur %email% est maintenant %status%.'
+            temporary_password: 'Mot de passe temporaire pour %email% : %password%'
+            verification_resent: 'Renvoi de vérification demandé pour %email% (mailer non configuré en local).'
+        empty: 'Aucun utilisateur trouvé.'
+    identities:
+        title: 'Identités'
+        lead: 'Gérez les identités sociales/OIDC liées et réassignez leur propriétaire si nécessaire.'
+        continuity_title: 'Continuité de récupération de compte'
+        continuity_lead: 'Restez ancré au même utilisateur en naviguant entre identités, activité de sécurité et historique d’audit.'
+        filters:
+            search: 'Recherche'
+            search_placeholder: 'provider, subject, e-mail'
+            provider: 'Fournisseur'
+            provider_placeholder: 'google, auth0...'
+            user: 'Utilisateur'
+            all_users: 'Tous les utilisateurs'
+        filter_summary:
+            search: 'Recherche'
+            provider: 'Fournisseur'
+            user: 'Utilisateur'
+        table:
+            provider: 'Fournisseur'
+            subject: 'Sujet'
+            identity_email: 'E-mail de l’identité'
+            linked_user: 'Utilisateur lié'
+        actions:
+            user: 'Utilisateur'
+            security: 'Sécurité'
+            audit: 'Audit'
+            relink: 'Réassigner'
+        shortcuts:
+            open_user: 'Ouvrir l’utilisateur'
+            user_security: 'Sécurité utilisateur'
+            user_audit: 'Audit utilisateur'
+        flash:
+            invalid_target_user: 'Identifiant utilisateur cible invalide.'
+            relinked: 'L’identité %provider% a été reliée à %email%.'
+            deleted: 'Identité supprimée.'
+        empty: 'Aucune identité trouvée.'
+    security:
+        title: 'Activités de sécurité'
+        lead: 'Suivez les tentatives de connexion et les changements sensibles liés aux comptes.'
+        continuity_title: 'Continuité d’investigation'
+        continuity_lead: 'Restez ancré au même acteur en naviguant entre utilisateur, identités et audit.'
+        filters:
+            action: 'Action'
+            action_placeholder: 'security.login.failure'
+            actor: 'Acteur'
+            all_actors: 'Tous les acteurs'
+            from: 'Du'
+            to: 'Au'
+        filter_summary:
+            action: 'Action'
+            actor: 'Acteur'
+            from: 'Du'
+            to: 'Au'
+        table:
+            when: 'Quand'
+            action: 'Action'
+            actor: 'Acteur'
+            target: 'Cible'
+            correlation: 'Corrélation'
+        actions:
+            user: 'Utilisateur'
+            identities: 'Identités'
+            audit: 'Audit'
+            correlation: 'Corrélation'
+        shortcuts:
+            open_user: 'Ouvrir l’utilisateur'
+            user_identities: 'Identités utilisateur'
+            user_audit: 'Audit utilisateur'
+        anonymous: 'anonyme'
+        empty: 'Aucune activité de sécurité trouvée.'
+    audit:
+        title: 'Journaux d’audit'
+        lead: 'Piste immuable des actions admin avec acteur, cible et identifiant de corrélation.'
+        continuity_title: 'Continuité d’investigation'
+        continuity_lead: 'Gardez le même acteur ou la même corrélation visibles en naviguant entre utilisateur, identités, sécurité et audit.'
+        filters_title: 'Filtres'
+        filters:
+            action: 'Action'
+            action_placeholder: 'admin.station.updated'
+            actor: 'Acteur'
+            all_actors: 'Tous les acteurs'
+            target_type: 'Type de cible'
+            target_type_placeholder: 'station'
+            target_id: 'ID cible'
+            target_id_placeholder: 'UUID'
+            correlation_id: 'ID de corrélation'
+            correlation_id_placeholder: 'corr-...'
+            from_date: 'Date de début'
+            to_date: 'Date de fin'
+        apply_filters: 'Appliquer les filtres'
+        filter_summary:
+            action: 'Action'
+            actor: 'Acteur'
+            target_type: 'Type de cible'
+            target_id: 'ID cible'
+            correlation: 'Corrélation'
+            from: 'Du'
+            to: 'Au'
+        table:
+            created: 'Créé le'
+            action: 'Action'
+            actor: 'Acteur'
+            target: 'Cible'
+            correlation_id: 'ID de corrélation'
+            diff_summary: 'Résumé du diff'
+            view_diff: 'voir'
+        actions:
+            user: 'Utilisateur'
+            identities: 'Identités'
+            security: 'Sécurité'
+            correlation: 'Corrélation'
+        shortcuts:
+            open_user: 'Ouvrir l’utilisateur'
+            user_identities: 'Identités utilisateur'
+            user_security: 'Sécurité utilisateur'
+            same_correlation: 'Même corrélation'
+        empty: 'Aucune entrée d’audit trouvée.'
 
 flash:
     csrf:
@@ -505,6 +714,15 @@ flash:
         rule_created: 'Règle de rappel créée.'
         rule_updated: 'Règle de rappel mise à jour.'
         rule_deleted: 'Règle de rappel supprimée.'
+
+'User not found.': 'Utilisateur introuvable.'
+'Nothing to update.': 'Aucune modification à appliquer.'
+'You cannot deactivate your own account.': 'Vous ne pouvez pas désactiver votre propre compte.'
+'You cannot remove your own admin role.': 'Vous ne pouvez pas retirer votre propre rôle admin.'
+'At least one active admin account is required.': 'Au moins un compte admin actif est requis.'
+'User email is already verified.': 'L’adresse e-mail de l’utilisateur est déjà vérifiée.'
+'Identity not found.': 'Identité introuvable.'
+'Target user not found.': 'Utilisateur cible introuvable.'
 
 station:
     title: 'Stations'

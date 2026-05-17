@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-05-17 - `make phpunit-functional` ignores ad-hoc `ARGS`
+- Symptom: trying to target one functional file through `make phpunit-functional ARGS=...` still launched the full functional suite.
+- Root cause: the Make target hardcodes the suite command and does not forward extra CLI args.
+- Fix: use direct `vendor/bin/phpunit ... <path>` inside the app container for targeted functional red/green loops.
+- Prevention: when you need a single functional file or `--filter`, inspect the Make target first instead of assuming pass-through args.
+
 ## 2026-05-17 - Translation catalogs must keep a single top-level key per domain
 - Symptom: every translated page returned 500 with `Duplicate key "vehicle"` after an i18n migration pass.
 - Root cause: `messages.*.yaml` defined `vehicle:` twice (`vehicle.show` and later `vehicle.form`/`vehicle.validation`) instead of merging them under one top-level node.

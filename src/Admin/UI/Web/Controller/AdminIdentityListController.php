@@ -19,12 +19,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminIdentityListController extends AbstractController
 {
     public function __construct(
         private readonly AdminIdentityManager $identityManager,
         private readonly AdminUserManager $userManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -79,14 +81,14 @@ final class AdminIdentityListController extends AbstractController
         $summary = [];
 
         if (null !== $q) {
-            $summary[] = ['label' => 'Search', 'value' => $q];
+            $summary[] = ['label' => $this->t('admin.identities.filter_summary.search'), 'value' => $q];
         }
         if (null !== $provider) {
-            $summary[] = ['label' => 'Provider', 'value' => $provider];
+            $summary[] = ['label' => $this->t('admin.identities.filter_summary.provider'), 'value' => $provider];
         }
         if (null !== $userId) {
             $user = $this->userManager->getUser($userId);
-            $summary[] = ['label' => 'User', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $userId) : $userId];
+            $summary[] = ['label' => $this->t('admin.identities.filter_summary.user'), 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $userId) : $userId];
         }
 
         return $summary;
@@ -108,15 +110,15 @@ final class AdminIdentityListController extends AbstractController
 
         return [
             [
-                'label' => 'Open user',
+                'label' => $this->t('admin.identities.shortcuts.open_user'),
                 'url' => $this->generateUrl('ui_admin_user_list', ['q' => $user->email]),
             ],
             [
-                'label' => 'User security',
+                'label' => $this->t('admin.identities.shortcuts.user_security'),
                 'url' => $this->generateUrl('ui_admin_security_activity_list', ['actorId' => $userId]),
             ],
             [
-                'label' => 'User audit',
+                'label' => $this->t('admin.identities.shortcuts.user_audit'),
                 'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $userId]),
             ],
         ];
@@ -136,5 +138,13 @@ final class AdminIdentityListController extends AbstractController
         }
 
         return $options;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|\Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

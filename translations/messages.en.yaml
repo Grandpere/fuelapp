@@ -485,6 +485,215 @@ admin:
                 next_action_processed: 'Open the created receipt if support needs to continue on the resulting business record.'
                 probable_default: 'The import is currently in %status% state.'
                 next_action_default: 'Open the current queue or detail flow and continue with the state-specific next step.'
+    common:
+        active_filters: 'Active filters'
+        all: 'All'
+    users:
+        title: 'Users'
+        lead: 'Filter users, activate or deactivate accounts, and manage admin access.'
+        metrics:
+            inactive_accounts: 'Inactive accounts'
+            unverified_emails: 'Unverified emails'
+            missing_identities: 'Missing identities'
+            admins: 'Admins'
+        attention_title: 'Needs attention now'
+        attention_lead: 'Jump straight to the account slice that usually needs support action first.'
+        triage_speed_title: 'Account triage speed'
+        triage_speed_lead: 'Open the next fragile account directly instead of scanning the entire table first.'
+        filters:
+            search: 'Search'
+            search_placeholder: 'email'
+            role: 'Role'
+            all_roles: 'All roles'
+            role_option_admin: 'Admin'
+            role_option_user: 'User'
+            status: 'Status'
+            verification: 'Verification'
+            identities: 'Identities'
+        filter_summary:
+            search: 'Search'
+            role: 'Role'
+            status: 'Status'
+            verification: 'Verification'
+            identities: 'Identities'
+        table:
+            email: 'Email'
+            signal: 'Signal'
+            status: 'Status'
+            email_verification: 'Email verification'
+            roles: 'Roles'
+            identities: 'Identities'
+        status:
+            active: 'active'
+            inactive: 'inactive'
+        verification:
+            verified: 'verified'
+            unverified: 'unverified'
+        identities:
+            linked: 'linked'
+            missing: 'missing'
+        roles:
+            admin: 'admin'
+            standard: 'standard'
+            admin_plural: 'Admins'
+        actions:
+            deactivate: 'Deactivate'
+            activate: 'Activate'
+            remove_admin: 'Remove admin'
+            make_admin: 'Make admin'
+            mark_unverified: 'Mark unverified'
+            mark_verified: 'Mark verified'
+            resend_verification: 'Resend verification'
+            reset_password: 'Reset password'
+            identities: 'Identities'
+            security: 'Security'
+            audit: 'Audit'
+        shortcuts:
+            open_next_missing_identity: 'Open next missing identity'
+            open_next_unverified_account: 'Open next unverified account'
+            open_next_inactive_account: 'Open next inactive account'
+        signal:
+            inactive_and_unverified:
+                headline: 'Inactive and unverified'
+                detail: 'Account needs both activation and verification review.'
+            missing_identities:
+                headline: 'Missing identities'
+                detail: 'Recovery may depend on linking or reviewing external identities.'
+            email_not_verified:
+                headline: 'Email not verified'
+                detail: 'Verification or resend is likely the next support step.'
+            inactive_account:
+                headline: 'Inactive account'
+                detail: 'Support may need to reactivate the user before login succeeds.'
+            admin_account:
+                headline: 'Admin account'
+                detail: 'Keep admin-only changes auditable and deliberate.'
+            healthy_account:
+                headline: 'Healthy account'
+                detail: 'No immediate support issue stands out on this row.'
+        flash:
+            status_updated: 'User %email% is now %status%.'
+            role_updated: 'User %email% is now %role%.'
+            verification_updated: 'User %email% is now %status%.'
+            temporary_password: 'Temporary password for %email%: %password%'
+            verification_resent: 'Verification resend requested for %email% (mailer not configured locally).'
+        empty: 'No users found.'
+    identities:
+        title: 'Identities'
+        lead: 'Manage linked social/OIDC identities and reassign ownership when needed.'
+        continuity_title: 'Account recovery continuity'
+        continuity_lead: 'Stay anchored to the same user while moving between identities, security activity, and audit history.'
+        filters:
+            search: 'Search'
+            search_placeholder: 'provider, subject, email'
+            provider: 'Provider'
+            provider_placeholder: 'google, auth0...'
+            user: 'User'
+            all_users: 'All users'
+        filter_summary:
+            search: 'Search'
+            provider: 'Provider'
+            user: 'User'
+        table:
+            provider: 'Provider'
+            subject: 'Subject'
+            identity_email: 'Identity email'
+            linked_user: 'Linked user'
+        actions:
+            user: 'User'
+            security: 'Security'
+            audit: 'Audit'
+            relink: 'Relink'
+        shortcuts:
+            open_user: 'Open user'
+            user_security: 'User security'
+            user_audit: 'User audit'
+        flash:
+            invalid_target_user: 'Invalid target user id.'
+            relinked: 'Identity %provider% has been linked to %email%.'
+            deleted: 'Identity deleted.'
+        empty: 'No identities found.'
+    security:
+        title: 'Security activities'
+        lead: 'Track login attempts and security-sensitive account changes.'
+        continuity_title: 'Investigation continuity'
+        continuity_lead: 'Stay anchored to the same actor while moving across user, identity, and audit views.'
+        filters:
+            action: 'Action'
+            action_placeholder: 'security.login.failure'
+            actor: 'Actor'
+            all_actors: 'All actors'
+            from: 'From'
+            to: 'To'
+        filter_summary:
+            action: 'Action'
+            actor: 'Actor'
+            from: 'From'
+            to: 'To'
+        table:
+            when: 'When'
+            action: 'Action'
+            actor: 'Actor'
+            target: 'Target'
+            correlation: 'Correlation'
+        actions:
+            user: 'User'
+            identities: 'Identities'
+            audit: 'Audit'
+            correlation: 'Correlation'
+        shortcuts:
+            open_user: 'Open user'
+            user_identities: 'User identities'
+            user_audit: 'User audit'
+        anonymous: 'anonymous'
+        empty: 'No security activity found.'
+    audit:
+        title: 'Audit logs'
+        lead: 'Immutable admin action trail with actor, target, and correlation id.'
+        continuity_title: 'Investigation continuity'
+        continuity_lead: 'Keep the same actor or correlation in view while moving between user, identity, security, and audit screens.'
+        filters_title: 'Filters'
+        filters:
+            action: 'Action'
+            action_placeholder: 'admin.station.updated'
+            actor: 'Actor'
+            all_actors: 'All actors'
+            target_type: 'Target type'
+            target_type_placeholder: 'station'
+            target_id: 'Target ID'
+            target_id_placeholder: 'UUID'
+            correlation_id: 'Correlation ID'
+            correlation_id_placeholder: 'corr-...'
+            from_date: 'From date'
+            to_date: 'To date'
+        apply_filters: 'Apply filters'
+        filter_summary:
+            action: 'Action'
+            actor: 'Actor'
+            target_type: 'Target type'
+            target_id: 'Target id'
+            correlation: 'Correlation'
+            from: 'From'
+            to: 'To'
+        table:
+            created: 'Created'
+            action: 'Action'
+            actor: 'Actor'
+            target: 'Target'
+            correlation_id: 'Correlation ID'
+            diff_summary: 'Diff summary'
+            view_diff: 'view'
+        actions:
+            user: 'User'
+            identities: 'Identities'
+            security: 'Security'
+            correlation: 'Correlation'
+        shortcuts:
+            open_user: 'Open user'
+            user_identities: 'User identities'
+            user_security: 'User security'
+            same_correlation: 'Same correlation'
+        empty: 'No audit entries found.'
 
 flash:
     csrf:
@@ -1063,3 +1272,12 @@ import:
         line_invalid_fuel_type: 'Line %index% has an invalid fuel type.'
         legacy_line_incomplete: 'If one line field is provided, all line fields are required.'
         legacy_line_invalid_fuel_type: 'Invalid fuel type provided.'
+
+'User not found.': 'User not found.'
+'Nothing to update.': 'Nothing to update.'
+'You cannot deactivate your own account.': 'You cannot deactivate your own account.'
+'You cannot remove your own admin role.': 'You cannot remove your own admin role.'
+'At least one active admin account is required.': 'At least one active admin account is required.'
+'User email is already verified.': 'User email is already verified.'
+'Identity not found.': 'Identity not found.'
+'Target user not found.': 'Target user not found.'

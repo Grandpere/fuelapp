@@ -1,31 +1,31 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Users{% endblock %}
+{% block title %}{{ 'admin.users.title'|trans }}{% endblock %}
 
 {% set admin_section = 'users' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Users</h2>
-            <p class="muted">Filter users, activate/deactivate accounts, and manage admin access.</p>
+            <h2 class="page-title">{{ 'admin.users.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.users.lead'|trans }}</p>
         </div>
 
         <div class="admin-metric-grid metric-grid-spaced admin-table-top">
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Inactive accounts</p>
+                <p class="admin-metric-label">{{ 'admin.users.metrics.inactive_accounts'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.inactive }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Unverified emails</p>
+                <p class="admin-metric-label">{{ 'admin.users.metrics.unverified_emails'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.unverified }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Missing identities</p>
+                <p class="admin-metric-label">{{ 'admin.users.metrics.missing_identities'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.withoutIdentity }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Admins</p>
+                <p class="admin-metric-label">{{ 'admin.users.metrics.admins'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.admins }}</p>
             </article>
         </div>
@@ -33,14 +33,14 @@
         <div class="card-subtle card-subtle-block admin-table-top">
             <div class="admin-page-head">
                 <div class="admin-page-header">
-                    <strong>Needs attention now</strong>
-                    <p class="muted compact-note">Jump straight to the account slice that usually needs support action first.</p>
+                    <strong>{{ 'admin.users.attention_title'|trans }}</strong>
+                    <p class="muted compact-note">{{ 'admin.users.attention_lead'|trans }}</p>
                 </div>
                 <div class="actions-wrap">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {verification: 'unverified'}) }}">Unverified</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {is_active: '0'}) }}">Inactive</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {has_identity: '0'}) }}">Missing identities</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {role: 'admin'}) }}">Admins</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {verification: 'unverified'}) }}">{{ 'admin.users.verification.unverified'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {is_active: '0'}) }}">{{ 'admin.users.status.inactive'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {has_identity: '0'}) }}">{{ 'admin.users.identities.missing'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list', {role: 'admin'}) }}">{{ 'admin.users.roles.admin_plural'|trans }}</a>
                 </div>
             </div>
         </div>
@@ -49,8 +49,8 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Account triage speed</strong>
-                        <p class="muted compact-note">Open the next fragile account directly instead of scanning the entire table first.</p>
+                        <strong>{{ 'admin.users.triage_speed_title'|trans }}</strong>
+                        <p class="muted compact-note">{{ 'admin.users.triage_speed_lead'|trans }}</p>
                     </div>
                     <div class="actions-wrap">
                         {% for item in supportShortcuts %}
@@ -65,7 +65,7 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Active filters</strong>
+                        <strong>{{ 'admin.common.active_filters'|trans }}</strong>
                         <p class="muted compact-note">
                             {% for item in activeFilterSummary %}
                                 {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
@@ -73,7 +73,7 @@
                         </p>
                     </div>
                     <div class="admin-page-actions">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list') }}">Reset</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_user_list') }}">{{ 'action.reset'|trans }}</a>
                     </div>
                 </div>
             </div>
@@ -81,44 +81,44 @@
 
         <form method="get" action="{{ path('ui_admin_user_list') }}" class="admin-filter-grid-4 admin-table-top">
             <label class="label">
-                Search
-                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="email">
+                {{ 'admin.users.filters.search'|trans }}
+                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="{{ 'admin.users.filters.search_placeholder'|trans }}">
             </label>
             <label class="label">
-                Role
+                {{ 'admin.users.filters.role'|trans }}
                 <select class="select" name="role">
-                    <option value="" {% if filters.role == '' %}selected{% endif %}>All roles</option>
-                    <option value="admin" {% if filters.role == 'admin' %}selected{% endif %}>Admin</option>
-                    <option value="user" {% if filters.role == 'user' %}selected{% endif %}>User</option>
+                    <option value="" {% if filters.role == '' %}selected{% endif %}>{{ 'admin.users.filters.all_roles'|trans }}</option>
+                    <option value="admin" {% if filters.role == 'admin' %}selected{% endif %}>{{ 'admin.users.filters.role_option_admin'|trans }}</option>
+                    <option value="user" {% if filters.role == 'user' %}selected{% endif %}>{{ 'admin.users.filters.role_option_user'|trans }}</option>
                 </select>
             </label>
             <label class="label">
-                Status
+                {{ 'admin.users.filters.status'|trans }}
                 <select class="select" name="is_active">
-                    <option value="" {% if filters.is_active == '' %}selected{% endif %}>All</option>
-                    <option value="1" {% if filters.is_active == '1' %}selected{% endif %}>Active</option>
-                    <option value="0" {% if filters.is_active == '0' %}selected{% endif %}>Inactive</option>
+                    <option value="" {% if filters.is_active == '' %}selected{% endif %}>{{ 'admin.common.all'|trans }}</option>
+                    <option value="1" {% if filters.is_active == '1' %}selected{% endif %}>{{ 'admin.users.status.active'|trans }}</option>
+                    <option value="0" {% if filters.is_active == '0' %}selected{% endif %}>{{ 'admin.users.status.inactive'|trans }}</option>
                 </select>
             </label>
             <label class="label">
-                Verification
+                {{ 'admin.users.filters.verification'|trans }}
                 <select class="select" name="verification">
-                    <option value="" {% if filters.verification == '' %}selected{% endif %}>All</option>
-                    <option value="verified" {% if filters.verification == 'verified' %}selected{% endif %}>Verified</option>
-                    <option value="unverified" {% if filters.verification == 'unverified' %}selected{% endif %}>Unverified</option>
+                    <option value="" {% if filters.verification == '' %}selected{% endif %}>{{ 'admin.common.all'|trans }}</option>
+                    <option value="verified" {% if filters.verification == 'verified' %}selected{% endif %}>{{ 'admin.users.verification.verified'|trans }}</option>
+                    <option value="unverified" {% if filters.verification == 'unverified' %}selected{% endif %}>{{ 'admin.users.verification.unverified'|trans }}</option>
                 </select>
             </label>
             <label class="label">
-                Identities
+                {{ 'admin.users.filters.identities'|trans }}
                 <select class="select" name="has_identity">
-                    <option value="" {% if filters.has_identity == '' %}selected{% endif %}>All</option>
-                    <option value="1" {% if filters.has_identity == '1' %}selected{% endif %}>Linked</option>
-                    <option value="0" {% if filters.has_identity == '0' %}selected{% endif %}>Missing</option>
+                    <option value="" {% if filters.has_identity == '' %}selected{% endif %}>{{ 'admin.common.all'|trans }}</option>
+                    <option value="1" {% if filters.has_identity == '1' %}selected{% endif %}>{{ 'admin.users.identities.linked'|trans }}</option>
+                    <option value="0" {% if filters.has_identity == '0' %}selected{% endif %}>{{ 'admin.users.identities.missing'|trans }}</option>
                 </select>
             </label>
             <div class="admin-form-actions">
-                <button class="btn btn-primary" type="submit">Apply</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_user_list') }}">Reset</a>
+                <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_user_list') }}">{{ 'action.reset'|trans }}</a>
             </div>
         </form>
 
@@ -126,13 +126,13 @@
             <table class="app-table">
                 <thead>
                 <tr>
-                    <th>Email</th>
-                    <th>Signal</th>
-                    <th>Status</th>
-                    <th>Email Verification</th>
-                    <th>Roles</th>
-                    <th>Identities</th>
-                    <th>Actions</th>
+                    <th>{{ 'admin.users.table.email'|trans }}</th>
+                    <th>{{ 'admin.users.table.signal'|trans }}</th>
+                    <th>{{ 'admin.users.table.status'|trans }}</th>
+                    <th>{{ 'admin.users.table.email_verification'|trans }}</th>
+                    <th>{{ 'admin.users.table.roles'|trans }}</th>
+                    <th>{{ 'admin.users.table.identities'|trans }}</th>
+                    <th>{{ 'common.actions'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -145,12 +145,12 @@
                         </td>
                         <td>
                             <span class="pill {{ user.isActive ? 'pill-soft-success' : 'pill-soft-danger' }}">
-                                {{ user.isActive ? 'active' : 'inactive' }}
+                                {{ user.isActive ? 'admin.users.status.active'|trans : 'admin.users.status.inactive'|trans }}
                             </span>
                         </td>
                         <td>
                             <span class="pill {{ user.isEmailVerified ? 'pill-soft-success' : 'pill-soft-warning' }}">
-                                {{ user.isEmailVerified ? 'verified' : 'unverified' }}
+                                {{ user.isEmailVerified ? 'admin.users.verification.verified'|trans : 'admin.users.verification.unverified'|trans }}
                             </span>
                         </td>
                         <td>{{ user.roles|join(', ') }}</td>
@@ -159,37 +159,37 @@
                             <form method="post" action="{{ path('ui_admin_user_toggle_active', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_active_' ~ user.id) }}">
                                 <button class="btn {{ user.isActive ? 'btn-danger' : 'btn-secondary' }} btn-compact" type="submit">
-                                    {{ user.isActive ? 'Deactivate' : 'Activate' }}
+                                    {{ user.isActive ? 'admin.users.actions.deactivate'|trans : 'admin.users.actions.activate'|trans }}
                                 </button>
                             </form>
                             <form method="post" action="{{ path('ui_admin_user_toggle_admin', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_admin_' ~ user.id) }}">
                                 <button class="btn btn-secondary btn-compact" type="submit">
-                                    {{ user.isAdmin ? 'Remove admin' : 'Make admin' }}
+                                    {{ user.isAdmin ? 'admin.users.actions.remove_admin'|trans : 'admin.users.actions.make_admin'|trans }}
                                 </button>
                             </form>
                             <form method="post" action="{{ path('ui_admin_user_toggle_verification', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_verification_' ~ user.id) }}">
                                 <button class="btn btn-secondary btn-compact" type="submit">
-                                    {{ user.isEmailVerified ? 'Mark unverified' : 'Mark verified' }}
+                                    {{ user.isEmailVerified ? 'admin.users.actions.mark_unverified'|trans : 'admin.users.actions.mark_verified'|trans }}
                                 </button>
                             </form>
                             <form method="post" action="{{ path('ui_admin_user_resend_verification', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_resend_verification_' ~ user.id) }}">
-                                <button class="btn btn-secondary btn-compact" type="submit">Resend verification</button>
+                                <button class="btn btn-secondary btn-compact" type="submit">{{ 'admin.users.actions.resend_verification'|trans }}</button>
                             </form>
                             <form method="post" action="{{ path('ui_admin_user_reset_password', {id: user.id}) }}" data-turbo-frame="_top">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_user_reset_password_' ~ user.id) }}">
-                                <button class="btn btn-danger btn-compact" type="submit">Reset password</button>
+                                <button class="btn btn-danger btn-compact" type="submit">{{ 'admin.users.actions.reset_password'|trans }}</button>
                             </form>
-                            <a class="btn btn-secondary btn-compact" href="{{ user.identitiesUrl }}">Identities</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ user.securityUrl }}">Security</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ user.auditUrl }}">Audit</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ user.identitiesUrl }}">{{ 'admin.users.actions.identities'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ user.securityUrl }}">{{ 'admin.users.actions.security'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ user.auditUrl }}">{{ 'admin.users.actions.audit'|trans }}</a>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="7" class="muted">No users found.</td>
+                        <td colspan="7" class="muted">{{ 'admin.users.empty'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

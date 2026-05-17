@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminUserToggleActiveController extends AbstractController
 {
@@ -33,6 +34,7 @@ final class AdminUserToggleActiveController extends AbstractController
     public function __construct(
         private readonly AdminUserManager $userManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -60,7 +62,7 @@ final class AdminUserToggleActiveController extends AbstractController
         try {
             $updated = $this->userManager->updateUser($id, !$user->isActive, null, null, $actorId);
         } catch (LogicException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
 
             return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
         }
@@ -77,7 +79,10 @@ final class AdminUserToggleActiveController extends AbstractController
             ],
         );
 
-        $this->addFlash('success', sprintf('User %s is now %s.', $updated->email, $updated->isActive ? 'active' : 'inactive'));
+        $this->addFlash('success', $this->translator->trans('admin.users.flash.status_updated', [
+            '%email%' => $updated->email,
+            '%status%' => $this->translator->trans($updated->isActive ? 'admin.users.status.active' : 'admin.users.status.inactive'),
+        ]));
 
         return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
     }

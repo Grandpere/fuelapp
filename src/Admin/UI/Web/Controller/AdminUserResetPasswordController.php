@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminUserResetPasswordController extends AbstractController
 {
@@ -31,6 +32,7 @@ final class AdminUserResetPasswordController extends AbstractController
     public function __construct(
         private readonly AdminUserManager $userManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -49,7 +51,7 @@ final class AdminUserResetPasswordController extends AbstractController
         try {
             $result = $this->userManager->resetPassword($id);
         } catch (LogicException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
 
             return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
         }
@@ -62,7 +64,10 @@ final class AdminUserResetPasswordController extends AbstractController
             ['channel' => 'admin_ui'],
         );
 
-        $this->addFlash('success', sprintf('Temporary password for %s: %s', $result->user->email, $result->temporaryPassword));
+        $this->addFlash('success', $this->translator->trans('admin.users.flash.temporary_password', [
+            '%email%' => $result->user->email,
+            '%password%' => $result->temporaryPassword,
+        ]));
 
         return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
     }

@@ -324,16 +324,16 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $usersResponse = $this->request('GET', '/ui/admin/users', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $usersResponse->getStatusCode());
-        self::assertStringContainsString('Users', (string) $usersResponse->getContent());
+        self::assertStringContainsString('Utilisateurs', (string) $usersResponse->getContent());
         self::assertStringContainsString('ui.owner@example.com', (string) $usersResponse->getContent());
-        self::assertStringContainsString('Needs attention now', (string) $usersResponse->getContent());
-        self::assertStringContainsString('Account triage speed', (string) $usersResponse->getContent());
-        self::assertStringContainsString('Missing identities', (string) $usersResponse->getContent());
+        self::assertStringContainsString('Priorités immédiates', (string) $usersResponse->getContent());
+        self::assertStringContainsString('Accélérateurs de tri', (string) $usersResponse->getContent());
+        self::assertStringContainsString('Identités manquantes', (string) $usersResponse->getContent());
         self::assertStringContainsString('Signal', (string) $usersResponse->getContent());
 
         $identitiesResponse = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $identitiesResponse->getStatusCode());
-        self::assertStringContainsString('Identities', (string) $identitiesResponse->getContent());
+        self::assertStringContainsString('Identités', (string) $identitiesResponse->getContent());
         self::assertStringContainsString('ui-owner-google-sub', (string) $identitiesResponse->getContent());
 
         $vehiclesResponse = $this->request('GET', '/ui/admin/vehicles', [], [], $sessionCookie);
@@ -380,7 +380,7 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $securityResponse = $this->request('GET', '/ui/admin/security-activities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $securityResponse->getStatusCode());
-        self::assertStringContainsString('Security Activities', (string) $securityResponse->getContent());
+        self::assertStringContainsString('Activités de sécurité', (string) $securityResponse->getContent());
         self::assertStringContainsString('security.login.success', (string) $securityResponse->getContent());
 
         $auditResponse = $this->request('GET', '/ui/admin/audit-logs', ['action' => 'admin.station.updated'], [], $sessionCookie);
@@ -598,9 +598,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
         self::assertStringContainsString('ui.managed.user@example.com', $listContent);
-        self::assertStringContainsString('Inactive accounts', $listContent);
-        self::assertStringContainsString('Identities', $listContent);
-        self::assertStringContainsString('Security', $listContent);
+        self::assertStringContainsString('Comptes inactifs', $listContent);
+        self::assertStringContainsString('Identités', $listContent);
+        self::assertStringContainsString('Sécurité', $listContent);
         self::assertStringContainsString('Audit', $listContent);
 
         $activeToken = $this->extractToggleActiveCsrf($listContent, $managedId);
@@ -616,7 +616,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $afterDeactivate = $this->request('GET', '/ui/admin/users?is_active=0', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDeactivate->getStatusCode());
         self::assertStringContainsString('inactive', (string) $afterDeactivate->getContent());
-        self::assertStringContainsString('Active filters', (string) $afterDeactivate->getContent());
+        self::assertStringContainsString('Filtres actifs', (string) $afterDeactivate->getContent());
 
         $reactivateToken = $this->extractToggleActiveCsrf((string) $afterDeactivate->getContent(), $managedId);
         $reactivateResponse = $this->request(
@@ -643,7 +643,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $onlyAdmins = $this->request('GET', '/ui/admin/users?role=admin', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $onlyAdmins->getStatusCode());
         self::assertStringContainsString('ui.managed.user@example.com', (string) $onlyAdmins->getContent());
-        self::assertStringContainsString('Active filters', (string) $onlyAdmins->getContent());
+        self::assertStringContainsString('Filtres actifs', (string) $onlyAdmins->getContent());
 
         $toggleVerificationToken = $this->extractToggleVerificationCsrf((string) $adminList->getContent(), $managedId);
         $verifyResponse = $this->request(
@@ -657,7 +657,7 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $afterVerify = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterVerify->getStatusCode());
-        self::assertStringContainsString('verified', (string) $afterVerify->getContent());
+        self::assertStringContainsString('vérifié', (string) $afterVerify->getContent());
 
         $resendToken = $this->extractResendVerificationCsrf((string) $afterVerify->getContent(), $managedId);
         $resendResponse = $this->request(
@@ -671,7 +671,7 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $afterRejectedResend = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterRejectedResend->getStatusCode());
-        self::assertStringContainsString('User email is already verified.', (string) $afterRejectedResend->getContent());
+        self::assertStringContainsString('L’adresse e-mail de l’utilisateur est déjà vérifiée.', (string) $afterRejectedResend->getContent());
 
         $resetToken = $this->extractResetPasswordCsrf((string) $afterVerify->getContent(), $managedId);
         $resetResponse = $this->request(
@@ -685,7 +685,7 @@ final class AdminBackofficeUiTest extends WebTestCase
 
         $afterReset = $this->request('GET', '/ui/admin/users?q=ui.managed.user@example.com', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterReset->getStatusCode());
-        self::assertStringContainsString('Temporary password for ui.managed.user@example.com:', (string) $afterReset->getContent());
+        self::assertStringContainsString('Mot de passe temporaire pour ui.managed.user@example.com :', (string) $afterReset->getContent());
     }
 
     public function testAdminCanRelinkAndDeleteIdentityFromBackofficeUi(): void
@@ -712,9 +712,9 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
         self::assertStringContainsString('ui-owner-subject-001', $listContent);
-        self::assertStringContainsString('Active filters', $listContent);
-        self::assertStringContainsString('User', $listContent);
-        self::assertStringContainsString('Security', $listContent);
+        self::assertStringContainsString('Filtres actifs', $listContent);
+        self::assertStringContainsString('Utilisateur', $listContent);
+        self::assertStringContainsString('Sécurité', $listContent);
         self::assertStringContainsString('Audit', $listContent);
 
         $relinkToken = $this->extractIdentityRelinkCsrf($listContent, $identityId);
@@ -736,10 +736,10 @@ final class AdminBackofficeUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $afterRelink->getStatusCode());
         $afterRelinkContent = (string) $afterRelink->getContent();
         self::assertStringContainsString('ui.identity.owner.b@example.com', $afterRelinkContent);
-        self::assertStringContainsString('Account recovery continuity', $afterRelinkContent);
-        self::assertStringContainsString('Open user', $afterRelinkContent);
-        self::assertStringContainsString('User security', $afterRelinkContent);
-        self::assertStringContainsString('User audit', $afterRelinkContent);
+        self::assertStringContainsString('Continuité de récupération de compte', $afterRelinkContent);
+        self::assertStringContainsString('Ouvrir l’utilisateur', $afterRelinkContent);
+        self::assertStringContainsString('Sécurité utilisateur', $afterRelinkContent);
+        self::assertStringContainsString('Audit utilisateur', $afterRelinkContent);
 
         $deleteToken = $this->extractIdentityDeleteCsrf($afterRelinkContent, $identityId);
         $deleteResponse = $this->request(
@@ -758,7 +758,7 @@ final class AdminBackofficeUiTest extends WebTestCase
         $afterDelete = $this->request('GET', '/ui/admin/identities', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $afterDelete->getStatusCode());
         self::assertStringNotContainsString('ui-owner-subject-001', (string) $afterDelete->getContent());
-        self::assertStringContainsString('No identities found.', (string) $afterDelete->getContent());
+        self::assertStringContainsString('Aucune identité trouvée.', (string) $afterDelete->getContent());
     }
 
     public function testAdminCanFilterSecurityActivitiesFromBackofficeUi(): void
@@ -793,14 +793,14 @@ final class AdminBackofficeUiTest extends WebTestCase
         $content = (string) $response->getContent();
         self::assertStringContainsString('security.login.failure', $content);
         self::assertStringContainsString('corr-ui-security-001', $content);
-        self::assertStringContainsString('Investigation continuity', $content);
-        self::assertStringContainsString('Active filters', $content);
-        self::assertStringContainsString('Open user', $content);
-        self::assertStringContainsString('User identities', $content);
-        self::assertStringContainsString('User audit', $content);
-        self::assertStringContainsString('Identities', $content);
+        self::assertStringContainsString('Continuité d’investigation', $content);
+        self::assertStringContainsString('Filtres actifs', $content);
+        self::assertStringContainsString('Ouvrir l’utilisateur', $content);
+        self::assertStringContainsString('Identités utilisateur', $content);
+        self::assertStringContainsString('Audit utilisateur', $content);
+        self::assertStringContainsString('Identités', $content);
         self::assertStringContainsString('Audit', $content);
-        self::assertStringContainsString('Correlation', $content);
+        self::assertStringContainsString('Corrélation', $content);
     }
 
     public function testAdminCanDeleteImportJobFromBackofficeUi(): void

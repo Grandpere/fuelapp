@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}My Vehicles{% endblock %}
+{% block title %}{{ 'vehicle.index.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -32,13 +32,13 @@
     <main class="app-shell vehicles-page">
         <section class="vehicles-header">
             <div>
-                <h1 class="page-title">My Vehicles</h1>
-                <p class="muted">Manage your fleet used for receipts and maintenance planning.</p>
+                <h1 class="page-title">{{ 'vehicle.index.title'|trans }}</h1>
+                <p class="muted">{{ 'vehicle.index.lead'|trans }}</p>
             </div>
             <div class="page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_station_list') }}">Stations</a>
-                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
-                <a class="btn btn-primary" href="{{ path('ui_vehicle_new') }}">Add vehicle</a>
+                <a class="btn btn-secondary" href="{{ path('ui_station_list') }}">{{ 'nav.stations'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">{{ 'nav.maintenance'|trans }}</a>
+                <a class="btn btn-primary" href="{{ path('ui_vehicle_new') }}">{{ 'vehicle.index.add'|trans }}</a>
             </div>
         </section>
 
@@ -51,10 +51,10 @@
                 <table class="app-table">
                     <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Plate</th>
-                        <th>Updated</th>
-                        <th>Actions</th>
+                        <th>{{ 'vehicle.index.col_name'|trans }}</th>
+                        <th>{{ 'vehicle.index.col_plate'|trans }}</th>
+                        <th>{{ 'vehicle.index.col_updated'|trans }}</th>
+                        <th>{{ 'common.actions'|trans }}</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -72,20 +72,20 @@
                             <td>{{ vehicle.plateNumber }}</td>
                             <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
                             <td class="action-cell-flex">
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>Receipts</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>Maintenance</a>
-                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>Add receipt</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ vehicleShowUrl }}" data-row-link-ignore>Open</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString, return_to: vehicleListUrl}) }}" data-row-link-ignore>Edit</a>
-                                <form method="post" action="{{ path('ui_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('Delete this vehicle?');" data-row-link-ignore>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>{{ 'nav.receipts'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>{{ 'nav.maintenance'|trans }}</a>
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {vehicle_id: vehicle.id.toString}) }}" data-row-link-ignore>{{ 'receipt.form.action_create'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ vehicleShowUrl }}" data-row-link-ignore>{{ 'action.open'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_edit', {id: vehicle.id.toString, return_to: vehicleListUrl}) }}" data-row-link-ignore>{{ 'action.edit'|trans }}</a>
+                                <form method="post" action="{{ path('ui_vehicle_delete', {id: vehicle.id.toString}) }}" onsubmit="return confirm('{{ 'vehicle.index.confirm_delete'|trans|e('js') }}');" data-row-link-ignore>
                                     <input type="hidden" name="_token" value="{{ csrf_token('vehicle_delete_' ~ vehicle.id.toString) }}">
-                                    <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                                    <button class="btn btn-danger btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
                                 </form>
                             </td>
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="4" class="muted">No vehicle yet. Add your first one to start maintenance tracking.</td>
+                            <td colspan="4" class="muted">{{ 'vehicle.index.empty'|trans }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>

@@ -190,7 +190,7 @@ final class VehicleWebUiTest extends KernelTestCase
         self::assertStringContainsString('/ui/vehicles/'.$vehicleId.'/edit', $listContent);
         self::assertStringContainsString('return_to=', $listContent);
         self::assertStringNotContainsString('>Workflow</th>', $listContent);
-        self::assertStringContainsString('>Open</a>', $listContent);
+        self::assertStringContainsString('>Ouvrir</a>', $listContent);
         self::assertStringNotContainsString('>Detail</a>', $listContent);
 
         $editPage = $this->request('GET', '/ui/vehicles/'.$vehicleId.'/edit?return_to='.rawurlencode('/ui/vehicles/'.$vehicleId), [], [], $sessionCookie);

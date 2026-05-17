@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-05-18 - UI i18n can still hide in controller-built label maps
+- Symptom: pages looked mostly translated, but receipt list still showed English labels like `Vehicle`, date shortcuts, column presets, and export notes.
+- Root cause: several UI labels were generated in controller constants/arrays instead of Twig, so template-only translation sweeps missed them.
+- Fix: inject `TranslatorInterface` into the controller and translate preset labels, column labels, active filter pills, and shortcut links from message keys.
+- Prevention: for every i18n pass on a list/dashboard page, inspect both Twig and controller-built view models before considering the screen complete.
+
 ## 2026-05-18 - Admin translation catalogs can break by inserting new sections inside an existing subtree
 - Symptom: multiple admin pages started returning 500 right after an i18n pass, with YAML parse errors around `messages.fr.yaml` / `messages.en.yaml`.
 - Root cause: new `admin.vehicles`, `admin.stations`, and `admin.public_fuel_stations` sections were inserted before the existing `admin.import.show` subtree was fully closed.

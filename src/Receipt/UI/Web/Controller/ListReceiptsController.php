@@ -23,6 +23,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class ListReceiptsController extends AbstractController
 {
@@ -43,20 +44,20 @@ final class ListReceiptsController extends AbstractController
     ];
 
     /** @var array<string, string> */
-    private const COLUMN_LABELS = [
-        'id' => 'Receipt ID',
-        'issued_at' => 'Date',
-        'station_name' => 'Station name',
-        'station_street_name' => 'Station street',
-        'station_postal_code' => 'Station postal code',
-        'station_city' => 'Station city',
-        'odometer_kilometers' => 'Odometer (km)',
-        'fuel_type' => 'Fuel type',
-        'quantity_milli_liters' => 'Quantity (mL)',
-        'unit_price_deci_cents_per_liter' => 'Unit price (deci-cents/L)',
-        'vat_rate_percent' => 'VAT rate (%)',
-        'total_cents' => 'Total (cents)',
-        'vat_amount_cents' => 'VAT amount (cents)',
+    private const COLUMN_LABEL_KEYS = [
+        'id' => 'receipt.index.col_receipt_id',
+        'issued_at' => 'receipt.index.col_date',
+        'station_name' => 'receipt.index.col_station_name',
+        'station_street_name' => 'receipt.index.column_option_station_street',
+        'station_postal_code' => 'receipt.index.column_option_station_postal_code',
+        'station_city' => 'receipt.index.column_option_station_city',
+        'odometer_kilometers' => 'receipt.index.column_option_odometer',
+        'fuel_type' => 'receipt.index.column_option_fuel_type',
+        'quantity_milli_liters' => 'receipt.index.column_option_quantity',
+        'unit_price_deci_cents_per_liter' => 'receipt.index.column_option_unit_price',
+        'vat_rate_percent' => 'receipt.index.column_option_vat_rate',
+        'total_cents' => 'receipt.index.column_option_total',
+        'vat_amount_cents' => 'receipt.index.column_option_vat_amount',
     ];
 
     /** @var array<string, list<string>> */
@@ -104,18 +105,19 @@ final class ListReceiptsController extends AbstractController
     ];
 
     /** @var array<string, string> */
-    private const PRESET_LABELS = [
-        self::PRESET_CUSTOM => 'Custom',
-        self::PRESET_COMPACT => 'Compact',
-        self::PRESET_MOBILE => 'Mobile',
-        self::PRESET_FULL => 'Full',
-        self::PRESET_EXPORT_ACCOUNTING => 'Export accounting',
+    private const PRESET_LABEL_KEYS = [
+        self::PRESET_CUSTOM => 'receipt.index.preset_custom',
+        self::PRESET_COMPACT => 'receipt.index.preset_compact',
+        self::PRESET_MOBILE => 'receipt.index.preset_mobile',
+        self::PRESET_FULL => 'receipt.index.preset_full',
+        self::PRESET_EXPORT_ACCOUNTING => 'receipt.index.preset_export_accounting',
     ];
 
     public function __construct(
         private readonly ReceiptRepository $receiptRepository,
         private readonly StationRepository $stationRepository,
         private readonly VehicleRepository $vehicleRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -267,8 +269,8 @@ final class ListReceiptsController extends AbstractController
             ],
             'queryParams' => $queryParams,
             'exportQueryParams' => $queryParams,
-            'columnOptions' => self::COLUMN_LABELS,
-            'columnPresetOptions' => self::PRESET_LABELS,
+            'columnOptions' => $this->translateMap(self::COLUMN_LABEL_KEYS),
+            'columnPresetOptions' => $this->translateMap(self::PRESET_LABEL_KEYS),
             'visibleColumns' => $visibleColumns,
             'fuelTypeChoices' => array_map(static fn (FuelType $fuelType): string => $fuelType->value, FuelType::cases()),
             'enableRealtime' => $enableRealtime,
@@ -335,26 +337,26 @@ final class ListReceiptsController extends AbstractController
         $filters = [];
 
         if (null !== $selectedVehicle) {
-            $filters[] = ['label' => 'Vehicle', 'value' => $selectedVehicle['label']];
+            $filters[] = ['label' => $this->t('receipt.index.active_filter_vehicle'), 'value' => $selectedVehicle['label']];
         }
 
         if (null !== $selectedStation) {
-            $filters[] = ['label' => 'Station', 'value' => $selectedStation['label']];
+            $filters[] = ['label' => $this->t('receipt.index.active_filter_station'), 'value' => $selectedStation['label']];
         }
 
         if ($issuedFrom instanceof DateTimeImmutable || $issuedTo instanceof DateTimeImmutable) {
             $filters[] = [
-                'label' => 'Issued window',
+                'label' => $this->t('receipt.index.active_filter_issued_window'),
                 'value' => sprintf('%s -> %s', $issuedFrom?->format('d/m/Y') ?? '...', $issuedTo?->format('d/m/Y') ?? '...'),
             ];
         }
 
         if (null !== $fuelType) {
-            $filters[] = ['label' => 'Fuel', 'value' => strtoupper($fuelType)];
+            $filters[] = ['label' => $this->t('receipt.index.active_filter_fuel'), 'value' => strtoupper($fuelType)];
         }
 
         if (null !== $vatRatePercent) {
-            $filters[] = ['label' => 'VAT', 'value' => sprintf('%d%%', $vatRatePercent)];
+            $filters[] = ['label' => $this->t('receipt.index.active_filter_vat'), 'value' => sprintf('%d%%', $vatRatePercent)];
         }
 
         return $filters;
@@ -384,17 +386,17 @@ final class ListReceiptsController extends AbstractController
     ): array {
         return [
             [
-                'label' => 'Last 30 days',
+                'label' => $this->t('receipt.index.shortcut_last_30_days'),
                 'params' => $this->buildShortcutQueryParams('-30 days', 'today', $perPage, $vehicleId, $stationId, $fuelType, $selectedColumnsPreset, $visibleColumns, $quantityMilliLitersMin, $quantityMilliLitersMax, $unitPriceDeciCentsPerLiterMin, $unitPriceDeciCentsPerLiterMax, $vatRatePercent, $sortBy, $sortDirection),
                 'isActive' => $this->isSameDateShortcut($issuedFrom, $issuedTo, '-30 days', 'today'),
             ],
             [
-                'label' => 'Last 90 days',
+                'label' => $this->t('receipt.index.shortcut_last_90_days'),
                 'params' => $this->buildShortcutQueryParams('-90 days', 'today', $perPage, $vehicleId, $stationId, $fuelType, $selectedColumnsPreset, $visibleColumns, $quantityMilliLitersMin, $quantityMilliLitersMax, $unitPriceDeciCentsPerLiterMin, $unitPriceDeciCentsPerLiterMax, $vatRatePercent, $sortBy, $sortDirection),
                 'isActive' => $this->isSameDateShortcut($issuedFrom, $issuedTo, '-90 days', 'today'),
             ],
             [
-                'label' => 'This month',
+                'label' => $this->t('receipt.index.shortcut_this_month'),
                 'params' => $this->buildShortcutQueryParams('first day of this month', 'last day of this month', $perPage, $vehicleId, $stationId, $fuelType, $selectedColumnsPreset, $visibleColumns, $quantityMilliLitersMin, $quantityMilliLitersMax, $unitPriceDeciCentsPerLiterMin, $unitPriceDeciCentsPerLiterMax, $vatRatePercent, $sortBy, $sortDirection),
                 'isActive' => $this->isSameDateShortcut($issuedFrom, $issuedTo, 'first day of this month', 'last day of this month'),
             ],
@@ -528,7 +530,7 @@ final class ListReceiptsController extends AbstractController
             return self::DEFAULT_COLUMNS;
         }
 
-        $allowed = array_keys(self::COLUMN_LABELS);
+        $allowed = array_keys(self::COLUMN_LABEL_KEYS);
         $columns = [];
         foreach ($value as $item) {
             if (!is_scalar($item)) {
@@ -580,5 +582,27 @@ final class ListReceiptsController extends AbstractController
         }
 
         return self::PRESET_CUSTOM;
+    }
+
+    /**
+     * @param array<string, string> $keys
+     *
+     * @return array<string, string>
+     */
+    private function translateMap(array $keys): array
+    {
+        $translated = [];
+
+        foreach ($keys as $name => $key) {
+            $translated[$name] = $this->t($key);
+        }
+
+        return $translated;
+    }
+
+    /** @param array<string, scalar|\Stringable|null> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

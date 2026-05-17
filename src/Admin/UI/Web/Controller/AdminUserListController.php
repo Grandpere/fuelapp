@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Admin\UI\Web\Controller;
 
 use App\Admin\Application\User\AdminUserManager;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -317,7 +318,7 @@ final class AdminUserListController extends AbstractController
     }
 
     /**
-     * @param array<string, bool|float|int|string|\Stringable|null> $parameters
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
      */
     private function t(string $key, array $parameters = []): string
     {

@@ -25,6 +25,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminStationFormController extends AbstractController
 {
@@ -35,6 +36,7 @@ final class AdminStationFormController extends AbstractController
         private readonly UpdateStationAddressHandler $updateStationAddressHandler,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -79,13 +81,20 @@ final class AdminStationFormController extends AbstractController
             ];
 
             if (!$this->isCsrfTokenValid('admin_station_form', $formData['_token'])) {
-                $errors[] = 'Invalid CSRF token.';
+                $errors[] = $this->translator->trans('station.validation.invalid_csrf');
             }
 
-            foreach (['name', 'streetName', 'postalCode', 'city'] as $field) {
-                if ('' === $formData[$field]) {
-                    $errors[] = sprintf('Field "%s" is required.', $field);
-                }
+            if ('' === $formData['name']) {
+                $errors[] = $this->translator->trans('station.validation.name_required');
+            }
+            if ('' === $formData['streetName']) {
+                $errors[] = $this->translator->trans('station.validation.street_name_required');
+            }
+            if ('' === $formData['postalCode']) {
+                $errors[] = $this->translator->trans('station.validation.postal_code_required');
+            }
+            if ('' === $formData['city']) {
+                $errors[] = $this->translator->trans('station.validation.city_required');
             }
 
             if ([] === $errors) {
@@ -121,7 +130,7 @@ final class AdminStationFormController extends AbstractController
                     );
                 }
 
-                $this->addFlash('success', 'Station updated.');
+                $this->addFlash('success', $this->translator->trans('flash.station.updated'));
 
                 return new RedirectResponse(
                     $this->resolveReturnTo($request->request->get('_return_to'), $returnTo),

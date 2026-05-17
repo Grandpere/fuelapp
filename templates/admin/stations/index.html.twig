@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Stations{% endblock %}
+{% block title %}{{ 'admin.stations.title'|trans }}{% endblock %}
 
 {% set admin_section = 'stations' %}
 
@@ -8,16 +8,16 @@
     {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Stations</h2>
-            <p class="muted">Global station registry with direct follow-up into linked receipts.</p>
+            <h2 class="page-title">{{ 'admin.stations.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.stations.lead'|trans }}</p>
         </div>
 
         {% if supportShortcuts is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Queue shortcuts</strong>
-                        <p class="muted compact-note">Jump into the next station queue that likely needs follow-up.</p>
+                        <strong>{{ 'admin.stations.queue_shortcuts_title'|trans }}</strong>
+                        <p class="muted compact-note">{{ 'admin.stations.queue_shortcuts_lead'|trans }}</p>
                     </div>
                     <div class="actions-wrap">
                         {% for item in supportShortcuts %}
@@ -32,7 +32,7 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Active filters</strong>
+                        <strong>{{ 'admin.import.index.active_filters'|trans }}</strong>
                         <p class="muted compact-note">
                             {% for item in activeFilterSummary %}
                                 {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
@@ -40,7 +40,7 @@
                         </p>
                     </div>
                     <div class="admin-page-actions">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">Reset</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_list') }}">{{ 'action.reset'|trans }}</a>
                     </div>
                 </div>
             </div>
@@ -48,21 +48,21 @@
 
         <form method="get" action="{{ path('ui_admin_station_list') }}" class="admin-filter-grid-3 admin-table-top">
             <label class="label">
-                Search
-                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="Name, street, city">
+                {{ 'admin.stations.filters.search'|trans }}
+                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="{{ 'admin.stations.filters.search_placeholder'|trans }}">
             </label>
             <label class="label">
-                Geocoding
+                {{ 'admin.stations.filters.geocoding'|trans }}
                 <select class="select" name="geocoding_status">
-                    <option value="">All statuses</option>
+                    <option value="">{{ 'admin.stations.filters.all_statuses'|trans }}</option>
                     {% for status in geocodingOptions %}
                         <option value="{{ status }}" {% if filters.geocoding_status == status %}selected{% endif %}>{{ status }}</option>
                     {% endfor %}
                 </select>
             </label>
             <div class="admin-form-actions">
-                <button class="btn btn-primary" type="submit">Apply</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">Reset</a>
+                <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_station_list') }}">{{ 'action.reset'|trans }}</a>
             </div>
         </form>
 
@@ -70,13 +70,13 @@
             <table class="app-table table-min-1040">
                 <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Address</th>
-                    <th>Signal</th>
-                    <th>Geocoding</th>
-                    <th>Receipt activity</th>
-                    <th>Linked vehicles</th>
-                    <th>Actions</th>
+                    <th>{{ 'admin.stations.table.name'|trans }}</th>
+                    <th>{{ 'admin.stations.table.address'|trans }}</th>
+                    <th>{{ 'admin.import.index.column.signal'|trans }}</th>
+                    <th>{{ 'admin.stations.table.geocoding'|trans }}</th>
+                    <th>{{ 'admin.stations.table.receipt_activity'|trans }}</th>
+                    <th>{{ 'admin.stations.table.linked_vehicles'|trans }}</th>
+                    <th>{{ 'admin.import.index.column.action'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -97,30 +97,30 @@
                         </td>
                         <td><span class="pill pill-energy">{{ station.geocodingStatus.value }}</span></td>
                         <td>
-                            <div>{{ row.receiptCount }} receipt{{ row.receiptCount == 1 ? '' : 's' }}</div>
+                            <div>{{ (row.receiptCount == 1 ? 'admin.stations.receipt_one' : 'admin.stations.receipt_other')|trans({'%count%': row.receiptCount}) }}</div>
                             <div class="muted compact-note">
                                 {% if row.lastReceiptAt %}
-                                    Last: {{ row.lastReceiptAt|date('Y-m-d H:i') }}
+                                    {{ 'admin.stations.last_receipt'|trans({'%date%': row.lastReceiptAt|date('Y-m-d H:i')}) }}
                                 {% else %}
-                                    No receipt yet
+                                    {{ 'admin.stations.no_receipt_yet'|trans }}
                                 {% endif %}
                             </div>
                         </td>
                         <td>{{ row.linkedVehicleCount }}</td>
                         <td class="action-cell-flex" data-row-link-ignore>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: station.id.toString, return_to: returnTo}) }}">Open</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {station_id: station.id.toString}) }}">Receipts</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_edit', {id: station.id.toString, return_to: returnTo}) }}">Edit</a>
-                            <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_show', {id: station.id.toString, return_to: returnTo}) }}">{{ 'action.open'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {station_id: station.id.toString}) }}">{{ 'nav.receipts'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_edit', {id: station.id.toString, return_to: returnTo}) }}">{{ 'action.edit'|trans }}</a>
+                            <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('{{ 'admin.stations.confirm_delete'|trans }}');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
                                 <input type="hidden" name="_redirect" value="{{ returnTo }}">
-                                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                                <button class="btn btn-danger btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
                             </form>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="7" class="muted">No stations found.</td>
+                        <td colspan="7" class="muted">{{ 'admin.stations.empty'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

@@ -9,7 +9,8 @@
 - [completed] Translate the remaining user-facing dashboard, vehicle, and maintenance screens plus their tests.
 - [completed] Re-run quality gates and prepare the manual functional validation handover.
 - [completed] Translate admin users, identities, security, and audit screens plus related tests.
-- [pending] Translate the remaining admin resource screens (vehicles, stations, receipts, maintenance, diagnostics).
+- [completed] Translate the admin vehicle, station, and public fuel diagnostics screens plus related tests.
+- [pending] Translate the remaining admin receipt and maintenance screens.
 - [pending] Hand over the remaining manual functional admin validation.
 
 # TODO - SP41-003 Topbar account actions responsiveness

@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-05-18 - Admin translation catalogs can break by inserting new sections inside an existing subtree
+- Symptom: multiple admin pages started returning 500 right after an i18n pass, with YAML parse errors around `messages.fr.yaml` / `messages.en.yaml`.
+- Root cause: new `admin.vehicles`, `admin.stations`, and `admin.public_fuel_stations` sections were inserted before the existing `admin.import.show` subtree was fully closed.
+- Fix: restore the full `admin.import.show` block first, then append new admin translation namespaces only after that subtree ends; lint both YAML catalogs immediately.
+- Prevention: when extending large YAML catalogs, inspect the parent subtree boundaries first and run `php bin/console lint:yaml translations/messages.fr.yaml translations/messages.en.yaml` before chasing any downstream 500.
+
 ## 2026-05-17 - `make phpunit-functional` ignores ad-hoc `ARGS`
 - Symptom: trying to target one functional file through `make phpunit-functional ARGS=...` still launched the full functional suite.
 - Root cause: the Make target hardcodes the suite command and does not forward extra CLI args.

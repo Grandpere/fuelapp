@@ -16,6 +16,7 @@ namespace App\Admin\UI\Web\Controller;
 use App\Admin\Application\Security\SecurityActivityReader;
 use App\Admin\Application\User\AdminUserManager;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -164,7 +165,7 @@ final class AdminSecurityActivityListController extends AbstractController
     }
 
     /**
-     * @param array<string, bool|float|int|string|\Stringable|null> $parameters
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
      */
     private function t(string $key, array $parameters = []): string
     {

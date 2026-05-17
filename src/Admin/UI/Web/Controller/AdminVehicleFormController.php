@@ -23,6 +23,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminVehicleFormController extends AbstractController
 {
@@ -31,6 +32,7 @@ final class AdminVehicleFormController extends AbstractController
     public function __construct(
         private readonly VehicleRepository $vehicleRepository,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -74,7 +76,7 @@ final class AdminVehicleFormController extends AbstractController
 
                 $vehicle->update($ownerId, $name, $plateNumber);
                 $this->vehicleRepository->save($vehicle);
-                $this->addFlash('success', 'Vehicle updated.');
+                $this->addFlash('success', $this->translator->trans('flash.vehicle.updated'));
 
                 return new RedirectResponse(
                     $this->resolveReturnTo($request->request->get('_return_to'), $returnTo),
@@ -108,28 +110,28 @@ final class AdminVehicleFormController extends AbstractController
         $errors = [];
 
         if (!$this->isCsrfTokenValid('admin_vehicle_form', $formData['_token'])) {
-            $errors[] = 'Jeton CSRF invalide.';
+            $errors[] = $this->translator->trans('flash.csrf.invalid');
         }
 
         $ownerId = trim($formData['ownerId']);
         if (!Uuid::isValid($ownerId) || !$this->vehicleRepository->ownerExists($ownerId)) {
-            $errors[] = 'Owner not found.';
+            $errors[] = $this->translator->trans('admin.vehicles.validation.owner_not_found');
         }
 
         $name = trim($formData['name']);
         if ('' === $name) {
-            $errors[] = 'Name is required.';
+            $errors[] = $this->translator->trans('vehicle.validation.name_required');
         }
 
         $plateNumber = trim($formData['plateNumber']);
         if ('' === $plateNumber) {
-            $errors[] = 'Plate number is required.';
+            $errors[] = $this->translator->trans('vehicle.validation.plate_required');
         }
 
         if (Uuid::isValid($ownerId) && '' !== $plateNumber) {
             $existing = $this->vehicleRepository->findByOwnerAndPlateNumber($ownerId, $plateNumber);
             if ($existing instanceof Vehicle && (null === $currentVehicle || $existing->id()->toString() !== $currentVehicle->id()->toString())) {
-                $errors[] = 'A vehicle with this plate already exists for this owner.';
+                $errors[] = $this->translator->trans('vehicle.validation.duplicate_plate');
             }
         }
 

@@ -1,88 +1,88 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Public Fuel Stations{% endblock %}
+{% block title %}{{ 'admin.public_fuel_stations.title'|trans }}{% endblock %}
 
 {% set admin_section = 'public_fuel_stations' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Public Fuel Stations</h2>
-            <p class="muted">Read-only sync diagnostics for the official data.gouv fuel station cache.</p>
+            <h2 class="page-title">{{ 'admin.public_fuel_stations.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.public_fuel_stations.lead'|trans }}</p>
         </div>
 
         <div class="admin-metric-grid metric-grid-spaced">
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Cached stations</p>
+                <p class="admin-metric-label">{{ 'admin.public_fuel_stations.cached_stations'|trans }}</p>
                 <p class="admin-metric-value">{{ diagnostics.stationCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Latest source update</p>
+                <p class="admin-metric-label">{{ 'admin.public_fuel_stations.latest_source_update'|trans }}</p>
                 <p class="admin-metric-value admin-metric-value-small">
-                    {{ diagnostics.latestSourceUpdatedAt ? diagnostics.latestSourceUpdatedAt|date('Y-m-d H:i') : 'n/a' }}
+                    {{ diagnostics.latestSourceUpdatedAt ? diagnostics.latestSourceUpdatedAt|date('Y-m-d H:i') : ('common.na'|trans) }}
                 </p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Latest local import</p>
+                <p class="admin-metric-label">{{ 'admin.public_fuel_stations.latest_local_import'|trans }}</p>
                 <p class="admin-metric-value admin-metric-value-small">
-                    {{ diagnostics.latestImportedAt ? diagnostics.latestImportedAt|date('Y-m-d H:i') : 'n/a' }}
+                    {{ diagnostics.latestImportedAt ? diagnostics.latestImportedAt|date('Y-m-d H:i') : ('common.na'|trans) }}
                 </p>
             </article>
         </div>
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Latest sync run</h3>
+        <h3 class="section-title">{{ 'admin.public_fuel_stations.latest_sync_run'|trans }}</h3>
         {% if diagnostics.latestRun %}
             {% set run = diagnostics.latestRun %}
             <div class="admin-metric-grid metric-grid-spaced">
                 <article class="card-subtle admin-metric-card">
-                    <p class="admin-metric-label">Status</p>
+                    <p class="admin-metric-label">{{ 'admin.public_fuel_stations.status'|trans }}</p>
                     <p class="admin-metric-value admin-metric-value-small">{{ run.status }}</p>
                 </article>
                 <article class="card-subtle admin-metric-card">
-                    <p class="admin-metric-label">Processed</p>
+                    <p class="admin-metric-label">{{ 'admin.public_fuel_stations.processed'|trans }}</p>
                     <p class="admin-metric-value">{{ run.processedCount }}</p>
                 </article>
                 <article class="card-subtle admin-metric-card">
-                    <p class="admin-metric-label">Rejected</p>
+                    <p class="admin-metric-label">{{ 'admin.public_fuel_stations.rejected'|trans }}</p>
                     <p class="admin-metric-value">{{ run.rejectedCount }}</p>
                 </article>
             </div>
 
             <dl class="admin-dl admin-detail-stack">
-                <dt class="admin-dt">Run ID</dt>
+                <dt class="admin-dt">{{ 'admin.public_fuel_stations.run_id'|trans }}</dt>
                 <dd class="admin-dd">{{ run.id }}</dd>
-                <dt class="admin-dt">Source</dt>
+                <dt class="admin-dt">{{ 'admin.public_fuel_stations.source'|trans }}</dt>
                 <dd class="admin-dd">{{ run.sourceUrl }}</dd>
-                <dt class="admin-dt">Started</dt>
+                <dt class="admin-dt">{{ 'admin.public_fuel_stations.started'|trans }}</dt>
                 <dd class="admin-dd">{{ run.startedAt|date('Y-m-d H:i:s') }}</dd>
-                <dt class="admin-dt">Completed</dt>
-                <dd class="admin-dd">{{ run.completedAt ? run.completedAt|date('Y-m-d H:i:s') : 'running or interrupted' }}</dd>
-                <dt class="admin-dt">Upserted</dt>
+                <dt class="admin-dt">{{ 'admin.public_fuel_stations.completed'|trans }}</dt>
+                <dd class="admin-dd">{{ run.completedAt ? run.completedAt|date('Y-m-d H:i:s') : ('admin.public_fuel_stations.running_or_interrupted'|trans) }}</dd>
+                <dt class="admin-dt">{{ 'admin.public_fuel_stations.upserted'|trans }}</dt>
                 <dd class="admin-dd">{{ run.upsertedCount }}</dd>
                 {% if run.errorMessage %}
-                    <dt class="admin-dt">Error</dt>
+                    <dt class="admin-dt">{{ 'admin.public_fuel_stations.error'|trans }}</dt>
                     <dd class="admin-dd">{{ run.errorMessage }}</dd>
                 {% endif %}
             </dl>
         {% else %}
-            <p class="muted">No public fuel station sync has run yet.</p>
+            <p class="muted">{{ 'admin.public_fuel_stations.empty_runs'|trans }}</p>
         {% endif %}
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Recent sync runs</h3>
+        <h3 class="section-title">{{ 'admin.public_fuel_stations.recent_sync_runs'|trans }}</h3>
         <div class="table-wrap table-min-980">
             <table class="app-table table-min-980">
                 <thead>
                 <tr>
-                    <th>Started</th>
-                    <th>Status</th>
-                    <th>Processed</th>
-                    <th>Upserted</th>
-                    <th>Rejected</th>
-                    <th>Error</th>
+                    <th>{{ 'admin.public_fuel_stations.started'|trans }}</th>
+                    <th>{{ 'admin.public_fuel_stations.status'|trans }}</th>
+                    <th>{{ 'admin.public_fuel_stations.processed'|trans }}</th>
+                    <th>{{ 'admin.public_fuel_stations.upserted'|trans }}</th>
+                    <th>{{ 'admin.public_fuel_stations.rejected'|trans }}</th>
+                    <th>{{ 'admin.public_fuel_stations.error'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -93,11 +93,11 @@
                         <td>{{ run.processedCount }}</td>
                         <td>{{ run.upsertedCount }}</td>
                         <td>{{ run.rejectedCount }}</td>
-                        <td>{{ run.errorMessage ?? 'n/a' }}</td>
+                        <td>{{ run.errorMessage ?? ('common.na'|trans) }}</td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="6" class="muted">No sync run found.</td>
+                        <td colspan="6" class="muted">{{ 'admin.public_fuel_stations.no_sync_run_found'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

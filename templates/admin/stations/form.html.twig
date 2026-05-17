@@ -1,14 +1,14 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Edit Admin Station{% endblock %}
+{% block title %}{{ 'admin.stations.detail.edit_station'|trans }}{% endblock %}
 
 {% set admin_section = 'stations' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Edit station</h2>
-            <p class="muted">Update station address details from back-office.</p>
+            <h2 class="page-title">{{ 'admin.stations.detail.edit_station'|trans }}</h2>
+            <p class="muted">{{ 'admin.stations.form.lead'|trans }}</p>
         </div>
 
         {% if errors is not empty %}
@@ -25,25 +25,25 @@
             <input type="hidden" name="_token" value="{{ csrfToken }}">
             <input type="hidden" name="_return_to" value="{{ returnTo }}">
             <label class="label">
-                Name
+                {{ 'station.form.name'|trans }}
                 <input class="input" type="text" name="name" value="{{ formData.name }}" required>
             </label>
             <label class="label">
-                Street name
+                {{ 'station.form.street_name'|trans }}
                 <input class="input" type="text" name="streetName" value="{{ formData.streetName }}" required>
             </label>
             <label class="label">
-                Postal code
+                {{ 'station.form.postal_code'|trans }}
                 <input class="input" type="text" name="postalCode" value="{{ formData.postalCode }}" required>
             </label>
             <label class="label">
-                City
+                {{ 'station.form.city'|trans }}
                 <input class="input" type="text" name="city" value="{{ formData.city }}" required>
             </label>
 
             <div class="actions-wrap">
-                <button class="btn btn-primary" type="submit">Save changes</button>
-                <a class="btn btn-secondary" href="{{ returnTo }}">Back</a>
+                <button class="btn btn-primary" type="submit">{{ 'station.form.action_save'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ returnTo }}">{{ 'common.back'|trans }}</a>
             </div>
         </form>
     </section>

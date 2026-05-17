@@ -107,6 +107,66 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         self::assertStringContainsString('>Back-office<', $content);
     }
 
+    public function testAnonymousUserCanSwitchLocaleFromLoginAndKeepItInSession(): void
+    {
+        $loginPageResponse = $this->request('GET', '/ui/login');
+        self::assertSame(Response::HTTP_OK, $loginPageResponse->getStatusCode());
+
+        $sessionCookie = $this->extractSessionCookie($loginPageResponse);
+        self::assertNotEmpty($sessionCookie);
+        self::assertStringContainsString('>Connexion<', (string) $loginPageResponse->getContent());
+
+        $switchResponse = $this->request(
+            'GET',
+            '/ui/locale/en?return_to=%2Fui%2Flogin',
+            [],
+            ['HTTP_REFERER' => 'http://localhost/ui/login'],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $switchResponse->getStatusCode());
+        self::assertSame('/ui/login', (string) $switchResponse->headers->get('Location'));
+
+        $localeSessionCookie = $this->extractSessionCookie($switchResponse) ?: $sessionCookie;
+
+        $englishLoginResponse = $this->request('GET', '/ui/login', [], [], $localeSessionCookie);
+        self::assertSame(Response::HTTP_OK, $englishLoginResponse->getStatusCode());
+        $englishContent = (string) $englishLoginResponse->getContent();
+        self::assertStringContainsString('>Sign in<', $englishContent);
+        self::assertStringContainsString('Email', $englishContent);
+        self::assertStringContainsString('Password', $englishContent);
+    }
+
+    public function testAuthenticatedUserCanSwitchLocaleAndSeeEnglishTopbar(): void
+    {
+        $email = 'topbar.locale.user@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password, ['ROLE_USER']);
+        $this->em->flush();
+
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $switchResponse = $this->request(
+            'GET',
+            '/ui/locale/en?return_to=%2Fui%2Freceipts',
+            [],
+            ['HTTP_REFERER' => 'http://localhost/ui/receipts'],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $switchResponse->getStatusCode());
+        self::assertSame('/ui/receipts', (string) $switchResponse->headers->get('Location'));
+
+        $localeSessionCookie = $this->extractSessionCookie($switchResponse) ?: $sessionCookie;
+
+        $receiptsResponse = $this->request('GET', '/ui/receipts', [], [], $localeSessionCookie);
+        self::assertSame(Response::HTTP_OK, $receiptsResponse->getStatusCode());
+        $receiptsContent = (string) $receiptsResponse->getContent();
+        self::assertStringContainsString('>Dashboard<', $receiptsContent);
+        self::assertStringContainsString('>Receipts<', $receiptsContent);
+        self::assertStringContainsString('>Fuel Map<', $receiptsContent);
+        self::assertStringContainsString('>Contact<', $receiptsContent);
+        self::assertStringContainsString('>Sign out<', $receiptsContent);
+    }
+
     public function testUiLoginFailureWithOverlongEmailDoesNotReturnServerError(): void
     {
         $loginPageResponse = $this->request('GET', '/ui/login');

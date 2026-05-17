@@ -255,6 +255,43 @@
                     min-width: 0;
                 }
 
+                .locale-switch {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.2rem;
+                    padding: 0.18rem;
+                    border: 1px solid var(--nav-border);
+                    border-radius: 999px;
+                    background: var(--nav-surface);
+                }
+
+                .locale-switch-link {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 2.4rem;
+                    padding: 0.28rem 0.55rem;
+                    border-radius: 999px;
+                    color: var(--nav-link-text);
+                    font-size: 0.74rem;
+                    font-weight: 800;
+                    letter-spacing: 0.05em;
+                    text-decoration: none;
+                    border: 1px solid transparent;
+                    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+                }
+
+                .locale-switch-link:hover {
+                    transform: translateY(-1px);
+                    background: var(--nav-link-hover-bg);
+                }
+
+                .locale-switch-link.is-active {
+                    color: var(--nav-active-text);
+                    background: linear-gradient(120deg, var(--primary) 0%, var(--primary-strong) 100%);
+                    border-color: rgba(240, 138, 0, 0.42);
+                }
+
                 .topbar-nav {
                     display: flex;
                     align-items: center;
@@ -901,6 +938,15 @@
                     .topbar-account .theme-toggle {
                         width: 100%;
                     }
+
+                    .topbar-account .locale-switch {
+                        width: 100%;
+                        justify-content: space-between;
+                    }
+
+                    .topbar-account .locale-switch-link {
+                        flex: 1 1 0;
+                    }
                 }
             </style>
         {% endblock %}
@@ -915,6 +961,8 @@
         data-theme-switch-to-dark="{{ 'theme.switch_to_dark'|trans }}"
         data-theme-switch-to-light="{{ 'theme.switch_to_light'|trans }}"
     >
+        {% set currentLocale = app.request.locale|default('fr') %}
+        {% set currentUrl = app.request.uri|default('') %}
         {% if app.user %}
             {% set currentRoute = app.request.attributes.get('_route')|default('') %}
             <header class="topbar">
@@ -922,6 +970,16 @@
                     <a class="topbar-brand" href="{{ path('ui_dashboard') }}">FuelApp</a>
                     <div class="topbar-account">
                         <span class="topbar-user-email" title="{{ app.user.userIdentifier }}">{{ app.user.userIdentifier }}</span>
+                        <div class="locale-switch" aria-label="{{ 'locale.switch'|trans }}">
+                            <a
+                                class="locale-switch-link {{ currentLocale == 'fr' ? 'is-active' : '' }}"
+                                href="{{ path('ui_locale_switch', {locale: 'fr', return_to: currentUrl}) }}"
+                            >{{ 'locale.short_fr'|trans }}</a>
+                            <a
+                                class="locale-switch-link {{ currentLocale == 'en' ? 'is-active' : '' }}"
+                                href="{{ path('ui_locale_switch', {locale: 'en', return_to: currentUrl}) }}"
+                            >{{ 'locale.short_en'|trans }}</a>
+                        </div>
                         <button class="btn btn-secondary btn-compact theme-toggle" type="button" data-theme-toggle>
                             <span class="theme-toggle-icon" data-theme-toggle-icon>🌙</span>
                             <span class="theme-toggle-label" data-theme-toggle-label>{{ 'theme.dark'|trans }}</span>
@@ -948,10 +1006,22 @@
                 </nav>
             </header>
         {% else %}
-            <button class="btn btn-secondary btn-compact theme-toggle theme-toggle-floating" type="button" data-theme-toggle>
-                <span class="theme-toggle-icon" data-theme-toggle-icon>🌙</span>
-                <span class="theme-toggle-label" data-theme-toggle-label>{{ 'theme.dark'|trans }}</span>
-            </button>
+            <div class="action-row theme-toggle-floating">
+                <div class="locale-switch" aria-label="{{ 'locale.switch'|trans }}">
+                    <a
+                        class="locale-switch-link {{ currentLocale == 'fr' ? 'is-active' : '' }}"
+                        href="{{ path('ui_locale_switch', {locale: 'fr', return_to: currentUrl}) }}"
+                    >{{ 'locale.short_fr'|trans }}</a>
+                    <a
+                        class="locale-switch-link {{ currentLocale == 'en' ? 'is-active' : '' }}"
+                        href="{{ path('ui_locale_switch', {locale: 'en', return_to: currentUrl}) }}"
+                    >{{ 'locale.short_en'|trans }}</a>
+                </div>
+                <button class="btn btn-secondary btn-compact theme-toggle" type="button" data-theme-toggle>
+                    <span class="theme-toggle-icon" data-theme-toggle-icon>🌙</span>
+                    <span class="theme-toggle-label" data-theme-toggle-label>{{ 'theme.dark'|trans }}</span>
+                </button>
+            </div>
         {% endif %}
 
         {% for label in ['success', 'error'] %}

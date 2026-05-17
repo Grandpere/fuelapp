@@ -19,6 +19,7 @@ use App\Receipt\UI\Realtime\ReceiptStreamPublisher;
 use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -600,7 +601,7 @@ final class ListReceiptsController extends AbstractController
         return $translated;
     }
 
-    /** @param array<string, scalar|\Stringable|null> $parameters */
+    /** @param array<string, scalar|Stringable|null> $parameters */
     private function t(string $key, array $parameters = []): string
     {
         return $this->translator->trans($key, $parameters);

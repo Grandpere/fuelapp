@@ -49,6 +49,7 @@ security:
         - { path: ^/api/login$, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs(\..+)?$, roles: PUBLIC_ACCESS }
         - { path: ^/ui/login, roles: PUBLIC_ACCESS }
+        - { path: ^/ui/locale/, roles: PUBLIC_ACCESS }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: ^/ui/admin, roles: ROLE_ADMIN }
         - { path: ^/api, roles: ROLE_USER }

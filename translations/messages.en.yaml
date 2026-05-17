@@ -24,6 +24,11 @@ action:
     sign_out: 'Sign out'
     back_to_receipts: 'Back to receipts'
 
+locale:
+    switch: 'Language switcher'
+    short_fr: 'FR'
+    short_en: 'EN'
+
 theme:
     dark: 'Dark'
     light: 'Light'

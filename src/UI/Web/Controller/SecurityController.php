@@ -26,6 +26,9 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 final class SecurityController extends AbstractController
 {
+    private const SESSION_LOCALE_KEY = 'ui_locale';
+    private const AVAILABLE_LOCALES = ['fr', 'en'];
+
     public function __construct(
         private readonly OidcProviderRegistry $oidcProviderRegistry,
         private readonly TokenStorageInterface $tokenStorage,
@@ -62,5 +65,76 @@ final class SecurityController extends AbstractController
         }
 
         return $this->redirectToRoute('ui_login');
+    }
+
+    #[Route('/ui/locale/{locale}', name: 'ui_locale_switch', methods: ['GET'])]
+    public function switchLocale(Request $request, string $locale): RedirectResponse
+    {
+        if (!in_array($locale, self::AVAILABLE_LOCALES, true)) {
+            throw $this->createNotFoundException();
+        }
+
+        $request->getSession()->set(self::SESSION_LOCALE_KEY, $locale);
+
+        $target = $this->resolveLocaleRedirectTarget($request);
+
+        return new RedirectResponse($target);
+    }
+
+    private function resolveLocaleRedirectTarget(Request $request): string
+    {
+        $explicitReturnTo = $request->query->get('return_to');
+        if (is_string($explicitReturnTo) && '' !== trim($explicitReturnTo)) {
+            $validated = $this->validateSameOriginTarget($request, $explicitReturnTo);
+            if (null !== $validated) {
+                return $validated;
+            }
+        }
+
+        $referer = $request->headers->get('referer');
+        if (is_string($referer) && '' !== trim($referer)) {
+            $validated = $this->validateSameOriginTarget($request, $referer);
+            if (null !== $validated) {
+                return $validated;
+            }
+        }
+
+        return null !== $this->getUser()
+            ? $this->generateUrl('ui_dashboard')
+            : $this->generateUrl('ui_login');
+    }
+
+    private function validateSameOriginTarget(Request $request, string $target): ?string
+    {
+        $trimmed = trim($target);
+        if ('' === $trimmed) {
+            return null;
+        }
+
+        if (str_starts_with($trimmed, '/')) {
+            return $trimmed;
+        }
+
+        $parts = parse_url($trimmed);
+        if (!is_array($parts)) {
+            return null;
+        }
+
+        $scheme = $parts['scheme'] ?? null;
+        $host = $parts['host'] ?? null;
+        if (!is_string($scheme) || !is_string($host)) {
+            return null;
+        }
+
+        if ($scheme !== $request->getScheme() || $host !== $request->getHost()) {
+            return null;
+        }
+
+        $port = $parts['port'] ?? null;
+        if (is_int($port) && $port !== $request->getPort()) {
+            return null;
+        }
+
+        return $trimmed;
     }
 }

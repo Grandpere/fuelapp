@@ -24,6 +24,11 @@ action:
     sign_out: 'Déconnexion'
     back_to_receipts: 'Retour aux reçus'
 
+locale:
+    switch: 'Choix de la langue'
+    short_fr: 'FR'
+    short_en: 'EN'
+
 theme:
     dark: 'Sombre'
     light: 'Clair'

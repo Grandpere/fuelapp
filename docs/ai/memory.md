@@ -225,6 +225,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: inject `TranslatorInterface` into the controller and translate preset labels, column labels, active filter pills, and shortcut links from message keys.
 - Prevention: for every i18n pass on a list/dashboard page, inspect both Twig and controller-built view models before considering the screen complete.
 
+## 2026-05-18 - Public UI locale switch must bypass the authenticated `/ui` access rule
+- Symptom: anonymous locale-switch requests returned to login without persisting the chosen locale.
+- Root cause: the new `/ui/locale/{locale}` route sat under the generic `^/ui` `ROLE_USER` access control, so the security layer intercepted it before the controller could write the session value.
+- Fix: add an explicit `PUBLIC_ACCESS` rule for `^/ui/locale/` ahead of the authenticated `^/ui` rule.
+- Prevention: whenever adding a public helper route under `/ui`, review `access_control` order before debugging controller/session behavior.
+
 ## 2026-05-18 - Admin translation catalogs can break by inserting new sections inside an existing subtree
 - Symptom: multiple admin pages started returning 500 right after an i18n pass, with YAML parse errors around `messages.fr.yaml` / `messages.en.yaml`.
 - Root cause: new `admin.vehicles`, `admin.stations`, and `admin.public_fuel_stations` sections were inserted before the existing `admin.import.show` subtree was fully closed.

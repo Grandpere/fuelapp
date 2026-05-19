@@ -78,6 +78,67 @@ final class PublicFuelStationWebUiTest extends WebTestCase
         self::assertStringContainsString('"latitude":49.569', $content);
         self::assertStringContainsString('\u003C\/script\u003E\u003Cscript\u003Ealert(1)\u003C\/script\u003E', $content);
         self::assertStringNotContainsString('8 ROUTE SANS GAZOLE', $content);
+        self::assertStringContainsString('public-fuel-fuel-pill fuel-theme-diesel is-available', $content);
+        self::assertStringContainsString('pill public-fuel-fuel-pill fuel-theme-diesel', $content);
+    }
+
+    public function testPublicFuelStationListUsesDifferentFuelThemesPerFamily(): void
+    {
+        $email = 'public.station.ui.themes@example.com';
+        $password = 'test1234';
+        $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new PublicFuelStationEntity();
+        $station->setSourceId('3000003');
+        $station->setLatitudeMicroDegrees(49569000);
+        $station->setLongitudeMicroDegrees(3646000);
+        $station->setAddress('1 AVENUE DES COULEURS');
+        $station->setPostalCode('31000');
+        $station->setCity('TOULOUSE');
+        $station->setPopulationKind('R');
+        $station->setDepartment('Haute-Garonne');
+        $station->setDepartmentCode('31');
+        $station->setRegion('Occitanie');
+        $station->setRegionCode('76');
+        $station->setAutomate24(false);
+        $station->setServices([]);
+        $station->setFuels([
+            'sp95' => [
+                'available' => true,
+                'priceMilliEurosPerLiter' => 1810,
+                'priceUpdatedAt' => '2026-04-28T09:15:00+02:00',
+                'ruptureType' => null,
+                'ruptureStartedAt' => null,
+            ],
+            'gazole' => [
+                'available' => true,
+                'priceMilliEurosPerLiter' => 1710,
+                'priceUpdatedAt' => '2026-04-28T09:15:00+02:00',
+                'ruptureType' => null,
+                'ruptureStartedAt' => null,
+            ],
+            'gplc' => [
+                'available' => true,
+                'priceMilliEurosPerLiter' => 990,
+                'priceUpdatedAt' => '2026-04-28T09:15:00+02:00',
+                'ruptureType' => null,
+                'ruptureStartedAt' => null,
+            ],
+        ]);
+        $station->setSourceUpdatedAt(new DateTimeImmutable('2026-04-28 09:15:00'));
+        $station->setImportedAt(new DateTimeImmutable('2026-04-28 09:20:00'));
+        $this->em->persist($station);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $response = $this->request('GET', '/ui/public-fuel-stations');
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = (string) $response->getContent();
+
+        self::assertStringContainsString('fuel-theme-petrol is-available', $content);
+        self::assertStringContainsString('fuel-theme-diesel is-available', $content);
+        self::assertStringContainsString('fuel-theme-gas is-available', $content);
     }
 
     private function persistPublicStation(string $sourceId, string $address, string $postalCode, string $city, bool $available, bool $withPrice): void

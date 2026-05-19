@@ -112,3 +112,10 @@
 - [completed] Add failing functional coverage for the session-backed locale switch on login and authenticated pages.
 - [completed] Implement the locale switch route, request subscriber, and shared UI controls in a Symfony-standard way.
 - [completed] Run targeted checks plus standard quality gates and hand over the manual functional validation.
+
+# TODO - Public fuel badge colors
+
+## Plan
+- [completed] Add a maintainable fuel-family mapping for public station badges.
+- [completed] Update the public stations UI so fuel pills use differentiated real-world-inspired colors.
+- [completed] Add targeted coverage and run quality gates.

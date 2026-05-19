@@ -91,10 +91,58 @@
             color: var(--text-soft);
         }
 
+        .public-fuel-fuel-pill.fuel-theme-petrol {
+            border-color: rgba(115, 168, 37, 0.42);
+            background: rgba(146, 196, 60, 0.14);
+            color: #31540b;
+        }
+
+        .public-fuel-fuel-pill.fuel-theme-diesel {
+            border-color: rgba(214, 162, 9, 0.42);
+            background: rgba(255, 198, 31, 0.16);
+            color: #6c4b00;
+        }
+
+        .public-fuel-fuel-pill.fuel-theme-gas {
+            border-color: rgba(66, 145, 214, 0.42);
+            background: rgba(109, 178, 240, 0.16);
+            color: #0c4775;
+        }
+
+        :root[data-theme="dark"] .public-fuel-fuel-pill.fuel-theme-petrol {
+            color: #dff4ad;
+            background: rgba(146, 196, 60, 0.18);
+        }
+
+        :root[data-theme="dark"] .public-fuel-fuel-pill.fuel-theme-diesel {
+            color: #ffe7a1;
+            background: rgba(255, 198, 31, 0.2);
+        }
+
+        :root[data-theme="dark"] .public-fuel-fuel-pill.fuel-theme-gas {
+            color: #d6edff;
+            background: rgba(109, 178, 240, 0.2);
+        }
+
         .public-fuel-fuel-pill.is-available {
             color: var(--text-strong);
             border-color: rgba(32, 176, 124, 0.34);
             background: rgba(32, 176, 124, 0.14);
+        }
+
+        .public-fuel-fuel-pill.is-available.fuel-theme-petrol {
+            border-color: rgba(115, 168, 37, 0.54);
+            background: rgba(146, 196, 60, 0.24);
+        }
+
+        .public-fuel-fuel-pill.is-available.fuel-theme-diesel {
+            border-color: rgba(214, 162, 9, 0.54);
+            background: rgba(255, 198, 31, 0.26);
+        }
+
+        .public-fuel-fuel-pill.is-available.fuel-theme-gas {
+            border-color: rgba(66, 145, 214, 0.54);
+            background: rgba(109, 178, 240, 0.24);
         }
 
         .public-fuel-empty {
@@ -125,7 +173,7 @@
                 <div class="public-fuel-meta">
                     <span class="pill">{{ (result.totalCount == 1 ? 'public_fuel_station.matching_count_one' : 'public_fuel_station.matching_count_other')|trans({'%count%': result.totalCount}) }}</span>
                     <span class="pill">{{ 'public_fuel_station.showing_limit'|trans({'%shown%': result.items|length, '%limit%': result.limit}) }}</span>
-                    {% if selectedFuelType %}<span class="pill">{{ 'public_fuel_station.fuel_badge'|trans({'%fuel%': selectedFuelType.sourceLabel}) }}</span>{% endif %}
+                    {% if selectedFuelType %}<span class="pill public-fuel-fuel-pill fuel-theme-{{ fuelThemes[selectedFuelType.value]|default('neutral') }}">{{ 'public_fuel_station.fuel_badge'|trans({'%fuel%': selectedFuelType.sourceLabel}) }}</span>{% endif %}
                 </div>
             </article>
 
@@ -185,7 +233,7 @@
 
                             {% if selectedSnapshot %}
                                 <div class="public-fuel-meta">
-                                    <span class="public-fuel-fuel-pill {{ selectedSnapshot.available ? 'is-available' : '' }}">
+                                    <span class="public-fuel-fuel-pill fuel-theme-{{ fuelThemes[selectedFuelType.value]|default('neutral') }} {{ selectedSnapshot.available ? 'is-available' : '' }}">
                                         {{ selectedFuelType.sourceLabel }} · {{ selectedSnapshot.available ? 'public_fuel_station.available'|trans : 'public_fuel_station.unavailable'|trans }}
                                     </span>
                                     {% if selectedSnapshot.priceMilliEurosPerLiter %}
@@ -196,7 +244,7 @@
                                 <div class="public-fuel-fuels">
                                     {% for fuel, snapshot in station.fuels %}
                                         {% if snapshot.priceMilliEurosPerLiter is defined and snapshot.priceMilliEurosPerLiter %}
-                                            <span class="public-fuel-fuel-pill {{ snapshot.available ? 'is-available' : '' }}">
+                                            <span class="public-fuel-fuel-pill fuel-theme-{{ fuelThemes[fuel]|default('neutral') }} {{ snapshot.available ? 'is-available' : '' }}">
                                                 {{ fuel|upper }} {{ (snapshot.priceMilliEurosPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
                                             </span>
                                         {% endif %}

@@ -46,4 +46,13 @@ enum PublicFuelType: string
             self::SP98 => 'SP98',
         };
     }
+
+    public function theme(): string
+    {
+        return match ($this) {
+            self::DIESEL => 'diesel',
+            self::SP95, self::SP98, self::E10, self::E85 => 'petrol',
+            self::GPLC => 'gas',
+        };
+    }
 }

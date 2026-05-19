@@ -46,6 +46,7 @@ final class PublicFuelStationMapController extends AbstractController
                 'available' => $filters->availableOnly ? '1' : '0',
             ],
             'fuelOptions' => PublicFuelType::cases(),
+            'fuelThemes' => $this->fuelThemes(),
             'result' => $result,
             'mapPoints' => array_map(fn (PublicFuelStationListItem $item): array => $this->mapPoint($item, $fuelType), $result->items),
             'selectedFuelType' => $fuelType,
@@ -68,6 +69,18 @@ final class PublicFuelStationMapController extends AbstractController
         }
 
         return trim($value);
+    }
+
+    /** @return array<string, string> */
+    private function fuelThemes(): array
+    {
+        $themes = [];
+
+        foreach (PublicFuelType::cases() as $fuelType) {
+            $themes[$fuelType->value] = $fuelType->theme();
+        }
+
+        return $themes;
     }
 
     /** @return array<string, bool|float|int|string|null> */

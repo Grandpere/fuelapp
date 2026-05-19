@@ -18,6 +18,7 @@ use App\Shared\Application\Security\AuthenticatedUserIdProvider;
 use App\Station\Application\Favorite\FavoriteStationRepository;
 use App\Station\Application\Repository\StationRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -33,12 +34,14 @@ final class ListStationsController extends AbstractController
     }
 
     #[Route('/ui/stations', name: 'ui_station_list', methods: ['GET'])]
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
         $ownerId = $this->authenticatedUserIdProvider->getAuthenticatedUserId();
         if (null === $ownerId) {
             throw new NotFoundHttpException();
         }
+
+        $favoritesOnly = $request->query->getBoolean('favorites');
 
         $rowsByStationId = [];
 
@@ -90,6 +93,7 @@ final class ListStationsController extends AbstractController
                 'latestReceiptId' => $receiptStats['latestReceiptId'],
                 'recentSpendCents' => $receiptStats['recentSpendCents'],
                 'latestOdometer' => $receiptStats['latestOdometer'],
+                'isFavorite' => false,
             ];
         }
 
@@ -106,6 +110,10 @@ final class ListStationsController extends AbstractController
         usort(
             $stationRows,
             static function (array $left, array $right): int {
+                if ($left['isFavorite'] !== $right['isFavorite']) {
+                    return $left['isFavorite'] ? -1 : 1;
+                }
+
                 $leftDate = $left['latestIssuedAt'];
                 $rightDate = $right['latestIssuedAt'];
 
@@ -125,8 +133,16 @@ final class ListStationsController extends AbstractController
             },
         );
 
+        if ($favoritesOnly) {
+            $stationRows = array_values(array_filter(
+                $stationRows,
+                static fn (array $stationRow): bool => true === $stationRow['isFavorite'],
+            ));
+        }
+
         return $this->render('station/index.html.twig', [
             'stationRows' => $stationRows,
+            'favoritesOnly' => $favoritesOnly,
         ]);
     }
 }

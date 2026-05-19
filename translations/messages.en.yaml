@@ -1020,8 +1020,12 @@ flash:
 station:
     title: 'Stations'
     lead: 'Quick view of the places you revisit most, with direct shortcuts into receipts and analytics.'
+    filter_all: 'All stations'
+    filter_favorites_only: 'Favorites only'
     empty: 'No station is visible yet. Add or import a receipt with station details to start building this list.'
+    empty_favorites: 'No favorite station matches yet.'
     empty_action_add_receipt: 'Add first receipt'
+    empty_action_show_all: 'Show all stations'
     empty_action_open_imports: 'Open imports'
     latest_visit: 'Latest visit'
     receipts_count: 'Receipts'

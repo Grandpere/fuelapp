@@ -102,9 +102,9 @@
 # TODO - SP41-002 Favorite stations ranking and filtering
 
 ## Plan
-- [pending] Make favorites rise to the top of the station index while preserving recent-visit ordering inside each group.
-- [pending] Add a lightweight `favorites only` filter on the station index with a dedicated empty state.
-- [pending] Add or update the relevant functional coverage and run quality gates.
+- [completed] Make favorites rise to the top of the station index while preserving recent-visit ordering inside each group.
+- [completed] Add a lightweight `favorites only` filter on the station index with a dedicated empty state.
+- [completed] Add or update the relevant functional coverage and run quality gates.
 
 # TODO - UI locale switch V1
 

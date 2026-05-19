@@ -1029,8 +1029,12 @@ flash:
 station:
     title: 'Stations'
     lead: 'Vue rapide des lieux que vous revisitez le plus, avec des raccourcis directs vers les reçus et les analyses.'
+    filter_all: 'Toutes les stations'
+    filter_favorites_only: 'Favorites uniquement'
     empty: 'Aucune station n’est encore visible. Ajoutez ou importez un reçu avec les détails de station pour commencer à alimenter cette liste.'
+    empty_favorites: 'Aucune station favorite ne correspond pour le moment.'
     empty_action_add_receipt: 'Ajouter le premier reçu'
+    empty_action_show_all: 'Voir toutes les stations'
     empty_action_open_imports: 'Ouvrir les imports'
     latest_visit: 'Dernière visite'
     receipts_count: 'Reçus'

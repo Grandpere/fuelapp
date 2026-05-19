@@ -58,7 +58,7 @@
 - [completed] Design a dedicated bulk nearby-public reader for analytics instead of reusing the generic list search.
 - [completed] Enrich the analytics station map with nearby public stations not already matched.
 - [completed] Update analytics UI and fallback list to distinguish visited, matched public and nearby public stations.
-- [pending] Add or update unit/integration/functional coverage and run quality gates.
+- [completed] Add or update unit/integration/functional coverage and run quality gates.
 
 # TODO - SP40-001 Station picker and import matching
 

@@ -965,6 +965,9 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertStringContainsString('name="stationStreetName" value="12 Route Nord"', $createContent);
         self::assertStringContainsString('name="stationPostalCode" value="59000"', $createContent);
         self::assertStringContainsString('name="stationCity" value="Lille"', $createContent);
+        self::assertStringContainsString('Sélection active', $createContent);
+        self::assertStringContainsString('Suggestion active', $createContent);
+        self::assertMatchesRegularExpression('/name="selectedSuggestion" value="station:'.$stationId.'"[^>]*checked/', $createContent);
     }
 
     public function testReceiptIndexEmptyStateOffersContextualNextSteps(): void

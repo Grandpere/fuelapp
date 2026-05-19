@@ -5,6 +5,55 @@
 {% block stylesheets %}
     {{ parent() }}
     <style>
+        .import-station-suggestion-option {
+            display: grid;
+            gap: 0.45rem;
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            border: 1px solid var(--surface-soft-border);
+            background: var(--surface-soft-bg);
+            transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+        }
+
+        .import-station-suggestion-option:hover {
+            border-color: var(--accent-border);
+            background: var(--surface-bg);
+        }
+
+        .import-station-suggestion-option.is-selected {
+            border-color: var(--accent-border);
+            background: color-mix(in srgb, var(--accent-soft-bg) 72%, white 28%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-border) 38%, transparent);
+        }
+
+        .import-station-suggestion-option .compact-note {
+            margin: 0;
+        }
+
+        .import-station-suggestion-title {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .import-station-suggestion-selected-badge {
+            display: none;
+            width: fit-content;
+            padding: 0.18rem 0.5rem;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--accent-border) 20%, white 80%);
+            color: var(--text-strong);
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .import-station-suggestion-option.is-selected .import-station-suggestion-selected-badge {
+            display: inline-flex;
+        }
+
         .import-station-selection-state {
             display: none;
             gap: 0.4rem;
@@ -70,6 +119,7 @@
     {% set issueList = parsedDraft is not null and parsedDraft.issues is defined and parsedDraft.issues is iterable ? parsedDraft.issues : [] %}
     {% set issuedAtMissing = 'issued_at_missing' in issueList %}
     {% set reviewLines = reviewLines is defined and reviewLines is iterable ? reviewLines : [] %}
+    {% set selectedSuggestionValue = selectedSuggestionValue|default('') %}
     {% set finalizedReceiptId = payloadData is not null and payloadData.finalizedReceiptId is defined and payloadData.finalizedReceiptId is not null ? payloadData.finalizedReceiptId : null %}
     {% set duplicateOfImportJobId = payloadData is not null and payloadData.duplicateOfImportJobId is defined and payloadData.duplicateOfImportJobId is not null ? payloadData.duplicateOfImportJobId : null %}
     {% set duplicateOfReceiptId = payloadData is not null and payloadData.duplicateOfReceiptId is defined and payloadData.duplicateOfReceiptId is not null ? payloadData.duplicateOfReceiptId : null %}
@@ -279,38 +329,44 @@
                     {% set publicStationSuggestions = publicStationSuggestions|default([]) %}
                     {% if existingStationSuggestions is not empty or publicStationSuggestions is not empty %}
                         <div class="form-stack card-subtle card-subtle-block">
-                            <div class="import-station-selection-state" data-import-station-selection-state>
+                            <div class="import-station-selection-state {{ selectedStationSuggestion is not null ? 'is-visible' : '' }}" data-import-station-selection-state>
                                 <span class="import-station-selection-label">{{ 'receipt.form.station_selection_active'|trans }}</span>
-                                <p class="import-station-selection-title" data-import-station-selection-title></p>
-                                <p class="import-station-selection-copy" data-import-station-selection-copy></p>
+                                <p class="import-station-selection-title" data-import-station-selection-title>{{ selectedStationSuggestion is not null ? selectedStationSuggestion.title : '' }}</p>
+                                <p class="import-station-selection-copy" data-import-station-selection-copy>{% if selectedStationSuggestion is not null %}{% if selectedStationSuggestion.kind == 'public' %}<strong>{{ 'import.show.public_selection_prefix'|trans }}</strong> {{ selectedStationSuggestion.meta }} {{ 'import.show.public_selection_suffix'|trans }}{% else %}<strong>{{ 'import.show.existing_selection_prefix'|trans }}</strong> {{ selectedStationSuggestion.meta }} {{ 'import.show.existing_selection_suffix'|trans }}{% endif %}{% endif %}</p>
                                 <button class="btn btn-secondary btn-compact import-station-selection-reset" type="button" data-import-station-selection-reset>{{ 'receipt.form.station_selection_reset'|trans }}</button>
                             </div>
                             {% if existingStationSuggestions is not empty %}
                                 <p class="text-block-title">{{ 'receipt.form.station_suggestions_existing'|trans }}</p>
                                 {% for candidate in existingStationSuggestions %}
-                                    <label class="label" data-import-suggestion-kind="existing" data-import-suggestion-title="{{ candidate.name }}" data-import-suggestion-meta="{{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}">
-                                        <span class="muted compact-note">
-                                            <input type="radio" name="selectedSuggestion" value="station:{{ candidate.sourceId }}">
+                                    {% set candidateValue = 'station:' ~ candidate.sourceId %}
+                                    {% set isSelected = selectedSuggestionValue == candidateValue %}
+                                    <label class="label import-station-suggestion-option {{ isSelected ? 'is-selected' : '' }}" data-import-suggestion-kind="existing" data-import-suggestion-title="{{ candidate.name }}" data-import-suggestion-meta="{{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}">
+                                        <span class="import-station-suggestion-title">
+                                            <input type="radio" name="selectedSuggestion" value="{{ candidateValue }}" {% if isSelected %}checked{% endif %}>
                                             <strong>{{ 'receipt.form.station_suggestion_existing_badge'|trans }}</strong> {{ candidate.name }} - {{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}
                                         </span>
+                                        <span class="import-station-suggestion-selected-badge">{{ 'receipt.form.station_suggestion_selected_badge'|trans }}</span>
                                     </label>
                                 {% endfor %}
                             {% endif %}
                             {% if publicStationSuggestions is not empty %}
                                 <p class="text-block-title">{{ 'receipt.form.station_suggestions_public'|trans }}</p>
                                 {% for candidate in publicStationSuggestions %}
-                                    <label class="label" data-import-suggestion-kind="public" data-import-suggestion-title="{{ candidate.name }}" data-import-suggestion-meta="{{ candidate.postalCode }} {{ candidate.city }}">
-                                        <span class="muted compact-note">
-                                            <input type="radio" name="selectedSuggestion" value="public:{{ candidate.sourceId }}">
+                                    {% set candidateValue = 'public:' ~ candidate.sourceId %}
+                                    {% set isSelected = selectedSuggestionValue == candidateValue %}
+                                    <label class="label import-station-suggestion-option {{ isSelected ? 'is-selected' : '' }}" data-import-suggestion-kind="public" data-import-suggestion-title="{{ candidate.name }}" data-import-suggestion-meta="{{ candidate.postalCode }} {{ candidate.city }}">
+                                        <span class="import-station-suggestion-title">
+                                            <input type="radio" name="selectedSuggestion" value="{{ candidateValue }}" {% if isSelected %}checked{% endif %}>
                                             <strong>{{ 'receipt.form.station_suggestion_public_badge'|trans }}</strong> {{ candidate.name }}, {{ candidate.postalCode }} {{ candidate.city }}
                                         </span>
+                                        <span class="import-station-suggestion-selected-badge">{{ 'receipt.form.station_suggestion_selected_badge'|trans }}</span>
                                         <span class="muted compact-note">{{ 'import.show.public_station_help'|trans }}</span>
                                     </label>
                                 {% endfor %}
                             {% endif %}
                             <label class="label">
                                 <span class="muted compact-note">
-                                    <input type="radio" name="selectedSuggestion" value="" checked>
+                                    <input type="radio" name="selectedSuggestion" value="" {% if selectedSuggestionValue == '' %}checked{% endif %}>
                                     {{ 'import.show.keep_manual_station_fields'|trans }}
                                 </span>
                             </label>
@@ -501,6 +557,10 @@
                         const selected = radios.find((radio) => radio.checked);
                         const useSuggestion = !!selected && selected.value !== '';
                         const manualFields = Array.from(manualFieldsWrapper.querySelectorAll('input, select, textarea'));
+
+                        for (const radio of radios) {
+                            radio.closest('.import-station-suggestion-option')?.classList.toggle('is-selected', radio.checked && radio.value !== '');
+                        }
 
                         manualFieldsWrapper.classList.toggle('is-collapsed', useSuggestion);
 

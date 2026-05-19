@@ -63,6 +63,7 @@ final class ImportJobShowWebController extends AbstractController
         $creationPayload = $this->readCreationPayload($payloadData);
         $parsedDraft = $this->readParsedDraft($payloadData);
         $stationSuggestions = $this->stationSuggestions($creationPayload, $parsedDraft);
+        $selectedSuggestion = $this->selectedSuggestionFromRequest($request, $stationSuggestions);
         $backToImportsUrl = $this->safeReturnPathResolver->resolve(
             $request->query->get('return_to'),
             $this->generateUrl('ui_import_index'),
@@ -78,6 +79,8 @@ final class ImportJobShowWebController extends AbstractController
             'parsedDraft' => $parsedDraft,
             'existingStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'station' === $suggestion->sourceType)),
             'publicStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'public' === $suggestion->sourceType)),
+            'selectedSuggestionValue' => $selectedSuggestion['value'] ?? '',
+            'selectedStationSuggestion' => $selectedSuggestion,
             'stationSearch' => $this->stationSearchString($creationPayload, $parsedDraft),
             'reviewLines' => $this->readLines($creationPayload, $parsedDraft),
             'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
@@ -589,6 +592,46 @@ final class ImportJobShowWebController extends AbstractController
         $trimmed = trim($value);
 
         return '' === $trimmed ? null : $trimmed;
+    }
+
+    /**
+     * @param list<StationSuggestion> $stationSuggestions
+     *
+     * @return array{value:string, kind:string, title:string, meta:string}|null
+     */
+    private function selectedSuggestionFromRequest(Request $request, array $stationSuggestions): ?array
+    {
+        $selectedSuggestion = $request->query->get('selectedSuggestion');
+        if (!is_string($selectedSuggestion) || '' === trim($selectedSuggestion)) {
+            return null;
+        }
+
+        $selectedSuggestion = trim($selectedSuggestion);
+
+        foreach ($stationSuggestions as $suggestion) {
+            $suggestionValue = $suggestion->sourceType.':'.$suggestion->sourceId;
+            if ($suggestionValue !== $selectedSuggestion) {
+                continue;
+            }
+
+            return [
+                'value' => $suggestionValue,
+                'kind' => $suggestion->sourceType,
+                'title' => $suggestion->name,
+                'meta' => $this->stationSuggestionMeta($suggestion),
+            ];
+        }
+
+        return null;
+    }
+
+    private function stationSuggestionMeta(StationSuggestion $suggestion): string
+    {
+        if ('public' === $suggestion->sourceType) {
+            return trim(sprintf('%s %s', $suggestion->postalCode, $suggestion->city));
+        }
+
+        return trim(sprintf('%s, %s %s', $suggestion->streetName, $suggestion->postalCode, $suggestion->city), ' ,');
     }
 
     /**

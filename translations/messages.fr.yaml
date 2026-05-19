@@ -1276,6 +1276,7 @@ receipt:
         station_suggestions_public: 'Stations publiques'
         station_suggestion_existing_badge: 'Existante'
         station_suggestion_public_badge: 'Publique'
+        station_suggestion_selected_badge: 'Suggestion active'
         station_suggestion_public_help: 'Une station interne sera créée ou réutilisée lors de l’enregistrement.'
         station_suggestion_manual_title: 'Ne pas utiliser de suggestion'
         station_suggestion_manual_help: 'Conserver les champs station manuels ci-dessous.'

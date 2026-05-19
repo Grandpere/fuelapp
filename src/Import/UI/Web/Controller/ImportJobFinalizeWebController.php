@@ -56,6 +56,7 @@ final class ImportJobFinalizeWebController extends AbstractController
             $request->request->get('_return_to'),
             $this->generateUrl('ui_import_index'),
         );
+        $selectedSuggestion = $this->toNullableString($request->request->get('selectedSuggestion'));
         $nextReviewId = $this->shouldContinueToNextReview($request)
             ? $this->findNextReviewJobId($job)
             : null;
@@ -63,7 +64,7 @@ final class ImportJobFinalizeWebController extends AbstractController
         if (!$this->isCsrfTokenValid('ui_import_finalize_'.$id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'flash.csrf.invalid');
 
-            return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
+            return $this->redirectToRoute('ui_import_show', $this->showRouteParameters($id, $returnTo, $selectedSuggestion));
         }
 
         try {
@@ -99,7 +100,7 @@ final class ImportJobFinalizeWebController extends AbstractController
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
+        return $this->redirectToRoute('ui_import_show', $this->showRouteParameters($id, $returnTo, $selectedSuggestion));
     }
 
     private function shouldContinueToNextReview(Request $request): bool
@@ -217,6 +218,23 @@ final class ImportJobFinalizeWebController extends AbstractController
         $id = trim((string) ($parts[1] ?? ''));
 
         return '' === $id ? null : $id;
+    }
+
+    /**
+     * @return array{id:string, return_to:string, selectedSuggestion?:string}
+     */
+    private function showRouteParameters(string $id, string $returnTo, ?string $selectedSuggestion): array
+    {
+        $parameters = [
+            'id' => $id,
+            'return_to' => $returnTo,
+        ];
+
+        if (null !== $selectedSuggestion) {
+            $parameters['selectedSuggestion'] = $selectedSuggestion;
+        }
+
+        return $parameters;
     }
 
     /** @return list<CreateReceiptLineCommand>|null */

@@ -1,4 +1,6 @@
 <turbo-frame id="receipt_form_frame">
+    {% set selectedSuggestionValue = selectedStationSuggestion is defined and selectedStationSuggestion is not null ? selectedStationSuggestion.value : '' %}
+
     {% if errors is not empty %}
         <div class="flash flash-error">
             <ul class="flash-list">
@@ -85,20 +87,23 @@
                 {% set existingStationSuggestions = existingStationSuggestions|default([]) %}
                 {% set publicStationSuggestions = publicStationSuggestions|default([]) %}
                 {% if existingStationSuggestions is not empty or publicStationSuggestions is not empty %}
-                    <div class="station-selection-state" data-station-selection-state>
+                    <div class="station-selection-state {{ selectedStationSuggestion is not null ? 'is-visible' : '' }}" data-station-selection-state>
                         <span class="station-selection-state-label">{{ 'receipt.form.station_selection_active'|trans }}</span>
-                        <p class="station-selection-state-title" data-station-selection-title></p>
-                        <p class="station-selection-state-copy" data-station-selection-copy></p>
+                        <p class="station-selection-state-title" data-station-selection-title>{{ selectedStationSuggestion is not null ? selectedStationSuggestion.title : '' }}</p>
+                        <p class="station-selection-state-copy" data-station-selection-copy>{% if selectedStationSuggestion is not null %}{% if selectedStationSuggestion.kind == 'public' %}<strong>{{ 'receipt.form.station_selection_public_prefix'|trans }}</strong> {{ selectedStationSuggestion.meta }} {{ 'receipt.form.station_selection_public_suffix'|trans }}{% else %}<strong>{{ 'receipt.form.station_selection_existing_prefix'|trans }}</strong> {{ selectedStationSuggestion.meta }} {{ 'receipt.form.station_selection_existing_suffix'|trans }}{% endif %}{% endif %}</p>
                         <button class="btn btn-secondary btn-compact station-selection-reset" type="button" data-station-selection-reset>{{ 'receipt.form.station_selection_reset'|trans }}</button>
                     </div>
                     <div class="station-lookup-results">
                         {% if existingStationSuggestions is not empty %}
                             <p class="station-lookup-results-title">{{ 'receipt.form.station_suggestions_existing'|trans }}</p>
                             {% for candidate in existingStationSuggestions %}
-                                <label class="station-lookup-option" data-suggestion-kind="existing" data-suggestion-title="{{ candidate.name }}" data-suggestion-meta="{{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}">
-                                    <input type="radio" name="selectedSuggestion" value="station:{{ candidate.sourceId }}" {% if formData.selectedSuggestion == 'station:' ~ candidate.sourceId or formData.selectedStationId == candidate.sourceId %}checked{% endif %}>
+                                {% set candidateValue = 'station:' ~ candidate.sourceId %}
+                                {% set isSelected = selectedSuggestionValue == candidateValue %}
+                                <label class="station-lookup-option {{ isSelected ? 'is-selected' : '' }}" data-suggestion-kind="existing" data-suggestion-title="{{ candidate.name }}" data-suggestion-meta="{{ candidate.streetName }}, {{ candidate.postalCode }} {{ candidate.city }}">
+                                    <input type="radio" name="selectedSuggestion" value="{{ candidateValue }}" {% if isSelected %}checked{% endif %}>
                                     <span class="station-lookup-option-content">
                                         <span class="station-lookup-option-badge">{{ 'receipt.form.station_suggestion_existing_badge'|trans }}</span>
+                                        <span class="station-lookup-option-selection-badge">{{ 'receipt.form.station_suggestion_selected_badge'|trans }}</span>
                                         <strong>{{ candidate.name }}</strong>
                                         <span>{{ candidate.streetName }}</span>
                                         <span class="station-lookup-option-meta">{{ candidate.postalCode }} {{ candidate.city }}</span>
@@ -109,10 +114,13 @@
                         {% if publicStationSuggestions is not empty %}
                             <p class="station-lookup-results-title">{{ 'receipt.form.station_suggestions_public'|trans }}</p>
                             {% for candidate in publicStationSuggestions %}
-                                <label class="station-lookup-option" data-suggestion-kind="public" data-suggestion-title="{{ candidate.name }}" data-suggestion-meta="{{ candidate.postalCode }} {{ candidate.city }}">
-                                    <input type="radio" name="selectedSuggestion" value="public:{{ candidate.sourceId }}" {% if formData.selectedSuggestion == 'public:' ~ candidate.sourceId %}checked{% endif %}>
+                                {% set candidateValue = 'public:' ~ candidate.sourceId %}
+                                {% set isSelected = selectedSuggestionValue == candidateValue %}
+                                <label class="station-lookup-option {{ isSelected ? 'is-selected' : '' }}" data-suggestion-kind="public" data-suggestion-title="{{ candidate.name }}" data-suggestion-meta="{{ candidate.postalCode }} {{ candidate.city }}">
+                                    <input type="radio" name="selectedSuggestion" value="{{ candidateValue }}" {% if isSelected %}checked{% endif %}>
                                     <span class="station-lookup-option-content">
                                         <span class="station-lookup-option-badge station-lookup-option-badge-public">{{ 'receipt.form.station_suggestion_public_badge'|trans }}</span>
+                                        <span class="station-lookup-option-selection-badge">{{ 'receipt.form.station_suggestion_selected_badge'|trans }}</span>
                                         <strong>{{ candidate.name }}</strong>
                                         <span class="station-lookup-option-meta">{{ candidate.postalCode }} {{ candidate.city }}</span>
                                         <span class="muted compact-note">{{ 'receipt.form.station_suggestion_public_help'|trans }}</span>
@@ -121,7 +129,7 @@
                             {% endfor %}
                         {% endif %}
                         <label class="station-lookup-option station-lookup-manual">
-                            <input type="radio" name="selectedSuggestion" value="" {% if formData.selectedSuggestion == '' and formData.selectedStationId == '' %}checked{% endif %}>
+                            <input type="radio" name="selectedSuggestion" value="" {% if selectedSuggestionValue == '' %}checked{% endif %}>
                             <span class="station-lookup-option-content">
                                 <strong>{{ 'receipt.form.station_suggestion_manual_title'|trans }}</strong>
                                 <span>{{ 'receipt.form.station_suggestion_manual_help'|trans }}</span>
@@ -190,6 +198,10 @@
             const syncManualFields = () => {
                 const selected = radios.find((radio) => radio.checked);
                 const useSuggestion = !!selected && selected.value !== '';
+
+                for (const radio of radios) {
+                    radio.closest('.station-lookup-option')?.classList.toggle('is-selected', radio.checked && radio.value !== '');
+                }
 
                 for (const field of manualFields) {
                     field.disabled = useSuggestion;

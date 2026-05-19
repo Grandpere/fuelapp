@@ -99,6 +99,7 @@ final class CreateReceiptController extends AbstractController
 
         $stationSuggestions = $this->stationSuggestions($formData);
         $this->clearStaleSelectedSuggestion($formData, $stationSuggestions);
+        $selectedStationSuggestion = $this->selectedStationSuggestion($formData, $stationSuggestions);
 
         $response = $this->render($isTurboFrameRequest ? 'receipt/_form.html.twig' : 'receipt/new.html.twig', [
             'formData' => $formData,
@@ -107,6 +108,7 @@ final class CreateReceiptController extends AbstractController
             'vehicleOptions' => $this->vehicleOptions($ownerId),
             'existingStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'station' === $suggestion->sourceType)),
             'publicStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'public' === $suggestion->sourceType)),
+            'selectedStationSuggestion' => $selectedStationSuggestion,
             'stationLookupPerformed' => $this->stationLookupPerformed($request),
             'stationLookupCount' => count($stationSuggestions),
             'csrfToken' => $this->csrfTokenManager->getToken('receipt_new')->getValue(),
@@ -462,6 +464,50 @@ final class CreateReceiptController extends AbstractController
         if ('public' === $this->selectedSuggestionType($formData)) {
             $formData['selectedSuggestion'] = '';
         }
+    }
+
+    /**
+     * @param array<string, string>   $formData
+     * @param list<StationSuggestion> $stationSuggestions
+     *
+     * @return array{value:string, kind:string, title:string, meta:string}|null
+     */
+    private function selectedStationSuggestion(array $formData, array $stationSuggestions): ?array
+    {
+        $selectedSuggestion = $this->nullIfEmpty($formData['selectedSuggestion']);
+        $selectedStationId = $this->nullIfEmpty($formData['selectedStationId']);
+
+        foreach ($stationSuggestions as $suggestion) {
+            $suggestionValue = $suggestion->sourceType.':'.$suggestion->sourceId;
+
+            $matchesSelectedSuggestion = null !== $selectedSuggestion && $selectedSuggestion === $suggestionValue;
+            $matchesSelectedStation = null === $selectedSuggestion
+                && 'station' === $suggestion->sourceType
+                && null !== $selectedStationId
+                && $selectedStationId === $suggestion->sourceId;
+
+            if (!$matchesSelectedSuggestion && !$matchesSelectedStation) {
+                continue;
+            }
+
+            return [
+                'value' => $suggestionValue,
+                'kind' => $suggestion->sourceType,
+                'title' => $suggestion->name,
+                'meta' => $this->stationSuggestionMeta($suggestion),
+            ];
+        }
+
+        return null;
+    }
+
+    private function stationSuggestionMeta(StationSuggestion $suggestion): string
+    {
+        if ('public' === $suggestion->sourceType) {
+            return trim(sprintf('%s %s', $suggestion->postalCode, $suggestion->city));
+        }
+
+        return trim(sprintf('%s, %s %s', $suggestion->streetName, $suggestion->postalCode, $suggestion->city), ' ,');
     }
 
     /**

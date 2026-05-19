@@ -927,14 +927,18 @@ final class ImportWebUiTest extends WebTestCase
             'selectedStationId' => '',
         ], [], $sessionCookie);
         self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
-        self::assertSame('/ui/imports/'.$jobId.'?return_to=/ui/imports', $response->headers->get('Location'));
+        self::assertSame('/ui/imports/'.$jobId.'?return_to=/ui/imports&selectedSuggestion=public:public-1', $response->headers->get('Location'));
 
-        $follow = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        $follow = $this->request('GET', '/ui/imports/'.$jobId.'?return_to=/ui/imports&selectedSuggestion=public:public-1', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $follow->getStatusCode());
+        $followContent = (string) $follow->getContent();
         self::assertStringContainsString(
             'La station publique sélectionnée est en conflit avec la source publique déjà liée à cette station.',
-            (string) $follow->getContent(),
+            $followContent,
         );
+        self::assertStringContainsString('Sélection active', $followContent);
+        self::assertStringContainsString('Suggestion active', $followContent);
+        self::assertMatchesRegularExpression('/name="selectedSuggestion" value="public:public-1"[^>]*checked/', $followContent);
 
         $this->em->clear();
         self::assertCount(0, $this->em->getRepository(ReceiptEntity::class)->findBy(['owner' => $user]));

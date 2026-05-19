@@ -219,6 +219,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-05-20 - Import review selection state must survive validation redirects
+- Symptom: the station suggestion choice on import review became visually ambiguous again after a finalize validation error.
+- Root cause: finalize redirects dropped `selectedSuggestion`, and the UI only rebuilt the active selection summary client-side.
+- Fix: preserve `selectedSuggestion` in the redirect back to `/ui/imports/{id}` and server-render the active selection state/badge when the choice is known.
+- Prevention: when a UX flow relies on a transient selection, preserve that selection across redirects and do not depend on JS alone for first render clarity.
+
 ## 2026-05-18 - UI i18n can still hide in controller-built label maps
 - Symptom: pages looked mostly translated, but receipt list still showed English labels like `Vehicle`, date shortcuts, column presets, and export notes.
 - Root cause: several UI labels were generated in controller constants/arrays instead of Twig, so template-only translation sweeps missed them.

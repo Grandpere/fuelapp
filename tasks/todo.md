@@ -87,9 +87,9 @@
 # TODO - SP40-004 Station picker UX polish
 
 ## Plan
-- [pending] Make the active suggestion state explicit in manual receipt creation.
-- [pending] Mirror the same clarity in import review without changing business behavior.
-- [pending] Add/update the most relevant coverage and run quality gates.
+- [completed] Make the active suggestion state explicit in manual receipt creation.
+- [completed] Mirror the same clarity in import review without changing business behavior.
+- [completed] Add/update the most relevant coverage and run quality gates.
 
 # TODO - SP41-001 Favorite stations
 

@@ -1267,6 +1267,7 @@ receipt:
         station_suggestions_public: 'Public stations'
         station_suggestion_existing_badge: 'Existing'
         station_suggestion_public_badge: 'Public'
+        station_suggestion_selected_badge: 'Active suggestion'
         station_suggestion_public_help: 'This will create or reuse an internal station when you save.'
         station_suggestion_manual_title: 'Do not use a suggestion'
         station_suggestion_manual_help: 'Keep the manual station fields below.'

@@ -224,7 +224,7 @@ phpunit-integration: db-test-init ## Run PHPUnit Integration suite
 
 .PHONY: phpunit-functional
 phpunit-functional: db-test-init ## Run PHPUnit Functional suite
-	$(DC_EXEC) vendor/bin/phpunit --configuration phpunit.xml --testsuite Functional
+	$(DC_EXEC) php -d memory_limit=256M vendor/bin/phpunit --configuration phpunit.xml --testsuite Functional
 
 ##
 ## Quality

@@ -225,6 +225,12 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: preserve `selectedSuggestion` in the redirect back to `/ui/imports/{id}` and server-render the active selection state/badge when the choice is known.
 - Prevention: when a UX flow relies on a transient selection, preserve that selection across redirects and do not depend on JS alone for first render clarity.
 
+## 2026-05-20 - Full functional suite can exceed the default 128M CLI memory limit
+- Symptom: `make phpunit-functional` sometimes crashes in unrelated spots such as `Symfony\Component\Mime\FileinfoMimeTypeGuesser` with `Allowed memory size of 134217728 bytes exhausted`.
+- Root cause: the complete BrowserKit functional suite now exceeds the default PHP CLI `memory_limit=128M`; the upload/import test only happened to be where the next allocation failed.
+- Fix: run the functional Make target with an explicit higher CLI memory limit (`php -d memory_limit=256M vendor/bin/phpunit ...`).
+- Prevention: keep an explicit memory limit on the full functional Make target instead of relying on the container default as the suite grows.
+
 ## 2026-05-18 - UI i18n can still hide in controller-built label maps
 - Symptom: pages looked mostly translated, but receipt list still showed English labels like `Vehicle`, date shortcuts, column presets, and export notes.
 - Root cause: several UI labels were generated in controller constants/arrays instead of Twig, so template-only translation sweeps missed them.

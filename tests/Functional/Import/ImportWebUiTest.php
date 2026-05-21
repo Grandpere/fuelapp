@@ -678,6 +678,98 @@ final class ImportWebUiTest extends WebTestCase
         self::assertCount(2, $savedReceipt->getLines());
     }
 
+    public function testUserSeesIndexedValidationErrorWhenFinalizingNeedsReviewImport(): void
+    {
+        $email = 'import.web.multiline.invalid@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/25/manual-invalid-multiline.jpg');
+        $job->setOriginalFilename('manual-invalid-multiline.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('n', 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'issuedAt' => '2026-03-25T11:20:00+00:00',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 30000,
+                        'unitPriceDeciCentsPerLiter' => 1820,
+                        'vatRatePercent' => 20,
+                    ],
+                    [
+                        'fuelType' => 'sp98',
+                        'quantityMilliLiters' => 10000,
+                        'unitPriceDeciCentsPerLiter' => 1940,
+                        'vatRatePercent' => 20,
+                    ],
+                ],
+                'creationPayload' => null,
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-25 11:21:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-25 11:21:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-25 11:21:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $reviewPage = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $reviewPage->getStatusCode());
+        $reviewContent = (string) $reviewPage->getContent();
+        $csrfToken = $this->extractFinalizeCsrfToken($reviewContent, $jobId);
+
+        $finalizeResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$jobId.'/finalize',
+            [
+                '_token' => $csrfToken,
+                'issuedAt' => '2026-03-25T11:20',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => '30000',
+                        'unitPriceDeciCentsPerLiter' => '1820',
+                        'vatRatePercent' => '20',
+                    ],
+                    [
+                        'fuelType' => '',
+                        'quantityMilliLiters' => '10000',
+                        'unitPriceDeciCentsPerLiter' => '1940',
+                        'vatRatePercent' => '20',
+                    ],
+                ],
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $finalizeResponse->getStatusCode());
+
+        $followResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $followResponse->getStatusCode());
+        self::assertStringContainsString(
+            'Ligne 2 incomplète. Type de carburant, quantité, prix unitaire et taux de TVA sont tous obligatoires.',
+            (string) $followResponse->getContent(),
+        );
+    }
+
     public function testUserCanFinalizeAndOpenNextNeedsReviewImportFromUi(): void
     {
         $email = 'import.web.continue@example.com';

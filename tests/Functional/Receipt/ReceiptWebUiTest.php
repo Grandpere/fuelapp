@@ -128,6 +128,71 @@ final class ReceiptWebUiTest extends WebTestCase
         self::assertSame(1750, $updatedLine->getUnitPriceDeciCentsPerLiter());
     }
 
+    public function testUserSeesIndexedFuelTypeErrorWhenEditingReceiptLines(): void
+    {
+        $email = 'receipt.ui.editor.invalid-line@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName('Edit Station');
+        $station->setStreetName('1 Edit Street');
+        $station->setPostalCode('75011');
+        $station->setCity('Paris');
+        $this->em->persist($station);
+
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt(new DateTimeImmutable('2026-03-03 11:00:00'));
+        $receipt->setTotalCents(1800);
+        $receipt->setVatAmountCents(300);
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(10000);
+        $line->setUnitPriceDeciCentsPerLiter(1800);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
+        $this->em->flush();
+
+        $receiptId = $receipt->getId()->toRfc4122();
+        $this->loginWithUiForm($email, $password);
+
+        $editPage = $this->request('GET', '/ui/receipts/'.$receiptId.'/edit');
+        self::assertSame(Response::HTTP_OK, $editPage->getStatusCode());
+        $csrf = $this->extractFormCsrf((string) $editPage->getContent());
+
+        $editResponse = $this->request(
+            'POST',
+            '/ui/receipts/'.$receiptId.'/edit',
+            [
+                '_token' => $csrf,
+                'lines' => [
+                    [
+                        'fuelType' => 'sp95',
+                        'quantityLiters' => '12.000',
+                        'unitPriceEurosPerLiter' => '1.750',
+                        'vatRatePercent' => '20',
+                    ],
+                    [
+                        'fuelType' => 'not-a-fuel',
+                        'quantityLiters' => '10.000',
+                        'unitPriceEurosPerLiter' => '1.650',
+                        'vatRatePercent' => '20',
+                    ],
+                ],
+            ],
+        );
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $editResponse->getStatusCode());
+        self::assertStringContainsString('Ligne 2 : type de carburant invalide.', (string) $editResponse->getContent());
+    }
+
     public function testUserCanEditReceiptMetadataFromUi(): void
     {
         $email = 'receipt.ui.metadata@example.com';

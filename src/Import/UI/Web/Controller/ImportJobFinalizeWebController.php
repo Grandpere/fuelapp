@@ -24,11 +24,13 @@ use App\Shared\UI\Web\SafeReturnPathResolver;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use RuntimeException;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use ValueError;
 
 final class ImportJobFinalizeWebController extends AbstractController
@@ -37,6 +39,7 @@ final class ImportJobFinalizeWebController extends AbstractController
         private readonly ImportJobRepository $importJobRepository,
         private readonly FinalizeImportJobHandler $finalizeImportJobHandler,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -274,13 +277,13 @@ final class ImportJobFinalizeWebController extends AbstractController
             }
 
             if (null === $fuelType || null === $quantity || null === $unitPrice || null === $vatRate) {
-                throw new InvalidArgumentException(strtr('import.validation.line_incomplete', ['%index%' => (string) $lineNumber]));
+                throw new InvalidArgumentException($this->t('import.validation.line_incomplete', ['%index%' => (string) $lineNumber]));
             }
 
             try {
                 $lines[] = new CreateReceiptLineCommand(FuelType::from($fuelType), $quantity, $unitPrice, $vatRate);
             } catch (ValueError) {
-                throw new InvalidArgumentException(strtr('import.validation.line_invalid_fuel_type', ['%index%' => (string) $lineNumber]));
+                throw new InvalidArgumentException($this->t('import.validation.line_invalid_fuel_type', ['%index%' => (string) $lineNumber]));
             }
         }
 
@@ -310,6 +313,12 @@ final class ImportJobFinalizeWebController extends AbstractController
         }
 
         return [$line];
+    }
+
+    /** @param array<string, scalar|Stringable|null> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

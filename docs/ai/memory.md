@@ -668,3 +668,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the conflict rule lived correctly in the application write path, but the web flows did not yet consistently translate that business exception into user-facing validation feedback.
 - Fix: keep the conflict guard in `CreateReceiptWithStationHandler`, surface it as an inline validation error on `/ui/receipts/new`, and cover both receipt and import review flows with functional tests so conflicting relinks never regress into `500` responses.
 - Prevention: when turning a previously implicit match into a persisted unique link, add the conflict rule and the UI error-handling path in the same ticket; otherwise the first real mismatch becomes a production crash instead of a recoverable user decision.
+
+## 2026-05-21 - Locale return targets must reject protocol-relative paths and keyed validation errors need real translation before flashing
+- Symptom: the public `/ui/locale/{locale}` switch accepted `return_to=//host` and line-level import/receipt validation could show `%index%` literally instead of the failing line number.
+- Root cause: the same-origin check treated every leading slash as local even though `//host` is protocol-relative, and several controllers started storing translation keys as exception/error strings after calling `strtr()` on the key name instead of on translated text.
+- Fix: reject `//...` in the locale redirect guard, translate line-level validation messages at the point where `%index%` is known, and add functional coverage for the locale redirect plus user-facing line-numbered errors.
+- Prevention: treat any redirect target beginning with `//` as external even if it starts with `/`, and never interpolate placeholders on translation keys; call the translator with parameters before persisting or flashing a user-visible message.

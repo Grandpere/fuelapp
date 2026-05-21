@@ -136,6 +136,25 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         self::assertStringContainsString('Password', $englishContent);
     }
 
+    public function testLocaleSwitchRejectsProtocolRelativeReturnTargets(): void
+    {
+        $loginPageResponse = $this->request('GET', '/ui/login');
+        self::assertSame(Response::HTTP_OK, $loginPageResponse->getStatusCode());
+
+        $sessionCookie = $this->extractSessionCookie($loginPageResponse);
+        self::assertNotEmpty($sessionCookie);
+
+        $switchResponse = $this->request(
+            'GET',
+            '/ui/locale/en?return_to=%2F%2Fevil.example%2Fphishing',
+            [],
+            ['HTTP_REFERER' => 'http://localhost/ui/login'],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $switchResponse->getStatusCode());
+        self::assertSame('http://localhost/ui/login', (string) $switchResponse->headers->get('Location'));
+    }
+
     public function testAuthenticatedUserCanSwitchLocaleAndSeeEnglishTopbar(): void
     {
         $email = 'topbar.locale.user@example.com';

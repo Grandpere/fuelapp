@@ -19,6 +19,7 @@ use App\Receipt\Application\Command\UpdateReceiptLinesHandler;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Security\Voter\ReceiptVoter;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +27,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use ValueError;
 
 final class EditReceiptLinesController extends AbstractController
@@ -36,6 +38,7 @@ final class EditReceiptLinesController extends AbstractController
         private readonly ReceiptRepository $receiptRepository,
         private readonly UpdateReceiptLinesHandler $updateReceiptLinesHandler,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -145,7 +148,7 @@ final class EditReceiptLinesController extends AbstractController
             try {
                 $fuelType = FuelType::from($line['fuelType']);
             } catch (ValueError) {
-                $errors[] = strtr('receipt.validation.line_invalid_fuel_type', ['%index%' => (string) ($index + 1)]);
+                $errors[] = $this->t('receipt.validation.line_invalid_fuel_type', ['%index%' => (string) ($index + 1)]);
                 continue;
             }
 
@@ -154,13 +157,13 @@ final class EditReceiptLinesController extends AbstractController
             $vatRate = filter_var($line['vatRatePercent'], FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
 
             if (null === $quantity || $quantity <= 0) {
-                $errors[] = strtr('receipt.validation.line_invalid_quantity', ['%index%' => (string) ($index + 1)]);
+                $errors[] = $this->t('receipt.validation.line_invalid_quantity', ['%index%' => (string) ($index + 1)]);
             }
             if (null === $unitPrice || $unitPrice < 0) {
-                $errors[] = strtr('receipt.validation.line_invalid_unit_price', ['%index%' => (string) ($index + 1)]);
+                $errors[] = $this->t('receipt.validation.line_invalid_unit_price', ['%index%' => (string) ($index + 1)]);
             }
             if (null === $vatRate || $vatRate < 0 || $vatRate > 100) {
-                $errors[] = strtr('receipt.validation.line_invalid_vat', ['%index%' => (string) ($index + 1)]);
+                $errors[] = $this->t('receipt.validation.line_invalid_vat', ['%index%' => (string) ($index + 1)]);
             }
 
             if (null !== $quantity && $quantity > 0 && null !== $unitPrice && $unitPrice >= 0 && null !== $vatRate && $vatRate >= 0 && $vatRate <= 100) {
@@ -194,5 +197,11 @@ final class EditReceiptLinesController extends AbstractController
         $fraction = str_pad($fraction, $maxDecimals, '0');
 
         return ((int) $whole * $scale) + (int) substr($fraction, 0, $maxDecimals);
+    }
+
+    /** @param array<string, scalar|Stringable|null> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

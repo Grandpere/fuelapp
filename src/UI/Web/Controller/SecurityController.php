@@ -111,7 +111,7 @@ final class SecurityController extends AbstractController
             return null;
         }
 
-        if (str_starts_with($trimmed, '/')) {
+        if (str_starts_with($trimmed, '/') && !str_starts_with($trimmed, '//')) {
             return $trimmed;
         }
 

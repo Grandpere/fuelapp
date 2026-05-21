@@ -1,14 +1,14 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Audit Logs{% endblock %}
+{% block title %}{{ 'admin.audit.title'|trans }}{% endblock %}
 
 {% set admin_section = 'audit' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Audit Logs</h2>
-            <p class="muted">Immutable admin action trail with actor, target and correlation id.</p>
+            <h2 class="page-title">{{ 'admin.audit.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.audit.lead'|trans }}</p>
         </div>
     </section>
 
@@ -16,8 +16,8 @@
         <section class="card admin-panel admin-section-spaced">
             <div class="admin-page-head">
                 <div class="admin-page-header">
-                    <strong>Investigation continuity</strong>
-                    <p class="muted compact-note">Keep the same actor or correlation in view while moving between user, identity, security, and audit screens.</p>
+                    <strong>{{ 'admin.audit.continuity_title'|trans }}</strong>
+                    <p class="muted compact-note">{{ 'admin.audit.continuity_lead'|trans }}</p>
                 </div>
                 <div class="actions-wrap">
                     {% for item in supportShortcuts %}
@@ -32,7 +32,7 @@
         <section class="card admin-panel admin-section-spaced">
             <div class="admin-page-head">
                 <div class="admin-page-header">
-                    <strong>Active filters</strong>
+                    <strong>{{ 'admin.common.active_filters'|trans }}</strong>
                     <p class="muted compact-note">
                         {% for item in activeFilterSummary %}
                             {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
@@ -40,53 +40,53 @@
                     </p>
                 </div>
                 <div class="admin-page-actions">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list') }}">Reset</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list') }}">{{ 'action.reset'|trans }}</a>
                 </div>
             </div>
         </section>
     {% endif %}
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Filters</h3>
+        <h3 class="section-title">{{ 'admin.audit.filters_title'|trans }}</h3>
         <form method="get" class="admin-filters-form">
             <div class="form-grid-2">
                 <label class="label">
-                    Action
-                    <input class="input" type="text" name="action" value="{{ filters.action ?? '' }}" placeholder="admin.station.updated">
+                    {{ 'admin.audit.filters.action'|trans }}
+                    <input class="input" type="text" name="action" value="{{ filters.action ?? '' }}" placeholder="{{ 'admin.audit.filters.action_placeholder'|trans }}">
                 </label>
                 <label class="label">
-                    Actor
+                    {{ 'admin.audit.filters.actor'|trans }}
                     <select class="select" name="actorId">
-                        <option value="">All actors</option>
+                        <option value="">{{ 'admin.audit.filters.all_actors'|trans }}</option>
                         {% for actor in actorOptions %}
                             <option value="{{ actor.id }}" {% if filters.actorId == actor.id %}selected{% endif %}>{{ actor.label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Target type
-                    <input class="input" type="text" name="targetType" value="{{ filters.targetType ?? '' }}" placeholder="station">
+                    {{ 'admin.audit.filters.target_type'|trans }}
+                    <input class="input" type="text" name="targetType" value="{{ filters.targetType ?? '' }}" placeholder="{{ 'admin.audit.filters.target_type_placeholder'|trans }}">
                 </label>
                 <label class="label">
-                    Target ID
-                    <input class="input" type="text" name="targetId" value="{{ filters.targetId ?? '' }}" placeholder="UUID">
+                    {{ 'admin.audit.filters.target_id'|trans }}
+                    <input class="input" type="text" name="targetId" value="{{ filters.targetId ?? '' }}" placeholder="{{ 'admin.audit.filters.target_id_placeholder'|trans }}">
                 </label>
                 <label class="label">
-                    Correlation ID
-                    <input class="input" type="text" name="correlationId" value="{{ filters.correlationId ?? '' }}" placeholder="corr-...">
+                    {{ 'admin.audit.filters.correlation_id'|trans }}
+                    <input class="input" type="text" name="correlationId" value="{{ filters.correlationId ?? '' }}" placeholder="{{ 'admin.audit.filters.correlation_id_placeholder'|trans }}">
                 </label>
                 <label class="label">
-                    From date
+                    {{ 'admin.audit.filters.from_date'|trans }}
                     <input class="input" type="text" name="from" value="{{ filters.from ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
                 <label class="label">
-                    To date
+                    {{ 'admin.audit.filters.to_date'|trans }}
                     <input class="input" type="text" name="to" value="{{ filters.to ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
             </div>
             <div class="admin-form-actions">
-                <button class="btn btn-primary" type="submit">Apply filters</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_audit_log_list') }}">Reset</a>
+                <button class="btn btn-primary" type="submit">{{ 'admin.audit.apply_filters'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_audit_log_list') }}">{{ 'action.reset'|trans }}</a>
             </div>
         </form>
     </section>
@@ -96,13 +96,13 @@
             <table class="app-table">
                 <thead>
                 <tr>
-                    <th>Created</th>
-                    <th>Action</th>
-                    <th>Actor</th>
-                    <th>Target</th>
-                    <th>Correlation ID</th>
-                    <th>Diff Summary</th>
-                    <th>Actions</th>
+                    <th>{{ 'admin.audit.table.created'|trans }}</th>
+                    <th>{{ 'admin.audit.table.action'|trans }}</th>
+                    <th>{{ 'admin.audit.table.actor'|trans }}</th>
+                    <th>{{ 'admin.audit.table.target'|trans }}</th>
+                    <th>{{ 'admin.audit.table.correlation_id'|trans }}</th>
+                    <th>{{ 'admin.audit.table.diff_summary'|trans }}</th>
+                    <th>{{ 'common.actions'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -111,8 +111,8 @@
                         <td>{{ entry.entry.createdAt|date('Y-m-d H:i:s') }}</td>
                         <td>{{ entry.entry.action }}</td>
                         <td>
-                            <div>{{ entry.entry.actorEmail ?? 'n/a' }}</div>
-                            <div class="muted inline-meta">{{ entry.entry.actorId ?? 'n/a' }}</div>
+                            <div>{{ entry.entry.actorEmail ?? 'common.na'|trans }}</div>
+                            <div class="muted inline-meta">{{ entry.entry.actorId ?? 'common.na'|trans }}</div>
                         </td>
                         <td>
                             <div>{{ entry.entry.targetType }}</div>
@@ -122,31 +122,31 @@
                         <td>
                             {% if entry.entry.diffSummary is not empty %}
                                 <details>
-                                    <summary>view</summary>
+                                    <summary>{{ 'admin.audit.table.view_diff'|trans }}</summary>
                                     <pre class="preformatted-block">{{ entry.entry.diffSummary|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
                                 </details>
                             {% else %}
-                                <span class="muted">n/a</span>
+                                <span class="muted">{{ 'common.na'|trans }}</span>
                             {% endif %}
                         </td>
                         <td class="action-cell-flex">
                             {% if entry.userUrl %}
-                                <a class="btn btn-secondary btn-compact" href="{{ entry.userUrl }}">User</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ entry.userUrl }}">{{ 'admin.audit.actions.user'|trans }}</a>
                             {% endif %}
                             {% if entry.identitiesUrl %}
-                                <a class="btn btn-secondary btn-compact" href="{{ entry.identitiesUrl }}">Identities</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ entry.identitiesUrl }}">{{ 'admin.audit.actions.identities'|trans }}</a>
                             {% endif %}
                             {% if entry.securityUrl %}
-                                <a class="btn btn-secondary btn-compact" href="{{ entry.securityUrl }}">Security</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ entry.securityUrl }}">{{ 'admin.audit.actions.security'|trans }}</a>
                             {% endif %}
                             {% if entry.correlationUrl %}
-                                <a class="btn btn-secondary btn-compact" href="{{ entry.correlationUrl }}">Correlation</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ entry.correlationUrl }}">{{ 'admin.audit.actions.correlation'|trans }}</a>
                             {% endif %}
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="7" class="muted">No audit entries found.</td>
+                        <td colspan="7" class="muted">{{ 'admin.audit.empty'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

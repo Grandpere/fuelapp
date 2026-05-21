@@ -24,6 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminIdentityRelinkController extends AbstractController
 {
@@ -32,6 +33,7 @@ final class AdminIdentityRelinkController extends AbstractController
     public function __construct(
         private readonly AdminIdentityManager $identityManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -56,7 +58,7 @@ final class AdminIdentityRelinkController extends AbstractController
 
         $targetUserId = $request->request->get('user_id');
         if (!is_scalar($targetUserId) || !Uuid::isValid((string) $targetUserId)) {
-            $this->addFlash('error', 'Invalid target user id.');
+            $this->addFlash('error', $this->translator->trans('admin.identities.flash.invalid_target_user'));
 
             return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
         }
@@ -66,7 +68,7 @@ final class AdminIdentityRelinkController extends AbstractController
         try {
             $updated = $this->identityManager->relinkIdentity($id, (string) $targetUserId);
         } catch (LogicException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
 
             return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
         }
@@ -83,7 +85,10 @@ final class AdminIdentityRelinkController extends AbstractController
             ],
         );
 
-        $this->addFlash('success', sprintf('Identity %s has been linked to %s.', $updated->provider, $updated->userEmail));
+        $this->addFlash('success', $this->translator->trans('admin.identities.flash.relinked', [
+            '%provider%' => $updated->provider,
+            '%email%' => $updated->userEmail,
+        ]));
 
         return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
     }

@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminImportJobRetryController extends AbstractController
 {
@@ -30,6 +31,7 @@ final class AdminImportJobRetryController extends AbstractController
         private readonly RetryImportJobHandler $retryImportJobHandler,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -47,7 +49,7 @@ final class AdminImportJobRetryController extends AbstractController
         );
 
         if (!$this->isCsrfTokenValid('admin_import_retry_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
             return new RedirectResponse($redirectTarget);
         }
@@ -62,9 +64,9 @@ final class AdminImportJobRetryController extends AbstractController
                     'after' => ['status' => $job->status()->value],
                 ],
             );
-            $this->addFlash('success', 'Import job queued for retry.');
+            $this->addFlash('success', 'admin.import.flash.retried');
         } catch (InvalidArgumentException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
         }
 
         return new RedirectResponse($redirectTarget);

@@ -54,7 +54,7 @@ final class ToggleFavoriteStationController extends AbstractController
         }
 
         if (!$this->isCsrfTokenValid('station_favorite_toggle_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
             return $this->redirectToRoute('ui_station_list');
         }
@@ -65,7 +65,7 @@ final class ToggleFavoriteStationController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        $this->addFlash('success', $isFavorite ? 'Station added to favorites.' : 'Station removed from favorites.');
+        $this->addFlash('success', $isFavorite ? 'flash.station.favorite_added' : 'flash.station.favorite_removed');
 
         return new RedirectResponse($this->safeReturnPathResolver->resolve(
             $request->request->get('_redirect'),

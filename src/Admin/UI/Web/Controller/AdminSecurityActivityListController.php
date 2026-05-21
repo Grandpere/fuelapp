@@ -16,17 +16,20 @@ namespace App\Admin\UI\Web\Controller;
 use App\Admin\Application\Security\SecurityActivityReader;
 use App\Admin\Application\User\AdminUserManager;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminSecurityActivityListController extends AbstractController
 {
     public function __construct(
         private readonly SecurityActivityReader $reader,
         private readonly AdminUserManager $userManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -99,17 +102,17 @@ final class AdminSecurityActivityListController extends AbstractController
         $summary = [];
 
         if (null !== $action) {
-            $summary[] = ['label' => 'Action', 'value' => $action];
+            $summary[] = ['label' => $this->t('admin.security.filter_summary.action'), 'value' => $action];
         }
         if (null !== $actorId) {
             $user = $this->userManager->getUser($actorId);
-            $summary[] = ['label' => 'Actor', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $actorId) : $actorId];
+            $summary[] = ['label' => $this->t('admin.security.filter_summary.actor'), 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $actorId) : $actorId];
         }
         if ($from instanceof DateTimeImmutable) {
-            $summary[] = ['label' => 'From', 'value' => $from->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.security.filter_summary.from'), 'value' => $from->format('Y-m-d')];
         }
         if ($to instanceof DateTimeImmutable) {
-            $summary[] = ['label' => 'To', 'value' => $to->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.security.filter_summary.to'), 'value' => $to->format('Y-m-d')];
         }
 
         return $summary;
@@ -131,15 +134,15 @@ final class AdminSecurityActivityListController extends AbstractController
 
         return [
             [
-                'label' => 'Open user',
+                'label' => $this->t('admin.security.shortcuts.open_user'),
                 'url' => $this->generateUrl('ui_admin_user_list', ['q' => $user->email]),
             ],
             [
-                'label' => 'User identities',
+                'label' => $this->t('admin.security.shortcuts.user_identities'),
                 'url' => $this->generateUrl('ui_admin_identity_list', ['user_id' => $actorId]),
             ],
             [
-                'label' => 'User audit',
+                'label' => $this->t('admin.security.shortcuts.user_audit'),
                 'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $actorId]),
             ],
         ];
@@ -159,5 +162,13 @@ final class AdminSecurityActivityListController extends AbstractController
         }
 
         return $options;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

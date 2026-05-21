@@ -20,10 +20,12 @@ use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use App\Vehicle\Domain\Vehicle;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminVehicleListController extends AbstractController
 {
@@ -33,6 +35,7 @@ final class AdminVehicleListController extends AbstractController
         private readonly MaintenanceEventRepository $maintenanceEventRepository,
         private readonly MaintenanceReminderRepository $maintenanceReminderRepository,
         private readonly AdminUserManager $userManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -176,28 +179,36 @@ final class AdminVehicleListController extends AbstractController
     {
         if ($dueReminderCount > 0) {
             return [
-                'headline' => 'Due maintenance needs review',
-                'detail' => sprintf('%d reminder%s due now.', $dueReminderCount, 1 === $dueReminderCount ? '' : 's'),
+                'headline' => $this->t('admin.vehicles.signal.due_maintenance.headline'),
+                'detail' => $this->t(
+                    1 === $dueReminderCount
+                        ? 'admin.vehicles.signal.due_maintenance.detail_one'
+                        : 'admin.vehicles.signal.due_maintenance.detail_other',
+                    ['%count%' => $dueReminderCount],
+                ),
             ];
         }
 
         if (0 === $receiptCount) {
             return [
-                'headline' => 'No receipt history',
-                'detail' => 'Vehicle has no linked receipt yet.',
+                'headline' => $this->t('admin.vehicles.signal.no_receipt_history.headline'),
+                'detail' => $this->t('admin.vehicles.signal.no_receipt_history.detail'),
             ];
         }
 
         if (0 === $eventCount) {
             return [
-                'headline' => 'No maintenance events',
-                'detail' => 'Receipt activity exists but maintenance history is still empty.',
+                'headline' => $this->t('admin.vehicles.signal.no_maintenance_events.headline'),
+                'detail' => $this->t('admin.vehicles.signal.no_maintenance_events.detail'),
             ];
         }
 
         return [
-            'headline' => 'History looks linked',
-            'detail' => sprintf('%d receipt%s and %d maintenance event%s linked.', $receiptCount, 1 === $receiptCount ? '' : 's', $eventCount, 1 === $eventCount ? '' : 's'),
+            'headline' => $this->t('admin.vehicles.signal.linked_history.headline'),
+            'detail' => $this->t('admin.vehicles.signal.linked_history.detail', [
+                '%receipt_count%' => $receiptCount,
+                '%event_count%' => $eventCount,
+            ]),
         ];
     }
 
@@ -209,12 +220,12 @@ final class AdminVehicleListController extends AbstractController
         $summary = [];
 
         if (null !== $query) {
-            $summary[] = ['label' => 'Search', 'value' => $query];
+            $summary[] = ['label' => $this->t('admin.vehicles.filter_summary.search'), 'value' => $query];
         }
 
         if (null !== $ownerId) {
             $owner = $this->userManager->getUser($ownerId);
-            $summary[] = ['label' => 'Owner', 'value' => null !== $owner ? sprintf('%s (%s)', $owner->email, $ownerId) : $ownerId];
+            $summary[] = ['label' => $this->t('admin.vehicles.filter_summary.owner'), 'value' => null !== $owner ? sprintf('%s (%s)', $owner->email, $ownerId) : $ownerId];
         }
 
         return $summary;
@@ -238,21 +249,21 @@ final class AdminVehicleListController extends AbstractController
 
             if ($row['dueReminderCount'] > 0 && !isset($shortcuts['maintenance'])) {
                 $shortcuts['maintenance'] = [
-                    'label' => 'Open next due maintenance vehicle',
+                    'label' => $this->t('admin.vehicles.shortcuts.next_due_maintenance'),
                     'url' => $this->generateUrl('ui_admin_vehicle_show', ['id' => $vehicleId, 'return_to' => '/ui/admin/vehicles']),
                 ];
             }
 
             if ($row['receiptCount'] > 0 && !isset($shortcuts['receipts'])) {
                 $shortcuts['receipts'] = [
-                    'label' => 'Open busiest receipt vehicle',
+                    'label' => $this->t('admin.vehicles.shortcuts.busiest_receipt_vehicle'),
                     'url' => $this->generateUrl('ui_admin_receipt_list', ['vehicle_id' => $vehicleId]),
                 ];
             }
 
             if (0 === $row['receiptCount'] && !isset($shortcuts['missing'])) {
                 $shortcuts['missing'] = [
-                    'label' => 'Open vehicle with no receipts',
+                    'label' => $this->t('admin.vehicles.shortcuts.vehicle_without_receipts'),
                     'url' => $this->generateUrl('ui_admin_vehicle_show', ['id' => $vehicleId, 'return_to' => '/ui/admin/vehicles']),
                 ];
             }
@@ -275,5 +286,13 @@ final class AdminVehicleListController extends AbstractController
         }
 
         return $options;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

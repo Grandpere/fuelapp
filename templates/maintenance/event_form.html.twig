@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{% if isEdit %}Edit maintenance event{% else %}New maintenance event{% endif %}{% endblock %}
+{% block title %}{% if isEdit %}{{ 'maintenance.event_form.title_edit'|trans }}{% else %}{{ 'maintenance.event_form.title_new'|trans }}{% endif %}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -31,10 +31,10 @@
     <main class="app-shell maintenance-form-page">
         <header class="maintenance-form-header">
             <div class="page-header">
-                <h1 class="page-title">{% if isEdit %}Edit maintenance event{% else %}Add maintenance event{% endif %}</h1>
-                <p class="muted section-lead">Record a maintenance operation with vehicle, timing, odometer and cost context.</p>
+                <h1 class="page-title">{% if isEdit %}{{ 'maintenance.event_form.title_edit'|trans }}{% else %}{{ 'maintenance.event_form.title_new'|trans }}{% endif %}</h1>
+                <p class="muted section-lead">{{ 'maintenance.event_form.lead'|trans }}</p>
             </div>
-            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back</a>
+            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">{{ 'common.back'|trans }}</a>
         </header>
 
         <section class="card maintenance-form-card">
@@ -42,7 +42,7 @@
                 <div class="flash flash-error">
                     <ul class="flash-list">
                         {% for error in errors %}
-                            <li>{{ error }}</li>
+                            <li>{{ error|trans }}</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -54,16 +54,16 @@
 
                 <div class="form-grid-2">
                     <label class="label">
-                        Vehicle
+                        {{ 'maintenance.form.vehicle'|trans }}
                         <select class="select" name="vehicleId" required>
-                            <option value="">Select vehicle</option>
+                            <option value="">{{ 'maintenance.form.select_vehicle'|trans }}</option>
                             {% for optionId, optionLabel in vehicleOptions %}
                                 <option value="{{ optionId }}" {% if formData.vehicleId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
                             {% endfor %}
                         </select>
                     </label>
                     <label class="label">
-                        Event type
+                        {{ 'maintenance.event_form.event_type'|trans }}
                         <select class="select" name="eventType" required>
                             {% for eventType in eventTypes %}
                                 <option value="{{ eventType }}" {% if formData.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
@@ -71,32 +71,32 @@
                         </select>
                     </label>
                     <label class="label">
-                        Date/time
+                        {{ 'maintenance.event_form.occurred_at'|trans }}
                         <input class="input" type="text" name="occurredAt" data-datepicker="datetime" value="{{ formData.occurredAt }}" autocomplete="off" required>
                     </label>
                     <label class="label">
-                        Odometer (km)
+                        {{ 'maintenance.event_form.odometer'|trans }}
                         <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
                     </label>
                     <label class="label">
-                        Total cost (EUR)
+                        {{ 'maintenance.event_form.total_cost'|trans }}
                         <input class="input" type="text" inputmode="decimal" name="totalCostEuros" value="{{ formData.totalCostEuros }}" placeholder="189.90">
-                        <small class="muted">Use an amount in euros, for example <code>189.90</code>.</small>
+                        <small class="muted">{{ 'maintenance.event_form.total_cost_help'|trans|raw }}</small>
                     </label>
                     <label class="label">
-                        Currency
+                        {{ 'maintenance.form.currency'|trans }}
                         <input class="input" type="text" maxlength="3" name="currencyCode" value="{{ formData.currencyCode }}" required>
                     </label>
                 </div>
 
                 <label class="label">
-                    Description
+                    {{ 'maintenance.form.description'|trans }}
                     <textarea class="input" name="description" rows="4" maxlength="2000">{{ formData.description }}</textarea>
                 </label>
 
                 <div class="actions-wrap">
-                    <button class="btn btn-primary" type="submit">{% if isEdit %}Save changes{% else %}Create event{% endif %}</button>
-                    <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Cancel</a>
+                    <button class="btn btn-primary" type="submit">{% if isEdit %}{{ 'maintenance.event_form.action_save'|trans }}{% else %}{{ 'maintenance.event_form.action_create'|trans }}{% endif %}</button>
+                    <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">{{ 'action.cancel'|trans }}</a>
                 </div>
             </form>
         </section>

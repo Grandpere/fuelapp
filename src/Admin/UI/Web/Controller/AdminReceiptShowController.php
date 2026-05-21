@@ -17,12 +17,14 @@ use App\Import\Application\Repository\ImportJobRepository;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Station\Application\Repository\StationRepository;
 use App\Vehicle\Application\Repository\VehicleRepository;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminReceiptShowController extends AbstractController
 {
@@ -33,6 +35,7 @@ final class AdminReceiptShowController extends AbstractController
         private readonly StationRepository $stationRepository,
         private readonly VehicleRepository $vehicleRepository,
         private readonly ImportJobRepository $importJobRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -122,34 +125,42 @@ final class AdminReceiptShowController extends AbstractController
 
         if (null !== $vehicleId) {
             $shortcuts[] = [
-                'label' => 'Open vehicle',
+                'label' => $this->t('admin.receipts.shortcuts.open_vehicle'),
                 'url' => $this->generateUrl('ui_admin_vehicle_show', ['id' => $vehicleId, 'return_to' => $returnTo]),
             ];
             $shortcuts[] = [
-                'label' => 'Vehicle receipts',
+                'label' => $this->t('admin.receipts.shortcuts.vehicle_receipts'),
                 'url' => $this->generateUrl('ui_admin_receipt_list', ['vehicle_id' => $vehicleId]),
             ];
         }
 
         if (null !== $stationId) {
             $shortcuts[] = [
-                'label' => 'Open station',
+                'label' => $this->t('admin.receipts.shortcuts.open_station'),
                 'url' => $this->generateUrl('ui_admin_station_show', ['id' => $stationId, 'return_to' => $returnTo]),
             ];
             $shortcuts[] = [
-                'label' => 'Station receipts',
+                'label' => $this->t('admin.receipts.shortcuts.station_receipts'),
                 'url' => $this->generateUrl('ui_admin_receipt_list', ['station_id' => $stationId]),
             ];
         }
 
         foreach ($this->findRelatedImports($receiptId, $returnTo) as $item) {
             $shortcuts[] = [
-                'label' => 'Open related import',
+                'label' => $this->t('admin.receipts.shortcuts.open_related_import'),
                 'url' => $item['url'],
             ];
             break;
         }
 
         return $shortcuts;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

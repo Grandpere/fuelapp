@@ -27,6 +27,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminImportJobShowController extends AbstractController
 {
@@ -36,6 +37,7 @@ final class AdminImportJobShowController extends AbstractController
         private readonly VehicleRepository $vehicleRepository,
         private readonly StationRepository $stationRepository,
         private readonly AdminUserManager $userManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -120,24 +122,24 @@ final class AdminImportJobShowController extends AbstractController
     private function buildTriageSummary(ImportJob $job, ?array $payloadData): array
     {
         $summary = [
-            'Lifecycle status' => $job->status()->value,
-            'OCR retry count' => (string) $job->ocrRetryCount(),
+            $this->t('admin.import.show.triage.lifecycle_status') => $this->t('import.status.'.$job->status()->value),
+            $this->t('admin.import.show.triage.ocr_retry_count') => (string) $job->ocrRetryCount(),
         ];
 
         $queueWait = $this->formatDuration($job->createdAt(), $job->startedAt());
         if (null !== $queueWait) {
-            $summary['Queue wait'] = $queueWait;
+            $summary[$this->t('admin.import.show.triage.queue_wait')] = $queueWait;
         }
 
         $processingTime = $this->formatDuration($job->startedAt(), $job->completedAt() ?? $job->failedAt());
         if (null !== $processingTime) {
-            $summary['Processing time'] = $processingTime;
+            $summary[$this->t('admin.import.show.triage.processing_time')] = $processingTime;
         }
 
         if (null === $payloadData) {
             $rawPayload = $job->errorPayload();
             if (is_string($rawPayload) && '' !== trim($rawPayload)) {
-                $summary['Terminal detail'] = trim($rawPayload);
+                $summary[$this->t('admin.import.show.triage.terminal_detail')] = trim($rawPayload);
             }
 
             return $summary;
@@ -145,47 +147,47 @@ final class AdminImportJobShowController extends AbstractController
 
         $fingerprint = $this->readString($payloadData, 'fingerprint');
         if (null !== $fingerprint) {
-            $summary['Fingerprint'] = $fingerprint;
+            $summary[$this->t('admin.import.show.triage.fingerprint')] = $fingerprint;
         }
 
         $provider = $this->readString($payloadData, 'provider');
         if (null !== $provider) {
-            $summary['OCR provider'] = $provider;
+            $summary[$this->t('admin.import.show.triage.ocr_provider')] = $provider;
         }
 
         $retryCount = $this->readScalar($payloadData['retryCount'] ?? null);
         if (null !== $retryCount) {
-            $summary['Retry count at terminal state'] = $retryCount;
+            $summary[$this->t('admin.import.show.triage.retry_count_terminal')] = $retryCount;
         }
 
         $fallbackReason = $this->readString($payloadData, 'fallbackReason');
         if (null !== $fallbackReason) {
-            $summary['Fallback reason'] = $fallbackReason;
+            $summary[$this->t('admin.import.show.triage.fallback_reason')] = $fallbackReason;
         }
 
         $fallbackStrategy = $this->readString($payloadData, 'fallbackStrategy');
         if (null !== $fallbackStrategy) {
-            $summary['Fallback strategy'] = $fallbackStrategy;
+            $summary[$this->t('admin.import.show.triage.fallback_strategy')] = $fallbackStrategy;
         }
 
         $duplicateOfReceiptId = $this->readString($payloadData, 'duplicateOfReceiptId');
         if (null !== $duplicateOfReceiptId) {
-            $summary['Duplicate target'] = sprintf('receipt %s', $duplicateOfReceiptId);
+            $summary[$this->t('admin.import.show.triage.duplicate_target')] = $this->t('admin.import.show.triage.duplicate_target_receipt', ['%id%' => $duplicateOfReceiptId]);
         }
 
         $duplicateOfImportJobId = $this->readString($payloadData, 'duplicateOfImportJobId');
         if (null !== $duplicateOfImportJobId) {
-            $summary['Duplicate import job'] = $duplicateOfImportJobId;
+            $summary[$this->t('admin.import.show.triage.duplicate_import_job')] = $duplicateOfImportJobId;
         }
 
         $finalizedReceiptId = $this->readString($payloadData, 'finalizedReceiptId');
         if (null !== $finalizedReceiptId) {
-            $summary['Finalized receipt'] = $finalizedReceiptId;
+            $summary[$this->t('admin.import.show.triage.finalized_receipt')] = $finalizedReceiptId;
         }
 
         $reason = $this->readString($payloadData, 'reason');
         if (null !== $reason) {
-            $summary['Duplicate reason'] = $reason;
+            $summary[$this->t('admin.import.show.triage.duplicate_reason')] = $reason;
         }
 
         $parsedDraft = $payloadData['parsedDraft'] ?? null;
@@ -200,7 +202,7 @@ final class AdminImportJobShowController extends AbstractController
                 }
 
                 if ($issueCount > 0) {
-                    $summary['Detected issues'] = (string) $issueCount;
+                    $summary[$this->t('admin.import.show.triage.detected_issues')] = (string) $issueCount;
                 }
             }
         }
@@ -240,34 +242,34 @@ final class AdminImportJobShowController extends AbstractController
 
         return match ($status) {
             'needs_review' => [
-                'probableCause' => $fallbackReason ?? $reason ?? 'OCR or parsing left the import in manual review.',
-                'nextAction' => 'Review the parsed payload and finalize the receipt once the missing fields look trustworthy.',
+                'probableCause' => $fallbackReason ?? $reason ?? $this->t('admin.import.show.triage.probable_needs_review_default'),
+                'nextAction' => $this->t('admin.import.show.triage.next_action_needs_review'),
                 'operatorNote' => null !== $fallbackStrategy
-                    ? sprintf('Current fallback strategy: %s.', str_replace('_', ' ', $fallbackStrategy))
-                    : 'Manual review remains the next path from this state.',
+                    ? $this->t('admin.import.show.triage.note_fallback_strategy', ['%strategy%' => str_replace('_', ' ', $fallbackStrategy)])
+                    : $this->t('admin.import.show.triage.note_manual_review'),
             ],
             'failed' => [
                 'probableCause' => is_string($rawPayload) && '' !== trim($rawPayload)
                     ? trim($rawPayload)
-                    : 'The import failed without a decoded payload.',
-                'nextAction' => 'Inspect the failure, then retry only if the underlying provider or input issue has been addressed.',
+                    : $this->t('admin.import.show.triage.probable_failed_default'),
+                'nextAction' => $this->t('admin.import.show.triage.next_action_failed'),
                 'operatorNote' => $job->ocrRetryCount() > 0
-                    ? sprintf('This job already consumed %d OCR retries.', $job->ocrRetryCount())
+                    ? $this->t('admin.import.show.triage.note_existing_retries', ['%count%' => $job->ocrRetryCount()])
                     : null,
             ],
             'duplicate' => [
-                'probableCause' => $reason ?? 'The import matched an existing receipt or a previously uploaded import.',
-                'nextAction' => 'Open the linked receipt or original import to confirm the duplicate before taking further action.',
+                'probableCause' => $reason ?? $this->t('admin.import.show.triage.probable_duplicate_default'),
+                'nextAction' => $this->t('admin.import.show.triage.next_action_duplicate'),
                 'operatorNote' => null,
             ],
             'processed' => [
-                'probableCause' => 'The import already created a receipt successfully.',
-                'nextAction' => 'Open the created receipt if support needs to continue on the resulting business record.',
+                'probableCause' => $this->t('admin.import.show.triage.probable_processed'),
+                'nextAction' => $this->t('admin.import.show.triage.next_action_processed'),
                 'operatorNote' => null,
             ],
             default => [
-                'probableCause' => sprintf('The import is currently in %s state.', $status),
-                'nextAction' => 'Open the current queue or detail flow and continue with the state-specific next step.',
+                'probableCause' => $this->t('admin.import.show.triage.probable_default', ['%status%' => $this->t('import.status.'.$status)]),
+                'nextAction' => $this->t('admin.import.show.triage.next_action_default'),
                 'operatorNote' => null,
             ],
         };
@@ -319,7 +321,7 @@ final class AdminImportJobShowController extends AbstractController
 
         if (null !== $resolvedFinalizedReceiptId) {
             $actions[] = [
-                'label' => 'Open created receipt',
+                'label' => $this->t('import.action.open_created_receipt'),
                 'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $resolvedFinalizedReceiptId]),
                 'variant' => 'primary',
             ];
@@ -327,7 +329,7 @@ final class AdminImportJobShowController extends AbstractController
 
         if (null !== $resolvedDuplicateReceiptId) {
             $actions[] = [
-                'label' => 'Open existing receipt',
+                'label' => $this->t('import.action.open_existing_receipt'),
                 'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $resolvedDuplicateReceiptId]),
                 'variant' => 'primary',
             ];
@@ -335,7 +337,7 @@ final class AdminImportJobShowController extends AbstractController
 
         if (null !== $resolvedDuplicateOriginalImportId) {
             $actions[] = [
-                'label' => 'Open original import',
+                'label' => $this->t('import.action.open_original_import'),
                 'url' => $this->generateUrl('ui_admin_import_job_show', ['id' => $resolvedDuplicateOriginalImportId, 'return_to' => $backToListUrl]),
                 'variant' => 'secondary',
             ];
@@ -343,7 +345,7 @@ final class AdminImportJobShowController extends AbstractController
 
         if ('processed' === $job->status()->value && [] === $actions) {
             $actions[] = [
-                'label' => 'Back to imports',
+                'label' => $this->t('import.action.back_to_imports'),
                 'url' => $backToListUrl,
                 'variant' => 'secondary',
             ];
@@ -351,7 +353,7 @@ final class AdminImportJobShowController extends AbstractController
 
         if ('duplicate' === $job->status()->value && [] === $actions) {
             $actions[] = [
-                'label' => 'Back to imports',
+                'label' => $this->t('import.action.back_to_imports'),
                 'url' => $backToListUrl,
                 'variant' => 'secondary',
             ];
@@ -393,7 +395,7 @@ final class AdminImportJobShowController extends AbstractController
         }
 
         $actions = [[
-            'label' => 'Open receipt',
+            'label' => $this->t('import.action.open_receipt'),
             'url' => $this->generateUrl('ui_admin_receipt_show', ['id' => $receipt->id()->toString(), 'return_to' => $returnTo]),
             'variant' => 'primary',
         ]];
@@ -402,7 +404,7 @@ final class AdminImportJobShowController extends AbstractController
             $vehicle = $this->vehicleRepository->get($receipt->vehicleId()->toString());
             if (null !== $vehicle) {
                 $actions[] = [
-                    'label' => 'Open vehicle',
+                    'label' => $this->t('import.show.continuity.open_vehicle'),
                     'url' => $this->generateUrl('ui_admin_vehicle_show', ['id' => $vehicle->id()->toString(), 'return_to' => $returnTo]),
                     'variant' => 'secondary',
                 ];
@@ -413,7 +415,7 @@ final class AdminImportJobShowController extends AbstractController
             $station = $this->stationRepository->getForSystem($receipt->stationId()->toString());
             if (null !== $station) {
                 $actions[] = [
-                    'label' => 'Open station',
+                    'label' => $this->t('import.show.continuity.open_station'),
                     'url' => $this->generateUrl('ui_admin_station_show', ['id' => $station->id()->toString(), 'return_to' => $returnTo]),
                     'variant' => 'secondary',
                 ];
@@ -435,22 +437,28 @@ final class AdminImportJobShowController extends AbstractController
 
         return [
             [
-                'label' => 'Owner user',
+                'label' => $this->t('admin.import.show.owner_user'),
                 'url' => $this->generateUrl('ui_admin_user_list', ['q' => $owner->email]),
             ],
             [
-                'label' => 'Owner identities',
+                'label' => $this->t('admin.import.show.owner_identities'),
                 'url' => $this->generateUrl('ui_admin_identity_list', ['user_id' => $ownerId]),
             ],
             [
-                'label' => 'Owner security',
+                'label' => $this->t('admin.import.show.owner_security'),
                 'url' => $this->generateUrl('ui_admin_security_activity_list', ['actorId' => $ownerId]),
             ],
             [
-                'label' => 'Owner audit',
+                'label' => $this->t('admin.import.show.owner_audit'),
                 'url' => $this->generateUrl('ui_admin_audit_log_list', ['actorId' => $ownerId]),
             ],
         ];
+    }
+
+    /** @param array<string, scalar> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

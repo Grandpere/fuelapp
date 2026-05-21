@@ -1,29 +1,29 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Contact{% endblock %}
+{% block title %}{{ 'contact.title'|trans }}{% endblock %}
 
 {% block body %}
     <main class="app-shell page-stack page-narrow shell-compact">
         <header class="page-header">
-            <h1 class="page-title">Contact</h1>
-            <p class="muted section-lead">Need help with imports, receipts or account access? Use the direct contact details below.</p>
+            <h1 class="page-title">{{ 'contact.title'|trans }}</h1>
+            <p class="muted section-lead">{{ 'contact.lead'|trans }}</p>
         </header>
 
         <section class="card section-card">
             <div class="card-subtle card-subtle-block stack-sm">
-                <p class="text-block-title">Support email</p>
+                <p class="text-block-title">{{ 'contact.support_email'|trans }}</p>
                 <p class="section-lead"><a href="mailto:lorenzo.marozzo@gmail.com">lorenzo.marozzo@gmail.com</a></p>
             </div>
             <div class="card-subtle card-subtle-block stack-sm">
-                <p class="text-block-title">Suggested information</p>
+                <p class="text-block-title">{{ 'contact.suggested_information'|trans }}</p>
                 <ul class="flash-list">
-                    <li>Your user email</li>
-                    <li>Import job ID or receipt ID when relevant</li>
-                    <li>Short description of the issue and expected behavior</li>
+                    <li>{{ 'contact.suggested_user_email'|trans }}</li>
+                    <li>{{ 'contact.suggested_job_or_receipt'|trans }}</li>
+                    <li>{{ 'contact.suggested_issue_summary'|trans }}</li>
                 </ul>
             </div>
             <div class="actions-wrap">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Back to receipts</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">{{ 'action.back_to_receipts'|trans }}</a>
             </div>
         </section>
     </main>

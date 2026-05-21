@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Import Job Detail{% endblock %}
+{% block title %}{{ 'admin.import.show.title'|trans }}{% endblock %}
 
 {% set admin_section = 'imports' %}
 
@@ -14,45 +14,45 @@
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
-                <h2 class="page-title">Import Job Detail</h2>
-                <p class="muted">Detailed payload and processing metadata for troubleshooting.</p>
+                <h2 class="page-title">{{ 'admin.import.show.title'|trans }}</h2>
+                <p class="muted">{{ 'admin.import.show.lead'|trans }}</p>
             </div>
         </div>
 
         <dl class="admin-dl admin-table-top">
-            <dt class="admin-dt">ID</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.id'|trans }}</dt>
             <dd class="admin-dd">{{ job.id.toString }}</dd>
-            <dt class="admin-dt">Status</dt>
-            <dd class="admin-dd">{{ job.status.value }}</dd>
-            <dt class="admin-dt">Owner ID</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.status'|trans }}</dt>
+            <dd class="admin-dd">{{ ('import.status.' ~ job.status.value)|trans }}</dd>
+            <dt class="admin-dt">{{ 'admin.import.show.field.owner_id'|trans }}</dt>
             <dd class="admin-dd">{{ job.ownerId }}</dd>
-            <dt class="admin-dt">Storage</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.storage'|trans }}</dt>
             <dd class="admin-dd">{{ job.storage }}</dd>
-            <dt class="admin-dt">File path</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.file_path'|trans }}</dt>
             <dd class="admin-dd">{{ job.filePath }}</dd>
-            <dt class="admin-dt">Original filename</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.original_filename'|trans }}</dt>
             <dd class="admin-dd">{{ job.originalFilename }}</dd>
-            <dt class="admin-dt">Mime type</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.mime_type'|trans }}</dt>
             <dd class="admin-dd">{{ job.mimeType }}</dd>
-            <dt class="admin-dt">File size</dt>
-            <dd class="admin-dd">{{ job.fileSizeBytes }} bytes</dd>
-            <dt class="admin-dt">Checksum (sha256)</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.file_size'|trans }}</dt>
+            <dd class="admin-dd">{{ 'admin.import.show.bytes'|trans({'%bytes%': job.fileSizeBytes}) }}</dd>
+            <dt class="admin-dt">{{ 'admin.import.show.field.checksum'|trans }}</dt>
             <dd class="admin-dd">{{ job.fileChecksumSha256 }}</dd>
-            <dt class="admin-dt">Created at</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.created_at'|trans }}</dt>
             <dd class="admin-dd">{{ job.createdAt|date('Y-m-d H:i:s') }}</dd>
-            <dt class="admin-dt">Updated at</dt>
+            <dt class="admin-dt">{{ 'admin.import.show.field.updated_at'|trans }}</dt>
             <dd class="admin-dd">{{ job.updatedAt|date('Y-m-d H:i:s') }}</dd>
-            <dt class="admin-dt">Started at</dt>
-            <dd class="admin-dd">{{ job.startedAt ? job.startedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
-            <dt class="admin-dt">Completed at</dt>
-            <dd class="admin-dd">{{ job.completedAt ? job.completedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
-            <dt class="admin-dt">Failed at</dt>
-            <dd class="admin-dd">{{ job.failedAt ? job.failedAt|date('Y-m-d H:i:s') : 'n/a' }}</dd>
+            <dt class="admin-dt">{{ 'admin.import.show.field.started_at'|trans }}</dt>
+            <dd class="admin-dd">{{ job.startedAt ? job.startedAt|date('Y-m-d H:i:s') : ('common.na'|trans) }}</dd>
+            <dt class="admin-dt">{{ 'admin.import.show.field.completed_at'|trans }}</dt>
+            <dd class="admin-dd">{{ job.completedAt ? job.completedAt|date('Y-m-d H:i:s') : ('common.na'|trans) }}</dd>
+            <dt class="admin-dt">{{ 'admin.import.show.field.failed_at'|trans }}</dt>
+            <dd class="admin-dd">{{ job.failedAt ? job.failedAt|date('Y-m-d H:i:s') : ('common.na'|trans) }}</dd>
         </dl>
 
         {% if triageSummary is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
-                <p class="text-block-title">Triage summary</p>
+                <p class="text-block-title">{{ 'admin.import.show.triage_summary'|trans }}</p>
                 <dl class="admin-dl">
                     {% for label, value in triageSummary %}
                         <dt class="admin-dt">{{ label }}</dt>
@@ -63,26 +63,26 @@
         {% endif %}
 
         <div class="card-subtle card-subtle-block admin-table-top">
-            <p class="text-block-title">Triage readout</p>
+            <p class="text-block-title">{{ 'admin.import.show.triage_readout'|trans }}</p>
             <dl class="admin-dl">
-                <dt class="admin-dt">Probable cause</dt>
+                <dt class="admin-dt">{{ 'admin.import.show.probable_cause'|trans }}</dt>
                 <dd class="admin-dd">{{ triageReadout.probableCause }}</dd>
-                <dt class="admin-dt">Next best action</dt>
+                <dt class="admin-dt">{{ 'admin.import.show.next_best_action'|trans }}</dt>
                 <dd class="admin-dd">{{ triageReadout.nextAction }}</dd>
                 {% if triageReadout.operatorNote is not null %}
-                    <dt class="admin-dt">Operator note</dt>
+                    <dt class="admin-dt">{{ 'admin.import.show.operator_note'|trans }}</dt>
                     <dd class="admin-dd">{{ triageReadout.operatorNote }}</dd>
                 {% endif %}
             </dl>
         </div>
 
         <div class="card-subtle card-subtle-block admin-table-top">
-            <p class="text-block-title">Support diagnostics</p>
+            <p class="text-block-title">{{ 'admin.import.show.support_diagnostics'|trans }}</p>
             <dl class="admin-dl">
-                <dt class="admin-dt">Owner</dt>
+                <dt class="admin-dt">{{ 'admin.import.show.owner'|trans }}</dt>
                 <dd class="admin-dd">{{ ownerLabel }}</dd>
                 {% if requestCorrelationId is not null %}
-                    <dt class="admin-dt">Request correlation</dt>
+                    <dt class="admin-dt">{{ 'admin.import.show.request_correlation'|trans }}</dt>
                     <dd class="admin-dd">{{ requestCorrelationId }}</dd>
                 {% endif %}
             </dl>
@@ -92,7 +92,7 @@
                         <a class="btn btn-secondary btn-compact" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
                     {% endfor %}
                     {% if requestCorrelationId is not null %}
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list', {correlationId: requestCorrelationId}) }}" data-turbo-frame="_top">Request audit trail</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_audit_log_list', {correlationId: requestCorrelationId}) }}" data-turbo-frame="_top">{{ 'admin.import.show.request_audit_trail'|trans }}</a>
                     {% endif %}
                 </div>
             {% endif %}
@@ -100,39 +100,39 @@
 
         {% if payloadData is not null %}
             <div class="card-subtle card-subtle-block admin-table-top">
-                <p class="text-block-title">Decoded payload</p>
+                <p class="text-block-title">{{ 'admin.import.show.decoded_payload'|trans }}</p>
                 <pre class="preformatted-block">{{ payloadData|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
             </div>
         {% elseif payload %}
             <div class="card-subtle card-subtle-block admin-table-top">
-                <p class="text-block-title">Raw payload</p>
+                <p class="text-block-title">{{ 'admin.import.show.raw_payload'|trans }}</p>
                 <pre class="preformatted-block">{{ payload }}</pre>
             </div>
         {% else %}
-            <p class="muted admin-table-top">No payload available.</p>
+            <p class="muted admin-table-top">{{ 'admin.import.show.no_payload'|trans }}</p>
         {% endif %}
 
         <div class="actions-wrap admin-table-top">
-            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to list</a>
-            <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}" data-turbo-frame="_top">Open user API resource</a>
-            <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry" data-turbo-frame="_top">Open admin retry endpoint</a>
+            <a class="btn btn-secondary" href="{{ backToListUrl }}" data-turbo-frame="_top">{{ 'action.back_to_list'|trans }}</a>
+            <a class="btn btn-secondary" href="/api/imports/{{ job.id.toString }}" data-turbo-frame="_top">{{ 'admin.import.show.open_user_api'|trans }}</a>
+            <a class="btn btn-secondary" href="/api/admin/imports/{{ job.id.toString }}/retry" data-turbo-frame="_top">{{ 'admin.import.show.open_admin_retry_api'|trans }}</a>
             {% if job.status.value == 'needs_review' %}
                 <form method="post" action="{{ path('ui_admin_import_job_reparse', {id: job.id.toString}) }}" data-turbo-frame="_top">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_import_reparse_' ~ job.id.toString) }}">
                     <input type="hidden" name="_redirect" value="{{ app.request.requestUri }}">
-                    <button class="btn btn-secondary" type="submit">Reparse</button>
+                    <button class="btn btn-secondary" type="submit">{{ 'import.show.reparse'|trans }}</button>
                 </form>
             {% endif %}
-            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import job and source file?');">
+            <form method="post" action="{{ path('ui_admin_import_job_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('{{ 'admin.import.index.confirm_delete'|trans|e('js') }}');">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_delete_' ~ job.id.toString) }}">
                 <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
-                <button class="btn btn-danger" type="submit">Delete</button>
+                <button class="btn btn-danger" type="submit">{{ 'action.delete'|trans }}</button>
             </form>
         </div>
 
         {% if statusActions is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
-                <p class="text-block-title">Next step</p>
+                <p class="text-block-title">{{ 'admin.import.show.next_step'|trans }}</p>
                 <div class="actions-wrap">
                     {% for action in statusActions %}
                         <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
@@ -143,7 +143,7 @@
 
         {% if receiptContinuity is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
-                <p class="text-block-title">Receipt continuity</p>
+                <p class="text-block-title">{{ 'admin.import.show.receipt_continuity'|trans }}</p>
                 <div class="actions-wrap">
                     {% for action in receiptContinuity %}
                         <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ action.url }}" data-turbo-frame="_top">{{ action.label }}</a>
@@ -155,12 +155,12 @@
 
     {% if payloadData is not null and payloadData.fallbackReason is defined %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">OCR fallback</h3>
+            <h3 class="section-title">{{ 'admin.import.show.ocr_fallback'|trans }}</h3>
             <p class="muted">
-                {{ payloadData.fallbackNotice is defined ? payloadData.fallbackNotice : 'Automatic OCR is temporarily unavailable. Manual review remains available with the original uploaded file.' }}
+                {{ payloadData.fallbackNotice is defined ? payloadData.fallbackNotice : ('import.show.ocr_fallback_default'|trans) }}
             </p>
             <div class="actions-wrap">
-                <span class="pill status-pill status-needs_review">{{ payloadData.fallbackStrategy is defined ? payloadData.fallbackStrategy|replace({'_': ' '}) : 'manual review' }}</span>
+                <span class="pill status-pill status-needs_review">{{ payloadData.fallbackStrategy is defined ? payloadData.fallbackStrategy|replace({'_': ' '}) : ('import.show.manual_review'|trans) }}</span>
                 <span class="muted compact-note">{{ payloadData.fallbackReason }}</span>
             </div>
         </section>
@@ -168,64 +168,64 @@
 
     {% if issueList|length > 0 %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Detected issues</h3>
+            <h3 class="section-title">{{ 'admin.import.show.detected_issues'|trans }}</h3>
             <p class="muted">{{ issueList|join(', ') }}</p>
         </section>
     {% endif %}
 
     {% if issuedAtMissing %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Date required before finalization</h3>
-            <p class="muted">OCR could not read the receipt date. Enter the receipt date and time below before finalizing this import.</p>
+            <h3 class="section-title">{{ 'admin.import.show.date_required'|trans }}</h3>
+            <p class="muted">{{ 'admin.import.show.date_required_lead'|trans }}</p>
         </section>
     {% endif %}
 
     {% if job.status.value == 'processed' %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Import completed</h3>
-            <p class="muted">This import already created a receipt. Jump straight to the resulting receipt from here.</p>
+            <h3 class="section-title">{{ 'admin.import.show.import_completed'|trans }}</h3>
+            <p class="muted">{{ 'admin.import.show.import_completed_lead'|trans }}</p>
             <div class="actions-wrap">
                 {% if resolvedFinalizedReceiptId is not null %}
-                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_receipt_show', {id: resolvedFinalizedReceiptId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">Open created receipt</a>
+                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_receipt_show', {id: resolvedFinalizedReceiptId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">{{ 'import.action.open_created_receipt'|trans }}</a>
                 {% else %}
-                    <span class="muted compact-note">The linked receipt is no longer available.</span>
+                    <span class="muted compact-note">{{ 'admin.import.show.linked_resource_missing'|trans }}</span>
                 {% endif %}
-                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to queue</a>
+                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}" data-turbo-frame="_top">{{ 'import.action.back_to_imports'|trans }}</a>
             </div>
         </section>
     {% elseif job.status.value == 'duplicate' %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Duplicate import</h3>
-            <p class="muted">This job matches an existing receipt or previously uploaded import. Open the existing record directly from here.</p>
+            <h3 class="section-title">{{ 'admin.import.show.duplicate_import'|trans }}</h3>
+            <p class="muted">{{ 'admin.import.show.duplicate_import_lead'|trans }}</p>
             <div class="actions-wrap">
                 {% if resolvedDuplicateReceiptId is not null %}
-                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_receipt_show', {id: resolvedDuplicateReceiptId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">Open existing receipt</a>
+                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_receipt_show', {id: resolvedDuplicateReceiptId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">{{ 'import.action.open_existing_receipt'|trans }}</a>
                 {% elseif resolvedDuplicateOriginalImportId is not null %}
-                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_import_job_show', {id: resolvedDuplicateOriginalImportId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">Open original import</a>
+                    <a class="btn btn-primary btn-compact" href="{{ path('ui_admin_import_job_show', {id: resolvedDuplicateOriginalImportId, return_to: currentImportUrl}) }}" data-turbo-frame="_top">{{ 'import.action.open_original_import'|trans }}</a>
                 {% else %}
-                    <span class="muted compact-note">The linked receipt or original import is no longer available.</span>
+                    <span class="muted compact-note">{{ 'admin.import.show.linked_resource_missing'|trans }}</span>
                 {% endif %}
-                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}" data-turbo-frame="_top">Back to queue</a>
+                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}" data-turbo-frame="_top">{{ 'import.action.back_to_imports'|trans }}</a>
             </div>
         </section>
     {% endif %}
 
     {% if job.status.value == 'failed' %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Retry Failed Job</h3>
-            <p class="muted">Queue this failed import job for async reprocessing, then come straight back here to continue the investigation.</p>
+            <h3 class="section-title">{{ 'admin.import.show.retry_failed_job'|trans }}</h3>
+            <p class="muted">{{ 'admin.import.show.retry_failed_job_lead'|trans }}</p>
             <form method="post" action="{{ path('ui_admin_import_job_retry', {id: job.id.toString}) }}" data-turbo-frame="_top">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_retry_' ~ job.id.toString) }}">
                 <input type="hidden" name="_redirect" value="{{ app.request.requestUri }}">
-                <button class="btn btn-primary btn-compact" type="submit">Retry job</button>
+                <button class="btn btn-primary btn-compact" type="submit">{{ 'admin.import.show.retry_job'|trans }}</button>
             </form>
         </section>
     {% endif %}
 
     {% if job.status.value == 'needs_review' %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Fix And Finalize</h3>
-            <p class="muted">Optional corrections can be provided before finalization. Leave fields empty to use payload values and stay anchored to this queue context after submit.</p>
+            <h3 class="section-title">{{ 'admin.import.show.fix_and_finalize'|trans }}</h3>
+            <p class="muted">{{ 'admin.import.show.fix_and_finalize_lead'|trans }}</p>
 
             <form method="post" action="{{ path('ui_admin_import_job_finalize', {id: job.id.toString}) }}" data-turbo-frame="_top" class="form-stack">
                 <input type="hidden" name="_token" value="{{ csrf_token('admin_import_finalize_' ~ job.id.toString) }}">
@@ -233,61 +233,61 @@
 
                 <div class="form-grid-2">
                     <label class="label">
-                        Issued at
-                        <span class="muted compact-note">{{ issuedAtMissing ? 'Required for this import: OCR did not detect the receipt date.' : 'Use the receipt date/time. Leave empty only when OCR already filled it.' }}</span>
+                        {{ 'admin.import.show.issued_at'|trans }}
+                        <span class="muted compact-note">{{ (issuedAtMissing ? 'admin.import.show.issued_at_required_hint' : 'admin.import.show.issued_at_hint')|trans }}</span>
                         <input class="input" type="datetime-local" name="issuedAt" value="{{ creationPayload is not null and creationPayload.issuedAt is defined and creationPayload.issuedAt is not null ? creationPayload.issuedAt|date('Y-m-d\\\\TH:i') : (parsedDraft is not null and parsedDraft.issuedAt is defined and parsedDraft.issuedAt is not null ? parsedDraft.issuedAt|date('Y-m-d\\\\TH:i') : '') }}">
                     </label>
                     <label class="label">
-                        Station name
+                        {{ 'admin.import.show.station_name'|trans }}
                         <input class="input" type="text" name="stationName" value="{{ creationPayload is not null and creationPayload.stationName is defined ? creationPayload.stationName : (parsedDraft is not null and parsedDraft.stationName is defined ? parsedDraft.stationName : '') }}">
                     </label>
                     <label class="label">
-                        Station street
+                        {{ 'admin.import.show.station_street'|trans }}
                         <input class="input" type="text" name="stationStreetName" value="{{ creationPayload is not null and creationPayload.stationStreetName is defined ? creationPayload.stationStreetName : (parsedDraft is not null and parsedDraft.stationStreetName is defined ? parsedDraft.stationStreetName : '') }}">
                     </label>
                     <label class="label">
-                        Station postal code
+                        {{ 'admin.import.show.station_postal_code'|trans }}
                         <input class="input" type="text" name="stationPostalCode" value="{{ creationPayload is not null and creationPayload.stationPostalCode is defined ? creationPayload.stationPostalCode : (parsedDraft is not null and parsedDraft.stationPostalCode is defined ? parsedDraft.stationPostalCode : '') }}">
                     </label>
                     <label class="label">
-                        Station city
+                        {{ 'admin.import.show.station_city'|trans }}
                         <input class="input" type="text" name="stationCity" value="{{ creationPayload is not null and creationPayload.stationCity is defined ? creationPayload.stationCity : (parsedDraft is not null and parsedDraft.stationCity is defined ? parsedDraft.stationCity : '') }}">
                     </label>
                     <label class="label">
-                        Latitude (micro degrees)
+                        {{ 'admin.import.show.latitude_micro_degrees'|trans }}
                         <input class="input" type="number" name="latitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.latitudeMicroDegrees is defined ? creationPayload.latitudeMicroDegrees : '' }}" step="1">
                     </label>
                     <label class="label">
-                        Longitude (micro degrees)
+                        {{ 'admin.import.show.longitude_micro_degrees'|trans }}
                         <input class="input" type="number" name="longitudeMicroDegrees" value="{{ creationPayload is not null and creationPayload.longitudeMicroDegrees is defined ? creationPayload.longitudeMicroDegrees : '' }}" step="1">
                     </label>
                     <label class="label">
-                        Odometer (km)
+                        {{ 'admin.import.show.odometer'|trans }}
                         <input class="input" type="number" name="odometerKilometers" value="{{ creationPayload is not null and creationPayload.odometerKilometers is defined ? creationPayload.odometerKilometers : (parsedDraft is not null and parsedDraft.odometerKilometers is defined ? parsedDraft.odometerKilometers : '') }}" min="0" step="1">
                     </label>
                 </div>
 
                 <div class="form-stack">
-                    <p class="text-block-title">Receipt lines</p>
+                    <p class="text-block-title">{{ 'admin.import.show.receipt_lines'|trans }}</p>
                     {% if reviewLines|length > 0 %}
                         {% for line in reviewLines %}
                             <section class="card-subtle card-subtle-block">
-                                <p class="compact-note muted">Line {{ loop.index }}</p>
+                                <p class="compact-note muted">{{ 'admin.import.show.line_number'|trans({'%index%': loop.index}) }}</p>
                                 <div class="form-grid-2">
                                     <label class="label">
-                                        Fuel type
+                                        {{ 'receipt.form.fuel_type'|trans }}
                                         <input class="input" type="text" name="lines[{{ loop.index0 }}][fuelType]" value="{{ line.fuelType is defined ? line.fuelType : '' }}" placeholder="diesel">
                                     </label>
                                     <label class="label">
-                                        Quantity (mL)
+                                        {{ 'admin.import.show.quantity_ml'|trans }}
                                         <input class="input" type="number" name="lines[{{ loop.index0 }}][quantityMilliLiters]" value="{{ line.quantityMilliLiters is defined and line.quantityMilliLiters is not null ? line.quantityMilliLiters : '' }}" min="1" step="1">
                                     </label>
                                     <label class="label">
-                                        Unit price (deci-cents/L)
+                                        {{ 'admin.import.show.unit_price_deci_cents'|trans }}
                                         <input class="input" type="number" name="lines[{{ loop.index0 }}][unitPriceDeciCentsPerLiter]" value="{{ line.unitPriceDeciCentsPerLiter is defined and line.unitPriceDeciCentsPerLiter is not null ? line.unitPriceDeciCentsPerLiter : '' }}" min="0" step="1">
                                     </label>
                                     <label class="label">
-                                        VAT rate (%)
+                                        {{ 'admin.import.show.vat_rate'|trans }}
                                         <input class="input" type="number" name="lines[{{ loop.index0 }}][vatRatePercent]" value="{{ line.vatRatePercent is defined and line.vatRatePercent is not null ? line.vatRatePercent : '' }}" min="0" max="100" step="1">
                                     </label>
                                 </div>
@@ -295,22 +295,22 @@
                         {% endfor %}
                     {% else %}
                         <section class="card-subtle card-subtle-block">
-                            <p class="muted">No fuel lines were parsed. Add one manually below if you want to finalize this import.</p>
+                            <p class="muted">{{ 'admin.import.show.no_fuel_lines'|trans }}</p>
                             <div class="form-grid-2">
                                 <label class="label">
-                                    Fuel type
+                                    {{ 'receipt.form.fuel_type'|trans }}
                                     <input class="input" type="text" name="lines[0][fuelType]" value="" placeholder="diesel">
                                 </label>
                                 <label class="label">
-                                    Quantity (mL)
+                                    {{ 'admin.import.show.quantity_ml'|trans }}
                                     <input class="input" type="number" name="lines[0][quantityMilliLiters]" value="" min="1" step="1">
                                 </label>
                                 <label class="label">
-                                    Unit price (deci-cents/L)
+                                    {{ 'admin.import.show.unit_price_deci_cents'|trans }}
                                     <input class="input" type="number" name="lines[0][unitPriceDeciCentsPerLiter]" value="" min="0" step="1">
                                 </label>
                                 <label class="label">
-                                    VAT rate (%)
+                                    {{ 'admin.import.show.vat_rate'|trans }}
                                     <input class="input" type="number" name="lines[0][vatRatePercent]" value="" min="0" max="100" step="1">
                                 </label>
                             </div>
@@ -319,8 +319,8 @@
                 </div>
 
                 <div class="actions-wrap">
-                    <button class="btn btn-primary btn-compact" type="submit">Finalize job</button>
-                    <a class="btn btn-secondary btn-compact" href="/api/docs">Finalize from API docs</a>
+                    <button class="btn btn-primary btn-compact" type="submit">{{ 'admin.import.show.finalize_job'|trans }}</button>
+                    <a class="btn btn-secondary btn-compact" href="/api/docs">{{ 'admin.import.show.finalize_from_api_docs'|trans }}</a>
                 </div>
             </form>
         </section>

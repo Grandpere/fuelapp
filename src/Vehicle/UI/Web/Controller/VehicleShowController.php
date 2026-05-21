@@ -24,6 +24,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class VehicleShowController extends AbstractController
 {
@@ -33,6 +34,7 @@ final class VehicleShowController extends AbstractController
         private readonly MaintenanceEventRepository $maintenanceEventRepository,
         private readonly MaintenancePlannedCostRepository $maintenancePlannedCostRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -116,21 +118,25 @@ final class VehicleShowController extends AbstractController
 
         $attentionSummary = null;
         if (null !== $nextMaintenancePlan) {
-            $attentionSummary = sprintf(
-                'Next planned maintenance: %s on %s.',
-                $nextMaintenancePlan->label(),
-                $nextMaintenancePlan->plannedFor()->format('d/m/Y'),
+            $attentionSummary = $this->t(
+                'vehicle.show.next_planned_maintenance',
+                [
+                    '%label%' => $nextMaintenancePlan->label(),
+                    '%date%' => $nextMaintenancePlan->plannedFor()->format('d/m/Y'),
+                ],
             );
         } elseif (null !== $latestMaintenanceEvent) {
-            $attentionSummary = sprintf(
-                'Last maintenance recorded: %s on %s.',
-                $latestMaintenanceEvent->eventType()->value,
-                $latestMaintenanceEvent->occurredAt()->format('d/m/Y'),
+            $attentionSummary = $this->t(
+                'vehicle.show.last_maintenance_recorded',
+                [
+                    '%type%' => $latestMaintenanceEvent->eventType()->value,
+                    '%date%' => $latestMaintenanceEvent->occurredAt()->format('d/m/Y'),
+                ],
             );
         } elseif (null !== $latestReceipt) {
-            $attentionSummary = sprintf(
-                'Latest fuel receipt tracked on %s.',
-                $latestReceipt['issuedAt']->format('d/m/Y'),
+            $attentionSummary = $this->t(
+                'vehicle.show.latest_fuel_receipt_tracked',
+                ['%date%' => $latestReceipt['issuedAt']->format('d/m/Y')],
             );
         }
 
@@ -154,4 +160,10 @@ final class VehicleShowController extends AbstractController
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';
+
+    /** @param array<string, string> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
+    }
 }

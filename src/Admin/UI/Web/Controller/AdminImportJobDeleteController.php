@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminImportJobDeleteController extends AbstractController
 {
@@ -30,6 +31,7 @@ final class AdminImportJobDeleteController extends AbstractController
         private readonly DeleteImportJobHandler $deleteImportJobHandler,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -41,7 +43,7 @@ final class AdminImportJobDeleteController extends AbstractController
         }
 
         if (!$this->isCsrfTokenValid('admin_import_delete_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
             return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
         }
@@ -56,7 +58,7 @@ final class AdminImportJobDeleteController extends AbstractController
                     'after' => ['deleted' => true],
                 ],
             );
-            $this->addFlash('success', 'Import file and job deleted.');
+            $this->addFlash('success', 'admin.import.flash.deleted');
 
             return new RedirectResponse(
                 $this->safeReturnPathResolver->resolve(
@@ -65,7 +67,7 @@ final class AdminImportJobDeleteController extends AbstractController
                 ),
             );
         } catch (InvalidArgumentException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
 
             return $this->redirectToRoute('ui_admin_import_job_show', ['id' => $id]);
         }

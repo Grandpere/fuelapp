@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}New Receipt{% endblock %}
+{% block title %}{{ 'receipt.form.title_new'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -106,6 +106,12 @@
             box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-border) 38%, transparent);
         }
 
+        .station-lookup-option.is-selected {
+            border-color: var(--accent-border);
+            background: color-mix(in srgb, var(--accent-soft-bg) 72%, white 28%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-border) 38%, transparent);
+        }
+
         .station-lookup-option-content {
             display: grid;
             gap: 0.18rem;
@@ -125,6 +131,24 @@
 
         .station-lookup-option-badge-public {
             background: color-mix(in srgb, #f8b133 32%, white 68%);
+        }
+
+        .station-lookup-option-selection-badge {
+            display: none;
+            width: fit-content;
+            padding: 0.18rem 0.5rem;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--accent-border) 20%, white 80%);
+            color: var(--text-strong);
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .station-lookup-option:has(input:checked) .station-lookup-option-selection-badge,
+        .station-lookup-option.is-selected .station-lookup-option-selection-badge {
+            display: inline-flex;
         }
 
         .station-lookup-option strong {
@@ -229,10 +253,10 @@
     <main class="app-shell new-page">
         <header class="new-header">
             <div class="page-header">
-                <h1 class="page-title">Add receipt</h1>
-                <p class="muted section-lead">Create a receipt manually when you do not want to go through the import flow.</p>
+                <h1 class="page-title">{{ 'receipt.form.title_new'|trans }}</h1>
+                <p class="muted section-lead">{{ 'receipt.form.lead_new'|trans }}</p>
             </div>
-            <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Back to list</a>
+            <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">{{ 'receipt.index.back_to_list'|trans }}</a>
         </header>
 
         <section class="card new-card">

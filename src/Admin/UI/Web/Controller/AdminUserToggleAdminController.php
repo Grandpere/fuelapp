@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminUserToggleAdminController extends AbstractController
 {
@@ -33,6 +34,7 @@ final class AdminUserToggleAdminController extends AbstractController
     public function __construct(
         private readonly AdminUserManager $userManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -61,7 +63,7 @@ final class AdminUserToggleAdminController extends AbstractController
         try {
             $updated = $this->userManager->updateUser($id, null, !$isAdmin, null, $actorId);
         } catch (LogicException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
 
             return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
         }
@@ -78,7 +80,10 @@ final class AdminUserToggleAdminController extends AbstractController
             ],
         );
 
-        $this->addFlash('success', sprintf('User %s is now %s.', $updated->email, $updated->isAdmin() ? 'admin' : 'standard'));
+        $this->addFlash('success', $this->translator->trans('admin.users.flash.role_updated', [
+            '%email%' => $updated->email,
+            '%role%' => $this->translator->trans($updated->isAdmin() ? 'admin.users.roles.admin' : 'admin.users.roles.standard'),
+        ]));
 
         return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
     }

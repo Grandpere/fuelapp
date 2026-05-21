@@ -1,3 +1,25 @@
+# TODO - UI i18n migration (fr default, en fallback)
+
+## Plan
+- [completed] Define the translation strategy and migration scope with the user.
+- [completed] Write the design spec for progressive Symfony translations with `fr` default and `en` fallback.
+- [completed] Review the written spec with the user before turning it into an implementation plan.
+- [completed] Translate the main user-facing shell plus receipt, import, station, public fuel map, and analytics flows.
+- [completed] Translate the admin/back-office shell, dashboard, and import workflows.
+- [completed] Translate the remaining user-facing dashboard, vehicle, and maintenance screens plus their tests.
+- [completed] Re-run quality gates and prepare the manual functional validation handover.
+- [completed] Translate admin users, identities, security, and audit screens plus related tests.
+- [completed] Translate the admin vehicle, station, and public fuel diagnostics screens plus related tests.
+- [completed] Translate the remaining admin receipt and maintenance screens.
+- [completed] Hand over the remaining manual functional admin validation.
+
+# TODO - SP41-003 Topbar account actions responsiveness
+
+## Plan
+- [completed] Inspect the shared authenticated shell and confirm why the account controls overflow.
+- [completed] Rework the topbar layout so navigation and account actions remain visible without awkward scrolling.
+- [completed] Verify the header on desktop and mobile-sized viewports, then run the relevant quality checks.
+
 # TODO - SP38-001 Public fuel station import and cache
 
 ## Plan
@@ -36,7 +58,7 @@
 - [completed] Design a dedicated bulk nearby-public reader for analytics instead of reusing the generic list search.
 - [completed] Enrich the analytics station map with nearby public stations not already matched.
 - [completed] Update analytics UI and fallback list to distinguish visited, matched public and nearby public stations.
-- [pending] Add or update unit/integration/functional coverage and run quality gates.
+- [completed] Add or update unit/integration/functional coverage and run quality gates.
 
 # TODO - SP40-001 Station picker and import matching
 
@@ -65,14 +87,35 @@
 # TODO - SP40-004 Station picker UX polish
 
 ## Plan
-- [pending] Make the active suggestion state explicit in manual receipt creation.
-- [pending] Mirror the same clarity in import review without changing business behavior.
-- [pending] Add/update the most relevant coverage and run quality gates.
+- [completed] Make the active suggestion state explicit in manual receipt creation.
+- [completed] Mirror the same clarity in import review without changing business behavior.
+- [completed] Add/update the most relevant coverage and run quality gates.
 
 # TODO - SP41-001 Favorite stations
 
 ## Plan
-- [pending] Add a per-user favorite relation on internal stations with migration and repository support.
-- [pending] Expose favorite toggles on station list and station detail pages.
-- [pending] Surface favorite state in analytics station context.
-- [pending] Add/update unit, integration, and functional coverage and run quality gates.
+- [completed] Add a per-user favorite relation on internal stations with migration and repository support.
+- [completed] Expose favorite toggles on station list and station detail pages.
+- [completed] Surface favorite state in analytics station context.
+- [completed] Add/update unit, integration, and functional coverage and run quality gates.
+
+# TODO - SP41-002 Favorite stations ranking and filtering
+
+## Plan
+- [completed] Make favorites rise to the top of the station index while preserving recent-visit ordering inside each group.
+- [completed] Add a lightweight `favorites only` filter on the station index with a dedicated empty state.
+- [completed] Add or update the relevant functional coverage and run quality gates.
+
+# TODO - UI locale switch V1
+
+## Plan
+- [completed] Add failing functional coverage for the session-backed locale switch on login and authenticated pages.
+- [completed] Implement the locale switch route, request subscriber, and shared UI controls in a Symfony-standard way.
+- [completed] Run targeted checks plus standard quality gates and hand over the manual functional validation.
+
+# TODO - Public fuel badge colors
+
+## Plan
+- [completed] Add a maintainable fuel-family mapping for public station badges.
+- [completed] Update the public stations UI so fuel pills use differentiated real-world-inspired colors.
+- [completed] Add targeted coverage and run quality gates.

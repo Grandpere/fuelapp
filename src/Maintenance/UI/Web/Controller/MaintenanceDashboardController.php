@@ -33,6 +33,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class MaintenanceDashboardController extends AbstractController
 {
@@ -46,6 +47,7 @@ final class MaintenanceDashboardController extends AbstractController
         private readonly MaintenanceCostVarianceReader $varianceReader,
         private readonly VehicleRepository $vehicleRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -244,57 +246,48 @@ final class MaintenanceDashboardController extends AbstractController
         $message = null;
         if ($state->isDue) {
             if ($state->dueByDate && $state->dueByOdometer) {
-                $message = 'This rule is already due by date and mileage.';
+                $message = $this->t('maintenance_dashboard.rule_due_date_and_mileage');
             } elseif ($state->dueByDate) {
-                $message = 'This rule is already due by date.';
+                $message = $this->t('maintenance_dashboard.rule_due_date');
             } elseif ($state->dueByOdometer) {
-                $message = 'This rule is already due by mileage.';
+                $message = $this->t('maintenance_dashboard.rule_due_mileage');
             } else {
-                $message = 'This rule is already due.';
+                $message = $this->t('maintenance_dashboard.rule_due');
             }
         } elseif ('date' === $rule->triggerMode()->value) {
             if (null === $state->lastEventOccurredAt) {
-                $message = sprintf(
-                    'No matching maintenance event yet. The first reminder will appear after %d day%s.',
-                    $rule->intervalDays() ?? 0,
-                    1 === ($rule->intervalDays() ?? 0) ? '' : 's',
+                $intervalDays = $rule->intervalDays() ?? 0;
+                $message = $this->t(
+                    1 === $intervalDays ? 'maintenance_dashboard.first_reminder_after_days' : 'maintenance_dashboard.first_reminder_after_days_plural',
+                    ['%count%' => (string) $intervalDays],
                 );
             } elseif (null !== $state->dueAtDate) {
-                $message = sprintf('Next due on %s.', $state->dueAtDate->format('d/m/Y'));
+                $message = $this->t('maintenance_dashboard.next_due_on', ['%date%' => $state->dueAtDate->format('d/m/Y')]);
             }
         } elseif ('odometer' === $rule->triggerMode()->value) {
             if (null === $currentOdometer) {
-                $message = 'Waiting for odometer data from a receipt or maintenance event to evaluate this rule.';
+                $message = $this->t('maintenance_dashboard.waiting_for_odometer_data');
             } elseif (null !== $state->dueAtOdometerKilometers) {
-                $message = sprintf('Next due at %d km. Current estimate: %d km.', $state->dueAtOdometerKilometers, $currentOdometer);
+                $message = $this->t('maintenance_dashboard.next_due_at_current_estimate', ['%due%' => (string) $state->dueAtOdometerKilometers, '%current%' => (string) $currentOdometer]);
             }
         } else {
             if (null === $currentOdometer && null !== $state->dueAtDate) {
-                $message = sprintf(
-                    'Next due on %s. Mileage-based due checks will start once the vehicle has odometer data.',
-                    $state->dueAtDate->format('d/m/Y'),
-                );
+                $message = $this->t('maintenance_dashboard.next_due_on_odometer_starts_later', ['%date%' => $state->dueAtDate->format('d/m/Y')]);
             } elseif (null !== $state->dueAtDate && null !== $state->dueAtOdometerKilometers && null !== $currentOdometer) {
-                $message = sprintf(
-                    'Next due on %s or at %d km. Current estimate: %d km.',
-                    $state->dueAtDate->format('d/m/Y'),
-                    $state->dueAtOdometerKilometers,
-                    $currentOdometer,
-                );
+                $message = $this->t('maintenance_dashboard.next_due_on_or_at', ['%date%' => $state->dueAtDate->format('d/m/Y'), '%due%' => (string) $state->dueAtOdometerKilometers, '%current%' => (string) $currentOdometer]);
             } elseif (null !== $state->dueAtDate) {
-                $message = sprintf('Next due on %s.', $state->dueAtDate->format('d/m/Y'));
+                $message = $this->t('maintenance_dashboard.next_due_on', ['%date%' => $state->dueAtDate->format('d/m/Y')]);
             } elseif (null !== $state->dueAtOdometerKilometers) {
-                $message = sprintf('Next due at %d km.', $state->dueAtOdometerKilometers);
+                $message = $this->t('maintenance_dashboard.next_due_at', ['%due%' => (string) $state->dueAtOdometerKilometers]);
             }
         }
 
         $lastEventSummary = null;
         if (null !== $state->lastEventOccurredAt) {
-            $lastEventSummary = sprintf(
-                'Last matching event: %s%s',
-                $state->lastEventOccurredAt->format('d/m/Y H:i'),
-                null !== $state->lastEventOdometerKilometers ? sprintf(' · %d km', $state->lastEventOdometerKilometers) : '',
-            );
+            $lastEventSummary = $this->t('maintenance_dashboard.last_matching_event', [
+                '%date%' => $state->lastEventOccurredAt->format('d/m/Y H:i'),
+                '%odometer_suffix%' => null !== $state->lastEventOdometerKilometers ? sprintf(' · %d km', $state->lastEventOdometerKilometers) : '',
+            ]);
         }
 
         return [
@@ -310,36 +303,36 @@ final class MaintenanceDashboardController extends AbstractController
         if (!$state instanceof ReminderDueState) {
             return [
                 'stage' => 'configured',
-                'label' => 'Configured',
+                'label' => $this->t('maintenance_dashboard.status_configured'),
                 'badgeClass' => 'pill-maintenance-later',
-                'detail' => 'Waiting for the first evaluation pass for this rule.',
+                'detail' => $this->t('maintenance_dashboard.waiting_first_evaluation'),
             ];
         }
 
         if ($state->isDue) {
             return [
                 'stage' => 'due_now',
-                'label' => 'Due now',
+                'label' => $this->t('maintenance_dashboard.status_due_now'),
                 'badgeClass' => 'pill-reminder-due',
-                'detail' => 'A triggered reminder is ready for follow-up.',
+                'detail' => $this->t('maintenance_dashboard.follow_up_ready'),
             ];
         }
 
         if (ReminderRuleTriggerMode::ODOMETER === $rule->triggerMode() && null === $currentOdometer) {
             return [
                 'stage' => 'configured',
-                'label' => 'Configured',
+                'label' => $this->t('maintenance_dashboard.status_configured'),
                 'badgeClass' => 'pill-maintenance-later',
-                'detail' => 'Waiting for odometer data before mileage-based tracking can start.',
+                'detail' => $this->t('maintenance_dashboard.waiting_odometer_tracking'),
             ];
         }
 
         if (null === $state->lastEventOccurredAt) {
             return [
                 'stage' => 'configured',
-                'label' => 'Configured',
+                'label' => $this->t('maintenance_dashboard.status_configured'),
                 'badgeClass' => 'pill-maintenance-later',
-                'detail' => 'No matching maintenance event has been logged yet.',
+                'detail' => $this->t('maintenance_dashboard.no_matching_event'),
             ];
         }
 
@@ -348,9 +341,9 @@ final class MaintenanceDashboardController extends AbstractController
             if ($daysUntilDue >= 0 && $daysUntilDue <= 14) {
                 return [
                     'stage' => 'due_soon',
-                    'label' => 'Due soon',
+                    'label' => $this->t('maintenance_dashboard.status_due_soon'),
                     'badgeClass' => 'pill-maintenance-soon',
-                    'detail' => sprintf('Next due on %s.', $state->dueAtDate->format('d/m/Y')),
+                    'detail' => $this->t('maintenance_dashboard.next_due_on', ['%date%' => $state->dueAtDate->format('d/m/Y')]),
                 ];
             }
         }
@@ -360,18 +353,24 @@ final class MaintenanceDashboardController extends AbstractController
             if ($remainingKilometers >= 0 && $remainingKilometers <= 1000) {
                 return [
                     'stage' => 'due_soon',
-                    'label' => 'Due soon',
+                    'label' => $this->t('maintenance_dashboard.status_due_soon'),
                     'badgeClass' => 'pill-maintenance-soon',
-                    'detail' => sprintf('Next due at %d km. Current estimate: %d km.', $state->dueAtOdometerKilometers, $currentOdometer),
+                    'detail' => $this->t('maintenance_dashboard.due_soon_at', ['%due%' => (string) $state->dueAtOdometerKilometers, '%current%' => (string) $currentOdometer]),
                 ];
             }
         }
 
         return [
             'stage' => 'watching',
-            'label' => 'Watching',
+            'label' => $this->t('maintenance_dashboard.status_watching'),
             'badgeClass' => 'pill-soft-info',
-            'detail' => 'The rule is active and being tracked, but it is not close to due yet.',
+            'detail' => $this->t('maintenance_dashboard.rule_active_not_close'),
         ];
+    }
+
+    /** @param array<string, string> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

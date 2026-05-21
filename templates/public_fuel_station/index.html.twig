@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Public Fuel Stations{% endblock %}
+{% block title %}{{ 'public_fuel_station.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -91,10 +91,58 @@
             color: var(--text-soft);
         }
 
+        .public-fuel-fuel-pill.fuel-theme-petrol {
+            border-color: rgba(115, 168, 37, 0.42);
+            background: rgba(146, 196, 60, 0.14);
+            color: #31540b;
+        }
+
+        .public-fuel-fuel-pill.fuel-theme-diesel {
+            border-color: rgba(214, 162, 9, 0.42);
+            background: rgba(255, 198, 31, 0.16);
+            color: #6c4b00;
+        }
+
+        .public-fuel-fuel-pill.fuel-theme-gas {
+            border-color: rgba(66, 145, 214, 0.42);
+            background: rgba(109, 178, 240, 0.16);
+            color: #0c4775;
+        }
+
+        :root[data-theme="dark"] .public-fuel-fuel-pill.fuel-theme-petrol {
+            color: #dff4ad;
+            background: rgba(146, 196, 60, 0.18);
+        }
+
+        :root[data-theme="dark"] .public-fuel-fuel-pill.fuel-theme-diesel {
+            color: #ffe7a1;
+            background: rgba(255, 198, 31, 0.2);
+        }
+
+        :root[data-theme="dark"] .public-fuel-fuel-pill.fuel-theme-gas {
+            color: #d6edff;
+            background: rgba(109, 178, 240, 0.2);
+        }
+
         .public-fuel-fuel-pill.is-available {
             color: var(--text-strong);
             border-color: rgba(32, 176, 124, 0.34);
             background: rgba(32, 176, 124, 0.14);
+        }
+
+        .public-fuel-fuel-pill.is-available.fuel-theme-petrol {
+            border-color: rgba(115, 168, 37, 0.54);
+            background: rgba(146, 196, 60, 0.24);
+        }
+
+        .public-fuel-fuel-pill.is-available.fuel-theme-diesel {
+            border-color: rgba(214, 162, 9, 0.54);
+            background: rgba(255, 198, 31, 0.26);
+        }
+
+        .public-fuel-fuel-pill.is-available.fuel-theme-gas {
+            border-color: rgba(66, 145, 214, 0.54);
+            background: rgba(109, 178, 240, 0.24);
         }
 
         .public-fuel-empty {
@@ -119,41 +167,41 @@
         <section class="public-fuel-hero">
             <article class="card public-fuel-hero-card">
                 <div>
-                    <h1 class="page-title">Public Fuel Stations</h1>
-                    <p class="muted section-lead">Browse official public station data from the local cache. This map is separate from your visited stations, so public prices never rewrite your receipt history.</p>
+                    <h1 class="page-title">{{ 'public_fuel_station.title'|trans }}</h1>
+                    <p class="muted section-lead">{{ 'public_fuel_station.lead'|trans }}</p>
                 </div>
                 <div class="public-fuel-meta">
-                    <span class="pill">{{ result.totalCount }} station{{ result.totalCount == 1 ? '' : 's' }} matching</span>
-                    <span class="pill">Showing {{ result.items|length }} max {{ result.limit }}</span>
-                    {% if selectedFuelType %}<span class="pill">Fuel {{ selectedFuelType.sourceLabel }}</span>{% endif %}
+                    <span class="pill">{{ (result.totalCount == 1 ? 'public_fuel_station.matching_count_one' : 'public_fuel_station.matching_count_other')|trans({'%count%': result.totalCount}) }}</span>
+                    <span class="pill">{{ 'public_fuel_station.showing_limit'|trans({'%shown%': result.items|length, '%limit%': result.limit}) }}</span>
+                    {% if selectedFuelType %}<span class="pill public-fuel-fuel-pill fuel-theme-{{ fuelThemes[selectedFuelType.value]|default('neutral') }}">{{ 'public_fuel_station.fuel_badge'|trans({'%fuel%': selectedFuelType.sourceLabel}) }}</span>{% endif %}
                 </div>
             </article>
 
             <section class="card public-fuel-filter-card">
                 <form method="get" action="{{ path('ui_public_fuel_station_map') }}" class="public-fuel-filter-grid">
                     <label class="label">
-                        Search city, postcode or address
-                        <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="Paris, 75001, avenue...">
+                        {{ 'public_fuel_station.search'|trans }}
+                        <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="{{ 'public_fuel_station.search_placeholder'|trans }}">
                     </label>
                     <label class="label">
-                        Fuel
+                        {{ 'public_fuel_station.fuel'|trans }}
                         <select class="select" name="fuel">
-                            <option value="">All fuels</option>
+                            <option value="">{{ 'public_fuel_station.fuel_all'|trans }}</option>
                             {% for fuel in fuelOptions %}
                                 <option value="{{ fuel.value }}" {% if filters.fuel == fuel.value %}selected{% endif %}>{{ fuel.sourceLabel }}</option>
                             {% endfor %}
                         </select>
                     </label>
                     <label class="label">
-                        Availability
+                        {{ 'public_fuel_station.availability'|trans }}
                         <select class="select" name="available">
-                            <option value="1" {% if filters.available == '1' %}selected{% endif %}>Available only</option>
-                            <option value="0" {% if filters.available == '0' %}selected{% endif %}>With known price</option>
+                            <option value="1" {% if filters.available == '1' %}selected{% endif %}>{{ 'public_fuel_station.available_only'|trans }}</option>
+                            <option value="0" {% if filters.available == '0' %}selected{% endif %}>{{ 'public_fuel_station.with_known_price'|trans }}</option>
                         </select>
                     </label>
                     <div class="actions-wrap">
-                        <button class="btn btn-primary" type="submit">Apply filters</button>
-                        <a class="btn btn-secondary" href="{{ path('ui_public_fuel_station_map') }}">Reset</a>
+                        <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                        <a class="btn btn-secondary" href="{{ path('ui_public_fuel_station_map') }}">{{ 'action.reset'|trans }}</a>
                     </div>
                 </form>
             </section>
@@ -162,7 +210,7 @@
         <section class="public-fuel-map-grid">
             <section class="card public-fuel-map-card">
                 {% if mapPoints is empty %}
-                    <div class="empty-state public-fuel-empty">No public station is available for the current filters. Run the public station sync or widen the filters.</div>
+                    <div class="empty-state public-fuel-empty">{{ 'public_fuel_station.empty_filtered'|trans }}</div>
                 {% else %}
                     <div class="public-fuel-map" id="public-fuel-station-map"></div>
                     <script type="application/json" id="public-fuel-station-map-data">{{ mapPoints|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT'))|raw }}</script>
@@ -170,7 +218,7 @@
             </section>
 
             <section class="card public-fuel-list-card">
-                <h2 class="section-title">Station list</h2>
+                <h2 class="section-title">{{ 'public_fuel_station.station_list'|trans }}</h2>
                 <div class="public-fuel-list">
                     {% for station in result.items %}
                         {% set selectedSnapshot = selectedFuelType ? station.fuels[selectedFuelType.value]|default(null) : null %}
@@ -180,13 +228,13 @@
                                     <strong>{{ station.city }}</strong>
                                     <div class="muted compact-note">{{ station.postalCode }} · {{ station.address }}</div>
                                 </div>
-                                {% if station.automate24 %}<span class="pill">24/24</span>{% endif %}
+                                {% if station.automate24 %}<span class="pill">{{ 'public_fuel_station.always_open'|trans }}</span>{% endif %}
                             </div>
 
                             {% if selectedSnapshot %}
                                 <div class="public-fuel-meta">
-                                    <span class="public-fuel-fuel-pill {{ selectedSnapshot.available ? 'is-available' : '' }}">
-                                        {{ selectedFuelType.sourceLabel }} · {{ selectedSnapshot.available ? 'available' : 'unavailable' }}
+                                    <span class="public-fuel-fuel-pill fuel-theme-{{ fuelThemes[selectedFuelType.value]|default('neutral') }} {{ selectedSnapshot.available ? 'is-available' : '' }}">
+                                        {{ selectedFuelType.sourceLabel }} · {{ selectedSnapshot.available ? 'public_fuel_station.available'|trans : 'public_fuel_station.unavailable'|trans }}
                                     </span>
                                     {% if selectedSnapshot.priceMilliEurosPerLiter %}
                                         <span class="public-fuel-fuel-pill is-available">{{ (selectedSnapshot.priceMilliEurosPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L</span>
@@ -196,7 +244,7 @@
                                 <div class="public-fuel-fuels">
                                     {% for fuel, snapshot in station.fuels %}
                                         {% if snapshot.priceMilliEurosPerLiter is defined and snapshot.priceMilliEurosPerLiter %}
-                                            <span class="public-fuel-fuel-pill {{ snapshot.available ? 'is-available' : '' }}">
+                                            <span class="public-fuel-fuel-pill fuel-theme-{{ fuelThemes[fuel]|default('neutral') }} {{ snapshot.available ? 'is-available' : '' }}">
                                                 {{ fuel|upper }} {{ (snapshot.priceMilliEurosPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
                                             </span>
                                         {% endif %}
@@ -205,14 +253,14 @@
                             {% endif %}
 
                             {% if station.services is not empty %}
-                                <div class="muted compact-note">Services: {{ station.services|slice(0, 4)|join(', ') }}</div>
+                                <div class="muted compact-note">{{ 'public_fuel_station.services'|trans({'%services%': station.services|slice(0, 4)|join(', ')}) }}</div>
                             {% endif %}
                             {% if station.sourceUpdatedAt %}
-                                <div class="muted compact-note">Updated: {{ station.sourceUpdatedAt|date('Y-m-d H:i') }}</div>
+                                <div class="muted compact-note">{{ 'public_fuel_station.updated_at'|trans({'%date%': station.sourceUpdatedAt|date('Y-m-d H:i')}) }}</div>
                             {% endif %}
                         </article>
                     {% else %}
-                        <div class="empty-state public-fuel-empty">No station found.</div>
+                        <div class="empty-state public-fuel-empty">{{ 'public_fuel_station.empty'|trans }}</div>
                     {% endfor %}
                 </div>
             </section>
@@ -224,6 +272,11 @@
     {{ parent() }}
     <script id="public-fuel-leaflet-script" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
+        const publicFuelMapTranslations = {
+            available: {{ 'public_fuel_station.available'|trans|json_encode|raw }},
+            unavailable: {{ 'public_fuel_station.unavailable'|trans|json_encode|raw }},
+            alwaysOpen: {{ 'public_fuel_station.always_open'|trans|json_encode|raw }}
+        };
         const initPublicFuelStationMap = () => {
             const mapContainer = document.getElementById('public-fuel-station-map');
             const dataContainer = document.getElementById('public-fuel-station-map-data');
@@ -277,7 +330,7 @@
                     : '';
                 const fuel = point.fuel ? `<br>${escapeHtml(point.fuel)}${price}` : '';
                 const availability = typeof point.available === 'boolean'
-                    ? `<br>${point.available ? 'Available' : 'Unavailable'}`
+                    ? `<br>${point.available ? publicFuelMapTranslations.available : publicFuelMapTranslations.unavailable}`
                     : '';
 
                 marker.bindPopup(
@@ -285,7 +338,7 @@
                     `${escapeHtml(point.address)}` +
                     `${fuel}` +
                     `${availability}` +
-                    `${point.automate24 ? '<br>Automate 24/24' : ''}`
+                    `${point.automate24 ? `<br>${escapeHtml(publicFuelMapTranslations.alwaysOpen)}` : ''}`
                 );
                 bounds.push([point.latitude, point.longitude]);
             });

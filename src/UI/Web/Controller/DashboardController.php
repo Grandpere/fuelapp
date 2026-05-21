@@ -29,6 +29,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class DashboardController extends AbstractController
 {
@@ -39,6 +40,7 @@ final class DashboardController extends AbstractController
         private readonly MaintenancePlannedCostRepository $maintenancePlannedCostRepository,
         private readonly VehicleRepository $vehicleRepository,
         private readonly AuthenticatedUserIdProvider $authenticatedUserIdProvider,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -110,49 +112,49 @@ final class DashboardController extends AbstractController
         $attentionItems = [];
         if (isset($needsReviewImports[0])) {
             $attentionItems[] = [
-                'title' => 'Import needs review',
-                'detail' => sprintf('"%s" is waiting for a manual check before the receipt can be created.', $needsReviewImports[0]->originalFilename()),
+                'title' => $this->t('dashboard.attention.import_needs_review'),
+                'detail' => $this->t('dashboard.attention.import_needs_review_detail', ['%file%' => $needsReviewImports[0]->originalFilename()]),
                 'actions' => [
-                    ['label' => 'Review import', 'url' => $this->generateUrl('ui_import_show', ['id' => $needsReviewImports[0]->id()->toString(), 'return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'primary'],
-                    ['label' => 'Open queue', 'url' => $this->generateUrl('ui_import_index', ['status' => ImportJobStatus::NEEDS_REVIEW->value]), 'variant' => 'secondary'],
+                    ['label' => $this->t('import.follow_up.review_next'), 'url' => $this->generateUrl('ui_import_show', ['id' => $needsReviewImports[0]->id()->toString(), 'return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'primary'],
+                    ['label' => $this->t('admin.dashboard.attention.open_queue'), 'url' => $this->generateUrl('ui_import_index', ['status' => ImportJobStatus::NEEDS_REVIEW->value]), 'variant' => 'secondary'],
                 ],
             ];
         }
 
         if (isset($failedImports[0])) {
             $attentionItems[] = [
-                'title' => 'Import failed',
-                'detail' => sprintf('"%s" stopped during processing and may need a replacement upload.', $failedImports[0]->originalFilename()),
+                'title' => $this->t('dashboard.attention.import_failed'),
+                'detail' => $this->t('dashboard.attention.import_failed_detail', ['%file%' => $failedImports[0]->originalFilename()]),
                 'actions' => [
-                    ['label' => 'Inspect failure', 'url' => $this->generateUrl('ui_import_show', ['id' => $failedImports[0]->id()->toString(), 'return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'secondary'],
-                    ['label' => 'Upload replacement', 'url' => $this->generateUrl('ui_import_index').'#import-upload-card', 'variant' => 'primary'],
+                    ['label' => $this->t('import.follow_up.inspect_failure'), 'url' => $this->generateUrl('ui_import_show', ['id' => $failedImports[0]->id()->toString(), 'return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'secondary'],
+                    ['label' => $this->t('import.action.upload_replacement'), 'url' => $this->generateUrl('ui_import_index').'#import-upload-card', 'variant' => 'primary'],
                 ],
             ];
         }
 
         if (isset($reminders[0])) {
             $reminder = $reminders[0];
-            $vehicleLabel = $vehicleLabels[$reminder->vehicleId()] ?? 'Unknown vehicle';
+            $vehicleLabel = $vehicleLabels[$reminder->vehicleId()] ?? $this->t('common.unknown_vehicle');
             $attentionItems[] = [
-                'title' => 'Maintenance is due',
-                'detail' => sprintf('%s has a triggered reminder that is ready for follow-up.', $vehicleLabel),
+                'title' => $this->t('dashboard.attention.maintenance_due'),
+                'detail' => $this->t('dashboard.attention.maintenance_due_detail', ['%vehicle%' => $vehicleLabel]),
                 'actions' => [
-                    ['label' => 'Log event now', 'url' => $this->generateUrl('ui_maintenance_event_new', ['vehicle_id' => $reminder->vehicleId(), 'return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'primary'],
-                    ['label' => 'Open maintenance', 'url' => $this->generateUrl('ui_maintenance_index', ['vehicle_id' => $reminder->vehicleId()]), 'variant' => 'secondary'],
-                    ['label' => 'Open vehicle', 'url' => $this->generateUrl('ui_vehicle_show', ['id' => $reminder->vehicleId()]), 'variant' => 'secondary'],
+                    ['label' => $this->t('maintenance_dashboard.log_event_now'), 'url' => $this->generateUrl('ui_maintenance_event_new', ['vehicle_id' => $reminder->vehicleId(), 'return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'primary'],
+                    ['label' => $this->t('analytics.open_maintenance'), 'url' => $this->generateUrl('ui_maintenance_index', ['vehicle_id' => $reminder->vehicleId()]), 'variant' => 'secondary'],
+                    ['label' => $this->t('analytics.open_vehicle'), 'url' => $this->generateUrl('ui_vehicle_show', ['id' => $reminder->vehicleId()]), 'variant' => 'secondary'],
                 ],
             ];
         }
 
         if (isset($upcomingPlans[0])) {
             $plan = $upcomingPlans[0];
-            $vehicleLabel = $vehicleLabels[$plan->vehicleId()] ?? 'Unknown vehicle';
+            $vehicleLabel = $vehicleLabels[$plan->vehicleId()] ?? $this->t('common.unknown_vehicle');
             $attentionItems[] = [
-                'title' => 'Planned maintenance is coming up',
-                'detail' => sprintf('%s has "%s" planned for %s.', $vehicleLabel, $plan->label(), $plan->plannedFor()->format('d/m/Y')),
+                'title' => $this->t('dashboard.attention.planned_maintenance_coming'),
+                'detail' => $this->t('dashboard.attention.planned_maintenance_coming_detail', ['%vehicle%' => $vehicleLabel, '%plan%' => $plan->label(), '%date%' => $plan->plannedFor()->format('d/m/Y')]),
                 'actions' => [
-                    ['label' => 'Edit plan', 'url' => $this->generateUrl('ui_maintenance_plan_edit', ['id' => $plan->id()->toString(), 'return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'secondary'],
-                    ['label' => 'Open maintenance', 'url' => $this->generateUrl('ui_maintenance_index', ['vehicle_id' => $plan->vehicleId()]), 'variant' => 'primary'],
+                    ['label' => $this->t('dashboard.edit_next_plan'), 'url' => $this->generateUrl('ui_maintenance_plan_edit', ['id' => $plan->id()->toString(), 'return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'secondary'],
+                    ['label' => $this->t('analytics.open_maintenance'), 'url' => $this->generateUrl('ui_maintenance_index', ['vehicle_id' => $plan->vehicleId()]), 'variant' => 'primary'],
                 ],
             ];
         }
@@ -160,32 +162,32 @@ final class DashboardController extends AbstractController
         return $this->render('dashboard/index.html.twig', [
             'summaryCards' => [
                 [
-                    'label' => 'Needs review',
+                    'label' => $this->t('dashboard.summary.needs_review'),
                     'value' => count($needsReviewImports),
-                    'meta' => 'Imports waiting for a manual decision',
+                    'meta' => $this->t('dashboard.summary.needs_review_meta'),
                     'url' => $this->generateUrl('ui_import_index', ['status' => ImportJobStatus::NEEDS_REVIEW->value]),
                 ],
                 [
-                    'label' => 'Failed imports',
+                    'label' => $this->t('dashboard.summary.failed_imports'),
                     'value' => count($failedImports),
-                    'meta' => 'Files that may need a replacement upload',
+                    'meta' => $this->t('dashboard.summary.failed_imports_meta'),
                     'url' => $this->generateUrl('ui_import_index', ['status' => ImportJobStatus::FAILED->value]),
                 ],
                 [
-                    'label' => 'Maintenance due',
+                    'label' => $this->t('dashboard.summary.maintenance_due'),
                     'value' => count($reminders),
-                    'meta' => 'Triggered reminders ready for follow-up',
+                    'meta' => $this->t('dashboard.summary.maintenance_due_meta'),
                     'url' => $this->generateUrl('ui_maintenance_index'),
                     'hint' => isset($reminders[0])
-                        ? sprintf('Focus on %s first', $vehicleLabels[$reminders[0]->vehicleId()] ?? 'the latest vehicle')
-                        : 'No triggered reminder is waiting right now',
+                        ? $this->t('dashboard.summary.maintenance_due_hint_first', ['%vehicle%' => $vehicleLabels[$reminders[0]->vehicleId()] ?? $this->t('common.unknown_vehicle')])
+                        : $this->t('dashboard.summary.maintenance_due_hint_empty'),
                 ],
                 [
-                    'label' => 'Receipts this month',
+                    'label' => $this->t('dashboard.summary.receipts_this_month'),
                     'value' => $receiptsThisMonthCount,
-                    'meta' => sprintf('Since %s', $monthStart->format('d/m/Y')),
+                    'meta' => $this->t('dashboard.summary.receipts_this_month_meta', ['%date%' => $monthStart->format('d/m/Y')]),
                     'url' => $this->generateUrl('ui_receipt_index', ['issued_from' => $monthStart->format('Y-m-d')]),
-                    'hint' => 0 === $receiptsThisMonthCount ? 'Start with a new receipt or an import upload' : 'Jump straight into the filtered receipt list',
+                    'hint' => 0 === $receiptsThisMonthCount ? $this->t('dashboard.summary.receipts_this_month_hint_empty') : $this->t('dashboard.summary.receipts_this_month_hint_ready'),
                 ],
             ],
             'attentionItems' => $attentionItems,
@@ -193,44 +195,50 @@ final class DashboardController extends AbstractController
             'recentImports' => $this->buildRecentImportCards(array_slice($imports, 0, 5)),
             'vehicleCount' => count($vehicles),
             'quickActions' => [
-                ['label' => 'Add receipt', 'url' => $this->generateUrl('ui_receipt_new'), 'variant' => 'primary'],
-                ['label' => 'Upload files', 'url' => $this->generateUrl('ui_import_index').'#import-upload-card', 'variant' => 'secondary'],
-                ['label' => 'Open maintenance', 'url' => $this->generateUrl('ui_maintenance_index'), 'variant' => 'secondary'],
-                ['label' => 'Open analytics', 'url' => $this->generateUrl('ui_analytics_dashboard'), 'variant' => 'secondary'],
+                ['label' => $this->t('receipt.form.action_create'), 'url' => $this->generateUrl('ui_receipt_new'), 'variant' => 'primary'],
+                ['label' => $this->t('import.index.upload_files'), 'url' => $this->generateUrl('ui_import_index').'#import-upload-card', 'variant' => 'secondary'],
+                ['label' => $this->t('analytics.open_maintenance'), 'url' => $this->generateUrl('ui_maintenance_index'), 'variant' => 'secondary'],
+                ['label' => $this->t('dashboard.open_analytics'), 'url' => $this->generateUrl('ui_analytics_dashboard'), 'variant' => 'secondary'],
             ],
             'workflowCards' => [
                 [
-                    'title' => 'Imports',
-                    'detail' => sprintf('%d need review, %d failed, %d are already resolved.', count($needsReviewImports), count($failedImports), max(0, count($imports) - count($needsReviewImports) - count($failedImports))),
+                    'title' => $this->t('dashboard.workflow.imports'),
+                    'detail' => $this->t('dashboard.workflow.imports_detail', ['%review%' => (string) count($needsReviewImports), '%failed%' => (string) count($failedImports), '%resolved%' => (string) max(0, count($imports) - count($needsReviewImports) - count($failedImports))]),
                     'actions' => [
-                        ['label' => 0 === count($needsReviewImports) ? 'Open imports' : 'Open follow-up now', 'url' => $this->generateUrl('ui_import_index', 0 === count($needsReviewImports) ? [] : ['status' => ImportJobStatus::NEEDS_REVIEW->value]), 'variant' => 'secondary'],
-                        ['label' => 'Upload files', 'url' => $this->generateUrl('ui_import_index').'#import-upload-card', 'variant' => 'secondary'],
+                        ['label' => 0 === count($needsReviewImports) ? $this->t('import.index.open_imports') : $this->t('dashboard.open_follow_up_now'), 'url' => $this->generateUrl('ui_import_index', 0 === count($needsReviewImports) ? [] : ['status' => ImportJobStatus::NEEDS_REVIEW->value]), 'variant' => 'secondary'],
+                        ['label' => $this->t('import.index.upload_files'), 'url' => $this->generateUrl('ui_import_index').'#import-upload-card', 'variant' => 'secondary'],
                     ],
                 ],
                 [
-                    'title' => 'Maintenance',
-                    'detail' => sprintf('%d reminder%s due now, %d upcoming plan%s in the next 14 days.', count($reminders), 1 === count($reminders) ? '' : 's', count($upcomingPlans), 1 === count($upcomingPlans) ? '' : 's'),
+                    'title' => $this->t('dashboard.workflow.maintenance'),
+                    'detail' => $this->t('dashboard.workflow.maintenance_detail', [
+                        '%reminders%' => (string) count($reminders),
+                        '%reminders_suffix%' => 1 === count($reminders) ? '' : 's',
+                        '%reminders_plural%' => 1 === count($reminders) ? '' : 's',
+                        '%plans%' => (string) count($upcomingPlans),
+                        '%plans_suffix%' => 1 === count($upcomingPlans) ? '' : 's',
+                    ]),
                     'actions' => [
-                        ['label' => 0 === count($reminders) ? 'Open maintenance' : 'Handle due work', 'url' => $this->generateUrl('ui_maintenance_index', isset($reminders[0]) ? ['vehicle_id' => $reminders[0]->vehicleId()] : []), 'variant' => 'secondary'],
-                        ['label' => isset($upcomingPlans[0]) ? 'Edit next plan' : 'Plan maintenance', 'url' => isset($upcomingPlans[0]) ? $this->generateUrl('ui_maintenance_plan_edit', ['id' => $upcomingPlans[0]->id()->toString(), 'return_to' => $this->generateUrl('ui_dashboard')]) : $this->generateUrl('ui_maintenance_plan_new', ['return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'secondary'],
+                        ['label' => 0 === count($reminders) ? $this->t('analytics.open_maintenance') : $this->t('dashboard.handle_due_work'), 'url' => $this->generateUrl('ui_maintenance_index', isset($reminders[0]) ? ['vehicle_id' => $reminders[0]->vehicleId()] : []), 'variant' => 'secondary'],
+                        ['label' => isset($upcomingPlans[0]) ? $this->t('dashboard.edit_next_plan') : $this->t('maintenance.plan_form.title_new'), 'url' => isset($upcomingPlans[0]) ? $this->generateUrl('ui_maintenance_plan_edit', ['id' => $upcomingPlans[0]->id()->toString(), 'return_to' => $this->generateUrl('ui_dashboard')]) : $this->generateUrl('ui_maintenance_plan_new', ['return_to' => $this->generateUrl('ui_dashboard')]), 'variant' => 'secondary'],
                     ],
                 ],
                 [
-                    'title' => 'Receipts',
+                    'title' => $this->t('dashboard.workflow.receipts'),
                     'detail' => 0 === $receiptsThisMonthCount
-                        ? 'Nothing tracked yet this month. Start from a receipt or an import upload.'
-                        : sprintf('%d receipt%s tracked since %s.', $receiptsThisMonthCount, 1 === $receiptsThisMonthCount ? '' : 's', $monthStart->format('d/m/Y')),
+                        ? $this->t('dashboard.workflow.receipts_empty')
+                        : $this->t('dashboard.workflow.receipts_detail', ['%count%' => (string) $receiptsThisMonthCount, '%suffix%' => 1 === $receiptsThisMonthCount ? '' : 's', '%date%' => $monthStart->format('d/m/Y')]),
                     'actions' => [
-                        ['label' => 'Open month view', 'url' => $this->generateUrl('ui_receipt_index', ['issued_from' => $monthStart->format('Y-m-d')]), 'variant' => 'secondary'],
-                        ['label' => 'Add receipt', 'url' => $this->generateUrl('ui_receipt_new'), 'variant' => 'primary'],
+                        ['label' => $this->t('dashboard.open_month_view'), 'url' => $this->generateUrl('ui_receipt_index', ['issued_from' => $monthStart->format('Y-m-d')]), 'variant' => 'secondary'],
+                        ['label' => $this->t('receipt.form.action_create'), 'url' => $this->generateUrl('ui_receipt_new'), 'variant' => 'primary'],
                     ],
                 ],
                 [
-                    'title' => 'Fleet',
-                    'detail' => sprintf('%d vehicle%s tracked so far. Use the list views when you want a broader scan than a single record page.', count($vehicles), 1 === count($vehicles) ? '' : 's'),
+                    'title' => $this->t('dashboard.workflow.fleet'),
+                    'detail' => $this->t('dashboard.workflow.fleet_detail', ['%count%' => (string) count($vehicles), '%suffix%' => 1 === count($vehicles) ? '' : 's']),
                     'actions' => [
-                        ['label' => 'Open vehicles', 'url' => $this->generateUrl('ui_vehicle_list'), 'variant' => 'secondary'],
-                        ['label' => 'Open stations', 'url' => $this->generateUrl('ui_station_list'), 'variant' => 'secondary'],
+                        ['label' => $this->t('dashboard.open_vehicles'), 'url' => $this->generateUrl('ui_vehicle_list'), 'variant' => 'secondary'],
+                        ['label' => $this->t('dashboard.open_stations'), 'url' => $this->generateUrl('ui_station_list'), 'variant' => 'secondary'],
                     ],
                 ],
             ],
@@ -271,12 +279,12 @@ final class DashboardController extends AbstractController
         foreach ($recentReceipts as $row) {
             $actions = [
                 [
-                    'label' => 'Open receipt',
+                    'label' => $this->t('receipt.action.open'),
                     'url' => $this->generateUrl('ui_receipt_show', ['id' => $row['id'], 'return_to' => $this->generateUrl('ui_dashboard')]),
                     'variant' => 'secondary',
                 ],
                 [
-                    'label' => 'Edit details',
+                    'label' => $this->t('receipt.action.edit_details'),
                     'url' => $this->generateUrl('ui_receipt_edit_metadata', ['id' => $row['id'], 'return_to' => $this->generateUrl('ui_dashboard')]),
                     'variant' => 'secondary',
                 ],
@@ -286,12 +294,12 @@ final class DashboardController extends AbstractController
             if ($receipt instanceof Receipt && null !== $receipt->vehicleId()) {
                 $vehicleId = $receipt->vehicleId()->toString();
                 $actions[] = [
-                    'label' => 'Open vehicle',
+                    'label' => $this->t('analytics.open_vehicle'),
                     'url' => $this->generateUrl('ui_vehicle_show', ['id' => $vehicleId]),
                     'variant' => 'secondary',
                 ];
                 $actions[] = [
-                    'label' => 'Analytics',
+                    'label' => $this->t('nav.analytics'),
                     'url' => $this->generateUrl('ui_analytics_dashboard', ['vehicle_id' => $vehicleId]),
                     'variant' => 'secondary',
                 ];
@@ -335,30 +343,30 @@ final class DashboardController extends AbstractController
 
             switch ($job->status()) {
                 case ImportJobStatus::NEEDS_REVIEW:
-                    $actions[] = ['label' => 'Review import', 'url' => $detailUrl, 'variant' => 'primary'];
-                    $actions[] = ['label' => 'Open queue', 'url' => $this->generateUrl('ui_import_index', ['status' => ImportJobStatus::NEEDS_REVIEW->value]), 'variant' => 'secondary'];
+                    $actions[] = ['label' => $this->t('import.follow_up.review_next'), 'url' => $detailUrl, 'variant' => 'primary'];
+                    $actions[] = ['label' => $this->t('admin.dashboard.attention.open_queue'), 'url' => $this->generateUrl('ui_import_index', ['status' => ImportJobStatus::NEEDS_REVIEW->value]), 'variant' => 'secondary'];
                     break;
                 case ImportJobStatus::FAILED:
-                    $actions[] = ['label' => 'Inspect failure', 'url' => $detailUrl, 'variant' => 'secondary'];
-                    $actions[] = ['label' => 'Upload replacement', 'url' => $uploadUrl, 'variant' => 'primary'];
+                    $actions[] = ['label' => $this->t('import.follow_up.inspect_failure'), 'url' => $detailUrl, 'variant' => 'secondary'];
+                    $actions[] = ['label' => $this->t('import.action.upload_replacement'), 'url' => $uploadUrl, 'variant' => 'primary'];
                     break;
                 case ImportJobStatus::PROCESSED:
                     $receiptId = $this->readPayloadString($payload, 'finalizedReceiptId');
                     if (null !== $receiptId) {
-                        $actions[] = ['label' => 'Open receipt', 'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId, 'return_to' => $returnTo]), 'variant' => 'primary'];
+                        $actions[] = ['label' => $this->t('receipt.action.open'), 'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId, 'return_to' => $returnTo]), 'variant' => 'primary'];
                     }
-                    $actions[] = ['label' => 'Detail', 'url' => $detailUrl, 'variant' => 'secondary'];
+                    $actions[] = ['label' => $this->t('import.action.detail'), 'url' => $detailUrl, 'variant' => 'secondary'];
                     break;
                 case ImportJobStatus::DUPLICATE:
                     $receiptId = $this->readPayloadString($payload, 'duplicateOfReceiptId');
                     if (null !== $receiptId) {
-                        $actions[] = ['label' => 'Open existing receipt', 'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId, 'return_to' => $returnTo]), 'variant' => 'primary'];
+                        $actions[] = ['label' => $this->t('import.action.open_existing_receipt'), 'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId, 'return_to' => $returnTo]), 'variant' => 'primary'];
                     }
-                    $actions[] = ['label' => 'Upload another', 'url' => $uploadUrl, 'variant' => 'secondary'];
+                    $actions[] = ['label' => $this->t('import.action.upload_another_file'), 'url' => $uploadUrl, 'variant' => 'secondary'];
                     break;
                 default:
-                    $actions[] = ['label' => 'Open import', 'url' => $detailUrl, 'variant' => 'secondary'];
-                    $actions[] = ['label' => 'Open queue', 'url' => $this->generateUrl('ui_import_index'), 'variant' => 'secondary'];
+                    $actions[] = ['label' => $this->t('import.action.detail'), 'url' => $detailUrl, 'variant' => 'secondary'];
+                    $actions[] = ['label' => $this->t('admin.dashboard.attention.open_queue'), 'url' => $this->generateUrl('ui_import_index'), 'variant' => 'secondary'];
             }
 
             $cards[] = [
@@ -416,5 +424,11 @@ final class DashboardController extends AbstractController
         }
 
         return $vehicles;
+    }
+
+    /** @param array<string, string> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminStationDeleteController extends AbstractController
 {
@@ -32,6 +33,7 @@ final class AdminStationDeleteController extends AbstractController
         private readonly StationRepository $stationRepository,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -66,7 +68,7 @@ final class AdminStationDeleteController extends AbstractController
                 ],
             ],
         );
-        $this->addFlash('success', 'Station deleted.');
+        $this->addFlash('success', $this->translator->trans('admin.stations.flash.deleted'));
 
         return new RedirectResponse(
             $this->safeReturnPathResolver->resolve(

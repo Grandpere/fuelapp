@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Receipts{% endblock %}
+{% block title %}{{ 'receipt.index.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -181,10 +181,10 @@
 
         <section class="receipt-header">
             <div>
-                <h1 class="page-title">Fuel Receipts</h1>
-                <p class="muted">Track station spend, VAT and consumption in one operational view.</p>
+                <h1 class="page-title">{{ 'receipt.index.title'|trans }}</h1>
+                <p class="muted">{{ 'receipt.index.lead'|trans }}</p>
             </div>
-            <a class="btn btn-primary" href="{{ path('ui_receipt_new', newReceiptParams) }}">Add receipt</a>
+            <a class="btn btn-primary" href="{{ path('ui_receipt_new', newReceiptParams) }}">{{ 'receipt.index.add'|trans }}</a>
         </section>
 
         {% for message in app.flashes('success') %}
@@ -195,35 +195,35 @@
             <form method="get" action="{{ path('ui_receipt_index') }}" class="filters">
                 <div class="filters-row">
                     <label class="label">
-                        Vehicle
+                        {{ 'receipt.index.filter_vehicle'|trans }}
                         <select class="select" name="vehicle_id">
-                            <option value="">All</option>
+                            <option value="">{{ 'receipt.index.filter_all'|trans }}</option>
                             {% for option in vehicleOptions %}
                                 <option value="{{ option.id }}" {% if filters.vehicleId == option.id %}selected{% endif %}>{{ option.label }}</option>
                             {% endfor %}
                         </select>
                     </label>
                     <label class="label">
-                        Station
+                        {{ 'receipt.index.filter_station'|trans }}
                         <select class="select" name="station_id">
-                            <option value="">All</option>
+                            <option value="">{{ 'receipt.index.filter_all'|trans }}</option>
                             {% for option in stationOptions %}
                                 <option value="{{ option.id }}" {% if filters.stationId == option.id %}selected{% endif %}>{{ option.label }}</option>
                             {% endfor %}
                         </select>
                     </label>
                     <label class="label">
-                        Issued from
+                        {{ 'receipt.index.filter_issued_from'|trans }}
                         <input class="input" type="text" name="issued_from" value="{{ filters.issuedFrom }}" data-datepicker="date" autocomplete="off">
                     </label>
                     <label class="label">
-                        Issued to
+                        {{ 'receipt.index.filter_issued_to'|trans }}
                         <input class="input" type="text" name="issued_to" value="{{ filters.issuedTo }}" data-datepicker="date" autocomplete="off">
                     </label>
                     <label class="label">
-                        Fuel type
+                        {{ 'receipt.index.filter_fuel_type'|trans }}
                         <select class="select" name="fuel_type">
-                            <option value="">All</option>
+                            <option value="">{{ 'receipt.index.filter_all'|trans }}</option>
                             {% for fuelType in fuelTypeChoices %}
                                 <option value="{{ fuelType }}" {% if filters.fuelType == fuelType %}selected{% endif %}>{{ fuelType|upper }}</option>
                             {% endfor %}
@@ -233,44 +233,44 @@
 
                 <div class="filters-row">
                     <label class="label">
-                        Quantity min (mL)
+                        {{ 'receipt.index.filter_quantity_min'|trans }}
                         <input class="input" type="number" name="quantity_min" value="{{ filters.quantityMin }}">
                     </label>
                     <label class="label">
-                        Quantity max (mL)
+                        {{ 'receipt.index.filter_quantity_max'|trans }}
                         <input class="input" type="number" name="quantity_max" value="{{ filters.quantityMax }}">
                     </label>
                     <label class="label">
-                        Unit price min (deci-cents/L)
+                        {{ 'receipt.index.filter_unit_price_min'|trans }}
                         <input class="input" type="number" name="unit_price_min" value="{{ filters.unitPriceMin }}">
                     </label>
                     <label class="label">
-                        Unit price max (deci-cents/L)
+                        {{ 'receipt.index.filter_unit_price_max'|trans }}
                         <input class="input" type="number" name="unit_price_max" value="{{ filters.unitPriceMax }}">
                     </label>
                 </div>
 
                 <div class="filters-row">
                     <label class="label">
-                        Sort by
+                        {{ 'receipt.index.filter_sort_by'|trans }}
                         <select class="select" name="sort_by">
-                            <option value="date" {% if filters.sortBy == 'date' %}selected{% endif %}>Date</option>
-                            <option value="total" {% if filters.sortBy == 'total' %}selected{% endif %}>Total</option>
-                            <option value="fuel_type" {% if filters.sortBy == 'fuel_type' %}selected{% endif %}>Fuel type</option>
-                            <option value="quantity" {% if filters.sortBy == 'quantity' %}selected{% endif %}>Quantity</option>
-                            <option value="unit_price" {% if filters.sortBy == 'unit_price' %}selected{% endif %}>Unit price</option>
-                            <option value="vat_rate" {% if filters.sortBy == 'vat_rate' %}selected{% endif %}>VAT rate</option>
+                            <option value="date" {% if filters.sortBy == 'date' %}selected{% endif %}>{{ 'receipt.index.sort_date'|trans }}</option>
+                            <option value="total" {% if filters.sortBy == 'total' %}selected{% endif %}>{{ 'receipt.index.sort_total'|trans }}</option>
+                            <option value="fuel_type" {% if filters.sortBy == 'fuel_type' %}selected{% endif %}>{{ 'receipt.index.sort_fuel_type'|trans }}</option>
+                            <option value="quantity" {% if filters.sortBy == 'quantity' %}selected{% endif %}>{{ 'receipt.index.sort_quantity'|trans }}</option>
+                            <option value="unit_price" {% if filters.sortBy == 'unit_price' %}selected{% endif %}>{{ 'receipt.index.sort_unit_price'|trans }}</option>
+                            <option value="vat_rate" {% if filters.sortBy == 'vat_rate' %}selected{% endif %}>{{ 'receipt.index.sort_vat_rate'|trans }}</option>
                         </select>
                     </label>
                     <label class="label">
-                        Direction
+                        {{ 'receipt.index.sort_direction'|trans }}
                         <select class="select" name="sort_direction">
-                            <option value="desc" {% if filters.sortDirection == 'desc' %}selected{% endif %}>Descending</option>
-                            <option value="asc" {% if filters.sortDirection == 'asc' %}selected{% endif %}>Ascending</option>
+                            <option value="desc" {% if filters.sortDirection == 'desc' %}selected{% endif %}>{{ 'receipt.index.sort_direction_desc'|trans }}</option>
+                            <option value="asc" {% if filters.sortDirection == 'asc' %}selected{% endif %}>{{ 'receipt.index.sort_direction_asc'|trans }}</option>
                         </select>
                     </label>
                     <label class="label">
-                        Per page
+                        {{ 'receipt.index.per_page'|trans }}
                         <select class="select" name="per_page">
                             {% for size in [10, 25, 50, 100] %}
                                 <option value="{{ size }}" {% if perPage == size %}selected{% endif %}>{{ size }}</option>
@@ -278,18 +278,18 @@
                         </select>
                     </label>
                     <label class="label">
-                        VAT rate (%)
+                        {{ 'receipt.index.filter_vat_rate'|trans }}
                         <input class="input" type="number" name="vat_rate" value="{{ filters.vatRate }}">
                     </label>
                 </div>
 
                 <div class="actions-row">
-                    <button class="btn btn-primary" type="submit">Apply</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Reset</a>
-                    <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams) }}">Export CSV</a>
-                    <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams|merge({ format: 'xlsx' })) }}">Export XLSX</a>
+                    <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">{{ 'action.reset'|trans }}</a>
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams) }}">{{ 'receipt.index.export_csv'|trans }}</a>
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams|merge({ format: 'xlsx' })) }}">{{ 'receipt.index.export_xlsx'|trans }}</a>
                 </div>
-                <p class="muted receipt-note">Exports keep the current filters and visible columns. XLSX now uses the same scope with a share-friendly filename.</p>
+                <p class="muted receipt-note">{{ 'receipt.index.export_note'|trans }}</p>
 
                 <div class="shortcut-row">
                     {% for shortcut in dateShortcutLinks %}
@@ -298,9 +298,9 @@
                 </div>
 
                 <fieldset class="card-subtle columns-wrap">
-                    <legend class="muted">Columns (UI + export)</legend>
+                    <legend class="muted">{{ 'receipt.index.columns'|trans }}</legend>
                     <label class="label receipt-preset-label">
-                        Preset
+                        {{ 'receipt.index.preset'|trans }}
                         <select class="select" name="columns_preset" onchange="this.form.submit()">
                             {% for presetKey, presetLabel in columnPresetOptions %}
                                 <option value="{{ presetKey }}" {% if filters.columnsPreset == presetKey %}selected{% endif %}>{{ presetLabel }}</option>
@@ -334,20 +334,20 @@
                     <table class="app-table">
                         <thead>
                             <tr>
-                                {% if 'id' in visibleColumns %}<th>Receipt ID</th>{% endif %}
-                                {% if 'issued_at' in visibleColumns %}<th>Date</th>{% endif %}
-                                {% if 'station_name' in visibleColumns %}<th>Station name</th>{% endif %}
-                                {% if 'station_street_name' in visibleColumns %}<th>Street</th>{% endif %}
-                                {% if 'station_postal_code' in visibleColumns %}<th>Postal code</th>{% endif %}
-                                {% if 'station_city' in visibleColumns %}<th>City</th>{% endif %}
-                                {% if 'odometer_kilometers' in visibleColumns %}<th class="text-right">Odometer</th>{% endif %}
-                                {% if 'fuel_type' in visibleColumns %}<th>Fuel</th>{% endif %}
-                                {% if 'quantity_milli_liters' in visibleColumns %}<th class="text-right">Quantity</th>{% endif %}
-                                {% if 'unit_price_deci_cents_per_liter' in visibleColumns %}<th class="text-right">Unit price</th>{% endif %}
-                                {% if 'vat_rate_percent' in visibleColumns %}<th class="text-right">VAT rate</th>{% endif %}
-                                {% if 'total_cents' in visibleColumns %}<th class="text-right">Total</th>{% endif %}
-                                {% if 'vat_amount_cents' in visibleColumns %}<th class="text-right">VAT</th>{% endif %}
-                                <th class="text-right">Actions</th>
+                                {% if 'id' in visibleColumns %}<th>{{ 'receipt.index.col_receipt_id'|trans }}</th>{% endif %}
+                                {% if 'issued_at' in visibleColumns %}<th>{{ 'receipt.index.col_date'|trans }}</th>{% endif %}
+                                {% if 'station_name' in visibleColumns %}<th>{{ 'receipt.index.col_station_name'|trans }}</th>{% endif %}
+                                {% if 'station_street_name' in visibleColumns %}<th>{{ 'receipt.index.col_street'|trans }}</th>{% endif %}
+                                {% if 'station_postal_code' in visibleColumns %}<th>{{ 'receipt.index.col_postal_code'|trans }}</th>{% endif %}
+                                {% if 'station_city' in visibleColumns %}<th>{{ 'receipt.index.col_city'|trans }}</th>{% endif %}
+                                {% if 'odometer_kilometers' in visibleColumns %}<th class="text-right">{{ 'receipt.index.col_odometer'|trans }}</th>{% endif %}
+                                {% if 'fuel_type' in visibleColumns %}<th>{{ 'receipt.show.col_fuel'|trans }}</th>{% endif %}
+                                {% if 'quantity_milli_liters' in visibleColumns %}<th class="text-right">{{ 'receipt.show.col_quantity'|trans }}</th>{% endif %}
+                                {% if 'unit_price_deci_cents_per_liter' in visibleColumns %}<th class="text-right">{{ 'receipt.show.col_unit_price'|trans }}</th>{% endif %}
+                                {% if 'vat_rate_percent' in visibleColumns %}<th class="text-right">{{ 'receipt.show.col_vat_rate'|trans }}</th>{% endif %}
+                                {% if 'total_cents' in visibleColumns %}<th class="text-right">{{ 'receipt.index.col_total'|trans }}</th>{% endif %}
+                                {% if 'vat_amount_cents' in visibleColumns %}<th class="text-right">{{ 'receipt.show.col_vat'|trans }}</th>{% endif %}
+                                <th class="text-right">{{ 'common.actions'|trans }}</th>
                             </tr>
                         </thead>
                         <tbody id="receipts_rows">
@@ -360,28 +360,28 @@
 
                 {% if receipts is empty %}
                     <div id="receipts-empty" class="empty-state">
-                        <p>No receipt yet.</p>
+                        <p>{{ 'receipt.index.empty'|trans }}</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', newReceiptParams) }}">Add first receipt</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', newReceiptParams) }}">{{ 'receipt.index.add_first'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">{{ 'receipt.index.open_imports'|trans }}</a>
                             {% if selectedVehicle %}
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: selectedVehicle.id}) }}">Open vehicle</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: selectedVehicle.id}) }}">{{ 'receipt.index.open_vehicle'|trans }}</a>
                             {% endif %}
                             {% if selectedStation %}
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: selectedStation.id, return_to: app.request.uri}) }}">Open station</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: selectedStation.id, return_to: app.request.uri}) }}">{{ 'receipt.index.open_station'|trans }}</a>
                             {% endif %}
                         </div>
                     </div>
                 {% endif %}
 
                 <div class="summary">
-                    <div>{{ total }} receipt(s) - page {{ page }} / {{ lastPage }}</div>
+                    <div>{{ 'receipt.index.summary'|trans({'%count%': total, '%page%': page, '%last_page%': lastPage}) }}</div>
                     <nav>
                         {% if page > 1 %}
-                            <a href="{{ path('ui_receipt_index', queryParams|merge({page: page - 1})) }}">Previous</a>
+                            <a href="{{ path('ui_receipt_index', queryParams|merge({page: page - 1})) }}">{{ 'receipt.index.previous'|trans }}</a>
                         {% endif %}
                         {% if page < lastPage %}
-                            <a href="{{ path('ui_receipt_index', queryParams|merge({page: page + 1})) }}">Next</a>
+                            <a href="{{ path('ui_receipt_index', queryParams|merge({page: page + 1})) }}">{{ 'receipt.index.next'|trans }}</a>
                         {% endif %}
                     </nav>
                 </div>

@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit Receipt Lines{% endblock %}
+{% block title %}{{ 'receipt.form.title_edit_lines'|trans }}{% endblock %}
 
 {% block body %}
     <main class="app-shell page-stack page-medium shell-compact">
         <header class="page-header">
             <div class="page-header">
-                <h1 class="page-title">Edit receipt lines</h1>
-                <p class="muted section-lead">Receipt {{ receipt.id.toString() }} - update fuel lines and totals recalculation.</p>
+                <h1 class="page-title">{{ 'receipt.form.title_edit_lines'|trans }}</h1>
+                <p class="muted section-lead">{{ 'receipt.form.lead_edit_lines'|trans({'%id%': receipt.id.toString()}) }}</p>
             </div>
         </header>
 
@@ -16,7 +16,7 @@
                 <div class="flash flash-error">
                     <ul class="flash-list">
                         {% for error in errors %}
-                            <li>{{ error }}</li>
+                            <li>{{ error|trans }}</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -28,10 +28,10 @@
                     <table class="app-table table-min-780">
                         <thead>
                             <tr>
-                                <th>Fuel</th>
-                                <th>Quantity (L)</th>
-                                <th>Unit Price (€/L)</th>
-                                <th>VAT %</th>
+                                <th>{{ 'receipt.form.fuel_type'|trans }}</th>
+                                <th>{{ 'receipt.form.quantity'|trans }}</th>
+                                <th>{{ 'receipt.form.unit_price'|trans }}</th>
+                                <th>{{ 'receipt.form.vat'|trans }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -54,8 +54,8 @@
                 </div>
 
                 <div class="actions-wrap">
-                    <button class="btn btn-primary" type="submit">Save lines</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString()}) }}">Cancel</a>
+                    <button class="btn btn-primary" type="submit">{{ 'receipt.form.save_lines'|trans }}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString()}) }}">{{ 'action.cancel'|trans }}</a>
                 </div>
             </form>
         </section>

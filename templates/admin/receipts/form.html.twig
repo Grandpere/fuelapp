@@ -1,31 +1,31 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Edit Admin Receipt{% endblock %}
+{% block title %}{{ 'receipt.form.title_edit_lines'|trans({'%id%': receipt.id.toString()}) }}{% endblock %}
 
 {% set admin_section = 'receipts' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Edit receipt lines</h2>
-            <p class="muted">Adjust receipt lines and recompute totals.</p>
+            <h2 class="page-title">{{ 'receipt.form.title_edit_lines'|trans({'%id%': receipt.id.toString()}) }}</h2>
+            <p class="muted">{{ 'receipt.form.lead_edit_lines'|trans({'%id%': receipt.id.toString()}) }}</p>
         </div>
 
         <div class="card-subtle card-subtle-block admin-detail-stack">
             <div class="compact-note">
                 {% if vehicle %}
-                    Vehicle: {{ vehicle.name() }}
+                    {{ 'receipt.show.vehicle'|trans }}: {{ vehicle.name() }}
                 {% else %}
-                    Vehicle: n/a
+                    {{ 'receipt.show.vehicle'|trans }}: {{ 'common.na'|trans }}
                 {% endif %}
                 ·
                 {% if station %}
-                    Station: {{ station.name() }}
+                    {{ 'receipt.show.station'|trans }}: {{ station.name() }}
                 {% else %}
-                    Station: n/a
+                    {{ 'receipt.show.station'|trans }}: {{ 'common.na'|trans }}
                 {% endif %}
                 ·
-                Lines: {{ receipt.lines|length }}
+                {{ 'receipt.action.lines'|trans }}: {{ receipt.lines|length }}
             </div>
         </div>
 
@@ -46,10 +46,10 @@
                 <table class="app-table">
                     <thead>
                         <tr>
-                            <th>Fuel</th>
-                            <th>Quantity (mL)</th>
-                            <th>Unit Price (deci-cents/L)</th>
-                            <th>VAT %</th>
+                            <th>{{ 'receipt.form.fuel_type'|trans }}</th>
+                            <th>{{ 'admin.receipts.form.quantity_ml'|trans }}</th>
+                            <th>{{ 'admin.receipts.form.unit_price_deci_cents'|trans }}</th>
+                            <th>{{ 'receipt.form.vat'|trans }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -72,15 +72,15 @@
             </div>
 
             <div class="actions-wrap">
-                <button class="btn btn-primary" type="submit">Save changes</button>
-                <a class="btn btn-secondary" href="{{ backToReceiptUrl }}">Cancel</a>
+                <button class="btn btn-primary" type="submit">{{ 'receipt.form.save_lines'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ backToReceiptUrl }}">{{ 'action.cancel'|trans }}</a>
             </div>
         </form>
     </section>
 
     {% if supportShortcuts is not empty %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Support continuity</h3>
+            <h3 class="section-title">{{ 'admin.receipts.support_continuity_title'|trans }}</h3>
             <div class="actions-wrap admin-table-top">
                 {% for item in supportShortcuts %}
                     <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.label }}</a>
@@ -91,7 +91,7 @@
 
     {% if relatedImports is not empty %}
         <section class="card admin-panel admin-section-spaced">
-            <h3 class="section-title">Related imports</h3>
+            <h3 class="section-title">{{ 'admin.receipts.related_imports_title'|trans }}</h3>
             <div class="actions-wrap admin-table-top">
                 {% for item in relatedImports %}
                     <a class="btn btn-secondary btn-compact" href="{{ item.url }}">{{ item.filename }} · {{ item.status }}</a>

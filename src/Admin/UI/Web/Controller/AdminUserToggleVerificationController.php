@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminUserToggleVerificationController extends AbstractController
 {
@@ -33,6 +34,7 @@ final class AdminUserToggleVerificationController extends AbstractController
     public function __construct(
         private readonly AdminUserManager $userManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -60,7 +62,7 @@ final class AdminUserToggleVerificationController extends AbstractController
         try {
             $updated = $this->userManager->updateUser($id, null, null, !$user->isEmailVerified(), $actorId);
         } catch (LogicException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
 
             return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
         }
@@ -77,7 +79,10 @@ final class AdminUserToggleVerificationController extends AbstractController
             ],
         );
 
-        $this->addFlash('success', sprintf('User %s is now %s.', $updated->email, $updated->isEmailVerified() ? 'verified' : 'unverified'));
+        $this->addFlash('success', $this->translator->trans('admin.users.flash.verification_updated', [
+            '%email%' => $updated->email,
+            '%status%' => $this->translator->trans($updated->isEmailVerified() ? 'admin.users.verification.verified' : 'admin.users.verification.unverified'),
+        ]));
 
         return new RedirectResponse($this->generateUrl('ui_admin_user_list'), Response::HTTP_SEE_OTHER);
     }

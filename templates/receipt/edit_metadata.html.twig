@@ -1,22 +1,22 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit receipt details{% endblock %}
+{% block title %}{{ 'receipt.form.title_edit_details'|trans }}{% endblock %}
 
 {% block body %}
     <main class="app-shell page-stack page-medium shell-compact">
         <header class="page-header-split">
             <div class="page-header">
-                <h1 class="page-title">Edit receipt details</h1>
-                <p class="muted section-lead">Update the receipt context without touching the fuel lines.</p>
+                <h1 class="page-title">{{ 'receipt.form.title_edit_details'|trans }}</h1>
+                <p class="muted section-lead">{{ 'receipt.form.lead_edit_details'|trans }}</p>
             </div>
-            <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Back</a>
+            <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl}) }}">{{ 'common.back'|trans }}</a>
         </header>
 
         {% if errors is not empty %}
             <div class="flash flash-error">
                 <ul class="flash-list">
                     {% for error in errors %}
-                        <li>{{ error }}</li>
+                        <li>{{ error|trans }}</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -29,37 +29,37 @@
 
                 <div class="form-grid-2">
                     <label class="label">
-                        Date
+                        {{ 'receipt.form.date'|trans }}
                         <input class="input" type="text" name="issuedAt" value="{{ formData.issuedAt }}" data-datepicker="datetime" autocomplete="off" required>
                     </label>
                     <label class="label">
-                        Vehicle
+                        {{ 'receipt.form.vehicle_optional'|trans }}
                         <select class="select" name="vehicleId">
-                            <option value="">No linked vehicle</option>
+                            <option value="">{{ 'receipt.form.no_linked_vehicle'|trans }}</option>
                             {% for optionId, optionLabel in vehicleOptions %}
                                 <option value="{{ optionId }}" {% if formData.vehicleId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
                             {% endfor %}
                         </select>
                     </label>
                     <label class="label">
-                        Station
+                        {{ 'receipt.form.station_optional'|trans }}
                         <select class="select" name="stationId">
-                            <option value="">No linked station</option>
+                            <option value="">{{ 'receipt.form.no_linked_station'|trans }}</option>
                             {% for optionId, optionLabel in stationOptions %}
                                 <option value="{{ optionId }}" {% if formData.stationId == optionId %}selected{% endif %}>{{ optionLabel }}</option>
                             {% endfor %}
                         </select>
-                        <small class="muted">This changes the linked station, without editing the shared station record itself.</small>
+                        <small class="muted">{{ 'receipt.form.station_help'|trans }}</small>
                     </label>
                     <label class="label">
-                        Odometer (km)
+                        {{ 'receipt.form.odometer'|trans }}
                         <input class="input" type="number" min="0" step="1" name="odometerKilometers" value="{{ formData.odometerKilometers }}">
                     </label>
                 </div>
 
                 <div class="actions-wrap">
-                    <button class="btn btn-primary" type="submit">Save details</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl}) }}">Cancel</a>
+                    <button class="btn btn-primary" type="submit">{{ 'receipt.form.save_details'|trans }}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_receipt_show', {id: receipt.id.toString(), return_to: backToListUrl}) }}">{{ 'action.cancel'|trans }}</a>
                 </div>
             </form>
         </section>

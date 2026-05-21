@@ -21,11 +21,13 @@ use App\Receipt\Domain\Enum\FuelType;
 use App\Shared\UI\Web\SafeReturnPathResolver;
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use ValueError;
 
 final class AdminImportJobFinalizeController extends AbstractController
@@ -34,6 +36,7 @@ final class AdminImportJobFinalizeController extends AbstractController
         private readonly FinalizeImportJobHandler $finalizeImportJobHandler,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -51,7 +54,7 @@ final class AdminImportJobFinalizeController extends AbstractController
         );
 
         if (!$this->isCsrfTokenValid('admin_import_finalize_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
             return new RedirectResponse($redirectTarget);
         }
@@ -80,9 +83,9 @@ final class AdminImportJobFinalizeController extends AbstractController
                     ],
                 ],
             );
-            $this->addFlash('success', 'Import job finalized and receipt created.');
+            $this->addFlash('success', 'admin.import.flash.finalized');
         } catch (InvalidArgumentException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
         }
 
         return new RedirectResponse($redirectTarget);
@@ -171,13 +174,13 @@ final class AdminImportJobFinalizeController extends AbstractController
             }
 
             if (null === $fuelType || null === $quantity || null === $unitPrice || null === $vatRate) {
-                throw new InvalidArgumentException(sprintf('Line %d is incomplete. Fuel type, quantity, unit price, and VAT rate are all required.', $lineNumber));
+                throw new InvalidArgumentException($this->t('import.validation.line_incomplete', ['%index%' => (string) $lineNumber]));
             }
 
             try {
                 $lines[] = new CreateReceiptLineCommand(FuelType::from($fuelType), $quantity, $unitPrice, $vatRate);
             } catch (ValueError) {
-                throw new InvalidArgumentException(sprintf('Line %d has an invalid fuel type.', $lineNumber));
+                throw new InvalidArgumentException($this->t('import.validation.line_invalid_fuel_type', ['%index%' => (string) $lineNumber]));
             }
         }
 
@@ -197,16 +200,22 @@ final class AdminImportJobFinalizeController extends AbstractController
         }
 
         if (null === $fuelType || null === $quantity || null === $unitPrice || null === $vatRate) {
-            throw new InvalidArgumentException('If one line field is provided, all line fields are required.');
+            throw new InvalidArgumentException('import.validation.legacy_line_incomplete');
         }
 
         try {
             $line = new CreateReceiptLineCommand(FuelType::from($fuelType), $quantity, $unitPrice, $vatRate);
         } catch (ValueError) {
-            throw new InvalidArgumentException('Invalid fuel type provided.');
+            throw new InvalidArgumentException('import.validation.legacy_line_invalid_fuel_type');
         }
 
         return [$line];
+    }
+
+    /** @param array<string, scalar|Stringable|null> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 
     private function readFinalizedReceiptId(?string $payload): ?string

@@ -63,12 +63,19 @@ final class EditStationController extends AbstractController
             ];
 
             if (!$this->isCsrfTokenValid('station_edit_'.$id, $formData['_token'])) {
-                $errors[] = 'Invalid CSRF token.';
+                $errors[] = 'station.validation.invalid_csrf';
             }
 
-            foreach (['name', 'streetName', 'postalCode', 'city'] as $field) {
+            $requiredFields = [
+                'name' => 'station.validation.name_required',
+                'streetName' => 'station.validation.street_name_required',
+                'postalCode' => 'station.validation.postal_code_required',
+                'city' => 'station.validation.city_required',
+            ];
+
+            foreach ($requiredFields as $field => $messageKey) {
                 if ('' === $formData[$field]) {
-                    $errors[] = sprintf('Field "%s" is required.', $field);
+                    $errors[] = $messageKey;
                 }
             }
 
@@ -81,7 +88,7 @@ final class EditStationController extends AbstractController
                     $formData['city'],
                 ));
 
-                $this->addFlash('success', 'Station updated.');
+                $this->addFlash('success', 'flash.station.updated');
 
                 return new RedirectResponse($redirect, Response::HTTP_SEE_OTHER);
             }

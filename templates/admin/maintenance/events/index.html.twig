@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Maintenance Events{% endblock %}
+{% block title %}{{ 'admin.maintenance_events.title'|trans }}{% endblock %}
 
 {% set admin_section = 'maintenance_events' %}
 
@@ -8,51 +8,51 @@
     {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Maintenance Events</h2>
-            <p class="muted">Cross-owner timeline of maintenance operations.</p>
+            <h2 class="page-title">{{ 'admin.maintenance_events.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.maintenance_events.lead'|trans }}</p>
         </div>
 
         <form method="get" action="{{ path('ui_admin_maintenance_event_list') }}" class="admin-filters-form">
             <div class="form-grid-2 admin-table-top">
                 <label class="label">
-                    Owner
+                    {{ 'admin.maintenance_events.filters.owner'|trans }}
                     <select class="select" name="owner_id">
-                        <option value="">All owners</option>
+                        <option value="">{{ 'admin.maintenance_events.filters.all_owners'|trans }}</option>
                         {% for owner in ownerOptions %}
                             <option value="{{ owner.id }}" {% if filters.ownerId == owner.id %}selected{% endif %}>{{ owner.label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Vehicle
+                    {{ 'admin.maintenance_events.filters.vehicle'|trans }}
                     <select class="select" name="vehicle_id">
-                        <option value="">All vehicles</option>
+                        <option value="">{{ 'admin.maintenance_events.filters.all_vehicles'|trans }}</option>
                         {% for vehicle in vehicleOptions %}
                             <option value="{{ vehicle.id }}" {% if filters.vehicleId == vehicle.id %}selected{% endif %}>{{ vehicle.label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Event type
+                    {{ 'admin.maintenance_events.filters.event_type'|trans }}
                     <select class="select" name="event_type">
-                        <option value="">All</option>
+                        <option value="">{{ 'admin.maintenance_events.filters.all'|trans }}</option>
                         {% for eventType in eventTypeOptions %}
                             <option value="{{ eventType }}" {% if filters.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Occurred from
+                    {{ 'admin.maintenance_events.filters.occurred_from'|trans }}
                     <input class="input" type="text" name="occurred_from" data-datepicker="date" value="{{ filters.occurredFrom }}" autocomplete="off">
                 </label>
                 <label class="label">
-                    Occurred to
+                    {{ 'admin.maintenance_events.filters.occurred_to'|trans }}
                     <input class="input" type="text" name="occurred_to" data-datepicker="date" value="{{ filters.occurredTo }}" autocomplete="off">
                 </label>
             </div>
             <div class="admin-form-actions">
-                <button class="btn btn-primary" type="submit">Apply</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">Reset</a>
+                <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_event_list') }}">{{ 'action.reset'|trans }}</a>
             </div>
         </form>
 
@@ -60,7 +60,7 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Active filters</strong>
+                        <strong>{{ 'admin.common.active_filters'|trans }}</strong>
                         <p class="muted compact-note">
                             {% for item in activeFilterSummary %}
                                 {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
@@ -68,7 +68,7 @@
                         </p>
                     </div>
                     <div class="admin-page-actions">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list') }}">Reset</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list') }}">{{ 'action.reset'|trans }}</a>
                     </div>
                 </div>
             </div>
@@ -78,13 +78,13 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Support toolkit</strong>
-                        <p class="muted compact-note">This event queue is scoped to one vehicle so we can pivot directly into reminders, receipts, and the vehicle dossier.</p>
+                        <strong>{{ 'admin.maintenance_events.support_toolkit_title'|trans }}</strong>
+                        <p class="muted compact-note">{{ 'admin.maintenance_events.support_toolkit_lead'|trans }}</p>
                     </div>
                     <div class="admin-page-actions">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: filters.vehicleId, return_to: returnTo}) }}">Vehicle</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: filters.vehicleId}) }}">Receipts</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: filters.vehicleId, event_type: filters.eventType}) }}">Reminders</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: filters.vehicleId, return_to: returnTo}) }}">{{ 'nav.vehicles'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: filters.vehicleId}) }}">{{ 'nav.receipts'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: filters.vehicleId, event_type: filters.eventType}) }}">{{ 'nav.maintenance'|trans }}</a>
                     </div>
                 </div>
             </div>
@@ -94,14 +94,14 @@
             <table class="app-table">
                 <thead>
                 <tr>
-                    <th>Occurred</th>
-                    <th>Type</th>
-                    <th>Owner ID</th>
-                    <th>Vehicle</th>
-                    <th>Cost</th>
-                    <th>Odometer</th>
-                    <th>Description</th>
-                    <th>Actions</th>
+                    <th>{{ 'admin.maintenance_events.table.occurred_at'|trans }}</th>
+                    <th>{{ 'admin.maintenance_events.table.event_type'|trans }}</th>
+                    <th>{{ 'admin.maintenance_events.table.owner_id'|trans }}</th>
+                    <th>{{ 'nav.vehicles'|trans }}</th>
+                    <th>{{ 'admin.maintenance_events.table.cost'|trans }}</th>
+                    <th>{{ 'receipt.show.odometer'|trans }}</th>
+                    <th>{{ 'maintenance.form.description'|trans }}</th>
+                    <th>{{ 'common.actions'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -128,29 +128,29 @@
                             {% if event.event.totalCostCents is not null %}
                                 {{ (event.event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.event.currencyCode }}
                             {% else %}
-                                <span class="muted">n/a</span>
+                                <span class="muted">{{ 'common.na'|trans }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ event.event.odometerKilometers ?? 'n/a' }}</td>
-                        <td>{{ event.event.description ?? 'n/a' }}</td>
+                        <td>{{ event.event.odometerKilometers ?? ('common.na'|trans) }}</td>
+                        <td>{{ event.event.description ?? ('common.na'|trans) }}</td>
                         <td class="action-cell-flex" data-row-link-ignore>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_show', {id: event.event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_edit', {id: event.event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Edit</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_show', {id: event.event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">{{ 'action.open'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_edit', {id: event.event.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">{{ 'action.edit'|trans }}</a>
                             {% if event.vehicle %}
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: event.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: event.vehicle.id().toString()}) }}" data-turbo-frame="_top">Receipts</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: event.vehicle.id().toString(), event_type: event.event.eventType.value}) }}" data-turbo-frame="_top">Reminders</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: event.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">{{ 'nav.vehicles'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: event.vehicle.id().toString()}) }}" data-turbo-frame="_top">{{ 'nav.receipts'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: event.vehicle.id().toString(), event_type: event.event.eventType.value}) }}" data-turbo-frame="_top">{{ 'admin.maintenance_events.shortcuts.reminders'|trans }}</a>
                             {% endif %}
-                            <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.event.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this maintenance event?');">
+                            <form method="post" action="{{ path('ui_admin_maintenance_event_delete', {id: event.event.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('{{ 'admin.maintenance_events.confirm_delete'|trans }}');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_maintenance_event_delete_' ~ event.event.id.toString) }}">
                                 <input type="hidden" name="_redirect" value="{{ returnTo }}">
-                                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                                <button class="btn btn-danger btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
                             </form>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="8" class="muted">No maintenance events found.</td>
+                        <td colspan="8" class="muted">{{ 'admin.maintenance_events.empty'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

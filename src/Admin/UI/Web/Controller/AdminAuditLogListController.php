@@ -16,16 +16,19 @@ namespace App\Admin\UI\Web\Controller;
 use App\Admin\Application\Audit\AdminAuditLogReader;
 use App\Admin\Application\User\AdminUserManager;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminAuditLogListController extends AbstractController
 {
     public function __construct(
         private readonly AdminAuditLogReader $reader,
         private readonly AdminUserManager $userManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -106,10 +109,10 @@ final class AdminAuditLogListController extends AbstractController
         $summary = [];
 
         foreach ([
-            ['label' => 'Action', 'value' => $action],
-            ['label' => 'Target type', 'value' => $targetType],
-            ['label' => 'Target id', 'value' => $targetId],
-            ['label' => 'Correlation', 'value' => $correlationId],
+            ['label' => $this->t('admin.audit.filter_summary.action'), 'value' => $action],
+            ['label' => $this->t('admin.audit.filter_summary.target_type'), 'value' => $targetType],
+            ['label' => $this->t('admin.audit.filter_summary.target_id'), 'value' => $targetId],
+            ['label' => $this->t('admin.audit.filter_summary.correlation'), 'value' => $correlationId],
         ] as $item) {
             if (is_string($item['value']) && '' !== $item['value']) {
                 $summary[] = $item;
@@ -118,14 +121,14 @@ final class AdminAuditLogListController extends AbstractController
 
         if (null !== $actorId) {
             $user = $this->userManager->getUser($actorId);
-            $summary[] = ['label' => 'Actor', 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $actorId) : $actorId];
+            $summary[] = ['label' => $this->t('admin.audit.filter_summary.actor'), 'value' => null !== $user ? sprintf('%s (%s)', $user->email, $actorId) : $actorId];
         }
 
         if ($from instanceof DateTimeImmutable) {
-            $summary[] = ['label' => 'From', 'value' => $from->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.audit.filter_summary.from'), 'value' => $from->format('Y-m-d')];
         }
         if ($to instanceof DateTimeImmutable) {
-            $summary[] = ['label' => 'To', 'value' => $to->format('Y-m-d')];
+            $summary[] = ['label' => $this->t('admin.audit.filter_summary.to'), 'value' => $to->format('Y-m-d')];
         }
 
         return $summary;
@@ -142,15 +145,15 @@ final class AdminAuditLogListController extends AbstractController
             $user = $this->userManager->getUser($actorId);
             if (null !== $user) {
                 $shortcuts[] = [
-                    'label' => 'Open user',
+                    'label' => $this->t('admin.audit.shortcuts.open_user'),
                     'url' => $this->generateUrl('ui_admin_user_list', ['q' => $user->email]),
                 ];
                 $shortcuts[] = [
-                    'label' => 'User identities',
+                    'label' => $this->t('admin.audit.shortcuts.user_identities'),
                     'url' => $this->generateUrl('ui_admin_identity_list', ['user_id' => $actorId]),
                 ];
                 $shortcuts[] = [
-                    'label' => 'User security',
+                    'label' => $this->t('admin.audit.shortcuts.user_security'),
                     'url' => $this->generateUrl('ui_admin_security_activity_list', ['actorId' => $actorId]),
                 ];
             }
@@ -158,7 +161,7 @@ final class AdminAuditLogListController extends AbstractController
 
         if (null !== $correlationId) {
             $shortcuts[] = [
-                'label' => 'Same correlation',
+                'label' => $this->t('admin.audit.shortcuts.same_correlation'),
                 'url' => $this->generateUrl('ui_admin_audit_log_list', ['correlationId' => $correlationId]),
             ];
         }
@@ -180,5 +183,13 @@ final class AdminAuditLogListController extends AbstractController
         }
 
         return $options;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

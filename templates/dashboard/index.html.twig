@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}{{ 'dashboard.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -167,8 +167,8 @@
     <main class="app-shell dashboard-page">
         <header class="dashboard-header">
             <div>
-                <h1 class="page-title">Dashboard</h1>
-                <p class="muted section-lead">Start from the highest-friction follow-ups, then jump straight into the right screen.</p>
+                <h1 class="page-title">{{ 'dashboard.title'|trans }}</h1>
+                <p class="muted section-lead">{{ 'dashboard.lead'|trans }}</p>
             </div>
             <div class="dashboard-actions">
                 {% for action in quickActions %}
@@ -195,17 +195,17 @@
                 <article class="card dashboard-panel">
                     <div class="section-header">
                         <div>
-                            <h2>Needs attention now</h2>
-                            <p class="section-lead muted">The quickest next steps across imports and maintenance.</p>
+                            <h2>{{ 'dashboard.needs_attention'|trans }}</h2>
+                            <p class="section-lead muted">{{ 'dashboard.needs_attention_lead'|trans }}</p>
                         </div>
                     </div>
                     {% if attentionItems is empty %}
                         <div class="dashboard-empty">
-                            <p>No urgent follow-up is waiting right now.</p>
+                            <p>{{ 'dashboard.no_urgent_follow_up'|trans }}</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new') }}">Add receipt</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index') }}">Open maintenance</a>
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new') }}">{{ 'receipt.form.action_create'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">{{ 'nav.imports'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index') }}">{{ 'analytics.open_maintenance'|trans }}</a>
                             </div>
                         </div>
                     {% else %}
@@ -230,17 +230,17 @@
                 <article class="card dashboard-panel">
                     <div class="section-header">
                         <div>
-                            <h2>Recent receipts</h2>
-                            <p class="section-lead muted">Keep an eye on the latest tracked fuel activity.</p>
+                            <h2>{{ 'dashboard.recent_receipts'|trans }}</h2>
+                            <p class="section-lead muted">{{ 'dashboard.recent_receipts_lead'|trans }}</p>
                         </div>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}">Open receipts</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index') }}">{{ 'nav.receipts'|trans }}</a>
                     </div>
                     {% if recentReceipts is empty %}
                         <div class="dashboard-empty">
-                            <p>No receipt has been tracked yet.</p>
+                            <p>{{ 'dashboard.no_receipt_yet'|trans }}</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new') }}">Add first receipt</a>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new') }}">{{ 'receipt.form.action_create'|trans }}</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">{{ 'nav.imports'|trans }}</a>
                             </div>
                         </div>
                     {% else %}
@@ -248,7 +248,7 @@
                             {% for receipt in recentReceipts %}
                                 <div class="card-subtle dashboard-item">
                                     <div class="dashboard-item-head">
-                                        <div class="dashboard-item-title">{{ receipt.stationName ?? 'Unknown station' }}</div>
+                                        <div class="dashboard-item-title">{{ receipt.stationName ?? ('common.unknown_station'|trans) }}</div>
                                         <span class="pill">{{ receipt.issuedAt|date('d/m/Y') }}</span>
                                     </div>
                                     <div class="dashboard-item-meta">
@@ -272,16 +272,16 @@
                 <article class="card dashboard-panel">
                     <div class="section-header">
                         <div>
-                            <h2>Import queue snapshot</h2>
-                            <p class="section-lead muted">The latest files and their current status.</p>
+                            <h2>{{ 'dashboard.import_snapshot'|trans }}</h2>
+                            <p class="section-lead muted">{{ 'dashboard.import_snapshot_lead'|trans }}</p>
                         </div>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">{{ 'nav.imports'|trans }}</a>
                     </div>
                     {% if recentImports is empty %}
                         <div class="dashboard-empty">
-                            <p>No import file has been uploaded yet.</p>
+                            <p>{{ 'dashboard.no_import_yet'|trans }}</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-primary btn-compact" href="{{ path('ui_import_index') }}#import-upload-card">Upload first file</a>
+                                <a class="btn btn-primary btn-compact" href="{{ path('ui_import_index') }}#import-upload-card">{{ 'import.index.upload_files'|trans }}</a>
                             </div>
                         </div>
                     {% else %}
@@ -290,9 +290,9 @@
                                 <div class="card-subtle dashboard-item">
                                     <div class="dashboard-item-head">
                                         <div class="dashboard-item-title">{{ job.originalFilename }}</div>
-                                        <span class="pill status-pill status-{{ job.status.value }}">{{ job.status.value|replace({'_': ' '})|title }}</span>
+                                        <span class="pill status-pill status-{{ job.status.value }}">{{ ('import.status.' ~ job.status.value)|trans }}</span>
                                     </div>
-                                    <div class="dashboard-item-sub">Uploaded on {{ job.createdAt|date('d/m/Y H:i') }}</div>
+                                    <div class="dashboard-item-sub">{{ 'dashboard.upload_on'|trans({'%date%': job.createdAt|date('d/m/Y H:i')}) }}</div>
                                     <div class="actions-wrap">
                                         {% for action in job.actions %}
                                             <a class="btn {{ action.variant == 'primary' ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ action.url }}">{{ action.label }}</a>
@@ -307,8 +307,8 @@
                 <article class="card dashboard-panel">
                     <div class="section-header">
                         <div>
-                            <h2>Drill down by area</h2>
-                            <p class="section-lead muted">Use the right hub directly instead of scanning each page from scratch.</p>
+                            <h2>{{ 'dashboard.drilldown'|trans }}</h2>
+                            <p class="section-lead muted">{{ 'dashboard.drilldown_lead'|trans }}</p>
                         </div>
                     </div>
                     <div class="workflow-grid">

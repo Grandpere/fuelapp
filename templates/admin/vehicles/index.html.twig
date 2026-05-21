@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Vehicles{% endblock %}
+{% block title %}{{ 'admin.vehicles.title'|trans }}{% endblock %}
 
 {% set admin_section = 'vehicles' %}
 
@@ -8,16 +8,16 @@
     {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Vehicles</h2>
-            <p class="muted">System-wide fleet view with direct follow-up into receipts and maintenance.</p>
+            <h2 class="page-title">{{ 'admin.vehicles.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.vehicles.lead'|trans }}</p>
         </div>
 
         {% if supportShortcuts is not empty %}
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Queue shortcuts</strong>
-                        <p class="muted compact-note">Jump straight into the next vehicle queue that likely needs support attention.</p>
+                        <strong>{{ 'admin.vehicles.queue_shortcuts_title'|trans }}</strong>
+                        <p class="muted compact-note">{{ 'admin.vehicles.queue_shortcuts_lead'|trans }}</p>
                     </div>
                     <div class="actions-wrap">
                         {% for item in supportShortcuts %}
@@ -32,7 +32,7 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Active filters</strong>
+                        <strong>{{ 'admin.common.active_filters'|trans }}</strong>
                         <p class="muted compact-note">
                             {% for item in activeFilterSummary %}
                                 {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
@@ -40,7 +40,7 @@
                         </p>
                     </div>
                     <div class="admin-page-actions">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">Reset</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_list') }}">{{ 'action.reset'|trans }}</a>
                     </div>
                 </div>
             </div>
@@ -48,21 +48,21 @@
 
         <form method="get" action="{{ path('ui_admin_vehicle_list') }}" class="admin-filter-grid-3 admin-table-top">
             <label class="label">
-                Search
-                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="Name, plate, owner email">
+                {{ 'admin.vehicles.filters.search'|trans }}
+                <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="{{ 'admin.vehicles.filters.search_placeholder'|trans }}">
             </label>
             <label class="label">
-                Owner
+                {{ 'admin.vehicles.filters.owner'|trans }}
                 <select class="select" name="ownerId">
-                    <option value="">All owners</option>
+                    <option value="">{{ 'admin.vehicles.filters.all_owners'|trans }}</option>
                     {% for owner in ownerOptions %}
                         <option value="{{ owner.id }}" {% if filters.ownerId == owner.id %}selected{% endif %}>{{ owner.label }}</option>
                     {% endfor %}
                 </select>
             </label>
             <div class="admin-form-actions">
-                <button class="btn btn-primary" type="submit">Apply</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">Reset</a>
+                <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_vehicle_list') }}">{{ 'action.reset'|trans }}</a>
             </div>
         </form>
 
@@ -70,14 +70,14 @@
             <table class="app-table table-min-980">
                 <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Plate</th>
-                    <th>Owner</th>
-                    <th>Signal</th>
-                    <th>Receipts</th>
-                    <th>Maintenance</th>
-                    <th>Updated</th>
-                    <th>Actions</th>
+                    <th>{{ 'admin.vehicles.table.name'|trans }}</th>
+                    <th>{{ 'admin.vehicles.table.plate'|trans }}</th>
+                    <th>{{ 'admin.vehicles.table.owner'|trans }}</th>
+                    <th>{{ 'admin.vehicles.table.signal'|trans }}</th>
+                    <th>{{ 'admin.vehicles.table.receipts'|trans }}</th>
+                    <th>{{ 'admin.vehicles.table.maintenance'|trans }}</th>
+                    <th>{{ 'admin.vehicles.table.updated'|trans }}</th>
+                    <th>{{ 'common.actions'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -103,35 +103,35 @@
                             <div class="muted compact-note">{{ row.signal.detail }}</div>
                         </td>
                         <td>
-                            <div>{{ row.receiptCount }} receipt{{ row.receiptCount == 1 ? '' : 's' }}</div>
+                            <div>{{ (row.receiptCount == 1 ? 'admin.vehicles.receipt_one' : 'admin.vehicles.receipt_other')|trans({'%count%': row.receiptCount}) }}</div>
                             <div class="muted compact-note">
                                 {% if row.lastReceiptAt %}
-                                    Last: {{ row.lastReceiptAt|date('Y-m-d H:i') }}
+                                    {{ 'admin.vehicles.last_receipt'|trans({'%date%': row.lastReceiptAt|date('Y-m-d H:i')}) }}
                                 {% else %}
-                                    No receipt yet
+                                    {{ 'admin.vehicles.no_receipt_yet'|trans }}
                                 {% endif %}
                             </div>
                         </td>
                         <td>
-                            <div>{{ row.eventCount }} event{{ row.eventCount == 1 ? '' : 's' }}</div>
-                            <div class="muted compact-note">{{ row.dueReminderCount }} due reminder{{ row.dueReminderCount == 1 ? '' : 's' }}</div>
+                            <div>{{ (row.eventCount == 1 ? 'admin.vehicles.event_one' : 'admin.vehicles.event_other')|trans({'%count%': row.eventCount}) }}</div>
+                            <div class="muted compact-note">{{ (row.dueReminderCount == 1 ? 'admin.vehicles.due_reminder_one' : 'admin.vehicles.due_reminder_other')|trans({'%count%': row.dueReminderCount}) }}</div>
                         </td>
                         <td>{{ vehicle.updatedAt|date('Y-m-d H:i') }}</td>
                         <td class="action-cell-flex" data-row-link-ignore>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: vehicle.id.toString}) }}" data-turbo-frame="_top">Receipts</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: vehicle.id.toString}) }}" data-turbo-frame="_top">Maintenance</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Edit</a>
-                            <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this vehicle?');">
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: vehicle.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">{{ 'action.open'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: vehicle.id.toString}) }}" data-turbo-frame="_top">{{ 'nav.receipts'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list', {vehicle_id: vehicle.id.toString}) }}" data-turbo-frame="_top">{{ 'nav.maintenance'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_edit', {id: vehicle.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">{{ 'action.edit'|trans }}</a>
+                            <form method="post" action="{{ path('ui_admin_vehicle_delete', {id: vehicle.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('{{ 'admin.vehicles.confirm_delete'|trans }}');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('admin_vehicle_delete_' ~ vehicle.id.toString) }}">
                                 <input type="hidden" name="_redirect" value="{{ returnTo }}">
-                                <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                                <button class="btn btn-danger btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
                             </form>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="8" class="muted">No vehicles found.</td>
+                        <td colspan="8" class="muted">{{ 'admin.vehicles.empty'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

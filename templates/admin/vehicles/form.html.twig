@@ -1,14 +1,14 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Edit Admin Vehicle{% endblock %}
+{% block title %}{{ 'vehicle.form.title_edit'|trans }}{% endblock %}
 
 {% set admin_section = 'vehicles' %}
 
 {% block admin_content %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Edit vehicle</h2>
-            <p class="muted">Admin mutation flow for owner vehicle management.</p>
+            <h2 class="page-title">{{ 'vehicle.form.title_edit'|trans }}</h2>
+            <p class="muted">{{ 'admin.vehicles.form.lead'|trans }}</p>
         </div>
 
         {% if errors is not empty %}
@@ -25,21 +25,21 @@
             <input type="hidden" name="_token" value="{{ csrfToken }}">
             <input type="hidden" name="_return_to" value="{{ returnTo }}">
             <label class="label">
-                Owner ID
+                {{ 'admin.vehicles.form.owner_id'|trans }}
                 <input class="input" type="text" name="ownerId" value="{{ formData.ownerId }}" required>
             </label>
             <label class="label">
-                Vehicle name
+                {{ 'vehicle.form.name'|trans }}
                 <input class="input" type="text" name="name" value="{{ formData.name }}" required>
             </label>
             <label class="label">
-                Plate number
+                {{ 'vehicle.form.plate_number'|trans }}
                 <input class="input" type="text" name="plateNumber" value="{{ formData.plateNumber }}" required>
             </label>
 
             <div class="actions-wrap">
-                <button class="btn btn-primary" type="submit">Save changes</button>
-                <a class="btn btn-secondary" href="{{ returnTo }}" data-turbo-frame="_top">Back</a>
+                <button class="btn btn-primary" type="submit">{{ 'vehicle.form.action_save'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ returnTo }}" data-turbo-frame="_top">{{ 'common.back'|trans }}</a>
             </div>
         </form>
     </section>

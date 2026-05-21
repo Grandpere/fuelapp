@@ -14,15 +14,19 @@ declare(strict_types=1);
 namespace App\Admin\UI\Web\Controller;
 
 use App\Admin\Application\User\AdminUserManager;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminUserListController extends AbstractController
 {
-    public function __construct(private readonly AdminUserManager $userManager)
-    {
+    public function __construct(
+        private readonly AdminUserManager $userManager,
+        private readonly TranslatorInterface $translator,
+    ) {
     }
 
     #[Route('/ui/admin/users', name: 'ui_admin_user_list', methods: ['GET'])]
@@ -120,42 +124,42 @@ final class AdminUserListController extends AbstractController
     {
         if (!$row['isActive'] && !$row['isEmailVerified']) {
             return [
-                'headline' => 'Inactive and unverified',
-                'detail' => 'Account needs both activation and verification review.',
+                'headline' => $this->t('admin.users.signal.inactive_and_unverified.headline'),
+                'detail' => $this->t('admin.users.signal.inactive_and_unverified.detail'),
             ];
         }
 
         if (0 === $row['identityCount']) {
             return [
-                'headline' => 'Missing identities',
-                'detail' => 'Recovery may depend on linking or reviewing external identities.',
+                'headline' => $this->t('admin.users.signal.missing_identities.headline'),
+                'detail' => $this->t('admin.users.signal.missing_identities.detail'),
             ];
         }
 
         if (!$row['isEmailVerified']) {
             return [
-                'headline' => 'Email not verified',
-                'detail' => 'Verification or resend is likely the next support step.',
+                'headline' => $this->t('admin.users.signal.email_not_verified.headline'),
+                'detail' => $this->t('admin.users.signal.email_not_verified.detail'),
             ];
         }
 
         if (!$row['isActive']) {
             return [
-                'headline' => 'Inactive account',
-                'detail' => 'Support may need to reactivate the user before login succeeds.',
+                'headline' => $this->t('admin.users.signal.inactive_account.headline'),
+                'detail' => $this->t('admin.users.signal.inactive_account.detail'),
             ];
         }
 
         if ($row['isAdmin']) {
             return [
-                'headline' => 'Admin account',
-                'detail' => 'Keep admin-only changes auditable and deliberate.',
+                'headline' => $this->t('admin.users.signal.admin_account.headline'),
+                'detail' => $this->t('admin.users.signal.admin_account.detail'),
             ];
         }
 
         return [
-            'headline' => 'Healthy account',
-            'detail' => 'No immediate support issue stands out on this row.',
+            'headline' => $this->t('admin.users.signal.healthy_account.headline'),
+            'detail' => $this->t('admin.users.signal.healthy_account.detail'),
         ];
     }
 
@@ -206,21 +210,21 @@ final class AdminUserListController extends AbstractController
 
         foreach ($users as $user) {
             if (0 === $user['identityCount']) {
-                $shortcuts[] = ['label' => 'Open next missing identity', 'url' => $user['identitiesUrl']];
+                $shortcuts[] = ['label' => $this->t('admin.users.shortcuts.open_next_missing_identity'), 'url' => $user['identitiesUrl']];
                 break;
             }
         }
 
         foreach ($users as $user) {
             if (!$user['isEmailVerified']) {
-                $shortcuts[] = ['label' => 'Open next unverified account', 'url' => $user['auditUrl']];
+                $shortcuts[] = ['label' => $this->t('admin.users.shortcuts.open_next_unverified_account'), 'url' => $user['auditUrl']];
                 break;
             }
         }
 
         foreach ($users as $user) {
             if (!$user['isActive']) {
-                $shortcuts[] = ['label' => 'Open next inactive account', 'url' => $user['securityUrl']];
+                $shortcuts[] = ['label' => $this->t('admin.users.shortcuts.open_next_inactive_account'), 'url' => $user['securityUrl']];
                 break;
             }
         }
@@ -283,21 +287,41 @@ final class AdminUserListController extends AbstractController
         $summary = [];
 
         if (null !== $q) {
-            $summary[] = ['label' => 'Search', 'value' => $q];
+            $summary[] = ['label' => $this->t('admin.users.filter_summary.search'), 'value' => $q];
         }
         if (null !== $role) {
-            $summary[] = ['label' => 'Role', 'value' => $role];
+            $summary[] = [
+                'label' => $this->t('admin.users.filter_summary.role'),
+                'value' => $this->t('admin.users.filters.role_option_'.$role),
+            ];
         }
         if (null !== $isActive) {
-            $summary[] = ['label' => 'Status', 'value' => $isActive ? 'active' : 'inactive'];
+            $summary[] = [
+                'label' => $this->t('admin.users.filter_summary.status'),
+                'value' => $this->t($isActive ? 'admin.users.status.active' : 'admin.users.status.inactive'),
+            ];
         }
         if (null !== $verification) {
-            $summary[] = ['label' => 'Verification', 'value' => $verification ? 'verified' : 'unverified'];
+            $summary[] = [
+                'label' => $this->t('admin.users.filter_summary.verification'),
+                'value' => $this->t($verification ? 'admin.users.verification.verified' : 'admin.users.verification.unverified'),
+            ];
         }
         if (null !== $hasIdentity) {
-            $summary[] = ['label' => 'Identities', 'value' => $hasIdentity ? 'linked' : 'missing'];
+            $summary[] = [
+                'label' => $this->t('admin.users.filter_summary.identities'),
+                'value' => $this->t($hasIdentity ? 'admin.users.identities.linked' : 'admin.users.identities.missing'),
+            ];
         }
 
         return $summary;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

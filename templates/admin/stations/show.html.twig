@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Station Detail{% endblock %}
+{% block title %}{{ 'admin.stations.detail.title'|trans }}{% endblock %}
 
 {% set admin_section = 'stations' %}
 
@@ -11,31 +11,31 @@
     <section class="card admin-panel">
         <div class="admin-page-head">
             <div class="admin-page-header">
-                <h2 class="page-title">Station Detail</h2>
-                <p class="muted">Admin support view with direct access to linked receipt activity.</p>
+                <h2 class="page-title">{{ 'admin.stations.detail.title'|trans }}</h2>
+                <p class="muted">{{ 'admin.stations.detail.lead'|trans }}</p>
             </div>
             <div class="admin-page-actions">
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_edit', {id: station.id.toString, return_to: currentStationUrl}) }}">Edit station</a>
-                <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('Delete this station?');">
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_station_edit', {id: station.id.toString, return_to: currentStationUrl}) }}">{{ 'admin.stations.detail.edit_station'|trans }}</a>
+                <form method="post" action="{{ path('ui_admin_station_delete', {id: station.id.toString}) }}" onsubmit="return confirm('{{ 'admin.stations.confirm_delete'|trans }}');">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_station_delete_' ~ station.id.toString) }}">
                     <input type="hidden" name="_redirect" value="{{ backToListUrl }}">
-                    <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                    <button class="btn btn-danger btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
                 </form>
-                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}">Back to list</a>
+                <a class="btn btn-secondary btn-compact" href="{{ backToListUrl }}">{{ 'action.back_to_list'|trans }}</a>
             </div>
         </div>
 
         <div class="admin-metric-grid admin-table-top">
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Receipts</p>
+                <p class="admin-metric-label">{{ 'nav.receipts'|trans }}</p>
                 <p class="admin-metric-value">{{ receiptCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Linked vehicles</p>
+                <p class="admin-metric-label">{{ 'admin.stations.detail.linked_vehicles'|trans }}</p>
                 <p class="admin-metric-value">{{ linkedVehicleCount }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Geocoding</p>
+                <p class="admin-metric-label">{{ 'admin.stations.table.geocoding'|trans }}</p>
                 <p class="admin-metric-value" style="font-size: 1.25rem;">{{ station.geocodingStatus.value }}</p>
             </article>
         </div>
@@ -43,37 +43,37 @@
         <dl class="admin-dl admin-detail-stack">
             <dt class="admin-dt">ID</dt>
             <dd class="admin-dd">{{ station.id.toString }}</dd>
-            <dt class="admin-dt">Name</dt>
+            <dt class="admin-dt">{{ 'admin.stations.table.name'|trans }}</dt>
             <dd class="admin-dd">{{ station.name }}</dd>
-            <dt class="admin-dt">Street</dt>
+            <dt class="admin-dt">{{ 'station.form.street_name'|trans }}</dt>
             <dd class="admin-dd">{{ station.streetName }}</dd>
-            <dt class="admin-dt">Postal code</dt>
+            <dt class="admin-dt">{{ 'station.form.postal_code'|trans }}</dt>
             <dd class="admin-dd">{{ station.postalCode }}</dd>
-            <dt class="admin-dt">City</dt>
+            <dt class="admin-dt">{{ 'station.form.city'|trans }}</dt>
             <dd class="admin-dd">{{ station.city }}</dd>
-            <dt class="admin-dt">Coordinates</dt>
+            <dt class="admin-dt">{{ 'admin.stations.detail.coordinates'|trans }}</dt>
             <dd class="admin-dd">
                 {% if station.latitudeMicroDegrees is not null and station.longitudeMicroDegrees is not null %}
                     {{ station.latitudeMicroDegrees }} / {{ station.longitudeMicroDegrees }}
                 {% else %}
-                    n/a
+                    {{ 'common.na'|trans }}
                 {% endif %}
             </dd>
-            <dt class="admin-dt">Last geocoding error</dt>
-            <dd class="admin-dd">{{ station.geocodingLastError ?? 'n/a' }}</dd>
+            <dt class="admin-dt">{{ 'admin.stations.detail.last_geocoding_error'|trans }}</dt>
+            <dd class="admin-dd">{{ station.geocodingLastError ?? ('common.na'|trans) }}</dd>
         </dl>
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Support shortcuts</h3>
+        <h3 class="section-title">{{ 'admin.stations.detail.support_shortcuts'|trans }}</h3>
         <ul class="admin-inline-list">
-            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {station_id: station.id.toString}) }}">Open receipts</a></li>
-            <li><a class="btn btn-secondary btn-compact" href="/api/admin/stations/{{ station.id.toString }}">Open API resource</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {station_id: station.id.toString}) }}">{{ 'admin.stations.detail.open_receipts'|trans }}</a></li>
+            <li><a class="btn btn-secondary btn-compact" href="/api/admin/stations/{{ station.id.toString }}">{{ 'admin.stations.detail.open_api'|trans }}</a></li>
         </ul>
     </section>
 
     <section class="card admin-panel admin-section-spaced">
-        <h3 class="section-title">Recent receipts</h3>
+        <h3 class="section-title">{{ 'admin.stations.detail.recent_receipts'|trans }}</h3>
         {% if recentReceipts is not empty %}
             <div class="admin-dashboard-list">
                 {% for receipt in recentReceipts %}
@@ -85,22 +85,22 @@
                         <p class="muted compact-note">{{ receipt.id.toString }}</p>
                         <div class="compact-note">
                             {% if receipt.vehicleId %}
-                                Vehicle: {{ vehicleNames[receipt.vehicleId.toString] ?? receipt.vehicleId.toString }}
+                                {{ 'nav.vehicles'|trans }}: {{ vehicleNames[receipt.vehicleId.toString] ?? receipt.vehicleId.toString }}
                             {% else %}
-                                Vehicle: n/a
+                                {{ 'nav.vehicles'|trans }}: {{ 'common.na'|trans }}
                             {% endif %}
                         </div>
                         <div class="action-row">
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_show', {id: receipt.id.toString, return_to: currentStationUrl}) }}">Open</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_show', {id: receipt.id.toString, return_to: currentStationUrl}) }}">{{ 'action.open'|trans }}</a>
                             {% if receipt.vehicleId %}
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicleId.toString, return_to: currentStationUrl}) }}">Vehicle</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: receipt.vehicleId.toString, return_to: currentStationUrl}) }}">{{ 'nav.vehicles'|trans }}</a>
                             {% endif %}
                         </div>
                     </article>
                 {% endfor %}
             </div>
         {% else %}
-            <p class="muted">No receipt is linked to this station yet.</p>
+            <p class="muted">{{ 'station.no_receipts_yet'|trans }}</p>
         {% endif %}
     </section>
 {% endblock %}

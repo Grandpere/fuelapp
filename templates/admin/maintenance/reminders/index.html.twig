@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html.twig' %}
 
-{% block title %}Admin Maintenance Reminders{% endblock %}
+{% block title %}{{ 'admin.maintenance_reminders.title'|trans }}{% endblock %}
 
 {% set admin_section = 'maintenance_reminders' %}
 
@@ -8,21 +8,21 @@
     {% set returnTo = app.request.requestUri %}
     <section class="card admin-panel">
         <div class="admin-page-header">
-            <h2 class="page-title">Maintenance Reminders</h2>
-            <p class="muted">Triggered reminder states produced by scheduler evaluation.</p>
+            <h2 class="page-title">{{ 'admin.maintenance_reminders.title'|trans }}</h2>
+            <p class="muted">{{ 'admin.maintenance_reminders.lead'|trans }}</p>
         </div>
 
         <div class="admin-metric-grid admin-table-top">
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Due by date</p>
+                <p class="admin-metric-label">{{ 'admin.maintenance_reminders.metrics.date'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.date|default(0) }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Due by odometer</p>
+                <p class="admin-metric-label">{{ 'admin.maintenance_reminders.metrics.odometer'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.odometer|default(0) }}</p>
             </article>
             <article class="card-subtle admin-metric-card">
-                <p class="admin-metric-label">Due by both</p>
+                <p class="admin-metric-label">{{ 'admin.maintenance_reminders.metrics.both'|trans }}</p>
                 <p class="admin-metric-value">{{ metrics.both|default(0) }}</p>
             </article>
         </div>
@@ -30,53 +30,53 @@
         <form method="get" action="{{ path('ui_admin_maintenance_reminder_list') }}" class="admin-filters-form">
             <div class="form-grid-2 admin-table-top">
                 <label class="label">
-                    Owner
+                    {{ 'admin.maintenance_reminders.filters.owner'|trans }}
                     <select class="select" name="owner_id">
-                        <option value="">All owners</option>
+                        <option value="">{{ 'admin.maintenance_reminders.filters.all_owners'|trans }}</option>
                         {% for owner in ownerOptions %}
                             <option value="{{ owner.id }}" {% if filters.ownerId == owner.id %}selected{% endif %}>{{ owner.label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Vehicle
+                    {{ 'admin.maintenance_reminders.filters.vehicle'|trans }}
                     <select class="select" name="vehicle_id">
-                        <option value="">All vehicles</option>
+                        <option value="">{{ 'admin.maintenance_reminders.filters.all_vehicles'|trans }}</option>
                         {% for vehicle in vehicleOptions %}
                             <option value="{{ vehicle.id }}" {% if filters.vehicleId == vehicle.id %}selected{% endif %}>{{ vehicle.label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Due by
+                    {{ 'admin.maintenance_reminders.filters.due_by'|trans }}
                     <select class="select" name="due_by">
-                        <option value="">All</option>
-                        <option value="date" {% if filters.dueBy == 'date' %}selected{% endif %}>Date</option>
-                        <option value="odometer" {% if filters.dueBy == 'odometer' %}selected{% endif %}>Odometer</option>
-                        <option value="both" {% if filters.dueBy == 'both' %}selected{% endif %}>Both</option>
+                        <option value="">{{ 'admin.maintenance_reminders.filters.all'|trans }}</option>
+                        <option value="date" {% if filters.dueBy == 'date' %}selected{% endif %}>{{ 'admin.maintenance_reminders.trigger.date'|trans }}</option>
+                        <option value="odometer" {% if filters.dueBy == 'odometer' %}selected{% endif %}>{{ 'admin.maintenance_reminders.trigger.odometer'|trans }}</option>
+                        <option value="both" {% if filters.dueBy == 'both' %}selected{% endif %}>{{ 'admin.maintenance_reminders.trigger.both'|trans }}</option>
                     </select>
                 </label>
                 <label class="label">
-                    Event type
+                    {{ 'admin.maintenance_reminders.filters.event_type'|trans }}
                     <select class="select" name="event_type">
-                        <option value="">All</option>
+                        <option value="">{{ 'admin.maintenance_reminders.filters.all'|trans }}</option>
                         {% for eventType in eventTypeOptions %}
                             <option value="{{ eventType }}" {% if filters.eventType == eventType %}selected{% endif %}>{{ eventType|upper }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Due from
+                    {{ 'admin.maintenance_reminders.filters.due_from'|trans }}
                     <input class="input" type="text" name="due_from" data-datepicker="date" value="{{ filters.dueFrom }}" autocomplete="off">
                 </label>
                 <label class="label">
-                    Due to
+                    {{ 'admin.maintenance_reminders.filters.due_to'|trans }}
                     <input class="input" type="text" name="due_to" data-datepicker="date" value="{{ filters.dueTo }}" autocomplete="off">
                 </label>
             </div>
             <div class="admin-form-actions">
-                <button class="btn btn-primary" type="submit">Apply</button>
-                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_list') }}">Reset</a>
+                <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ path('ui_admin_maintenance_reminder_list') }}">{{ 'action.reset'|trans }}</a>
             </div>
         </form>
 
@@ -84,7 +84,7 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Active filters</strong>
+                        <strong>{{ 'admin.common.active_filters'|trans }}</strong>
                         <p class="muted compact-note">
                             {% for item in activeFilterSummary %}
                                 {{ item.label }}: {{ item.value }}{% if not loop.last %} · {% endif %}
@@ -92,7 +92,7 @@
                         </p>
                     </div>
                     <div class="admin-page-actions">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">Reset</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_list') }}">{{ 'action.reset'|trans }}</a>
                     </div>
                 </div>
             </div>
@@ -102,13 +102,13 @@
             <div class="card-subtle card-subtle-block admin-table-top">
                 <div class="admin-page-head">
                     <div class="admin-page-header">
-                        <strong>Support toolkit</strong>
-                        <p class="muted compact-note">Anchored on {{ contextVehicle.name() }} so we can move between reminders, events, receipts, and the vehicle dossier without losing context.</p>
+                        <strong>{{ 'admin.maintenance_reminders.support_toolkit_title'|trans }}</strong>
+                        <p class="muted compact-note">{{ 'admin.maintenance_reminders.support_toolkit_lead'|trans({'%vehicle%': contextVehicle.name()}) }}</p>
                     </div>
                     <div class="admin-page-actions">
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: contextVehicle.id().toString(), return_to: returnTo}) }}">Vehicle</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: contextVehicle.id().toString()}) }}">Receipts</a>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: contextVehicle.id().toString(), event_type: filters.eventType}) }}">Events</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: contextVehicle.id().toString(), return_to: returnTo}) }}">{{ 'nav.vehicles'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: contextVehicle.id().toString()}) }}">{{ 'nav.receipts'|trans }}</a>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: contextVehicle.id().toString(), event_type: filters.eventType}) }}">{{ 'admin.maintenance_reminders.shortcuts.events'|trans }}</a>
                     </div>
                 </div>
             </div>
@@ -118,14 +118,14 @@
             <table class="app-table">
                 <thead>
                 <tr>
-                    <th>Created</th>
-                    <th>Rule</th>
-                    <th>Owner ID</th>
-                    <th>Vehicle</th>
-                    <th>Due date</th>
-                    <th>Due odometer</th>
-                    <th>State</th>
-                    <th>Actions</th>
+                    <th>{{ 'admin.maintenance_reminders.table.created_at'|trans }}</th>
+                    <th>{{ 'admin.maintenance_reminders.table.rule'|trans }}</th>
+                    <th>{{ 'admin.maintenance_reminders.table.owner_id'|trans }}</th>
+                    <th>{{ 'nav.vehicles'|trans }}</th>
+                    <th>{{ 'admin.maintenance_reminders.table.due_date'|trans }}</th>
+                    <th>{{ 'admin.maintenance_reminders.table.due_odometer'|trans }}</th>
+                    <th>{{ 'admin.maintenance_reminders.table.state'|trans }}</th>
+                    <th>{{ 'common.actions'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -154,25 +154,25 @@
                                 <code>{{ reminder.reminder.vehicleId }}</code>
                             {% endif %}
                         </td>
-                        <td>{{ reminder.reminder.dueAtDate ? reminder.reminder.dueAtDate|date('Y-m-d') : 'n/a' }}</td>
-                        <td>{{ reminder.reminder.dueAtOdometerKilometers ?? 'n/a' }}</td>
+                        <td>{{ reminder.reminder.dueAtDate ? reminder.reminder.dueAtDate|date('Y-m-d') : ('common.na'|trans) }}</td>
+                        <td>{{ reminder.reminder.dueAtOdometerKilometers ?? ('common.na'|trans) }}</td>
                         <td>
-                            <span class="pill {{ reminder.triggerLabel == 'both' ? 'pill-soft-warning' : (reminder.triggerLabel == 'odometer' ? 'pill-soft-info' : 'pill-soft-warning') }}">{{ reminder.triggerLabel }}</span>
+                            <span class="pill {{ reminder.triggerLabel == 'both' ? 'pill-soft-warning' : (reminder.triggerLabel == 'odometer' ? 'pill-soft-info' : 'pill-soft-warning') }}">{{ ('admin.maintenance_reminders.trigger.' ~ reminder.triggerLabel)|trans }}</span>
                         </td>
                         <td>
                             <div class="action-row" data-row-link-ignore>
-                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.reminder.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">Open</a>
+                                <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_reminder_show', {id: reminder.reminder.id.toString, return_to: returnTo}) }}" data-turbo-frame="_top">{{ 'action.open'|trans }}</a>
                                 {% if reminder.vehicle %}
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: reminder.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">Vehicle</a>
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: reminder.vehicle.id().toString()}) }}" data-turbo-frame="_top">Receipts</a>
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: reminder.vehicle.id().toString(), event_type: ruleSummary is not null and ruleSummary.eventType is not empty ? ruleSummary.eventType : null}) }}" data-turbo-frame="_top">Events</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_vehicle_show', {id: reminder.vehicle.id().toString(), return_to: returnTo}) }}" data-turbo-frame="_top">{{ 'nav.vehicles'|trans }}</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_receipt_list', {vehicle_id: reminder.vehicle.id().toString()}) }}" data-turbo-frame="_top">{{ 'nav.receipts'|trans }}</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_admin_maintenance_event_list', {vehicle_id: reminder.vehicle.id().toString(), event_type: ruleSummary is not null and ruleSummary.eventType is not empty ? ruleSummary.eventType : null}) }}" data-turbo-frame="_top">{{ 'admin.maintenance_reminders.shortcuts.events'|trans }}</a>
                                 {% endif %}
                             </div>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="8" class="muted">No reminders found.</td>
+                        <td colspan="8" class="muted">{{ 'admin.maintenance_reminders.empty'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

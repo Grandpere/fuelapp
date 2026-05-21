@@ -98,7 +98,7 @@ final class ImportWebUiTest extends WebTestCase
         $pageResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $pageResponse->getStatusCode());
         $pageContent = (string) $pageResponse->getContent();
-        self::assertStringContainsString('Import Receipts', $pageContent);
+        self::assertStringContainsString('Importer des reçus', $pageContent);
 
         preg_match('/name="_token" value="([^"]+)"/', $pageContent, $matches);
         $csrfToken = $matches[1] ?? null;
@@ -125,10 +125,10 @@ final class ImportWebUiTest extends WebTestCase
         $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
-        self::assertStringContainsString('Last upload summary', $listContent);
-        self::assertStringContainsString('1 queued, 0 rejected.', $listContent);
+        self::assertStringContainsString('Résumé du dernier téléversement', $listContent);
+        self::assertStringContainsString('1 en file, 0 rejetés.', $listContent);
         self::assertStringContainsString('ticket.png', $listContent);
-        self::assertStringContainsString('Queued', $listContent);
+        self::assertStringContainsString('En file', $listContent);
         self::assertStringContainsString('data-controller="row-link"', $listContent);
 
         $saved = $this->em->getRepository(ImportJobEntity::class)->findOneBy(['originalFilename' => 'ticket.png']);
@@ -283,28 +283,28 @@ final class ImportWebUiTest extends WebTestCase
         $response = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
-        self::assertStringContainsString('Receipt created', $content);
-        self::assertStringContainsString('Open receipt', $content);
-        self::assertStringContainsString('Already handled elsewhere', $content);
-        self::assertStringContainsString('Matches an existing receipt.', $content);
-        self::assertStringContainsString('Processing stopped', $content);
-        self::assertStringContainsString('Reason: provider unavailable.', $content);
+        self::assertStringContainsString('Reçu créé', $content);
+        self::assertStringContainsString('Ouvrir le reçu', $content);
+        self::assertStringContainsString('Déjà traité ailleurs', $content);
+        self::assertStringContainsString('Correspond à un reçu existant.', $content);
+        self::assertStringContainsString('Traitement interrompu', $content);
+        self::assertStringContainsString('Raison : provider unavailable.', $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $content);
-        self::assertStringContainsString('All: 4', $content);
-        self::assertStringContainsString('Processed: 1', $content);
-        self::assertStringContainsString('Failed: 1', $content);
-        self::assertStringContainsString('Needs review: 1', $content);
-        self::assertStringContainsString('Review next pending', $content);
-        self::assertStringContainsString('Inspect latest failure', $content);
-        self::assertStringContainsString('Upload replacement', $content);
+        self::assertStringContainsString('Tous: 4', $content);
+        self::assertStringContainsString('Traité: 1', $content);
+        self::assertStringContainsString('En échec: 1', $content);
+        self::assertStringContainsString('À relire: 1', $content);
+        self::assertStringContainsString('Relire le prochain en attente', $content);
+        self::assertStringContainsString('Inspecter le dernier échec', $content);
+        self::assertStringContainsString('Téléverser un remplacement', $content);
         self::assertStringContainsString('/ui/imports#import-upload-card', $content);
-        self::assertStringContainsString('Re-upload', $content);
-        self::assertStringContainsString('Detail', $content);
+        self::assertStringContainsString('Retéléverser', $content);
+        self::assertStringContainsString('Détail', $content);
 
         $failedOnlyResponse = $this->request('GET', '/ui/imports?status=failed', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $failedOnlyResponse->getStatusCode());
         $failedOnlyContent = (string) $failedOnlyResponse->getContent();
-        self::assertStringContainsString('Filtered on <strong>Failed</strong>.', $failedOnlyContent);
+        self::assertStringContainsString('Filtré sur <strong>En échec</strong>.', $failedOnlyContent);
         self::assertStringContainsString('failed-list.jpg', $failedOnlyContent);
         self::assertStringNotContainsString('processed-list.jpg', $failedOnlyContent);
     }
@@ -351,8 +351,8 @@ final class ImportWebUiTest extends WebTestCase
         $listResponse = $this->request('GET', '/ui/imports', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $listResponse->getStatusCode());
         $listContent = (string) $listResponse->getContent();
-        self::assertStringContainsString('Last upload summary', $listContent);
-        self::assertStringContainsString('1 queued, 1 rejected.', $listContent);
+        self::assertStringContainsString('Résumé du dernier téléversement', $listContent);
+        self::assertStringContainsString('1 en file, 1 rejetés.', $listContent);
         self::assertStringContainsString('valid.png', $listContent);
         self::assertStringContainsString('invalid.txt', $listContent);
         self::assertStringContainsString('Unsupported file type', $listContent);
@@ -404,7 +404,7 @@ final class ImportWebUiTest extends WebTestCase
         $reviewPage = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $reviewPage->getStatusCode());
         $reviewContent = (string) $reviewPage->getContent();
-        self::assertStringContainsString('Fix And Finalize', $reviewContent);
+        self::assertStringContainsString('Corriger et finaliser', $reviewContent);
         $csrfToken = $this->extractFinalizeCsrfToken($reviewContent, $jobId);
 
         $finalizeResponse = $this->request(
@@ -492,12 +492,12 @@ final class ImportWebUiTest extends WebTestCase
 
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $content = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Review queue', $content);
-        self::assertStringContainsString('Import 2 of 3', $content);
-        self::assertStringContainsString('Previous: newer-review.jpg', $content);
-        self::assertStringContainsString('Next: older-review.jpg', $content);
+        self::assertStringContainsString('File de revue', $content);
+        self::assertStringContainsString('Import 2 sur 3', $content);
+        self::assertStringContainsString('Précédent : newer-review.jpg', $content);
+        self::assertStringContainsString('Suivant : older-review.jpg', $content);
         self::assertStringContainsString('/ui/imports?status=needs_review', $content);
-        self::assertStringContainsString('Finalize and open next', $content);
+        self::assertStringContainsString('Finaliser et ouvrir le suivant', $content);
     }
 
     public function testUserCanFinalizeNeedsReviewImportWithManualCorrectionsFromUi(): void
@@ -544,7 +544,7 @@ final class ImportWebUiTest extends WebTestCase
         $reviewPage = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $reviewPage->getStatusCode());
         $reviewContent = (string) $reviewPage->getContent();
-        self::assertStringContainsString('Fix And Finalize', $reviewContent);
+        self::assertStringContainsString('Corriger et finaliser', $reviewContent);
         $csrfToken = $this->extractFinalizeCsrfToken($reviewContent, $jobId);
 
         $finalizeResponse = $this->request(
@@ -633,7 +633,7 @@ final class ImportWebUiTest extends WebTestCase
         $reviewPage = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $reviewPage->getStatusCode());
         $reviewContent = (string) $reviewPage->getContent();
-        self::assertStringContainsString('Receipt lines', $reviewContent);
+        self::assertStringContainsString('Lignes du reçu', $reviewContent);
         self::assertStringContainsString('name="lines[0][fuelType]"', $reviewContent);
         self::assertStringContainsString('name="lines[1][fuelType]"', $reviewContent);
         $csrfToken = $this->extractFinalizeCsrfToken($reviewContent, $jobId);
@@ -676,6 +676,98 @@ final class ImportWebUiTest extends WebTestCase
         $savedReceipt = $this->em->getRepository(ReceiptEntity::class)->findOneBy([]);
         self::assertInstanceOf(ReceiptEntity::class, $savedReceipt);
         self::assertCount(2, $savedReceipt->getLines());
+    }
+
+    public function testUserSeesIndexedValidationErrorWhenFinalizingNeedsReviewImport(): void
+    {
+        $email = 'import.web.multiline.invalid@example.com';
+        $password = 'test1234';
+        $user = $this->createUser($email, $password);
+
+        $job = new ImportJobEntity();
+        $job->setId(Uuid::v7());
+        $job->setOwner($user);
+        $job->setStatus(ImportJobStatus::NEEDS_REVIEW);
+        $job->setStorage('local');
+        $job->setFilePath('2026/03/25/manual-invalid-multiline.jpg');
+        $job->setOriginalFilename('manual-invalid-multiline.jpg');
+        $job->setMimeType('image/jpeg');
+        $job->setFileSizeBytes(64000);
+        $job->setFileChecksumSha256(str_repeat('n', 64));
+        $job->setErrorPayload(json_encode([
+            'parsedDraft' => [
+                'issuedAt' => '2026-03-25T11:20:00+00:00',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => 30000,
+                        'unitPriceDeciCentsPerLiter' => 1820,
+                        'vatRatePercent' => 20,
+                    ],
+                    [
+                        'fuelType' => 'sp98',
+                        'quantityMilliLiters' => 10000,
+                        'unitPriceDeciCentsPerLiter' => 1940,
+                        'vatRatePercent' => 20,
+                    ],
+                ],
+                'creationPayload' => null,
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $job->setCreatedAt(new DateTimeImmutable('2026-03-25 11:21:00'));
+        $job->setUpdatedAt(new DateTimeImmutable('2026-03-25 11:21:00'));
+        $job->setRetentionUntil(new DateTimeImmutable('2026-04-25 11:21:00'));
+        $this->em->persist($job);
+        $this->em->flush();
+
+        $jobId = $job->getId()->toRfc4122();
+        $sessionCookie = $this->loginWithUiForm($email, $password);
+
+        $reviewPage = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $reviewPage->getStatusCode());
+        $reviewContent = (string) $reviewPage->getContent();
+        $csrfToken = $this->extractFinalizeCsrfToken($reviewContent, $jobId);
+
+        $finalizeResponse = $this->request(
+            'POST',
+            '/ui/imports/'.$jobId.'/finalize',
+            [
+                '_token' => $csrfToken,
+                'issuedAt' => '2026-03-25T11:20',
+                'stationName' => 'TOTAL ENERGIES',
+                'stationStreetName' => '1 Rue de Rivoli',
+                'stationPostalCode' => '75001',
+                'stationCity' => 'Paris',
+                'lines' => [
+                    [
+                        'fuelType' => 'diesel',
+                        'quantityMilliLiters' => '30000',
+                        'unitPriceDeciCentsPerLiter' => '1820',
+                        'vatRatePercent' => '20',
+                    ],
+                    [
+                        'fuelType' => '',
+                        'quantityMilliLiters' => '10000',
+                        'unitPriceDeciCentsPerLiter' => '1940',
+                        'vatRatePercent' => '20',
+                    ],
+                ],
+            ],
+            [],
+            $sessionCookie,
+        );
+        self::assertSame(Response::HTTP_FOUND, $finalizeResponse->getStatusCode());
+
+        $followResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        self::assertSame(Response::HTTP_OK, $followResponse->getStatusCode());
+        self::assertStringContainsString(
+            'Ligne 2 incomplète. Type de carburant, quantité, prix unitaire et taux de TVA sont tous obligatoires.',
+            (string) $followResponse->getContent(),
+        );
     }
 
     public function testUserCanFinalizeAndOpenNextNeedsReviewImportFromUi(): void
@@ -769,7 +861,7 @@ final class ImportWebUiTest extends WebTestCase
         $page = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $page->getStatusCode());
         $content = (string) $page->getContent();
-        self::assertStringContainsString('Existing station', $content);
+        self::assertStringContainsString('Station existante', $content);
         self::assertStringContainsString('TOTAL ENERGIES - 1 Rue de Rivoli, 75001 Paris', $content);
         $csrf = $this->extractFinalizeCsrfToken($content, $jobId);
 
@@ -811,7 +903,7 @@ final class ImportWebUiTest extends WebTestCase
 
         $follow = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $follow->getStatusCode());
-        self::assertStringContainsString('Selected station was not found.', (string) $follow->getContent());
+        self::assertStringContainsString('Station introuvable.', (string) $follow->getContent());
     }
 
     public function testUserCanFinalizeImportUsingSelectedPublicSuggestion(): void
@@ -849,9 +941,9 @@ final class ImportWebUiTest extends WebTestCase
         $page = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $page->getStatusCode());
         $content = (string) $page->getContent();
-        self::assertStringContainsString('Public station suggestions', $content);
+        self::assertStringContainsString('Stations publiques', $content);
         self::assertStringContainsString('40 Rue Robert Schuman', $content);
-        self::assertStringContainsString('Switch back to manual entry', $content);
+        self::assertStringContainsString('Revenir à la saisie manuelle', $content);
         $csrf = $this->extractFinalizeCsrfToken($content, $jobId);
 
         $response = $this->request('POST', '/ui/imports/'.$jobId.'/finalize', [
@@ -917,8 +1009,8 @@ final class ImportWebUiTest extends WebTestCase
         $page = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $page->getStatusCode());
         $content = (string) $page->getContent();
-        self::assertStringContainsString('Public station suggestions', $content);
-        self::assertStringContainsString('Selection active', $content);
+        self::assertStringContainsString('Stations publiques', $content);
+        self::assertStringContainsString('Sélection active', $content);
         $csrf = $this->extractFinalizeCsrfToken($content, $jobId);
 
         $response = $this->request('POST', '/ui/imports/'.$jobId.'/finalize', [
@@ -927,14 +1019,18 @@ final class ImportWebUiTest extends WebTestCase
             'selectedStationId' => '',
         ], [], $sessionCookie);
         self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
-        self::assertSame('/ui/imports/'.$jobId.'?return_to=/ui/imports', $response->headers->get('Location'));
+        self::assertSame('/ui/imports/'.$jobId.'?return_to=/ui/imports&selectedSuggestion=public:public-1', $response->headers->get('Location'));
 
-        $follow = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
+        $follow = $this->request('GET', '/ui/imports/'.$jobId.'?return_to=/ui/imports&selectedSuggestion=public:public-1', [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $follow->getStatusCode());
+        $followContent = (string) $follow->getContent();
         self::assertStringContainsString(
-            'Selected public station conflicts with the existing linked public source for this station.',
-            (string) $follow->getContent(),
+            'La station publique sélectionnée est en conflit avec la source publique déjà liée à cette station.',
+            $followContent,
         );
+        self::assertStringContainsString('Sélection active', $followContent);
+        self::assertStringContainsString('Suggestion active', $followContent);
+        self::assertMatchesRegularExpression('/name="selectedSuggestion" value="public:public-1"[^>]*checked/', $followContent);
 
         $this->em->clear();
         self::assertCount(0, $this->em->getRepository(ReceiptEntity::class)->findBy(['owner' => $user]));
@@ -1056,19 +1152,19 @@ final class ImportWebUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Import completed', $detailContent);
-        self::assertStringContainsString('What happened', $detailContent);
-        self::assertStringContainsString('Receipt created successfully', $detailContent);
-        self::assertStringContainsString('What you can do now', $detailContent);
-        self::assertStringContainsString('Receipt continuity', $detailContent);
-        self::assertStringContainsString('Vehicle: Processed Car', $detailContent);
+        self::assertStringContainsString('Import terminé', $detailContent);
+        self::assertStringContainsString('Ce qui s’est passé', $detailContent);
+        self::assertStringContainsString('Reçu créé avec succès', $detailContent);
+        self::assertStringContainsString('Ce que vous pouvez faire maintenant', $detailContent);
+        self::assertStringContainsString('Continuité du reçu', $detailContent);
+        self::assertStringContainsString('Véhicule: Processed Car', $detailContent);
         self::assertStringContainsString('Station: Processed Station', $detailContent);
         self::assertStringContainsString('/ui/receipts/'.$receiptId, $detailContent);
-        self::assertStringContainsString('Open created receipt', $detailContent);
-        self::assertStringContainsString('Open receipt', $detailContent);
+        self::assertStringContainsString('Ouvrir le reçu créé', $detailContent);
+        self::assertStringContainsString('Ouvrir le reçu', $detailContent);
         self::assertStringContainsString('/ui/vehicles/'.$vehicle->getId()->toRfc4122(), $detailContent);
         self::assertStringContainsString('/ui/stations/'.$station->getId()->toRfc4122(), $detailContent);
-        self::assertStringContainsString('Upload another file', $detailContent);
+        self::assertStringContainsString('Téléverser un autre fichier', $detailContent);
         self::assertStringContainsString('/ui/imports#import-upload-card', $detailContent);
     }
 
@@ -1122,12 +1218,12 @@ final class ImportWebUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Duplicate import', $detailContent);
-        self::assertStringContainsString('Duplicate already handled', $detailContent);
-        self::assertStringContainsString('What you can do now', $detailContent);
+        self::assertStringContainsString('Import en doublon', $detailContent);
+        self::assertStringContainsString('Doublon déjà traité', $detailContent);
+        self::assertStringContainsString('Ce que vous pouvez faire maintenant', $detailContent);
         self::assertStringContainsString('/ui/imports/'.$originalJobId, $detailContent);
-        self::assertStringContainsString('Open original import', $detailContent);
-        self::assertStringContainsString('Upload different file', $detailContent);
+        self::assertStringContainsString('Ouvrir l’import d’origine', $detailContent);
+        self::assertStringContainsString('Téléverser un autre fichier', $detailContent);
         self::assertStringContainsString('/ui/imports#import-upload-card', $detailContent);
     }
 
@@ -1187,15 +1283,15 @@ final class ImportWebUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Duplicate import', $detailContent);
-        self::assertStringContainsString('Duplicate already handled', $detailContent);
-        self::assertStringContainsString('Receipt continuity', $detailContent);
+        self::assertStringContainsString('Import en doublon', $detailContent);
+        self::assertStringContainsString('Doublon déjà traité', $detailContent);
+        self::assertStringContainsString('Continuité du reçu', $detailContent);
         self::assertStringContainsString('Station: PETRO EST', $detailContent);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $detailContent);
-        self::assertStringContainsString('Open existing receipt', $detailContent);
-        self::assertStringContainsString('Open receipt', $detailContent);
+        self::assertStringContainsString('Ouvrir le reçu existant', $detailContent);
+        self::assertStringContainsString('Ouvrir le reçu', $detailContent);
         self::assertStringContainsString('/ui/stations/'.$station->getId()->toRfc4122(), $detailContent);
-        self::assertStringContainsString('Upload different file', $detailContent);
+        self::assertStringContainsString('Téléverser un autre fichier', $detailContent);
     }
 
     public function testDuplicateImportDetailDoesNotExposeMissingReceiptShortcut(): void
@@ -1248,8 +1344,8 @@ final class ImportWebUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringNotContainsString('Open existing receipt', $detailContent);
-        self::assertStringContainsString('Open original import instead', $detailContent);
+        self::assertStringNotContainsString('Ouvrir le reçu existant', $detailContent);
+        self::assertStringContainsString('Ouvrir l’import d’origine à la place', $detailContent);
     }
 
     public function testDuplicateImportDetailDoesNotExposeMissingOriginalImportShortcut(): void
@@ -1283,8 +1379,8 @@ final class ImportWebUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringNotContainsString('Open original import', $detailContent);
-        self::assertStringContainsString('Back to imports', $detailContent);
+        self::assertStringNotContainsString('Ouvrir l’import d’origine', $detailContent);
+        self::assertStringContainsString('Retour aux imports', $detailContent);
     }
 
     public function testFailedImportDetailExplainsNextSteps(): void
@@ -1317,10 +1413,10 @@ final class ImportWebUiTest extends WebTestCase
         $detailResponse = $this->request('GET', '/ui/imports/'.$job->getId()->toRfc4122(), [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Import processing stopped', $detailContent);
-        self::assertStringContainsString('Fallback reason: provider unavailable', $detailContent);
-        self::assertStringContainsString('What you can do now', $detailContent);
-        self::assertStringContainsString('Upload replacement', $detailContent);
+        self::assertStringContainsString('Traitement d’import interrompu', $detailContent);
+        self::assertStringContainsString('Raison du repli: provider unavailable', $detailContent);
+        self::assertStringContainsString('Ce que vous pouvez faire maintenant', $detailContent);
+        self::assertStringContainsString('Téléverser un remplacement', $detailContent);
         self::assertStringContainsString('/ui/imports#import-upload-card', $detailContent);
     }
 
@@ -1433,8 +1529,8 @@ final class ImportWebUiTest extends WebTestCase
         $reviewResponse = $this->request('GET', '/ui/imports/'.$jobId, [], [], $sessionCookie);
         self::assertSame(Response::HTTP_OK, $reviewResponse->getStatusCode());
         $reviewContent = (string) $reviewResponse->getContent();
-        self::assertStringContainsString('Date required before finalization', $reviewContent);
-        self::assertStringContainsString('Required for this import: OCR did not detect the receipt date.', $reviewContent);
+        self::assertStringContainsString('Date requise avant finalisation', $reviewContent);
+        self::assertStringContainsString('Obligatoire pour cet import : l’OCR n’a pas détecté la date du reçu.', $reviewContent);
         self::assertStringContainsString('name="issuedAt"', $reviewContent);
     }
 

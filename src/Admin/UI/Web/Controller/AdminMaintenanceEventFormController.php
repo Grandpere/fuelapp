@@ -19,6 +19,7 @@ use App\Maintenance\Domain\Enum\MaintenanceEventType;
 use App\Maintenance\Domain\MaintenanceEvent;
 use App\Vehicle\Application\Repository\VehicleRepository;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +28,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use ValueError;
 
 final class AdminMaintenanceEventFormController extends AbstractController
@@ -38,6 +40,7 @@ final class AdminMaintenanceEventFormController extends AbstractController
         private readonly VehicleRepository $vehicleRepository,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -89,7 +92,7 @@ final class AdminMaintenanceEventFormController extends AbstractController
                     ],
                 );
 
-                $this->addFlash('success', 'Maintenance event updated.');
+                $this->addFlash('success', $this->t('admin.maintenance_events.flash.updated'));
 
                 return new RedirectResponse($backToListUrl, Response::HTTP_SEE_OTHER);
             }
@@ -177,40 +180,44 @@ final class AdminMaintenanceEventFormController extends AbstractController
         $errors = [];
 
         if (!$this->isCsrfTokenValid('admin_maintenance_event_form', $formData['_token'])) {
-            $errors[] = 'Jeton CSRF invalide.';
+            $errors[] = $this->t('receipt.validation.invalid_csrf');
         }
 
         $vehicleId = trim($formData['vehicleId']);
         if (!Uuid::isValid($vehicleId) || !$this->vehicleRepository->belongsToOwner($vehicleId, $ownerId)) {
-            $errors[] = 'Vehicle not found for this owner.';
+            $errors[] = $this->t('maintenance.validation.vehicle_not_found');
         }
 
         try {
             MaintenanceEventType::from(trim($formData['eventType']));
         } catch (ValueError) {
-            $errors[] = 'Invalid event type.';
+            $errors[] = $this->t('maintenance.validation.invalid_event_type');
         }
 
         $occurredAt = DateTimeImmutable::createFromFormat('Y-m-d\\TH:i', trim($formData['occurredAt']));
         if (false === $occurredAt) {
-            $errors[] = 'Invalid event date.';
+            $errors[] = $this->t('maintenance.validation.invalid_event_date');
         }
 
         foreach (['odometerKilometers', 'totalCostCents'] as $field) {
             $value = $this->nullableInt($formData[$field]);
             if ('' !== trim($formData[$field]) && null === $value) {
-                $errors[] = sprintf('Field %s must be an integer.', $field);
+                $errors[] = 'odometerKilometers' === $field
+                    ? $this->t('maintenance.validation.odometer_integer')
+                    : $this->t('admin.maintenance_events.validation.total_cost_integer');
                 continue;
             }
 
             if (null !== $value && $value < 0) {
-                $errors[] = sprintf('Field %s must be non-negative.', $field);
+                $errors[] = 'odometerKilometers' === $field
+                    ? $this->t('maintenance.validation.odometer_non_negative')
+                    : $this->t('maintenance.validation.total_cost_non_negative');
             }
         }
 
         $currencyCode = strtoupper(trim($formData['currencyCode']));
         if (3 !== strlen($currencyCode)) {
-            $errors[] = 'Currency code must contain exactly 3 letters.';
+            $errors[] = $this->t('maintenance.validation.currency_code');
         }
 
         return array_values(array_unique($errors));
@@ -233,5 +240,13 @@ final class AdminMaintenanceEventFormController extends AbstractController
         $trimmed = trim($value);
 
         return '' === $trimmed ? null : $trimmed;
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

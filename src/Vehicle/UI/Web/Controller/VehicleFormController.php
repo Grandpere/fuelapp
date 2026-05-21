@@ -100,11 +100,11 @@ final class VehicleFormController extends AbstractController
                 if ($vehicle instanceof Vehicle) {
                     $vehicle->update($ownerId, $name, $plateNumber);
                     $this->vehicleRepository->save($vehicle);
-                    $this->addFlash('success', 'Vehicle updated.');
+                    $this->addFlash('success', 'flash.vehicle.updated');
                 } else {
                     $newVehicle = Vehicle::create($ownerId, $name, $plateNumber);
                     $this->vehicleRepository->save($newVehicle);
-                    $this->addFlash('success', 'Vehicle created.');
+                    $this->addFlash('success', 'flash.vehicle.created');
                 }
 
                 return new RedirectResponse($backToListUrl, Response::HTTP_SEE_OTHER);
@@ -136,23 +136,23 @@ final class VehicleFormController extends AbstractController
         $errors = [];
 
         if (!$this->isCsrfTokenValid('vehicle_form', $formData['_token'])) {
-            $errors[] = 'Jeton CSRF invalide.';
+            $errors[] = 'flash.csrf.invalid';
         }
 
         $name = trim($formData['name']);
         if ('' === $name) {
-            $errors[] = 'Name is required.';
+            $errors[] = 'vehicle.validation.name_required';
         }
 
         $plateNumber = trim($formData['plateNumber']);
         if ('' === $plateNumber) {
-            $errors[] = 'Plate number is required.';
+            $errors[] = 'vehicle.validation.plate_required';
         }
 
         if ('' !== $plateNumber) {
             $existing = $this->vehicleRepository->findByOwnerAndPlateNumber($ownerId, $plateNumber);
             if ($existing instanceof Vehicle && (null === $currentVehicle || $existing->id()->toString() !== $currentVehicle->id()->toString())) {
-                $errors[] = 'A vehicle with this plate already exists for this owner.';
+                $errors[] = 'vehicle.validation.duplicate_plate';
             }
         }
 

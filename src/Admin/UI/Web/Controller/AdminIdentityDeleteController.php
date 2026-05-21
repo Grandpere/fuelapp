@@ -24,6 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminIdentityDeleteController extends AbstractController
 {
@@ -32,6 +33,7 @@ final class AdminIdentityDeleteController extends AbstractController
     public function __construct(
         private readonly AdminIdentityManager $identityManager,
         private readonly AdminAuditTrail $auditTrail,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -65,7 +67,7 @@ final class AdminIdentityDeleteController extends AbstractController
         try {
             $this->identityManager->unlinkIdentity($id);
         } catch (LogicException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addFlash('error', $this->translator->trans($e->getMessage()));
 
             return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
         }
@@ -77,7 +79,7 @@ final class AdminIdentityDeleteController extends AbstractController
             ['before' => $before],
         );
 
-        $this->addFlash('success', 'Identity deleted.');
+        $this->addFlash('success', $this->translator->trans('admin.identities.flash.deleted'));
 
         return new RedirectResponse($redirectTo, Response::HTTP_SEE_OTHER);
     }

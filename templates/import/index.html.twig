@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Import Receipts{% endblock %}
+{% block title %}{{ 'import.index.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -51,12 +51,12 @@
     <main class="app-shell page-stack">
         <header class="page-header-split">
             <div class="page-header">
-                <h1 class="page-title">Import Receipts</h1>
-                <p class="muted section-lead">Upload a receipt file and let the async OCR pipeline process it.</p>
+                <h1 class="page-title">{{ 'import.index.title'|trans }}</h1>
+                <p class="muted section-lead">{{ 'import.index.lead'|trans }}</p>
             </div>
             <div class="page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">Receipts</a>
-                <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard') }}" data-turbo-frame="_top">Analytics</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}" data-turbo-frame="_top">{{ 'nav.receipts'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard') }}" data-turbo-frame="_top">{{ 'nav.analytics'|trans }}</a>
             </div>
         </header>
 
@@ -64,15 +64,15 @@
             <form method="post" enctype="multipart/form-data" data-turbo-frame="_top" class="form-stack content-narrow">
                 <input type="hidden" name="_token" value="{{ csrf_token('ui_import_upload') }}">
                 <label class="label">
-                    Receipt files (PDF/JPEG/PNG/WEBP) or ZIP archive
+                    {{ 'import.index.upload_label'|trans }}
                     <input class="input" type="file" name="files[]" accept=".pdf,.zip,image/jpeg,image/png,image/webp" multiple required>
                 </label>
                 <p class="muted section-lead">
-                    Limits: allowed formats are PDF/JPEG/PNG/WEBP, max size is 8 MB for images and 1 MB for PDF, ZIP supports up to 50 entries, and unsafe ZIP paths are rejected.
+                    {{ 'import.index.upload_limits'|trans }}
                 </p>
                 <div class="actions-wrap">
-                    <button class="btn btn-primary" type="submit">Upload and process</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">Refresh</a>
+                    <button class="btn btn-primary" type="submit">{{ 'import.index.upload_submit'|trans }}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_import_index') }}" data-turbo-frame="_top">{{ 'import.index.refresh'|trans }}</a>
                 </div>
             </form>
         </section>
@@ -81,16 +81,16 @@
             <section class="card section-card">
                 <div class="section-header">
                     <div>
-                        <h2 class="section-title">Last upload summary</h2>
+                        <h2 class="section-title">{{ 'import.index.last_upload_summary'|trans }}</h2>
                         <p class="muted section-lead">
-                            {{ uploadSummary.acceptedCount }} queued, {{ uploadSummary.rejectedCount }} rejected.
+                            {{ 'import.index.last_upload_counts'|trans({'%accepted%': uploadSummary.acceptedCount, '%rejected%': uploadSummary.rejectedCount}) }}
                         </p>
                     </div>
                 </div>
 
                 {% if uploadSummary.accepted|length > 0 %}
                     <div class="form-stack">
-                        <p class="text-block-title">Accepted</p>
+                        <p class="text-block-title">{{ 'import.index.accepted'|trans }}</p>
                         <ul class="flash-list">
                             {% for accepted in uploadSummary.accepted %}
                                 <li class="flash">
@@ -98,7 +98,7 @@
                                     {% if accepted.source != accepted.filename %}
                                         <span class="muted">({{ accepted.source }})</span>
                                     {% endif %}
-                                    <span class="muted">queued as {{ accepted.status }}</span>
+                                    <span class="muted">{{ 'import.index.accepted_item'|trans({'%status%': accepted.status}) }}</span>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -107,7 +107,7 @@
 
                 {% if uploadSummary.rejected|length > 0 %}
                     <div class="form-stack">
-                        <p class="text-block-title">Rejected</p>
+                        <p class="text-block-title">{{ 'import.index.rejected'|trans }}</p>
                         <ul class="flash-list">
                             {% for rejected in uploadSummary.rejected %}
                                 <li class="flash flash-error">
@@ -127,8 +127,8 @@
         <section class="card section-card">
             <div class="section-header">
                 <div>
-                    <h2 class="section-title">My import jobs</h2>
-                    <p class="muted section-lead">Track OCR progress, review incomplete imports, and remove stale uploads.</p>
+                    <h2 class="section-title">{{ 'import.index.my_jobs'|trans }}</h2>
+                    <p class="muted section-lead">{{ 'import.index.my_jobs_lead'|trans }}</p>
                 </div>
             </div>
 
@@ -148,15 +148,15 @@
                 {% if followUpShortcuts|length > 0 %}
                     <div class="card section-card import-follow-up">
                         <div>
-                            <p class="text-block-title">Follow up now</p>
+                            <p class="text-block-title">{{ 'import.index.follow_up_now'|trans }}</p>
                             <p class="muted section-lead">
                                 {% if statusFilter %}
-                                    Filtered on <strong>{{ statusLabels[statusFilter] ?? statusFilter }}</strong>.
+                                    {{ 'import.index.filtered_on'|trans({'%status%': statusLabels[statusFilter] ?? statusFilter})|raw }}
                                 {% else %}
-                                    Jump straight to the next import that needs attention.
+                                    {{ 'import.index.follow_up_default'|trans }}
                                 {% endif %}
                             </p>
-                            <p class="muted section-lead">If an import looks unrecoverable, jump back to the upload box and send a replacement file right away.</p>
+                            <p class="muted section-lead">{{ 'import.index.follow_up_hint'|trans }}</p>
                         </div>
                         <div class="actions-wrap">
                             {% for shortcut in followUpShortcuts %}
@@ -172,14 +172,14 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Status</th>
-                            <th>Filename</th>
+                            <th>{{ 'import.index.col_status'|trans }}</th>
+                            <th>{{ 'import.index.col_filename'|trans }}</th>
                             <th>MIME</th>
-                            <th>Size</th>
-                            <th>Created</th>
-                            <th>Updated</th>
-                            <th>Signal</th>
-                            <th>Action</th>
+                            <th>{{ 'import.index.col_size'|trans }}</th>
+                            <th>{{ 'import.index.col_created'|trans }}</th>
+                            <th>{{ 'import.index.col_updated'|trans }}</th>
+                            <th>{{ 'import.index.col_signal'|trans }}</th>
+                            <th>{{ 'import.index.col_action'|trans }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -215,17 +215,17 @@
                                         {% if row.secondaryAction %}
                                             <a class="btn btn-{{ row.secondaryAction.variant }} btn-compact" href="{{ row.secondaryAction.url }}" data-turbo-frame="_top">{{ row.secondaryAction.label }}</a>
                                         {% endif %}
-                                        <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('Delete this import file?');">
+                                        <form method="post" action="{{ path('ui_import_delete', {id: job.id.toString}) }}" data-turbo-frame="_top" onsubmit="return confirm('{{ 'import.confirm.delete'|trans|e('js') }}');">
                                             <input type="hidden" name="_token" value="{{ csrf_token('ui_import_delete_' ~ job.id.toString) }}">
                                             <input type="hidden" name="_redirect" value="{{ returnTo }}">
-                                            <button class="btn btn-danger btn-compact" type="submit">Delete</button>
+                                            <button class="btn btn-danger btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="9" class="muted">No imports yet.</td>
+                                <td colspan="9" class="muted">{{ 'import.index.empty'|trans }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

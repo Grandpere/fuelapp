@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminVehicleDeleteController extends AbstractController
 {
@@ -32,6 +33,7 @@ final class AdminVehicleDeleteController extends AbstractController
         private readonly VehicleRepository $vehicleRepository,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -65,7 +67,7 @@ final class AdminVehicleDeleteController extends AbstractController
             ],
         );
         $this->vehicleRepository->delete($id);
-        $this->addFlash('success', 'Vehicle deleted.');
+        $this->addFlash('success', $this->translator->trans('flash.vehicle.deleted'));
 
         return new RedirectResponse(
             $this->safeReturnPathResolver->resolve(

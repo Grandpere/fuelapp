@@ -219,6 +219,60 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Fix: enforce last-active-admin protection only when removing `ROLE_ADMIN` from an active admin target.
 - Prevention: for cardinality guards on "active" entities, always include target state (`active/inactive`) in the decision predicate.
 
+## 2026-05-20 - Import review selection state must survive validation redirects
+- Symptom: the station suggestion choice on import review became visually ambiguous again after a finalize validation error.
+- Root cause: finalize redirects dropped `selectedSuggestion`, and the UI only rebuilt the active selection summary client-side.
+- Fix: preserve `selectedSuggestion` in the redirect back to `/ui/imports/{id}` and server-render the active selection state/badge when the choice is known.
+- Prevention: when a UX flow relies on a transient selection, preserve that selection across redirects and do not depend on JS alone for first render clarity.
+
+## 2026-05-20 - Full functional suite can exceed the default 128M CLI memory limit
+- Symptom: `make phpunit-functional` sometimes crashes in unrelated spots such as `Symfony\Component\Mime\FileinfoMimeTypeGuesser` with `Allowed memory size of 134217728 bytes exhausted`.
+- Root cause: the complete BrowserKit functional suite now exceeds the default PHP CLI `memory_limit=128M`; the upload/import test only happened to be where the next allocation failed.
+- Fix: run the functional Make target with an explicit higher CLI memory limit (`php -d memory_limit=256M vendor/bin/phpunit ...`).
+- Prevention: keep an explicit memory limit on the full functional Make target instead of relying on the container default as the suite grows.
+
+## 2026-05-18 - UI i18n can still hide in controller-built label maps
+- Symptom: pages looked mostly translated, but receipt list still showed English labels like `Vehicle`, date shortcuts, column presets, and export notes.
+- Root cause: several UI labels were generated in controller constants/arrays instead of Twig, so template-only translation sweeps missed them.
+- Fix: inject `TranslatorInterface` into the controller and translate preset labels, column labels, active filter pills, and shortcut links from message keys.
+- Prevention: for every i18n pass on a list/dashboard page, inspect both Twig and controller-built view models before considering the screen complete.
+
+## 2026-05-18 - Public UI locale switch must bypass the authenticated `/ui` access rule
+- Symptom: anonymous locale-switch requests returned to login without persisting the chosen locale.
+- Root cause: the new `/ui/locale/{locale}` route sat under the generic `^/ui` `ROLE_USER` access control, so the security layer intercepted it before the controller could write the session value.
+- Fix: add an explicit `PUBLIC_ACCESS` rule for `^/ui/locale/` ahead of the authenticated `^/ui` rule.
+- Prevention: whenever adding a public helper route under `/ui`, review `access_control` order before debugging controller/session behavior.
+
+## 2026-05-18 - Admin translation catalogs can break by inserting new sections inside an existing subtree
+- Symptom: multiple admin pages started returning 500 right after an i18n pass, with YAML parse errors around `messages.fr.yaml` / `messages.en.yaml`.
+- Root cause: new `admin.vehicles`, `admin.stations`, and `admin.public_fuel_stations` sections were inserted before the existing `admin.import.show` subtree was fully closed.
+- Fix: restore the full `admin.import.show` block first, then append new admin translation namespaces only after that subtree ends; lint both YAML catalogs immediately.
+- Prevention: when extending large YAML catalogs, inspect the parent subtree boundaries first and run `php bin/console lint:yaml translations/messages.fr.yaml translations/messages.en.yaml` before chasing any downstream 500.
+
+## 2026-05-17 - `make phpunit-functional` ignores ad-hoc `ARGS`
+- Symptom: trying to target one functional file through `make phpunit-functional ARGS=...` still launched the full functional suite.
+- Root cause: the Make target hardcodes the suite command and does not forward extra CLI args.
+- Fix: use direct `vendor/bin/phpunit ... <path>` inside the app container for targeted functional red/green loops.
+- Prevention: when you need a single functional file or `--filter`, inspect the Make target first instead of assuming pass-through args.
+
+## 2026-05-17 - Translation catalogs must keep a single top-level key per domain
+- Symptom: every translated page returned 500 with `Duplicate key "vehicle"` after an i18n migration pass.
+- Root cause: `messages.*.yaml` defined `vehicle:` twice (`vehicle.show` and later `vehicle.form`/`vehicle.validation`) instead of merging them under one top-level node.
+- Fix: group `show`, `form`, and `validation` under a single `vehicle:` block and re-run targeted functional tests.
+- Prevention: when extending translation catalogs, search for the existing top-level namespace first and append nested keys there instead of re-declaring the namespace.
+
+## 2026-05-17 - Twig hash literals cannot contain nested `{{ ... }}` output strings
+- Symptom: analytics pages returned 500 with `Twig\Error\SyntaxError` complaining that a mapping value must be followed by a comma.
+- Root cause: translated labels were inserted inside Twig hash literals as quoted `{{ ... }}` strings while building JSON chart configs.
+- Fix: use plain Twig expressions inside the hash, for example `label: ('analytics.chart_cost_label'|trans)`, then `json_encode` the full hash.
+- Prevention: inside Twig arrays/hashes, never wrap translated expressions in nested `{{ ... }}` output syntax; keep them as expressions.
+
+## 2026-05-16 - Topbar account actions must not share the nav row
+- Symptom: the authenticated header could push the account email and `Sign out` action partially off-screen, forcing awkward scrolling on narrower viewports.
+- Root cause: navigation, theme toggle, email, and logout action all lived in a single inline row with no dedicated responsive structure.
+- Fix: split the header into a main brand/account row plus a wrapping nav row, and truncate the email while letting controls stack on small screens.
+- Prevention: when a shared shell mixes dense navigation and account actions, separate them into independent responsive groups instead of relying on one long flex row.
+
 ## 2026-04-29 - Baseline-less maintenance reminders must use stable due dates
 - Symptom: reminder evaluation created duplicate reminders across repeated runs for the same untouched rule.
 - Root cause: when a date-based reminder rule had no matching maintenance event, the due calculator used `now` as `dueAtDate`, which changed the dedup key every run.
@@ -614,3 +668,15 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the conflict rule lived correctly in the application write path, but the web flows did not yet consistently translate that business exception into user-facing validation feedback.
 - Fix: keep the conflict guard in `CreateReceiptWithStationHandler`, surface it as an inline validation error on `/ui/receipts/new`, and cover both receipt and import review flows with functional tests so conflicting relinks never regress into `500` responses.
 - Prevention: when turning a previously implicit match into a persisted unique link, add the conflict rule and the UI error-handling path in the same ticket; otherwise the first real mismatch becomes a production crash instead of a recoverable user decision.
+
+## 2026-05-21 - Locale return targets must reject protocol-relative paths and keyed validation errors need real translation before flashing
+- Symptom: the public `/ui/locale/{locale}` switch accepted `return_to=//host` and line-level import/receipt validation could show `%index%` literally instead of the failing line number.
+- Root cause: the same-origin check treated every leading slash as local even though `//host` is protocol-relative, and several controllers started storing translation keys as exception/error strings after calling `strtr()` on the key name instead of on translated text.
+- Fix: reject `//...` in the locale redirect guard, translate line-level validation messages at the point where `%index%` is known, and add functional coverage for the locale redirect plus user-facing line-numbered errors.
+- Prevention: treat any redirect target beginning with `//` as external even if it starts with `/`, and never interpolate placeholders on translation keys; call the translator with parameters before persisting or flashing a user-visible message.
+
+## 2026-05-22 - Public locale switch must tolerate requests without an attached session
+- Symptom: the public `/ui/locale/{locale}` endpoint wrote `ui_locale` directly into the request session and could throw when a request reached it without a started or attached session.
+- Root cause: the locale switch assumed the normal web-session middleware was always present, unlike the locale subscriber which already treated session access as optional.
+- Fix: guard the write with `Request::hasSession()` and cover the no-session path with a direct controller test that still expects the safe redirect target.
+- Prevention: public controllers should treat session access as optional unless the route contract explicitly guarantees a session and failing closed is acceptable.

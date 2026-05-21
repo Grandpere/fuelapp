@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminMaintenanceEventDeleteController extends AbstractController
 {
@@ -32,6 +33,7 @@ final class AdminMaintenanceEventDeleteController extends AbstractController
         private readonly MaintenanceEventRepository $eventRepository,
         private readonly AdminAuditTrail $auditTrail,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -65,7 +67,7 @@ final class AdminMaintenanceEventDeleteController extends AbstractController
                 ],
             ],
         );
-        $this->addFlash('success', 'Maintenance event deleted.');
+        $this->addFlash('success', $this->translator->trans('admin.maintenance_events.flash.deleted'));
 
         return new RedirectResponse(
             $this->safeReturnPathResolver->resolve(

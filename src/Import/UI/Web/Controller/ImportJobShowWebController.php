@@ -29,6 +29,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class ImportJobShowWebController extends AbstractController
 {
@@ -39,6 +40,7 @@ final class ImportJobShowWebController extends AbstractController
         private readonly StationRepository $stationRepository,
         private readonly StationSuggestionReader $stationSuggestionReader,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -61,6 +63,7 @@ final class ImportJobShowWebController extends AbstractController
         $creationPayload = $this->readCreationPayload($payloadData);
         $parsedDraft = $this->readParsedDraft($payloadData);
         $stationSuggestions = $this->stationSuggestions($creationPayload, $parsedDraft);
+        $selectedSuggestion = $this->selectedSuggestionFromRequest($request, $stationSuggestions);
         $backToImportsUrl = $this->safeReturnPathResolver->resolve(
             $request->query->get('return_to'),
             $this->generateUrl('ui_import_index'),
@@ -76,6 +79,8 @@ final class ImportJobShowWebController extends AbstractController
             'parsedDraft' => $parsedDraft,
             'existingStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'station' === $suggestion->sourceType)),
             'publicStationSuggestions' => array_values(array_filter($stationSuggestions, static fn (StationSuggestion $suggestion): bool => 'public' === $suggestion->sourceType)),
+            'selectedSuggestionValue' => $selectedSuggestion['value'] ?? '',
+            'selectedStationSuggestion' => $selectedSuggestion,
             'stationSearch' => $this->stationSearchString($creationPayload, $parsedDraft),
             'reviewLines' => $this->readLines($creationPayload, $parsedDraft),
             'resolvedFinalizedReceiptId' => $resolvedFinalizedReceiptId,
@@ -294,69 +299,69 @@ final class ImportJobShowWebController extends AbstractController
         return match ($status) {
             ImportJobStatus::PROCESSED->value => [
                 'badge' => 'processed',
-                'title' => 'Receipt created successfully',
-                'lead' => sprintf('We already turned %s into a receipt. You can jump straight to the created record or go back to the receipt list.', $originalFilename),
+                'title' => $this->translator->trans('import.show.summary.processed_title'),
+                'lead' => $this->translator->trans('import.show.summary.processed_lead', ['%filename%' => $originalFilename]),
                 'keyDetails' => array_values(array_filter([
-                    $this->detailLine('Created receipt', $this->readStringValue($payloadData, 'finalizedReceiptId')),
-                    $this->detailLine('Completed at', $job->completedAt()?->format('d/m/Y H:i')),
+                    $this->detailLine($this->translator->trans('import.show.detail.created_receipt'), $this->readStringValue($payloadData, 'finalizedReceiptId')),
+                    $this->detailLine($this->translator->trans('import.show.detail.completed_at'), $job->completedAt()?->format('d/m/Y H:i')),
                 ])),
                 'nextSteps' => [
-                    'Open the created receipt if you want to double-check imported values.',
-                    'Go back to the receipt list if this import no longer needs attention.',
+                    $this->translator->trans('import.show.summary.processed_step_open'),
+                    $this->translator->trans('import.show.summary.processed_step_back'),
                 ],
             ],
             ImportJobStatus::DUPLICATE->value => [
                 'badge' => 'duplicate',
-                'title' => 'Duplicate already handled',
-                'lead' => sprintf('This file (%s) matches something you already imported. Use the shortcut below to open the existing record instead of processing it again.', $originalFilename),
+                'title' => $this->translator->trans('import.show.summary.duplicate_title'),
+                'lead' => $this->translator->trans('import.show.summary.duplicate_lead', ['%filename%' => $originalFilename]),
                 'keyDetails' => array_values(array_filter([
-                    $this->detailLine('Existing receipt', $this->readStringValue($payloadData, 'duplicateOfReceiptId')),
-                    $this->detailLine('Original import', $this->readStringValue($payloadData, 'duplicateOfImportJobId')),
-                    $this->detailLine('Reason', $this->readStringValue($payloadData, 'reason')),
+                    $this->detailLine($this->translator->trans('import.show.detail.existing_receipt'), $this->readStringValue($payloadData, 'duplicateOfReceiptId')),
+                    $this->detailLine($this->translator->trans('import.show.detail.original_import'), $this->readStringValue($payloadData, 'duplicateOfImportJobId')),
+                    $this->detailLine($this->translator->trans('import.show.detail.reason'), $this->readStringValue($payloadData, 'reason')),
                 ])),
                 'nextSteps' => [
-                    'Open the existing receipt or original import to confirm the duplicate.',
-                    'Delete this import if you do not need to keep the extra file around.',
+                    $this->translator->trans('import.show.summary.duplicate_step_open'),
+                    $this->translator->trans('import.show.summary.duplicate_step_delete'),
                 ],
             ],
             ImportJobStatus::FAILED->value => [
                 'badge' => 'failed',
-                'title' => 'Import processing stopped',
-                'lead' => sprintf('We could not turn %s into a reviewable import automatically. Check the detail below, then retry or remove the file.', $originalFilename),
+                'title' => $this->translator->trans('import.show.summary.failed_title'),
+                'lead' => $this->translator->trans('import.show.summary.failed_lead', ['%filename%' => $originalFilename]),
                 'keyDetails' => array_values(array_filter([
-                    $this->detailLine('Failure time', $job->failedAt()?->format('d/m/Y H:i')),
-                    $this->detailLine('OCR retry count', (string) $job->ocrRetryCount()),
-                    $this->detailLine('Fallback reason', $this->readStringValue($payloadData, 'fallbackReason')),
-                    $this->detailLine('Raw error', is_string($job->errorPayload()) && '' !== trim($job->errorPayload()) && null === $payloadData ? trim($job->errorPayload()) : null),
+                    $this->detailLine($this->translator->trans('import.show.detail.failure_time'), $job->failedAt()?->format('d/m/Y H:i')),
+                    $this->detailLine($this->translator->trans('import.show.detail.ocr_retry_count'), (string) $job->ocrRetryCount()),
+                    $this->detailLine($this->translator->trans('import.show.detail.fallback_reason'), $this->readStringValue($payloadData, 'fallbackReason')),
+                    $this->detailLine($this->translator->trans('import.show.detail.raw_error'), is_string($job->errorPayload()) && '' !== trim($job->errorPayload()) && null === $payloadData ? trim($job->errorPayload()) : null),
                 ])),
                 'nextSteps' => [
-                    'If the source file looks valid, retry or re-upload it after checking OCR/provider availability.',
-                    'If the file is clearly unusable, delete the import to keep the queue clean.',
+                    $this->translator->trans('import.show.summary.failed_step_retry'),
+                    $this->translator->trans('import.show.summary.failed_step_delete'),
                 ],
             ],
             ImportJobStatus::NEEDS_REVIEW->value => [
                 'badge' => 'needs_review',
-                'title' => 'Manual review required',
-                'lead' => sprintf('OCR got close, but %s still needs a manual pass before we can create the receipt.', $originalFilename),
+                'title' => $this->translator->trans('import.show.summary.needs_review_title'),
+                'lead' => $this->translator->trans('import.show.summary.needs_review_lead', ['%filename%' => $originalFilename]),
                 'keyDetails' => array_values(array_filter([
-                    $this->detailLine('Detected issues', $this->formatIssueList($payloadData)),
-                    $this->detailLine('Fallback strategy', $this->readStringValue($payloadData, 'fallbackStrategy')),
-                    $this->detailLine('OCR retry count', (string) $job->ocrRetryCount()),
+                    $this->detailLine($this->translator->trans('import.show.detail.detected_issues'), $this->formatIssueList($payloadData)),
+                    $this->detailLine($this->translator->trans('import.show.detail.fallback_strategy'), $this->readStringValue($payloadData, 'fallbackStrategy')),
+                    $this->detailLine($this->translator->trans('import.show.detail.ocr_retry_count'), (string) $job->ocrRetryCount()),
                 ])),
                 'nextSteps' => [
-                    'Review the extracted values below and finalize when they look right.',
-                    'Use reparse if the OCR draft looks incomplete and the source file is still worth another pass.',
+                    $this->translator->trans('import.show.summary.needs_review_step_finalize'),
+                    $this->translator->trans('import.show.summary.needs_review_step_reparse'),
                 ],
             ],
             default => [
                 'badge' => $status,
-                'title' => 'Import in progress',
-                'lead' => sprintf('%s is still moving through the import pipeline. Come back in a moment if the final state is not visible yet.', $originalFilename),
+                'title' => $this->translator->trans('import.show.summary.default_title'),
+                'lead' => $this->translator->trans('import.show.summary.default_lead', ['%filename%' => $originalFilename]),
                 'keyDetails' => array_filter([
-                    $this->detailLine('Current status', $status),
+                    $this->detailLine($this->translator->trans('import.show.detail.current_status'), $status),
                 ]),
                 'nextSteps' => [
-                    'Refresh later if you are waiting for OCR or queue processing to finish.',
+                    $this->translator->trans('import.show.summary.default_step_refresh'),
                 ],
             ],
         };
@@ -377,13 +382,13 @@ final class ImportJobShowWebController extends AbstractController
                 $receiptId = $this->resolveExistingReceiptId($this->readStringValue($payloadData, 'finalizedReceiptId'));
                 if (null !== $receiptId) {
                     $actions[] = [
-                        'label' => 'Open created receipt',
+                        'label' => $this->translator->trans('import.action.open_created_receipt'),
                         'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId]),
                         'variant' => 'primary',
                     ];
                 }
                 $actions[] = [
-                    'label' => 'Upload another file',
+                    'label' => $this->translator->trans('import.action.upload_another_file'),
                     'url' => $uploadUrl,
                     'variant' => 'secondary',
                 ];
@@ -395,7 +400,7 @@ final class ImportJobShowWebController extends AbstractController
                 $receiptId = $this->resolveExistingReceiptId($rawReceiptId);
                 if (null !== $receiptId) {
                     $actions[] = [
-                        'label' => 'Open existing receipt',
+                        'label' => $this->translator->trans('import.action.open_existing_receipt'),
                         'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId]),
                         'variant' => 'primary',
                     ];
@@ -403,14 +408,16 @@ final class ImportJobShowWebController extends AbstractController
                     $originalImportId = $this->resolveExistingImportId($this->readStringValue($payloadData, 'duplicateOfImportJobId'));
                     if (null !== $originalImportId) {
                         $actions[] = [
-                            'label' => null !== $rawReceiptId ? 'Open original import instead' : 'Open original import',
+                            'label' => $this->translator->trans(null !== $rawReceiptId
+                                ? 'import.action.open_original_import_instead'
+                                : 'import.action.open_original_import'),
                             'url' => $this->generateUrl('ui_import_show', ['id' => $originalImportId, 'return_to' => $backToImportsUrl]),
                             'variant' => 'primary',
                         ];
                     }
                 }
                 $actions[] = [
-                    'label' => 'Upload different file',
+                    'label' => $this->translator->trans('import.action.upload_different_file'),
                     'url' => $uploadUrl,
                     'variant' => 'secondary',
                 ];
@@ -419,12 +426,12 @@ final class ImportJobShowWebController extends AbstractController
 
             case ImportJobStatus::FAILED:
                 $actions[] = [
-                    'label' => 'Upload replacement',
+                    'label' => $this->translator->trans('import.action.upload_replacement'),
                     'url' => $uploadUrl,
                     'variant' => 'primary',
                 ];
                 $actions[] = [
-                    'label' => 'Back to imports',
+                    'label' => $this->translator->trans('import.action.back_to_imports'),
                     'url' => $backToImportsUrl,
                     'variant' => 'secondary',
                 ];
@@ -433,7 +440,7 @@ final class ImportJobShowWebController extends AbstractController
 
             case ImportJobStatus::NEEDS_REVIEW:
                 $actions[] = [
-                    'label' => 'Upload replacement',
+                    'label' => $this->translator->trans('import.action.upload_replacement'),
                     'url' => $uploadUrl,
                     'variant' => 'secondary',
                 ];
@@ -442,7 +449,7 @@ final class ImportJobShowWebController extends AbstractController
 
             default:
                 $actions[] = [
-                    'label' => 'Back to imports',
+                    'label' => $this->translator->trans('import.action.back_to_imports'),
                     'url' => $backToImportsUrl,
                     'variant' => 'secondary',
                 ];
@@ -588,6 +595,46 @@ final class ImportJobShowWebController extends AbstractController
     }
 
     /**
+     * @param list<StationSuggestion> $stationSuggestions
+     *
+     * @return array{value:string, kind:string, title:string, meta:string}|null
+     */
+    private function selectedSuggestionFromRequest(Request $request, array $stationSuggestions): ?array
+    {
+        $selectedSuggestion = $request->query->get('selectedSuggestion');
+        if (!is_string($selectedSuggestion) || '' === trim($selectedSuggestion)) {
+            return null;
+        }
+
+        $selectedSuggestion = trim($selectedSuggestion);
+
+        foreach ($stationSuggestions as $suggestion) {
+            $suggestionValue = $suggestion->sourceType.':'.$suggestion->sourceId;
+            if ($suggestionValue !== $selectedSuggestion) {
+                continue;
+            }
+
+            return [
+                'value' => $suggestionValue,
+                'kind' => $suggestion->sourceType,
+                'title' => $suggestion->name,
+                'meta' => $this->stationSuggestionMeta($suggestion),
+            ];
+        }
+
+        return null;
+    }
+
+    private function stationSuggestionMeta(StationSuggestion $suggestion): string
+    {
+        if ('public' === $suggestion->sourceType) {
+            return trim(sprintf('%s %s', $suggestion->postalCode, $suggestion->city));
+        }
+
+        return trim(sprintf('%s, %s %s', $suggestion->streetName, $suggestion->postalCode, $suggestion->city), ' ,');
+    }
+
+    /**
      * @param array<string, mixed>|null $payloadData
      *
      * @return array{
@@ -612,12 +659,12 @@ final class ImportJobShowWebController extends AbstractController
         }
 
         $details = [
-            sprintf('Issued at: %s', $receipt->issuedAt()->format('d/m/Y H:i')),
-            sprintf('Total: %.2f EUR', $receipt->totalCents() / 100),
+            sprintf('%s: %s', $this->translator->trans('import.show.continuity.issued_at'), $receipt->issuedAt()->format('d/m/Y H:i')),
+            sprintf('%s: %.2f EUR', $this->translator->trans('import.show.continuity.total'), $receipt->totalCents() / 100),
         ];
 
         $actions = [[
-            'label' => 'Open receipt',
+            'label' => $this->translator->trans('import.action.open_receipt'),
             'url' => $this->generateUrl('ui_receipt_show', ['id' => $receiptId]),
             'variant' => 'primary',
         ]];
@@ -626,9 +673,9 @@ final class ImportJobShowWebController extends AbstractController
         if (null !== $vehicleId) {
             $vehicle = $this->vehicleRepository->get($vehicleId);
             if (null !== $vehicle) {
-                $details[] = sprintf('Vehicle: %s', $vehicle->name());
+                $details[] = sprintf('%s: %s', $this->translator->trans('import.show.continuity.vehicle'), $vehicle->name());
                 $actions[] = [
-                    'label' => 'Open vehicle',
+                    'label' => $this->translator->trans('import.show.continuity.open_vehicle'),
                     'url' => $this->generateUrl('ui_vehicle_show', ['id' => $vehicleId]),
                     'variant' => 'secondary',
                 ];
@@ -639,9 +686,9 @@ final class ImportJobShowWebController extends AbstractController
         if (null !== $stationId) {
             $station = $this->stationRepository->get($stationId);
             if (null !== $station) {
-                $details[] = sprintf('Station: %s', $station->name());
+                $details[] = sprintf('%s: %s', $this->translator->trans('import.show.continuity.station'), $station->name());
                 $actions[] = [
-                    'label' => 'Open station',
+                    'label' => $this->translator->trans('import.show.continuity.open_station'),
                     'url' => $this->generateUrl('ui_station_show', ['id' => $stationId]),
                     'variant' => 'secondary',
                 ];
@@ -649,8 +696,8 @@ final class ImportJobShowWebController extends AbstractController
         }
 
         return [
-            'title' => 'Receipt continuity',
-            'lead' => 'This import is already linked to a real receipt, so you can continue from the receipt itself instead of staying in the import flow.',
+            'title' => $this->translator->trans('import.show.continuity.title'),
+            'lead' => $this->translator->trans('import.show.continuity.lead'),
             'details' => $details,
             'actions' => $actions,
         ];

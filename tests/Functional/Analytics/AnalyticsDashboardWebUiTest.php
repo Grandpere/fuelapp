@@ -123,15 +123,15 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         $content = (string) $response->getContent();
-        self::assertStringContainsString('Analytics Dashboard', $content);
-        self::assertStringContainsString('Last 30 days', $content);
-        self::assertStringContainsString('Last 90 days', $content);
-        self::assertStringContainsString('This month', $content);
-        self::assertStringContainsString('Period:', $content);
+        self::assertStringContainsString('Tableau de bord analytique', $content);
+        self::assertStringContainsString('30 derniers jours', $content);
+        self::assertStringContainsString('90 derniers jours', $content);
+        self::assertStringContainsString('Ce mois-ci', $content);
+        self::assertStringContainsString('Période :', $content);
         self::assertStringContainsString('01/01/2026', $content);
         self::assertStringContainsString('28/02/2026', $content);
         self::assertStringContainsString('/ui/receipts?issued_from=2026-01-01&amp;issued_to=2026-02-28', $content);
-        self::assertStringContainsString('Total cost', $content);
+        self::assertStringContainsString('Coût total', $content);
         self::assertStringContainsString('620.00 EUR', $content);
         self::assertStringContainsString('35.00 L', $content);
         self::assertStringContainsString('17.714 EUR/L', $content);
@@ -139,21 +139,21 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('280.00 EUR', $content);
         self::assertStringContainsString('2026-02', $content);
         self::assertStringContainsString('20.00 L', $content);
-        self::assertStringContainsString('Visited and matched public stations', $content);
-        self::assertStringContainsString('with public match', $content);
-        self::assertStringContainsString('with nearby public', $content);
+        self::assertStringContainsString('Stations visitées et correspondances publiques', $content);
+        self::assertStringContainsString('avec correspondance publique', $content);
+        self::assertStringContainsString('avec station publique proche', $content);
         self::assertStringContainsString('Station A', $content);
         self::assertStringContainsString('Favorite', $content);
-        self::assertStringContainsString('Public match · high', $content);
+        self::assertStringContainsString('Correspondance publique · high', $content);
         self::assertStringContainsString('5 PUBLIC ROAD, 75001 PARIS', $content);
-        self::assertStringContainsString('Nearby public:', $content);
+        self::assertStringContainsString('Public proche :', $content);
         self::assertStringContainsString('7 NEARBY ROAD, 75001 PARIS', $content);
-        self::assertStringContainsString('Nearby public stations', $content);
-        self::assertStringContainsString('receipt(s)', $content);
-        self::assertStringContainsString('Fuel price trend by month', $content);
+        self::assertStringContainsString('Stations publiques proches', $content);
+        self::assertStringContainsString('reçus', $content);
+        self::assertStringContainsString('Tendance du prix carburant par mois', $content);
         self::assertStringContainsString('2026-01 · diesel', $content);
         self::assertStringContainsString('2026-02 · unleaded95', $content);
-        self::assertStringContainsString('Compared cost trend (fuel vs maintenance vs total)', $content);
+        self::assertStringContainsString('Tendance comparée des coûts (carburant vs entretien vs total)', $content);
         self::assertStringContainsString('330.00 EUR', $content);
         self::assertStringContainsString('360.00 EUR', $content);
 
@@ -170,7 +170,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('15.00 L', $vehicleContent);
         self::assertStringContainsString('18.667 EUR/L', $vehicleContent);
         self::assertStringContainsString('vehicle_id='.$vehicle->getId()->toRfc4122(), $vehicleContent);
-        self::assertStringContainsString('Vehicle: Trend Car (TR-100-AA)', $vehicleContent);
+        self::assertStringContainsString('Véhicule : Trend Car (TR-100-AA)', $vehicleContent);
         self::assertStringContainsString('/ui/maintenance?vehicle_id='.$vehicle->getId()->toRfc4122(), $vehicleContent);
         self::assertStringContainsString('/ui/vehicles/'.$vehicle->getId()->toRfc4122(), $vehicleContent);
 
@@ -186,14 +186,14 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         self::assertStringContainsString('280.00 EUR', $stationFuelContent);
         self::assertStringContainsString('15.00 L', $stationFuelContent);
         self::assertStringContainsString('18.667 EUR/L', $stationFuelContent);
-        self::assertStringContainsString('All stations', $stationFuelContent);
-        self::assertStringContainsString('All fuel types', $stationFuelContent);
+        self::assertStringContainsString('Toutes les stations', $stationFuelContent);
+        self::assertStringContainsString('Tous les carburants', $stationFuelContent);
         self::assertStringContainsString('station_id='.$stationA->getId()->toRfc4122(), $stationFuelContent);
         self::assertStringContainsString('fuel_type=diesel', $stationFuelContent);
-        self::assertStringContainsString('Fuel: DIESEL', $stationFuelContent);
-        self::assertStringContainsString('Selected station is in favorites', $stationFuelContent);
+        self::assertStringContainsString('Carburant : DIESEL', $stationFuelContent);
+        self::assertStringContainsString('La station sélectionnée est dans les favorites', $stationFuelContent);
         self::assertStringContainsString('/ui/stations/'.$stationA->getId()->toRfc4122(), $stationFuelContent);
-        self::assertStringContainsString('Exports keep the current analytics scope so shared files match the dashboard you are looking at.', $content);
+        self::assertStringContainsString('Les exports conservent le périmètre analytique courant afin que les fichiers partagés correspondent au tableau de bord affiché.', $content);
 
         self::assertStringContainsString('data-chart-key="cost"', $content);
         self::assertStringContainsString('data-chart-key="fuel-price"', $content);
@@ -403,7 +403,7 @@ final class AnalyticsDashboardWebUiTest extends KernelTestCase
         $station->setPopulationKind('R');
         $station->setDepartment('Paris');
         $station->setDepartmentCode('75');
-        $station->setRegion('Ile-de-France');
+        $station->setRegion('Île-de-France');
         $station->setRegionCode('11');
         $station->setAutomate24(true);
         $station->setServices(['Boutique alimentaire']);

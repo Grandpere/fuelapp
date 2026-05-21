@@ -90,7 +90,7 @@ final class MaintenanceReminderRuleFormController extends AbstractController
                 }
 
                 $this->ruleRepository->save($rule);
-                $this->addFlash('success', null === $id ? 'Reminder rule created.' : 'Reminder rule updated.');
+                $this->addFlash('success', null === $id ? 'flash.maintenance.rule_created' : 'flash.maintenance.rule_updated');
 
                 return new RedirectResponse($this->generateUrl('ui_maintenance_index', ['vehicle_id' => $vehicleId]), Response::HTTP_SEE_OTHER);
             }
@@ -172,22 +172,22 @@ final class MaintenanceReminderRuleFormController extends AbstractController
         $errors = [];
 
         if (!$this->isCsrfTokenValid('maintenance_rule_form', $formData['_token'])) {
-            $errors[] = 'Jeton CSRF invalide.';
+            $errors[] = 'flash.csrf.invalid';
         }
 
         $vehicleId = trim($formData['vehicleId']);
         if (!Uuid::isValid($vehicleId) || !$this->vehicleRepository->belongsToOwner($vehicleId, $ownerId)) {
-            $errors[] = 'Vehicle not found.';
+            $errors[] = 'maintenance.validation.vehicle_not_found';
         }
 
         if ('' === trim($formData['name'])) {
-            $errors[] = 'Rule name is required.';
+            $errors[] = 'maintenance.validation.rule_name_required';
         }
 
         try {
             $triggerMode = ReminderRuleTriggerMode::from($formData['triggerMode']);
         } catch (ValueError) {
-            $errors[] = 'Invalid trigger mode.';
+            $errors[] = 'maintenance.validation.invalid_trigger_mode';
             $triggerMode = null;
         }
 
@@ -195,7 +195,7 @@ final class MaintenanceReminderRuleFormController extends AbstractController
             try {
                 MaintenanceEventType::from($formData['eventType']);
             } catch (ValueError) {
-                $errors[] = 'Invalid event type.';
+                $errors[] = 'maintenance.validation.invalid_event_type';
             }
         }
 
@@ -203,21 +203,21 @@ final class MaintenanceReminderRuleFormController extends AbstractController
         $intervalKilometers = $this->nullableInt($formData['intervalKilometers']);
 
         if ('' !== trim($formData['intervalDays']) && (null === $intervalDays || $intervalDays <= 0)) {
-            $errors[] = 'Days interval must be a positive integer.';
+            $errors[] = 'maintenance.validation.interval_days_positive';
         }
         if ('' !== trim($formData['intervalKilometers']) && (null === $intervalKilometers || $intervalKilometers <= 0)) {
-            $errors[] = 'Kilometers interval must be a positive integer.';
+            $errors[] = 'maintenance.validation.interval_kilometers_positive';
         }
 
         if ($triggerMode instanceof ReminderRuleTriggerMode) {
             if (ReminderRuleTriggerMode::DATE === $triggerMode && null === $intervalDays) {
-                $errors[] = 'DATE trigger requires a days interval.';
+                $errors[] = 'maintenance.validation.date_requires_days';
             }
             if (ReminderRuleTriggerMode::ODOMETER === $triggerMode && null === $intervalKilometers) {
-                $errors[] = 'ODOMETER trigger requires a kilometers interval.';
+                $errors[] = 'maintenance.validation.odometer_requires_kilometers';
             }
             if (ReminderRuleTriggerMode::WHICHEVER_FIRST === $triggerMode && (null === $intervalDays || null === $intervalKilometers)) {
-                $errors[] = 'WHICHEVER_FIRST trigger requires both days and kilometers intervals.';
+                $errors[] = 'maintenance.validation.whichever_requires_both';
             }
         }
 

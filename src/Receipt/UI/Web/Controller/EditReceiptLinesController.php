@@ -19,6 +19,7 @@ use App\Receipt\Application\Command\UpdateReceiptLinesHandler;
 use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Receipt\Domain\Enum\FuelType;
 use App\Security\Voter\ReceiptVoter;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +27,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use ValueError;
 
 final class EditReceiptLinesController extends AbstractController
@@ -36,6 +38,7 @@ final class EditReceiptLinesController extends AbstractController
         private readonly ReceiptRepository $receiptRepository,
         private readonly UpdateReceiptLinesHandler $updateReceiptLinesHandler,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -69,11 +72,11 @@ final class EditReceiptLinesController extends AbstractController
             $payload = $request->request->all('lines');
             $token = (string) $request->request->get('_token', '');
             if (!$this->isCsrfTokenValid('receipt_edit_lines_'.$id, $token)) {
-                $errors[] = 'Invalid CSRF token.';
+                $errors[] = 'receipt.validation.invalid_csrf';
             }
 
             if ([] === $payload) {
-                $errors[] = 'At least one line is required.';
+                $errors[] = 'receipt.validation.at_least_one_line';
             } else {
                 $formLines = [];
                 foreach ($payload as $rawLine) {
@@ -110,7 +113,7 @@ final class EditReceiptLinesController extends AbstractController
                     throw $this->createNotFoundException('Receipt not found.');
                 }
 
-                $this->addFlash('success', 'Receipt lines updated.');
+                $this->addFlash('success', 'receipt.flash.lines_updated');
 
                 return new RedirectResponse($this->generateUrl('ui_receipt_show', ['id' => $id]), Response::HTTP_SEE_OTHER);
             }
@@ -145,7 +148,7 @@ final class EditReceiptLinesController extends AbstractController
             try {
                 $fuelType = FuelType::from($line['fuelType']);
             } catch (ValueError) {
-                $errors[] = sprintf('Line %d: invalid fuel type.', $index + 1);
+                $errors[] = $this->t('receipt.validation.line_invalid_fuel_type', ['%index%' => (string) ($index + 1)]);
                 continue;
             }
 
@@ -154,13 +157,13 @@ final class EditReceiptLinesController extends AbstractController
             $vatRate = filter_var($line['vatRatePercent'], FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
 
             if (null === $quantity || $quantity <= 0) {
-                $errors[] = sprintf('Line %d: quantity must be a valid liters value.', $index + 1);
+                $errors[] = $this->t('receipt.validation.line_invalid_quantity', ['%index%' => (string) ($index + 1)]);
             }
             if (null === $unitPrice || $unitPrice < 0) {
-                $errors[] = sprintf('Line %d: unit price must be a valid €/L value.', $index + 1);
+                $errors[] = $this->t('receipt.validation.line_invalid_unit_price', ['%index%' => (string) ($index + 1)]);
             }
             if (null === $vatRate || $vatRate < 0 || $vatRate > 100) {
-                $errors[] = sprintf('Line %d: VAT rate must be between 0 and 100.', $index + 1);
+                $errors[] = $this->t('receipt.validation.line_invalid_vat', ['%index%' => (string) ($index + 1)]);
             }
 
             if (null !== $quantity && $quantity > 0 && null !== $unitPrice && $unitPrice >= 0 && null !== $vatRate && $vatRate >= 0 && $vatRate <= 100) {
@@ -169,7 +172,7 @@ final class EditReceiptLinesController extends AbstractController
         }
 
         if ([] === $commands) {
-            $errors[] = 'At least one valid line is required.';
+            $errors[] = 'receipt.validation.at_least_one_valid_line';
         }
 
         return [$commands, array_values(array_unique($errors))];
@@ -194,5 +197,11 @@ final class EditReceiptLinesController extends AbstractController
         $fraction = str_pad($fraction, $maxDecimals, '0');
 
         return ((int) $whole * $scale) + (int) substr($fraction, 0, $maxDecimals);
+    }
+
+    /** @param array<string, scalar|Stringable|null> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

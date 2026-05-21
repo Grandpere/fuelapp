@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Stations{% endblock %}
+{% block title %}{{ 'station.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -24,6 +24,14 @@
 
         .stations-panel {
             padding: 1rem;
+        }
+
+        .stations-filters {
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1rem;
         }
 
         .station-summary {
@@ -85,45 +93,59 @@
 {% endblock %}
 
 {% block body %}
+    {% set currentListUrl = favoritesOnly ? path('ui_station_list', {favorites: 1}) : path('ui_station_list') %}
+
     <main class="app-shell stations-page">
         <section class="stations-header">
             <div>
-                <h1 class="page-title">Stations</h1>
-                <p class="muted section-lead">Quick view of the places you revisit most, with direct shortcuts into receipts and analytics.</p>
+                <h1 class="page-title">{{ 'station.title'|trans }}</h1>
+                <p class="muted section-lead">{{ 'station.lead'|trans }}</p>
             </div>
             <div class="page-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Receipts</a>
-                <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}">Add receipt</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">{{ 'nav.receipts'|trans }}</a>
+                <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}">{{ 'receipt.form.action_create'|trans }}</a>
             </div>
         </section>
 
         {% for message in app.flashes('success') %}
-            <div class="flash">{{ message }}</div>
+            <div class="flash">{{ message|trans }}</div>
         {% endfor %}
         {% for message in app.flashes('error') %}
-            <div class="flash flash-error">{{ message }}</div>
+            <div class="flash flash-error">{{ message|trans }}</div>
         {% endfor %}
 
         <section class="card stations-panel">
+            <div class="stations-filters">
+                <a class="btn {{ favoritesOnly ? 'btn-secondary' : 'btn-primary' }} btn-compact" href="{{ path('ui_station_list') }}">{{ 'station.filter_all'|trans }}</a>
+                <a class="btn {{ favoritesOnly ? 'btn-primary' : 'btn-secondary' }} btn-compact" href="{{ path('ui_station_list', {favorites: 1}) }}">{{ 'station.filter_favorites_only'|trans }}</a>
+            </div>
+
             {% if stationRows is empty %}
                 <div class="empty-state">
-                    <p>No station is visible yet. Add or import a receipt with station details to start building this list.</p>
-                    <div class="actions-wrap">
-                        <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}">Add first receipt</a>
-                        <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">Open imports</a>
-                    </div>
+                    {% if favoritesOnly %}
+                        <p>{{ 'station.empty_favorites'|trans }}</p>
+                        <div class="actions-wrap">
+                            <a class="btn btn-primary" href="{{ path('ui_station_list') }}">{{ 'station.empty_action_show_all'|trans }}</a>
+                        </div>
+                    {% else %}
+                        <p>{{ 'station.empty'|trans }}</p>
+                        <div class="actions-wrap">
+                            <a class="btn btn-primary" href="{{ path('ui_receipt_new') }}">{{ 'station.empty_action_add_receipt'|trans }}</a>
+                            <a class="btn btn-secondary" href="{{ path('ui_import_index') }}">{{ 'station.empty_action_open_imports'|trans }}</a>
+                        </div>
+                    {% endif %}
                 </div>
             {% else %}
                 <div class="table-wrap table-min-920">
                     <table class="app-table">
                         <thead>
                             <tr>
-                                <th>Station</th>
-                                <th>Latest visit</th>
-                                <th>Receipts</th>
-                                <th>Recent spend</th>
-                                <th>Latest odometer</th>
-                                <th>Actions</th>
+                                <th>{{ 'nav.stations'|trans|slice(0) }}</th>
+                                <th>{{ 'station.latest_visit'|trans }}</th>
+                                <th>{{ 'station.receipts_count'|trans }}</th>
+                                <th>{{ 'station.recent_spend'|trans }}</th>
+                                <th>{{ 'station.latest_odometer'|trans }}</th>
+                                <th>{{ 'receipt.action.details'|trans }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -132,7 +154,7 @@
                                     class="table-row row-link"
                                     data-controller="row-link"
                                     data-action="click->row-link#navigate"
-                                    data-row-link-url-value="{{ path('ui_station_show', {id: row.id, return_to: path('ui_station_list')}) }}"
+                                    data-row-link-url-value="{{ path('ui_station_show', {id: row.id, return_to: currentListUrl}) }}"
                                     onclick="if (!event.target.closest('a,button,input,form,select,textarea,label,[data-row-link-ignore]')) { window.location.assign(this.getAttribute('data-row-link-url-value')); }"
                                 >
                                     <td>
@@ -142,7 +164,7 @@
                                                     <div class="station-summary-title-head">
                                                         <strong>{{ row.name }}</strong>
                                                         {% if row.isFavorite %}
-                                                            <span class="pill favorite-pill">Favorite</span>
+                                                            <span class="pill favorite-pill">{{ 'station.favorite'|trans }}</span>
                                                         {% endif %}
                                                     </div>
                                                     <span class="muted">{{ row.streetName }}</span>
@@ -157,7 +179,7 @@
                                         {% if row.latestIssuedAt %}
                                             {{ row.latestIssuedAt|date('d/m/Y') }}
                                         {% else %}
-                                            <span class="muted">n/a</span>
+                                            <span class="muted">{{ 'common.na'|trans }}</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ row.receiptCount }}</td>
@@ -166,22 +188,22 @@
                                         {% if row.latestOdometer is not null %}
                                             {{ row.latestOdometer }} km
                                         {% else %}
-                                            <span class="muted">n/a</span>
+                                            <span class="muted">{{ 'common.na'|trans }}</span>
                                         {% endif %}
                                     </td>
                                     <td class="action-cell-flex">
                                         <form class="favorite-toggle-form" method="post" action="{{ path('ui_station_toggle_favorite', {id: row.id}) }}" data-row-link-ignore>
                                             <input type="hidden" name="_token" value="{{ csrf_token('station_favorite_toggle_' ~ row.id) }}">
-                                            <input type="hidden" name="_redirect" value="{{ path('ui_station_list') }}">
+                                            <input type="hidden" name="_redirect" value="{{ currentListUrl }}">
                                             <button class="btn {{ row.isFavorite ? 'btn-primary' : 'btn-secondary' }} btn-compact favorite-toggle-btn" type="submit">
                                                 <span class="favorite-toggle-icon" aria-hidden="true">{{ row.isFavorite ? '★' : '☆' }}</span>
-                                                {{ row.isFavorite ? 'Favorite' : 'Add favorite' }}
+                                                {{ row.isFavorite ? 'station.favorite'|trans : 'station.add_favorite'|trans }}
                                             </button>
                                         </form>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: row.id, return_to: path('ui_station_list')}) }}" data-row-link-ignore>Open</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: row.id}) }}" data-row-link-ignore>Receipts</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: row.id}) }}" data-row-link-ignore>Analytics</a>
-                                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: row.id}) }}" data-row-link-ignore>Add receipt</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: row.id, return_to: currentListUrl}) }}" data-row-link-ignore>{{ 'action.open'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: row.id}) }}" data-row-link-ignore>{{ 'nav.receipts'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: row.id}) }}" data-row-link-ignore>{{ 'nav.analytics'|trans }}</a>
+                                        <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: row.id}) }}" data-row-link-ignore>{{ 'receipt.form.action_create'|trans }}</a>
                                     </td>
                                 </tr>
                             {% endfor %}

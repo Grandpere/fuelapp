@@ -24,11 +24,13 @@ use App\Shared\UI\Web\SafeReturnPathResolver;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use RuntimeException;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use ValueError;
 
 final class ImportJobFinalizeWebController extends AbstractController
@@ -37,6 +39,7 @@ final class ImportJobFinalizeWebController extends AbstractController
         private readonly ImportJobRepository $importJobRepository,
         private readonly FinalizeImportJobHandler $finalizeImportJobHandler,
         private readonly SafeReturnPathResolver $safeReturnPathResolver,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -56,14 +59,15 @@ final class ImportJobFinalizeWebController extends AbstractController
             $request->request->get('_return_to'),
             $this->generateUrl('ui_import_index'),
         );
+        $selectedSuggestion = $this->toNullableString($request->request->get('selectedSuggestion'));
         $nextReviewId = $this->shouldContinueToNextReview($request)
             ? $this->findNextReviewJobId($job)
             : null;
 
         if (!$this->isCsrfTokenValid('ui_import_finalize_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
-            return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
+            return $this->redirectToRoute('ui_import_show', $this->showRouteParameters($id, $returnTo, $selectedSuggestion));
         }
 
         try {
@@ -83,23 +87,23 @@ final class ImportJobFinalizeWebController extends AbstractController
                 $this->selectedSuggestionId($request),
             ));
             if (null !== $nextReviewId && $this->shouldContinueToNextReview($request)) {
-                $this->addFlash('success', 'Import finalized. Opened the next review item.');
+                $this->addFlash('success', 'import.flash.finalized_next');
 
                 return $this->redirectToRoute('ui_import_show', ['id' => $nextReviewId, 'return_to' => $returnTo]);
             }
 
             if ($this->shouldContinueToNextReview($request)) {
-                $this->addFlash('success', 'Import finalized. Review queue completed for now.');
+                $this->addFlash('success', 'import.flash.finalized_done');
 
                 return $this->redirect($returnTo);
             }
 
-            $this->addFlash('success', 'Import finalized and receipt created.');
+            $this->addFlash('success', 'import.flash.finalized_created');
         } catch (InvalidArgumentException|RuntimeException $e) {
             $this->addFlash('error', $e->getMessage());
         }
 
-        return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
+        return $this->redirectToRoute('ui_import_show', $this->showRouteParameters($id, $returnTo, $selectedSuggestion));
     }
 
     private function shouldContinueToNextReview(Request $request): bool
@@ -219,6 +223,23 @@ final class ImportJobFinalizeWebController extends AbstractController
         return '' === $id ? null : $id;
     }
 
+    /**
+     * @return array{id:string, return_to:string, selectedSuggestion?:string}
+     */
+    private function showRouteParameters(string $id, string $returnTo, ?string $selectedSuggestion): array
+    {
+        $parameters = [
+            'id' => $id,
+            'return_to' => $returnTo,
+        ];
+
+        if (null !== $selectedSuggestion) {
+            $parameters['selectedSuggestion'] = $selectedSuggestion;
+        }
+
+        return $parameters;
+    }
+
     /** @return list<CreateReceiptLineCommand>|null */
     private function toNullableLines(Request $request): ?array
     {
@@ -256,13 +277,13 @@ final class ImportJobFinalizeWebController extends AbstractController
             }
 
             if (null === $fuelType || null === $quantity || null === $unitPrice || null === $vatRate) {
-                throw new InvalidArgumentException(sprintf('Line %d is incomplete. Fuel type, quantity, unit price, and VAT rate are all required.', $lineNumber));
+                throw new InvalidArgumentException($this->t('import.validation.line_incomplete', ['%index%' => (string) $lineNumber]));
             }
 
             try {
                 $lines[] = new CreateReceiptLineCommand(FuelType::from($fuelType), $quantity, $unitPrice, $vatRate);
             } catch (ValueError) {
-                throw new InvalidArgumentException(sprintf('Line %d has an invalid fuel type.', $lineNumber));
+                throw new InvalidArgumentException($this->t('import.validation.line_invalid_fuel_type', ['%index%' => (string) $lineNumber]));
             }
         }
 
@@ -282,16 +303,22 @@ final class ImportJobFinalizeWebController extends AbstractController
         }
 
         if (null === $fuelType || null === $quantity || null === $unitPrice || null === $vatRate) {
-            throw new InvalidArgumentException('If one line field is provided, all line fields are required.');
+            throw new InvalidArgumentException('import.validation.legacy_line_incomplete');
         }
 
         try {
             $line = new CreateReceiptLineCommand(FuelType::from($fuelType), $quantity, $unitPrice, $vatRate);
         } catch (ValueError) {
-            throw new InvalidArgumentException('Invalid fuel type provided.');
+            throw new InvalidArgumentException('import.validation.legacy_line_invalid_fuel_type');
         }
 
         return [$line];
+    }
+
+    /** @param array<string, scalar|Stringable|null> $parameters */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 
     private const UUID_ROUTE_REQUIREMENT = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';

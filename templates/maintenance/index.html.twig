@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Maintenance{% endblock %}
+{% block title %}{{ 'maintenance_dashboard.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -246,112 +246,112 @@
     <main class="app-shell maintenance-page">
         <section class="maintenance-header">
             <div>
-                <h1 class="page-title">Maintenance</h1>
-                <p class="muted">Timeline des interventions, planning à venir et rappels actifs.</p>
+                <h1 class="page-title">{{ 'maintenance_dashboard.title'|trans }}</h1>
+                <p class="muted">{{ 'maintenance_dashboard.lead'|trans }}</p>
             </div>
             <div class="maintenance-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Receipts</a>
-                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new') }}">Add plan</a>
-                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new') }}">Add event</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">{{ 'nav.receipts'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new') }}">{{ 'maintenance.plan_form.title_new'|trans }}</a>
+                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new') }}">{{ 'maintenance.event_form.title_new'|trans }}</a>
             </div>
         </section>
 
         {% for message in app.flashes('success') %}
-            <div class="flash">{{ message }}</div>
+            <div class="flash">{{ message|trans }}</div>
         {% endfor %}
 
         <section class="card panel">
             <form class="inline-filter" method="get" action="{{ path('ui_maintenance_index') }}">
                 <label class="label">
-                    Vehicle filter
+                    {{ 'maintenance_dashboard.vehicle_filter'|trans }}
                     <select class="select" name="vehicle_id">
-                        <option value="">All vehicles</option>
+                        <option value="">{{ 'analytics.vehicle_all'|trans }}</option>
                         {% for optionId, optionLabel in vehicleOptions %}
                             <option value="{{ optionId }}" {% if vehicleFilter == optionId %}selected{% endif %}>{{ optionLabel }}</option>
                         {% endfor %}
                     </select>
                 </label>
-                <button class="btn btn-primary" type="submit">Apply</button>
-                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Reset</a>
+                <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">{{ 'action.reset'|trans }}</a>
             </form>
 
             <div class="kpi-grid">
                 <article class="card-subtle kpi">
-                    <div class="kpi-label">Planned ({{ monthStart|date('m/Y') }})</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.planned_month'|trans({'%month%': monthStart|date('m/Y')}) }}</div>
                     <div class="kpi-value">{{ (variance.plannedCostCents / 100)|number_format(2, '.', ' ') }} EUR</div>
                 </article>
                 <article class="card-subtle kpi">
-                    <div class="kpi-label">Actual ({{ monthStart|date('m/Y') }})</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.actual_month'|trans({'%month%': monthStart|date('m/Y')}) }}</div>
                     <div class="kpi-value">{{ (variance.actualCostCents / 100)|number_format(2, '.', ' ') }} EUR</div>
                 </article>
                 <article class="card-subtle kpi">
-                    <div class="kpi-label">Variance ({{ monthStart|date('m/Y') }})</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.variance_month'|trans({'%month%': monthStart|date('m/Y')}) }}</div>
                     <div class="kpi-value">{{ (variance.varianceCents / 100)|number_format(2, '.', ' ') }} EUR</div>
                 </article>
             </div>
 
             <div class="scan-grid">
                 <article class="card-subtle scan-card {% if reminders|length > 0 %}is-alert{% endif %}">
-                    <div class="kpi-label">Attention now</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.attention_now'|trans }}</div>
                     <div class="kpi-value">{{ reminders|length }}</div>
                     <div class="scan-copy">
                         {% if reminders|length > 0 %}
-                            Triggered reminder{% if reminders|length > 1 %}s{% endif %} already waiting for action.
+                            {{ (reminders|length > 1 ? 'maintenance_dashboard.attention_now_plural' : 'maintenance_dashboard.attention_now_single')|trans }}
                         {% else %}
-                            No triggered reminder is waiting right now.
+                            {{ 'maintenance_dashboard.attention_now_empty'|trans }}
                         {% endif %}
                     </div>
                 </article>
                 <article class="card-subtle scan-card {% if dueSoonPlanCount > 0 %}is-alert{% endif %}">
-                    <div class="kpi-label">Due soon</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.due_soon'|trans }}</div>
                     <div class="kpi-value">{{ dueSoonPlanCount }}</div>
                     <div class="scan-copy">
-                        Planned item{% if dueSoonPlanCount > 1 %}s{% endif %} scheduled in the next 14 days.
+                        {{ 'maintenance_dashboard.due_soon_items'|trans({'%plural%': dueSoonPlanCount > 1 ? 's' : '', '%suffix%': dueSoonPlanCount > 1 ? 's' : ''}) }}
                     </div>
                 </article>
                 <article class="card-subtle scan-card">
-                    <div class="kpi-label">Recently handled</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.recently_handled'|trans }}</div>
                     <div class="kpi-value">{{ recentEventCount }}</div>
                     <div class="scan-copy">
-                        Maintenance event{% if recentEventCount > 1 %}s{% endif %} logged in the last 30 days.
+                        {{ 'maintenance_dashboard.recently_handled_items'|trans({'%suffix%': recentEventCount > 1 ? 's' : ''}) }}
                     </div>
                 </article>
             </div>
 
             <div class="lifecycle-grid">
                 <article class="card-subtle scan-card">
-                    <div class="kpi-label">Configured</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.configured'|trans }}</div>
                     <div class="kpi-value">{{ configuredRuleCount }}</div>
-                    <div class="lifecycle-copy">Rules waiting for a first event or enough data to start tracking cleanly.</div>
+                    <div class="lifecycle-copy">{{ 'maintenance_dashboard.configured_lead'|trans }}</div>
                 </article>
                 <article class="card-subtle scan-card">
-                    <div class="kpi-label">Watching</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.watching'|trans }}</div>
                     <div class="kpi-value">{{ watchingRuleCount }}</div>
-                    <div class="lifecycle-copy">Rules currently active and tracking the next due point.</div>
+                    <div class="lifecycle-copy">{{ 'maintenance_dashboard.watching_lead'|trans }}</div>
                 </article>
                 <article class="card-subtle scan-card {% if dueSoonRuleCount > 0 %}is-alert{% endif %}">
-                    <div class="kpi-label">Due soon</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.due_soon'|trans }}</div>
                     <div class="kpi-value">{{ dueSoonRuleCount }}</div>
-                    <div class="lifecycle-copy">Rules getting close to their next due date or mileage threshold.</div>
+                    <div class="lifecycle-copy">{{ 'maintenance_dashboard.due_soon_lead'|trans }}</div>
                 </article>
                 <article class="card-subtle scan-card {% if dueRuleCount > 0 %}is-alert{% endif %}">
-                    <div class="kpi-label">Due now</div>
+                    <div class="kpi-label">{{ 'maintenance_dashboard.due_now'|trans }}</div>
                     <div class="kpi-value">{{ dueRuleCount }}</div>
-                    <div class="lifecycle-copy">Rules that have already crossed the threshold and should create follow-up work.</div>
+                    <div class="lifecycle-copy">{{ 'maintenance_dashboard.due_now_lead'|trans }}</div>
                 </article>
             </div>
         </section>
 
         <section class="maintenance-grid">
             <article class="card panel">
-                <h2>Timeline events</h2>
+                <h2>{{ 'maintenance_dashboard.timeline_events'|trans }}</h2>
                 {% if events is empty %}
                         <div class="empty-state">
-                            <p>No maintenance event yet.</p>
+                            <p>{{ 'maintenance_dashboard.no_maintenance_event_yet'|trans }}</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add first event</a>
+                                <a class="btn btn-primary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">{{ 'vehicle.show.add_first_event'|trans }}</a>
                                 {% if vehicleFilter %}
-                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">Open vehicle</a>
+                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">{{ 'analytics.open_vehicle'|trans }}</a>
                                 {% endif %}
                             </div>
                         </div>
@@ -363,22 +363,22 @@
                                     <strong>{{ event.eventType.value|upper }}</strong>
                                     <div class="show-action-list">
                                         {% if event.occurredAt >= recentEventCutoff %}
-                                            <span class="pill pill-maintenance-recent">Handled recently</span>
+                                            <span class="pill pill-maintenance-recent">{{ 'maintenance_dashboard.handled_recently'|trans }}</span>
                                         {% endif %}
                                         <span class="muted">{{ event.occurredAt|date('d/m/Y H:i') }}</span>
                                     </div>
                                 </div>
                                 <div class="item-sub">{{ vehicleOptions[event.vehicleId] ?? event.vehicleId }}</div>
                                 <div class="item-meta">
-                                    {% if event.odometerKilometers is not null %}<span>Odometer: {{ event.odometerKilometers }} km</span>{% endif %}
-                                    {% if event.totalCostCents is not null %}<span>Cost: {{ (event.totalCostCents / 100)|number_format(2, '.', ' ') }} {{ event.currencyCode }}</span>{% endif %}
+                                    {% if event.odometerKilometers is not null %}<span>{{ 'vehicle.show.odometer'|trans({'%odometer%': event.odometerKilometers}) }}</span>{% endif %}
+                                    {% if event.totalCostCents is not null %}<span>{{ 'vehicle.show.cost'|trans({'%amount%': (event.totalCostCents / 100)|number_format(2, '.', ' '), '%currency%': event.currencyCode}) }}</span>{% endif %}
                                 </div>
                                 {% if event.description %}<div class="item-sub">{{ event.description }}</div>{% endif %}
                                 <div class="actions-wrap">
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: event.id.toString, return_to: maintenanceReturnTo}) }}">Edit</a>
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: event.vehicleId}) }}">Open vehicle</a>
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: event.vehicleId}) }}">Receipts</a>
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: event.vehicleId}) }}">Analytics</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_event_edit', {id: event.id.toString, return_to: maintenanceReturnTo}) }}">{{ 'action.edit'|trans }}</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: event.vehicleId}) }}">{{ 'analytics.open_vehicle'|trans }}</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: event.vehicleId}) }}">{{ 'nav.receipts'|trans }}</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: event.vehicleId}) }}">{{ 'nav.analytics'|trans }}</a>
                                 </div>
                             </div>
                         {% endfor %}
@@ -389,16 +389,16 @@
             <article class="planner-section">
                 <section class="card panel">
                     <div class="panel-header">
-                        <h2>Planner (upcoming)</h2>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add plan</a>
+                        <h2>{{ 'maintenance_dashboard.planner_upcoming'|trans }}</h2>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">{{ 'maintenance.plan_form.title_new'|trans }}</a>
                     </div>
                     {% if upcomingPlans is empty %}
                         <div class="empty-state">
-                            <p>No upcoming planned cost.</p>
+                            <p>{{ 'maintenance_dashboard.no_upcoming_planned_cost'|trans }}</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add first plan</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">{{ 'vehicle.show.add_first_plan'|trans }}</a>
                                 {% if vehicleFilter %}
-                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">Open vehicle</a>
+                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">{{ 'analytics.open_vehicle'|trans }}</a>
                                 {% endif %}
                             </div>
                         </div>
@@ -410,24 +410,24 @@
                                     <strong>{{ plan.label }}</strong>
                                     <div class="show-action-list">
                                         {% if plan.plannedFor <= soonPlanCutoff %}
-                                            <span class="pill pill-maintenance-soon">Due soon</span>
+                                            <span class="pill pill-maintenance-soon">{{ 'maintenance_dashboard.due_soon'|trans }}</span>
                                         {% else %}
-                                            <span class="pill pill-maintenance-later">Later</span>
+                                            <span class="pill pill-maintenance-later">{{ 'maintenance_dashboard.later'|trans }}</span>
                                         {% endif %}
                                         <span class="muted">{{ plan.plannedFor|date('d/m/Y') }}</span>
                                     </div>
                                 </div>
                                     <div class="item-sub">{{ vehicleOptions[plan.vehicleId] ?? plan.vehicleId }}</div>
                                     <div class="item-meta">
-                                        <span>Budget: {{ (plan.plannedCostCents / 100)|number_format(2, '.', ' ') }} {{ plan.currencyCode }}</span>
-                                        {% if plan.eventType is not null %}<span>Type: {{ plan.eventType.value|upper }}</span>{% endif %}
+                                        <span>{{ 'vehicle.show.budget'|trans({'%amount%': (plan.plannedCostCents / 100)|number_format(2, '.', ' '), '%currency%': plan.currencyCode}) }}</span>
+                                        {% if plan.eventType is not null %}<span>{{ 'maintenance_dashboard.suggested_event'|trans({'%event%': plan.eventType.value|upper}) }}</span>{% endif %}
                                     </div>
                                     {% if plan.notes %}<div class="item-sub">{{ plan.notes }}</div>{% endif %}
                                     <div class="actions-wrap">
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_edit', {id: plan.id.toString, return_to: maintenanceReturnTo}) }}">Edit</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: plan.vehicleId}) }}">Open vehicle</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: plan.vehicleId}) }}">Receipts</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: plan.vehicleId}) }}">Analytics</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_plan_edit', {id: plan.id.toString, return_to: maintenanceReturnTo}) }}">{{ 'action.edit'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: plan.vehicleId}) }}">{{ 'analytics.open_vehicle'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: plan.vehicleId}) }}">{{ 'nav.receipts'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: plan.vehicleId}) }}">{{ 'nav.analytics'|trans }}</a>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -437,16 +437,16 @@
 
                 <section class="card panel">
                     <div class="panel-header">
-                        <h2>Reminder rules</h2>
-                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add rule</a>
+                        <h2>{{ 'maintenance_dashboard.reminder_rules'|trans }}</h2>
+                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">{{ 'maintenance.rule_form.title_new'|trans }}</a>
                     </div>
                     {% if reminderRules is empty %}
                         <div class="empty-state">
-                            <p>No reminder rule yet. Add one to start generating due reminders from time or mileage.</p>
+                            <p>{{ 'maintenance_dashboard.no_reminder_rule_yet'|trans }}</p>
                             <div class="actions-wrap">
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add first rule</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">{{ 'maintenance.rule_form.title_new'|trans }}</a>
                                 {% if vehicleFilter %}
-                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">Open vehicle</a>
+                                    <a class="btn btn-secondary" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">{{ 'analytics.open_vehicle'|trans }}</a>
                                 {% endif %}
                             </div>
                         </div>
@@ -461,10 +461,10 @@
                                     {% set insight = ruleInsights[rule.id.toString] ?? null %}
                                     {% set lifecycle = ruleLifecycle[rule.id.toString] ?? null %}
                                     <div class="item-meta">
-                                        <span>Trigger: {{ rule.triggerMode.value|replace({'_': ' '})|upper }}</span>
-                                        {% if rule.intervalDays is not null %}<span>Every {{ rule.intervalDays }} day{% if rule.intervalDays > 1 %}s{% endif %}</span>{% endif %}
-                                        {% if rule.intervalKilometers is not null %}<span>Every {{ rule.intervalKilometers }} km</span>{% endif %}
-                                        {% if rule.eventType is not null %}<span>Suggested event: {{ rule.eventType.value|upper }}</span>{% endif %}
+                                        <span>{{ 'maintenance_dashboard.trigger'|trans({'%mode%': rule.triggerMode.value|replace({'_': ' '})|upper}) }}</span>
+                                        {% if rule.intervalDays is not null %}<span>{{ (rule.intervalDays > 1 ? 'maintenance_dashboard.every_days_plural' : 'maintenance_dashboard.every_days')|trans({'%count%': rule.intervalDays}) }}</span>{% endif %}
+                                        {% if rule.intervalKilometers is not null %}<span>{{ 'maintenance_dashboard.every_kilometers'|trans({'%count%': rule.intervalKilometers}) }}</span>{% endif %}
+                                        {% if rule.eventType is not null %}<span>{{ 'maintenance_dashboard.suggested_event'|trans({'%event%': rule.eventType.value|upper}) }}</span>{% endif %}
                                         {% if lifecycle %}<span class="pill {{ lifecycle.badgeClass }}">{{ lifecycle.label }}</span>{% endif %}
                                     </div>
                                     {% if lifecycle and lifecycle.detail %}
@@ -477,10 +477,10 @@
                                         <div class="item-sub">{{ insight.lastEventSummary }}</div>
                                     {% endif %}
                                     <div class="actions-wrap">
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_edit', {id: rule.id.toString}) }}">Edit</a>
-                                        <form method="post" action="{{ path('ui_maintenance_rule_delete', {id: rule.id.toString}) }}" data-turbo-confirm="Delete reminder rule '{{ rule.name }}'?" style="display:inline-flex;">
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_edit', {id: rule.id.toString}) }}">{{ 'action.edit'|trans }}</a>
+                                        <form method="post" action="{{ path('ui_maintenance_rule_delete', {id: rule.id.toString}) }}" data-turbo-confirm="{{ 'maintenance_dashboard.delete_rule_confirm'|trans({'%name%': rule.name}) }}" style="display:inline-flex;">
                                             <input type="hidden" name="_token" value="{{ csrf_token('maintenance_rule_delete_' ~ rule.id.toString) }}">
-                                            <button class="btn btn-secondary btn-compact" type="submit">Delete</button>
+                                            <button class="btn btn-secondary btn-compact" type="submit">{{ 'action.delete'|trans }}</button>
                                         </form>
                                     </div>
                                 </div>
@@ -491,24 +491,24 @@
 
                 <section class="card panel">
                     <div class="panel-header">
-                        <h2>Triggered reminders</h2>
+                        <h2>{{ 'maintenance_dashboard.triggered_reminders'|trans }}</h2>
                         {% if reminderRules is not empty %}
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add another rule</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">{{ 'maintenance_dashboard.add_another_rule'|trans }}</a>
                         {% endif %}
                     </div>
                     {% if reminders is empty %}
                         <div class="empty-state">
                             {% if reminderRules is empty %}
-                                <p>No triggered reminder yet because no reminder rule is configured for this scope.</p>
+                                <p>{{ 'maintenance_dashboard.no_triggered_reminder_without_rules'|trans }}</p>
                             {% elseif dueRuleCount > 0 %}
-                                <p>No triggered reminder is listed yet, but at least one rule is already due. They will appear here as soon as reminders are generated.</p>
+                                <p>{{ 'maintenance_dashboard.no_triggered_reminder_due_rules'|trans }}</p>
                             {% else %}
-                                <p>No triggered reminder yet. Your rules are being tracked, but none is due right now.</p>
+                                <p>{{ 'maintenance_dashboard.no_triggered_reminder_tracking'|trans }}</p>
                             {% endif %}
                             <div class="actions-wrap">
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">Add a rule</a>
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add a plan</a>
-                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">Add an event</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_rule_new', vehicleFilter ? {vehicle_id: vehicleFilter} : {}) }}">{{ 'maintenance.rule_form.title_new'|trans }}</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_plan_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">{{ 'maintenance.plan_form.title_new'|trans }}</a>
+                                <a class="btn btn-secondary" href="{{ path('ui_maintenance_event_new', vehicleFilter ? {vehicle_id: vehicleFilter, return_to: maintenanceReturnTo} : {return_to: maintenanceReturnTo}) }}">{{ 'maintenance.event_form.title_new'|trans }}</a>
                             </div>
                         </div>
                     {% else %}
@@ -521,23 +521,23 @@
                                     </div>
                                     <div class="item-sub">{{ vehicleOptions[reminder.vehicleId] ?? reminder.vehicleId }}</div>
                                     <div class="item-meta">
-                                        {% if reminder.dueAtDate is not null %}<span>Due date: {{ reminder.dueAtDate|date('d/m/Y') }}</span>{% endif %}
-                                        {% if reminder.dueAtOdometerKilometers is not null %}<span>Due odometer: {{ reminder.dueAtOdometerKilometers }} km</span>{% endif %}
-                                        {% if reminder.dueByDate %}<span class="pill pill-reminder-date">Date due</span>{% endif %}
-                                        {% if reminder.dueByOdometer %}<span class="pill pill-reminder-odometer">Odometer due</span>{% endif %}
+                                        {% if reminder.dueAtDate is not null %}<span>{{ 'maintenance_dashboard.due_date'|trans({'%date%': reminder.dueAtDate|date('d/m/Y')}) }}</span>{% endif %}
+                                        {% if reminder.dueAtOdometerKilometers is not null %}<span>{{ 'maintenance_dashboard.due_odometer'|trans({'%odometer%': reminder.dueAtOdometerKilometers}) }}</span>{% endif %}
+                                        {% if reminder.dueByDate %}<span class="pill pill-reminder-date">{{ 'maintenance_dashboard.date_due'|trans }}</span>{% endif %}
+                                        {% if reminder.dueByOdometer %}<span class="pill pill-reminder-odometer">{{ 'maintenance_dashboard.odometer_due'|trans }}</span>{% endif %}
                                     </div>
                                     {% set ruleDetail = ruleDetails[reminder.ruleId] ?? null %}
                                     {% if ruleDetail %}
                                         <div class="item-sub">
-                                            Trigger: {{ ruleDetail.triggerMode|replace({'_': ' '})|upper }}
+                                            {{ 'maintenance_dashboard.trigger'|trans({'%mode%': ruleDetail.triggerMode|replace({'_': ' '})|upper}) }}
                                             {% if ruleDetail.intervalDays %}
-                                                · every {{ ruleDetail.intervalDays }} day{% if ruleDetail.intervalDays > 1 %}s{% endif %}
+                                                · {{ (ruleDetail.intervalDays > 1 ? 'maintenance_dashboard.every_days_plural' : 'maintenance_dashboard.every_days')|trans({'%count%': ruleDetail.intervalDays}) }}
                                             {% endif %}
                                             {% if ruleDetail.intervalKilometers %}
-                                                · every {{ ruleDetail.intervalKilometers }} km
+                                                · {{ 'maintenance_dashboard.every_kilometers'|trans({'%count%': ruleDetail.intervalKilometers}) }}
                                             {% endif %}
                                             {% if ruleDetail.eventType %}
-                                                · suggested event {{ ruleDetail.eventType|upper }}
+                                                · {{ 'maintenance_dashboard.suggested_event'|trans({'%event%': ruleDetail.eventType|upper}) }}
                                             {% endif %}
                                         </div>
                                     {% endif %}
@@ -547,11 +547,11 @@
                                     {% endif %}
                                     {% set logEventParams = logEventParams|merge({return_to: maintenanceReturnTo}) %}
                                     <div class="actions-wrap">
-                                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', logEventParams) }}">Log event now</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: reminder.vehicleId}) }}">Open vehicle</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: reminder.vehicleId}) }}">Vehicle timeline</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: reminder.vehicleId}) }}">Receipts</a>
-                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: reminder.vehicleId}) }}">Analytics</a>
+                                        <a class="btn btn-primary btn-compact" href="{{ path('ui_maintenance_event_new', logEventParams) }}">{{ 'maintenance_dashboard.log_event_now'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: reminder.vehicleId}) }}">{{ 'analytics.open_vehicle'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: reminder.vehicleId}) }}">{{ 'vehicle.show.vehicle_timeline'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {vehicle_id: reminder.vehicleId}) }}">{{ 'nav.receipts'|trans }}</a>
+                                        <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {vehicle_id: reminder.vehicleId}) }}">{{ 'nav.analytics'|trans }}</a>
                                     </div>
                                 </div>
                             {% endfor %}

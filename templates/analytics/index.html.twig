@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Analytics Dashboard{% endblock %}
+{% block title %}{{ 'analytics.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -634,17 +634,17 @@
     <main class="app-shell analytics-page">
         <section class="analytics-header">
             <div>
-                <h1 class="page-title">Analytics Dashboard</h1>
-                <p class="muted">Pilot fuel spend and consumption trends across your selected period.</p>
+                <h1 class="page-title">{{ 'analytics.title'|trans }}</h1>
+                <p class="muted">{{ 'analytics.lead'|trans }}</p>
             </div>
             <div class="analytics-actions">
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams) }}">Export CSV</a>
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams|merge({ format: 'xlsx' })) }}">Export XLSX</a>
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">Receipts</a>
-                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">Maintenance</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams) }}">{{ 'analytics.export_csv'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_export', exportQueryParams|merge({ format: 'xlsx' })) }}">{{ 'analytics.export_xlsx'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index') }}">{{ 'nav.receipts'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_maintenance_index') }}">{{ 'nav.maintenance'|trans }}</a>
             </div>
         </section>
-        <p class="muted">Exports keep the current analytics scope so shared files match the dashboard you are looking at.</p>
+        <p class="muted">{{ 'analytics.export_scope_hint'|trans }}</p>
 
         <section class="card analytics-filters">
             <div class="analytics-shortcuts">
@@ -654,43 +654,43 @@
             </div>
             <form class="analytics-filters-form" method="get" action="{{ path('ui_analytics_dashboard') }}">
                 <label class="label">
-                    From
+                    {{ 'analytics.from'|trans }}
                     <input class="input" type="text" name="from" value="{{ fromFilter ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
                 <label class="label">
-                    To
+                    {{ 'analytics.to'|trans }}
                     <input class="input" type="text" name="to" value="{{ toFilter ?? '' }}" data-datepicker="date" autocomplete="off">
                 </label>
                 <label class="label">
-                    Vehicle
+                    {{ 'analytics.vehicle'|trans }}
                     <select class="select" name="vehicle_id">
-                        <option value="">All vehicles</option>
+                        <option value="">{{ 'analytics.vehicle_all'|trans }}</option>
                         {% for optionId, optionLabel in vehicleOptions %}
                             <option value="{{ optionId }}" {% if vehicleFilter == optionId %}selected{% endif %}>{{ optionLabel }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Station
+                    {{ 'analytics.station'|trans }}
                     <select class="select" name="station_id">
-                        <option value="">All stations</option>
+                        <option value="">{{ 'analytics.station_all'|trans }}</option>
                         {% for stationOption in stationOptions %}
                             <option value="{{ stationOption.id }}" {% if stationFilter == stationOption.id %}selected{% endif %}>{{ stationOption.label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="label">
-                    Fuel type
+                    {{ 'analytics.fuel_type'|trans }}
                     <select class="select" name="fuel_type">
-                        <option value="">All fuel types</option>
+                        <option value="">{{ 'analytics.fuel_type_all'|trans }}</option>
                         {% for fuelTypeChoice in fuelTypeChoices %}
                             <option value="{{ fuelTypeChoice }}" {% if fuelTypeFilter == fuelTypeChoice %}selected{% endif %}>{{ fuelTypeChoice }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <div class="analytics-filter-actions">
-                    <button class="btn btn-primary" type="submit">Apply filters</button>
-                    <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard') }}">Reset</a>
+                    <button class="btn btn-primary" type="submit">{{ 'action.apply'|trans }}</button>
+                    <a class="btn btn-secondary" href="{{ path('ui_analytics_dashboard') }}">{{ 'action.reset'|trans }}</a>
                 </div>
             </form>
             {% if activeFilterBadges is not empty %}
@@ -702,39 +702,39 @@
             {% endif %}
             {% if selectedStationIsFavorite %}
                 <div class="analytics-context-hints">
-                    <span class="pill favorite-pill">Selected station is in favorites</span>
+                    <span class="pill favorite-pill">{{ 'analytics.selected_station_favorite'|trans }}</span>
                 </div>
             {% endif %}
             <div class="analytics-context-actions">
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', receiptQueryParams) }}">Open matching receipts</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', receiptQueryParams) }}">{{ 'analytics.open_matching_receipts'|trans }}</a>
                 {% if selectedVehicleLabel and vehicleFilter %}
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicleFilter}) }}">Open vehicle maintenance</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">Open vehicle</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index', {vehicle_id: vehicleFilter}) }}">{{ 'analytics.open_vehicle_maintenance'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_vehicle_show', {id: vehicleFilter}) }}">{{ 'analytics.open_vehicle'|trans }}</a>
                 {% else %}
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index') }}">Open maintenance</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_maintenance_index') }}">{{ 'analytics.open_maintenance'|trans }}</a>
                 {% endif %}
                 {% if selectedStationLabel and stationFilter %}
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: stationFilter, return_to: path('ui_analytics_dashboard', analyticsQueryParams)}) }}">Open station</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_station_show', {id: stationFilter, return_to: path('ui_analytics_dashboard', analyticsQueryParams)}) }}">{{ 'analytics.open_station'|trans }}</a>
                 {% endif %}
             </div>
         </section>
 
         <section class="kpi-grid">
             <article class="card-subtle kpi-card">
-                <div class="kpi-label">Total cost</div>
+                <div class="kpi-label">{{ 'analytics.total_cost'|trans }}</div>
                 <div class="kpi-value">{{ (totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</div>
             </article>
             <article class="card-subtle kpi-card">
-                <div class="kpi-label">Fuel volume</div>
+                <div class="kpi-label">{{ 'analytics.fuel_volume'|trans }}</div>
                 <div class="kpi-value">{{ (totalQuantityMilliLiters / 1000)|number_format(2, '.', ' ') }} L</div>
             </article>
             <article class="card-subtle kpi-card">
-                <div class="kpi-label">Average fuel price</div>
+                <div class="kpi-label">{{ 'analytics.average_fuel_price'|trans }}</div>
                 <div class="kpi-value">
                     {% if averagePriceDeciCentsPerLiter is not null %}
                         {{ (averagePriceDeciCentsPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
                     {% else %}
-                        n/a
+                        {{ 'common.na'|trans }}
                     {% endif %}
                 </div>
             </article>
@@ -743,24 +743,24 @@
         <section class="card map-card">
             <div class="map-card-head">
                 <div>
-                    <h2>Visited and matched public stations</h2>
-                    <p class="muted">Your receipt history stays primary. Public stations appear as a separate helper layer when a close match exists.</p>
+                    <h2>{{ 'analytics.visited_public_title'|trans }}</h2>
+                    <p class="muted">{{ 'analytics.visited_public_lead'|trans }}</p>
                 </div>
                 <div class="map-card-badges">
-                    <span class="pill">{{ stationMap.visitedPoints|length }} visited</span>
-                    <span class="pill">{{ stationMap.matchedVisitedCount }} with public match</span>
-                    <span class="pill">{{ stationMap.nearbyVisitedCount }} with nearby public</span>
-                    <span class="pill">{{ stationMap.publicPoints|length }} public marker{{ stationMap.publicPoints|length == 1 ? '' : 's' }}</span>
-                    <span class="pill">{{ stationMap.nearbyPublicPoints|length }} nearby marker{{ stationMap.nearbyPublicPoints|length == 1 ? '' : 's' }}</span>
+                    <span class="pill">{{ 'analytics.visited_count'|trans({'%count%': stationMap.visitedPoints|length}) }}</span>
+                    <span class="pill">{{ 'analytics.matched_public_count'|trans({'%count%': stationMap.matchedVisitedCount}) }}</span>
+                    <span class="pill">{{ 'analytics.nearby_public_count'|trans({'%count%': stationMap.nearbyVisitedCount}) }}</span>
+                    <span class="pill">{{ (stationMap.publicPoints|length == 1 ? 'analytics.public_markers_count' : 'analytics.public_markers_count_plural')|trans({'%count%': stationMap.publicPoints|length}) }}</span>
+                    <span class="pill">{{ (stationMap.nearbyPublicPoints|length == 1 ? 'analytics.nearby_markers_count' : 'analytics.nearby_markers_count_plural')|trans({'%count%': stationMap.nearbyPublicPoints|length}) }}</span>
                 </div>
             </div>
             {% if stationMap.visitedPoints is empty %}
-                <div class="empty-state">No geocoded station data for current filters.</div>
+                <div class="empty-state">{{ 'analytics.no_geocoded_data'|trans }}</div>
             {% else %}
                 <div class="map-legend">
-                    <span class="map-legend-item"><span class="map-legend-dot visited"></span>Visited station from your receipt history</span>
-                    <span class="map-legend-item"><span class="map-legend-dot public"></span>Matched public station from the official cache</span>
-                    <span class="map-legend-item"><span class="map-legend-dot nearby"></span>Nearby public station not yet visited</span>
+                    <span class="map-legend-item"><span class="map-legend-dot visited"></span>{{ 'analytics.legend_visited'|trans }}</span>
+                    <span class="map-legend-item"><span class="map-legend-dot public"></span>{{ 'analytics.legend_public'|trans }}</span>
+                    <span class="map-legend-item"><span class="map-legend-dot nearby"></span>{{ 'analytics.legend_nearby'|trans }}</span>
                 </div>
                 <div class="map-canvas" id="analytics-station-map"></div>
                 <ul class="station-map-list">
@@ -768,30 +768,30 @@
                         <li class="station-map-item">
                             <div class="station-map-item-head">
                                 <strong>{{ point.stationName }}</strong>
-                                <span class="pill">Visited</span>
+                                <span class="pill">{{ 'analytics.visited_badge'|trans }}</span>
                                 {% if point.isFavorite %}
-                                    <span class="pill favorite-pill">Favorite</span>
+                                    <span class="pill favorite-pill">{{ 'station.favorite'|trans }}</span>
                                 {% endif %}
                                 {% if point.publicMatch is not null %}
-                                    <span class="pill">Public match · {{ point.publicMatch.confidence }}</span>
+                                    <span class="pill">{{ 'analytics.public_match_badge'|trans({'%confidence%': point.publicMatch.confidence}) }}</span>
                                 {% endif %}
                             </div>
                             <div class="station-map-item-row">
                                 <span>{{ point.address }}</span>
                                 <span>{{ (point.totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
                                 <span>{{ (point.totalQuantityMilliLiters / 1000)|number_format(2, '.', ' ') }} L</span>
-                                <span>{{ point.receiptCount }} receipt(s)</span>
+                                <span>{{ (point.receiptCount == 1 ? 'analytics.receipt_count' : 'analytics.receipt_count_plural')|trans({'%count%': point.receiptCount}) }}</span>
                             </div>
                             {% if point.publicMatch is not null %}
                                 <div class="station-map-item-match">
                                     {{ point.publicMatch.address }}, {{ point.publicMatch.postalCode }} {{ point.publicMatch.city }}
-                                    {% if point.publicMatch.distanceMeters is not null %} · {{ point.publicMatch.distanceMeters }} m away{% endif %}
+                                    {% if point.publicMatch.distanceMeters is not null %} · {{ 'station.distance_away'|trans({'%distance%': point.publicMatch.distanceMeters}) }}{% endif %}
                                     {% if point.publicMatch.availableFuelLabels is not empty %} · {{ point.publicMatch.availableFuelLabels|join(', ') }}{% endif %}
                                 </div>
                             {% endif %}
                             {% if point.nearbyPublicStations is not empty %}
                                 <div class="station-map-item-match">
-                                    Nearby public:
+                                    {{ 'analytics.nearby_public_label'|trans }}
                                     {% for nearby in point.nearbyPublicStations %}
                                         {{ nearby.address }}, {{ nearby.postalCode }} {{ nearby.city }} · {{ nearby.distanceMeters }} m{% if nearby.availableFuelLabels is not empty %} · {{ nearby.availableFuelLabels|join(', ') }}{% endif %}{% if not loop.last %} | {% endif %}
                                     {% endfor %}
@@ -807,14 +807,14 @@
         <section class="trend-grid">
             <article class="card trend-card" data-controller="analytics-chart" data-chart-key="cost" data-chart-storage-key="analytics.chartView.cost" data-default-view="bars" data-chart-view="bars" data-chart-runtime-state="idle">
                 <div class="trend-card-header">
-                    <h2>Cost trend by month</h2>
+                    <h2>{{ 'analytics.cost_trend_title'|trans }}</h2>
                     <div class="trend-view-switch">
-                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">Bars</button>
-                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">Lines</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">{{ 'analytics.chart_bars'|trans }}</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">{{ 'analytics.chart_lines'|trans }}</button>
                     </div>
                 </div>
                 {% if costTrend is empty %}
-                    <div class="empty-state">No cost data for current filters.</div>
+                    <div class="empty-state">{{ 'analytics.no_cost_data'|trans }}</div>
                 {% else %}
                     {% set costChartLabels = [] %}
                     {% set costChartValues = [] %}
@@ -830,7 +830,7 @@
                         labels: costChartLabels,
                         datasets: [
                             {
-                                label: 'Cost',
+                                label: ('analytics.chart_cost_label'|trans),
                                 data: costChartValues,
                                 borderColor: '#f7b500',
                                 fillColor: 'rgba(247, 181, 0, 0.16)',
@@ -859,14 +859,14 @@
 
             <article class="card trend-card" data-controller="analytics-chart" data-chart-key="consumption" data-chart-storage-key="analytics.chartView.consumption" data-default-view="bars" data-chart-view="bars" data-chart-runtime-state="idle">
                 <div class="trend-card-header">
-                    <h2>Consumption trend by month</h2>
+                    <h2>{{ 'analytics.consumption_trend_title'|trans }}</h2>
                     <div class="trend-view-switch">
-                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">Bars</button>
-                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">Lines</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">{{ 'analytics.chart_bars'|trans }}</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">{{ 'analytics.chart_lines'|trans }}</button>
                     </div>
                 </div>
                 {% if consumptionTrend is empty %}
-                    <div class="empty-state">No consumption data for current filters.</div>
+                    <div class="empty-state">{{ 'analytics.no_consumption_data'|trans }}</div>
                 {% else %}
                     {% set consumptionChartLabels = [] %}
                     {% set consumptionChartValues = [] %}
@@ -882,7 +882,7 @@
                         labels: consumptionChartLabels,
                         datasets: [
                             {
-                                label: 'Consumption',
+                                label: ('analytics.chart_consumption_label'|trans),
                                 data: consumptionChartValues,
                                 borderColor: '#61ddff',
                                 fillColor: 'rgba(97, 221, 255, 0.16)',
@@ -911,14 +911,14 @@
 
             <article class="card trend-card" data-controller="analytics-chart" data-chart-key="fuel-price" data-chart-storage-key="analytics.chartView.fuel-price" data-default-view="line" data-chart-view="bars" data-chart-runtime-state="idle">
                 <div class="trend-card-header">
-                    <h2>Fuel price trend by month</h2>
+                    <h2>{{ 'analytics.fuel_price_trend_title'|trans }}</h2>
                     <div class="trend-view-switch">
-                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">Bars</button>
-                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">Lines</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">{{ 'analytics.chart_bars'|trans }}</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">{{ 'analytics.chart_lines'|trans }}</button>
                     </div>
                 </div>
                 {% if fuelPriceTrend is empty %}
-                    <div class="empty-state">No fuel price data for current filters.</div>
+                    <div class="empty-state">{{ 'analytics.no_fuel_price_data'|trans }}</div>
                 {% else %}
                     {% set fuelPriceChartLabels = [] %}
                     {% set fuelPriceChartValues = [] %}
@@ -934,7 +934,7 @@
                         labels: fuelPriceChartLabels,
                         datasets: [
                             {
-                                label: 'Fuel price',
+                                label: ('analytics.chart_fuel_price_label'|trans),
                                 data: fuelPriceChartValues,
                                 borderColor: '#9bff76',
                                 fillColor: 'rgba(155, 255, 118, 0.12)',
@@ -959,7 +959,7 @@
                                     {% if item.averagePriceDeciCentsPerLiter is not null %}
                                         {{ (item.averagePriceDeciCentsPerLiter / 1000)|number_format(3, '.', ' ') }} EUR/L
                                     {% else %}
-                                        n/a
+                                        {{ 'common.na'|trans }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -970,14 +970,14 @@
 
             <article class="card trend-card" data-controller="analytics-chart" data-chart-key="compared-cost" data-chart-storage-key="analytics.chartView.compared-cost" data-default-view="bars" data-chart-view="bars" data-chart-runtime-state="idle">
                 <div class="trend-card-header">
-                    <h2>Compared cost trend (fuel vs maintenance vs total)</h2>
+                    <h2>{{ 'analytics.compared_cost_trend_title'|trans }}</h2>
                     <div class="trend-view-switch">
-                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">Bars</button>
-                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">Lines</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="bars">{{ 'analytics.chart_bars'|trans }}</button>
+                        <button class="trend-view-link" type="button" data-action="analytics-chart#switch" data-analytics-chart-target="button" data-view="line">{{ 'analytics.chart_lines'|trans }}</button>
                     </div>
                 </div>
                 {% if comparedCostTrend is empty %}
-                    <div class="empty-state">No compared cost data for current filters.</div>
+                    <div class="empty-state">{{ 'analytics.no_compared_cost_data'|trans }}</div>
                 {% else %}
                     {% set comparedLabels = [] %}
                     {% set comparedFuelValues = [] %}
@@ -997,7 +997,7 @@
                         labels: comparedLabels,
                         datasets: [
                             {
-                                label: 'Fuel',
+                                label: ('analytics.chart_fuel_label'|trans),
                                 data: comparedFuelValues,
                                 borderColor: '#f7b500',
                                 fillColor: 'rgba(247, 181, 0, 0.1)',
@@ -1006,7 +1006,7 @@
                                 subtlePoints: true
                             },
                             {
-                                label: 'Maintenance',
+                                label: ('analytics.chart_maintenance_label'|trans),
                                 data: comparedMaintenanceValues,
                                 borderColor: '#ff8faa',
                                 fillColor: 'rgba(255, 143, 170, 0.1)',
@@ -1015,7 +1015,7 @@
                                 subtlePoints: true
                             },
                             {
-                                label: 'Total',
+                                label: ('analytics.chart_total_label'|trans),
                                 data: comparedTotalValues,
                                 borderColor: '#4ccf4e',
                                 fillColor: 'rgba(76, 207, 78, 0.1)',
@@ -1035,17 +1035,17 @@
                             <div class="compared-trend-row">
                                 <div class="compared-trend-label">{{ item.month }}</div>
                                 <div class="compared-trend-track">
-                                    <span class="trend-month">Fuel</span>
+                                    <span class="trend-month">{{ 'analytics.chart_fuel_label'|trans }}</span>
                                     <div class="trend-bar-wrap"><div class="trend-bar trend-bar-fuel" style="width: {{ item.fuelRatio }}%;"></div></div>
                                     <span class="trend-value">{{ (item.fuelCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
                                 </div>
                                 <div class="compared-trend-track">
-                                    <span class="trend-month">Maint.</span>
+                                    <span class="trend-month">{{ 'analytics.chart_maintenance_short'|trans }}</span>
                                     <div class="trend-bar-wrap"><div class="trend-bar trend-bar-maintenance" style="width: {{ item.maintenanceRatio }}%;"></div></div>
                                     <span class="trend-value">{{ (item.maintenanceCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
                                 </div>
                                 <div class="compared-trend-track">
-                                    <span class="trend-month">Total</span>
+                                    <span class="trend-month">{{ 'analytics.chart_total_label'|trans }}</span>
                                     <div class="trend-bar-wrap"><div class="trend-bar trend-bar-total" style="width: {{ item.totalRatio }}%;"></div></div>
                                     <span class="trend-value">{{ (item.totalCostCents / 100)|number_format(2, '.', ' ') }} EUR</span>
                                 </div>
@@ -1062,6 +1062,25 @@
     {{ parent() }}
     <script id="leaflet-script" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
+        const analyticsMapTranslations = {
+            publicMatch: {{ 'analytics.map_popup.public_match'|trans|json_encode|raw }},
+            visitedStation: {{ 'analytics.map_popup.visited_station'|trans|json_encode|raw }},
+            publicStation: {{ 'analytics.map_popup.public_station'|trans|json_encode|raw }},
+            nearbyPublicStation: {{ 'analytics.map_popup.nearby_public_station'|trans|json_encode|raw }},
+            distanceAwayConfidence: {{ 'analytics.map_popup.distance_away_confidence'|trans({'%distance%': '__DISTANCE__', '%confidence%': '__CONFIDENCE__'})|json_encode|raw }},
+            confidenceOnly: {{ 'analytics.map_popup.confidence_only'|trans({'%confidence%': '__CONFIDENCE__'})|json_encode|raw }},
+            confidenceMatch: {{ 'analytics.map_popup.confidence_match'|trans({'%confidence%': '__CONFIDENCE__'})|json_encode|raw }},
+            receiptCount: {{ 'analytics.map_popup.receipt_count'|trans({'%count%': '__COUNT__'})|json_encode|raw }},
+            receiptCountPlural: {{ 'analytics.map_popup.receipt_count_plural'|trans({'%count%': '__COUNT__'})|json_encode|raw }},
+            nearbyFromContext: {{ 'analytics.map_popup.nearby_from_context'|trans({'%distance%': '__DISTANCE__'})|json_encode|raw }},
+            linkedTo: {{ 'analytics.map_popup.linked_to'|trans({'%stations%': '__STATIONS__'})|json_encode|raw }},
+            nearby: {{ 'analytics.map_popup.nearby'|trans({'%stations%': '__STATIONS__'})|json_encode|raw }},
+            layers: {
+                visited: {{ 'analytics.layer.visited_stations'|trans|json_encode|raw }},
+                matched: {{ 'analytics.layer.matched_public_stations'|trans|json_encode|raw }},
+                nearby: {{ 'analytics.layer.nearby_public_stations'|trans|json_encode|raw }}
+            }
+        };
         const initAnalyticsStationMap = () => {
             const mapContainer = document.getElementById('analytics-station-map');
             const dataContainer = document.getElementById('analytics-station-map-data');
@@ -1109,6 +1128,11 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+            const replacePlaceholder = (template, placeholder, value) => template.replace(placeholder, value);
+            const replaceMany = (template, replacements) => Object.entries(replacements).reduce(
+                (result, [placeholder, value]) => result.replace(placeholder, value),
+                template,
+            );
 
             const bounds = [];
             const visitedLayer = L.layerGroup();
@@ -1132,18 +1156,20 @@
                 const address = escapeHtml(point.address);
                 const publicMatch = point.publicMatch && typeof point.publicMatch === 'object' ? point.publicMatch : null;
                 const publicMatchHtml = publicMatch
-                    ? `<div class="popup-meta">Public match</div>` +
+                    ? `<div class="popup-meta">${escapeHtml(analyticsMapTranslations.publicMatch)}</div>` +
                         `<div>${escapeHtml(publicMatch.address)}, ${escapeHtml(publicMatch.postalCode)} ${escapeHtml(publicMatch.city)}</div>` +
-                        (typeof publicMatch.distanceMeters === 'number' ? `<div class="popup-meta">${publicMatch.distanceMeters} m away · ${escapeHtml(publicMatch.confidence)}</div>` : `<div class="popup-meta">${escapeHtml(publicMatch.confidence)}</div>`) +
+                        (typeof publicMatch.distanceMeters === 'number'
+                            ? `<div class="popup-meta">${escapeHtml(replaceMany(analyticsMapTranslations.distanceAwayConfidence, { '__DISTANCE__': String(publicMatch.distanceMeters), '__CONFIDENCE__': String(publicMatch.confidence) }))}</div>`
+                            : `<div class="popup-meta">${escapeHtml(replacePlaceholder(analyticsMapTranslations.confidenceOnly, '__CONFIDENCE__', String(publicMatch.confidence)))}</div>`) +
                         (Array.isArray(publicMatch.availableFuelLabels) && publicMatch.availableFuelLabels.length > 0 ? `<div class="popup-highlight">${escapeHtml(publicMatch.availableFuelLabels.join(', '))}</div>` : '')
                     : '';
                 marker.bindPopup(
                     `<div class="analytics-map-popup">` +
-                    `<div class="popup-kicker">Visited station</div>` +
+                    `<div class="popup-kicker">${escapeHtml(analyticsMapTranslations.visitedStation)}</div>` +
                     `<strong>${stationName}</strong>` +
                     `<div>${address}</div>` +
                     `<div class="popup-highlight">${(point.totalCostCents / 100).toFixed(2)} EUR · ${(point.totalQuantityMilliLiters / 1000).toFixed(2)} L</div>` +
-                    `<div class="popup-meta">${point.receiptCount} receipt(s)</div>` +
+                    `<div class="popup-meta">${escapeHtml(replacePlaceholder(point.receiptCount === 1 ? analyticsMapTranslations.receiptCount : analyticsMapTranslations.receiptCountPlural, '__COUNT__', String(point.receiptCount)))}</div>` +
                     publicMatchHtml +
                     `</div>`
                 );
@@ -1165,14 +1191,14 @@
 
                 marker.bindPopup(
                     `<div class="analytics-map-popup">` +
-                    `<div class="popup-kicker">Public station</div>` +
+                    `<div class="popup-kicker">${escapeHtml(analyticsMapTranslations.publicStation)}</div>` +
                     `<strong>${escapeHtml(point.address)}</strong>` +
                     `<div>${escapeHtml(point.postalCode)} ${escapeHtml(point.city)}</div>` +
-                    `<div class="popup-meta">${escapeHtml(point.confidence)} match` +
+                    `<div class="popup-meta">${escapeHtml(replacePlaceholder(analyticsMapTranslations.confidenceMatch, '__CONFIDENCE__', String(point.confidence)))}` +
                     (typeof point.distanceMeters === 'number' ? ` · ${point.distanceMeters} m` : '') +
                     `</div>` +
                     (Array.isArray(point.availableFuelLabels) && point.availableFuelLabels.length > 0 ? `<div class="popup-highlight">${escapeHtml(point.availableFuelLabels.join(', '))}</div>` : '') +
-                    (Array.isArray(point.matchedStationNames) && point.matchedStationNames.length > 0 ? `<div class="popup-meta">Linked to: ${escapeHtml(point.matchedStationNames.join(', '))}</div>` : '') +
+                    (Array.isArray(point.matchedStationNames) && point.matchedStationNames.length > 0 ? `<div class="popup-meta">${escapeHtml(replacePlaceholder(analyticsMapTranslations.linkedTo, '__STATIONS__', point.matchedStationNames.join(', ')))}</div>` : '') +
                     `</div>`
                 );
 
@@ -1195,12 +1221,12 @@
 
                 marker.bindPopup(
                     `<div class="analytics-map-popup">` +
-                    `<div class="popup-kicker">Nearby public station</div>` +
+                    `<div class="popup-kicker">${escapeHtml(analyticsMapTranslations.nearbyPublicStation)}</div>` +
                     `<strong>${escapeHtml(point.address)}</strong>` +
                     `<div>${escapeHtml(point.postalCode)} ${escapeHtml(point.city)}</div>` +
-                    `<div class="popup-meta">${point.distanceMeters} m from visited context</div>` +
+                    `<div class="popup-meta">${escapeHtml(replacePlaceholder(analyticsMapTranslations.nearbyFromContext, '__DISTANCE__', String(point.distanceMeters)))}</div>` +
                     (Array.isArray(point.availableFuelLabels) && point.availableFuelLabels.length > 0 ? `<div class="popup-highlight">${escapeHtml(point.availableFuelLabels.join(', '))}</div>` : '') +
-                    (Array.isArray(point.nearbyStationNames) && point.nearbyStationNames.length > 0 ? `<div class="popup-meta">Nearby: ${escapeHtml(point.nearbyStationNames.join(', '))}</div>` : '') +
+                    (Array.isArray(point.nearbyStationNames) && point.nearbyStationNames.length > 0 ? `<div class="popup-meta">${escapeHtml(replacePlaceholder(analyticsMapTranslations.nearby, '__STATIONS__', point.nearbyStationNames.join(', ')))}</div>` : '') +
                     `</div>`
                 );
 
@@ -1216,9 +1242,9 @@
             }
             if (publicPoints.length > 0 || nearbyPublicPoints.length > 0) {
                 L.control.layers({}, {
-                    'Visited stations': visitedLayer,
-                    'Matched public stations': publicLayer,
-                    'Nearby public stations': nearbyLayer,
+                    [analyticsMapTranslations.layers.visited]: visitedLayer,
+                    [analyticsMapTranslations.layers.matched]: publicLayer,
+                    [analyticsMapTranslations.layers.nearby]: nearbyLayer,
                 }, { collapsed: false }).addTo(map);
             }
 

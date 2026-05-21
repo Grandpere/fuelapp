@@ -119,14 +119,14 @@ final class StationWebUiTest extends WebTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = (string) $response->getContent();
         self::assertStringContainsString('Hub Station', $content);
-        self::assertStringContainsString('Receipts tracked', $content);
-        self::assertStringContainsString('Latest receipts', $content);
+        self::assertStringContainsString('Reçus suivis', $content);
+        self::assertStringContainsString('Derniers reçus', $content);
         self::assertStringContainsString('/ui/receipts?station_id='.$stationId, $content);
         self::assertStringContainsString('/ui/analytics?station_id='.$stationId, $content);
         self::assertStringContainsString('/ui/receipts/new?station_id='.$stationId, $content);
         self::assertStringContainsString('/ui/receipts/'.$receipt->getId()->toRfc4122(), $content);
         self::assertStringContainsString('145200 km', $content);
-        self::assertStringContainsString('Public station candidates', $content);
+        self::assertStringContainsString('Stations publiques candidates', $content);
         self::assertStringContainsString('public-hub-station', $content);
         self::assertStringContainsString('1.789 EUR/L', $content);
     }
@@ -261,7 +261,7 @@ final class StationWebUiTest extends WebTestCase
         $afterToggleOn = $this->request('GET', '/ui/stations');
         self::assertSame(Response::HTTP_OK, $afterToggleOn->getStatusCode());
         $afterToggleOnContent = (string) $afterToggleOn->getContent();
-        self::assertStringContainsString('Station added to favorites.', $afterToggleOnContent);
+        self::assertStringContainsString('Station ajoutée aux favoris.', $afterToggleOnContent);
         self::assertStringContainsString('Favorite List Station', $afterToggleOnContent);
         self::assertStringContainsString('Favorite</span>', $afterToggleOnContent);
 
@@ -276,7 +276,105 @@ final class StationWebUiTest extends WebTestCase
 
         $afterToggleOff = $this->request('GET', '/ui/stations');
         self::assertSame(Response::HTTP_OK, $afterToggleOff->getStatusCode());
-        self::assertStringContainsString('Station removed from favorites.', (string) $afterToggleOff->getContent());
+        self::assertStringContainsString('Station retirée des favoris.', (string) $afterToggleOff->getContent());
+    }
+
+    public function testStationListShowsFavoritesFirstWhileKeepingRecentOrderInsideGroups(): void
+    {
+        $email = 'station.ui.favorite.order@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $favoriteOlder = $this->createStation('Favorite Older', '1 Rue Favorite', '75001', 'Paris');
+        $favoriteNewer = $this->createStation('Favorite Newer', '2 Rue Favorite', '75002', 'Paris');
+        $regularNewest = $this->createStation('Regular Newest', '3 Rue Standard', '69001', 'Lyon');
+        $regularOlder = $this->createStation('Regular Older', '4 Rue Standard', '13001', 'Marseille');
+
+        $this->createReceiptForStation($owner, $favoriteOlder, new DateTimeImmutable('2026-04-10 08:00:00'), 4100, 140000);
+        $this->createReceiptForStation($owner, $favoriteNewer, new DateTimeImmutable('2026-04-20 08:00:00'), 4200, 141000);
+        $this->createReceiptForStation($owner, $regularNewest, new DateTimeImmutable('2026-04-25 08:00:00'), 4300, 142000);
+        $this->createReceiptForStation($owner, $regularOlder, new DateTimeImmutable('2026-04-05 08:00:00'), 4400, 139000);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $initialPage = $this->request('GET', '/ui/stations');
+        self::assertSame(Response::HTTP_OK, $initialPage->getStatusCode());
+        $initialContent = (string) $initialPage->getContent();
+
+        $favoriteOlderToken = $this->extractFavoriteToggleToken($initialContent, $favoriteOlder->getId()->toRfc4122());
+        $favoriteNewerToken = $this->extractFavoriteToggleToken($initialContent, $favoriteNewer->getId()->toRfc4122());
+
+        $this->request('POST', '/ui/stations/'.$favoriteOlder->getId()->toRfc4122().'/toggle-favorite', [
+            '_token' => $favoriteOlderToken,
+            '_redirect' => '/ui/stations',
+        ]);
+        $this->request('POST', '/ui/stations/'.$favoriteNewer->getId()->toRfc4122().'/toggle-favorite', [
+            '_token' => $favoriteNewerToken,
+            '_redirect' => '/ui/stations',
+        ]);
+
+        $orderedResponse = $this->request('GET', '/ui/stations');
+        self::assertSame(Response::HTTP_OK, $orderedResponse->getStatusCode());
+        $orderedContent = (string) $orderedResponse->getContent();
+
+        $favoriteNewerPos = strpos($orderedContent, 'Favorite Newer');
+        $favoriteOlderPos = strpos($orderedContent, 'Favorite Older');
+        $regularNewestPos = strpos($orderedContent, 'Regular Newest');
+        $regularOlderPos = strpos($orderedContent, 'Regular Older');
+
+        self::assertIsInt($favoriteNewerPos);
+        self::assertIsInt($favoriteOlderPos);
+        self::assertIsInt($regularNewestPos);
+        self::assertIsInt($regularOlderPos);
+        self::assertTrue($favoriteNewerPos < $favoriteOlderPos);
+        self::assertTrue($favoriteOlderPos < $regularNewestPos);
+        self::assertTrue($regularNewestPos < $regularOlderPos);
+    }
+
+    public function testStationListCanFilterToFavoritesOnlyWithDedicatedEmptyState(): void
+    {
+        $email = 'station.ui.favorite.filter@example.com';
+        $password = 'test1234';
+        $owner = $this->createUser($email, $password, ['ROLE_USER']);
+
+        $favoriteStation = $this->createStation('Favorite Filter Station', '9 Rue Filtre', '75011', 'Paris');
+        $regularStation = $this->createStation('Regular Filter Station', '8 Rue Filtre', '33000', 'Bordeaux');
+
+        $this->createReceiptForStation($owner, $favoriteStation, new DateTimeImmutable('2026-04-22 09:00:00'), 4700, 150100);
+        $this->createReceiptForStation($owner, $regularStation, new DateTimeImmutable('2026-04-23 09:00:00'), 4800, 150300);
+        $this->em->flush();
+
+        $this->loginWithUiForm($email, $password);
+
+        $initialPage = $this->request('GET', '/ui/stations');
+        self::assertSame(Response::HTTP_OK, $initialPage->getStatusCode());
+        $initialContent = (string) $initialPage->getContent();
+        $favoriteToken = $this->extractFavoriteToggleToken($initialContent, $favoriteStation->getId()->toRfc4122());
+
+        $this->request('POST', '/ui/stations/'.$favoriteStation->getId()->toRfc4122().'/toggle-favorite', [
+            '_token' => $favoriteToken,
+            '_redirect' => '/ui/stations',
+        ]);
+
+        $favoritesOnlyResponse = $this->request('GET', '/ui/stations?favorites=1');
+        self::assertSame(Response::HTTP_OK, $favoritesOnlyResponse->getStatusCode());
+        $favoritesOnlyContent = (string) $favoritesOnlyResponse->getContent();
+        self::assertStringContainsString('Favorite Filter Station', $favoritesOnlyContent);
+        self::assertStringNotContainsString('Regular Filter Station', $favoritesOnlyContent);
+        self::assertStringContainsString('favorites=1', $favoritesOnlyContent);
+
+        $toggleOffToken = $this->extractFavoriteToggleToken($favoritesOnlyContent, $favoriteStation->getId()->toRfc4122());
+        $this->request('POST', '/ui/stations/'.$favoriteStation->getId()->toRfc4122().'/toggle-favorite', [
+            '_token' => $toggleOffToken,
+            '_redirect' => '/ui/stations?favorites=1',
+        ]);
+
+        $emptyFavoritesResponse = $this->request('GET', '/ui/stations?favorites=1');
+        self::assertSame(Response::HTTP_OK, $emptyFavoritesResponse->getStatusCode());
+        $emptyFavoritesContent = (string) $emptyFavoritesResponse->getContent();
+        self::assertStringContainsString('Aucune station favorite ne correspond pour le moment.', $emptyFavoritesContent);
+        self::assertStringContainsString('/ui/stations', $emptyFavoritesContent);
     }
 
     public function testStationDetailCanToggleFavoriteState(): void
@@ -317,7 +415,7 @@ final class StationWebUiTest extends WebTestCase
         $detailResponse = $this->request('GET', $detailPath);
         self::assertSame(Response::HTTP_OK, $detailResponse->getStatusCode());
         $detailContent = (string) $detailResponse->getContent();
-        self::assertStringContainsString('Not in favorites yet', $detailContent);
+        self::assertStringContainsString('Pas encore en favorites', $detailContent);
         $csrfToken = $this->extractFavoriteToggleToken($detailContent, $stationId);
 
         $toggleResponse = $this->request('POST', '/ui/stations/'.$stationId.'/toggle-favorite', [
@@ -331,8 +429,8 @@ final class StationWebUiTest extends WebTestCase
         $afterToggle = $this->request('GET', $detailPath);
         self::assertSame(Response::HTTP_OK, $afterToggle->getStatusCode());
         $afterToggleContent = (string) $afterToggle->getContent();
-        self::assertStringContainsString('Favorite station', $afterToggleContent);
-        self::assertStringContainsString('Station added to favorites.', $afterToggleContent);
+        self::assertStringContainsString('Station favorite', $afterToggleContent);
+        self::assertStringContainsString('Station ajoutée aux favoris.', $afterToggleContent);
     }
 
     public function testStationToggleFavoriteRejectsInvalidCsrfAndInaccessibleStation(): void
@@ -403,7 +501,7 @@ final class StationWebUiTest extends WebTestCase
 
         $afterInvalidCsrf = $this->request('GET', '/ui/stations');
         self::assertSame(Response::HTTP_OK, $afterInvalidCsrf->getStatusCode());
-        self::assertStringContainsString('Invalid CSRF token.', (string) $afterInvalidCsrf->getContent());
+        self::assertStringContainsString('Jeton CSRF invalide.', (string) $afterInvalidCsrf->getContent());
 
         $pageResponse = $this->request('GET', '/ui/stations');
         self::assertSame(Response::HTTP_OK, $pageResponse->getStatusCode());
@@ -490,5 +588,40 @@ final class StationWebUiTest extends WebTestCase
         self::assertIsNumeric($count);
 
         return (int) $count;
+    }
+
+    private function createStation(string $name, string $streetName, string $postalCode, string $city): StationEntity
+    {
+        $station = new StationEntity();
+        $station->setId(Uuid::v7());
+        $station->setName($name);
+        $station->setStreetName($streetName);
+        $station->setPostalCode($postalCode);
+        $station->setCity($city);
+        $this->em->persist($station);
+
+        return $station;
+    }
+
+    private function createReceiptForStation(UserEntity $owner, StationEntity $station, DateTimeImmutable $issuedAt, int $totalCents, int $odometerKilometers): void
+    {
+        $receipt = new ReceiptEntity();
+        $receipt->setId(Uuid::v7());
+        $receipt->setOwner($owner);
+        $receipt->setStation($station);
+        $receipt->setIssuedAt($issuedAt);
+        $receipt->setOdometerKilometers($odometerKilometers);
+        $receipt->setTotalCents($totalCents);
+        $receipt->setVatAmountCents((int) floor($totalCents / 6));
+
+        $line = new ReceiptLineEntity();
+        $line->setId(Uuid::v7());
+        $line->setFuelType('diesel');
+        $line->setQuantityMilliLiters(25000);
+        $line->setUnitPriceDeciCentsPerLiter(1800);
+        $line->setVatRatePercent(20);
+        $receipt->addLine($line);
+
+        $this->em->persist($receipt);
     }
 }

@@ -17,16 +17,19 @@ use App\Receipt\Application\Repository\ReceiptRepository;
 use App\Station\Application\Repository\StationRepository;
 use App\Station\Domain\Station;
 use DateTimeImmutable;
+use Stringable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminStationListController extends AbstractController
 {
     public function __construct(
         private readonly StationRepository $stationRepository,
         private readonly ReceiptRepository $receiptRepository,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -156,21 +159,24 @@ final class AdminStationListController extends AbstractController
     {
         if (0 === $receiptCount) {
             return [
-                'headline' => 'No receipt activity',
-                'detail' => 'Station has not been linked by any receipt yet.',
+                'headline' => $this->t('admin.stations.signal.no_receipt_activity.headline'),
+                'detail' => $this->t('admin.stations.signal.no_receipt_activity.detail'),
             ];
         }
 
         if (0 === $linkedVehicleCount) {
             return [
-                'headline' => 'Receipt linked without vehicle context',
-                'detail' => 'Receipt history exists but no vehicle is currently attached.',
+                'headline' => $this->t('admin.stations.signal.no_vehicle_context.headline'),
+                'detail' => $this->t('admin.stations.signal.no_vehicle_context.detail'),
             ];
         }
 
         return [
-            'headline' => sprintf('Geocoding %s', $geocodingStatus),
-            'detail' => sprintf('%d receipt%s across %d vehicle%s.', $receiptCount, 1 === $receiptCount ? '' : 's', $linkedVehicleCount, 1 === $linkedVehicleCount ? '' : 's'),
+            'headline' => $this->t('admin.stations.signal.geocoding_status', ['%status%' => $geocodingStatus]),
+            'detail' => $this->t('admin.stations.signal.receipt_vehicle_summary', [
+                '%receipt_count%' => $receiptCount,
+                '%vehicle_count%' => $linkedVehicleCount,
+            ]),
         ];
     }
 
@@ -182,11 +188,11 @@ final class AdminStationListController extends AbstractController
         $summary = [];
 
         if (null !== $query) {
-            $summary[] = ['label' => 'Search', 'value' => $query];
+            $summary[] = ['label' => $this->t('admin.stations.filter_summary.search'), 'value' => $query];
         }
 
         if (null !== $geocodingStatus) {
-            $summary[] = ['label' => 'Geocoding', 'value' => $geocodingStatus];
+            $summary[] = ['label' => $this->t('admin.stations.filter_summary.geocoding'), 'value' => $geocodingStatus];
         }
 
         return $summary;
@@ -209,14 +215,14 @@ final class AdminStationListController extends AbstractController
 
             if ($row['receiptCount'] > 0 && !isset($shortcuts['receipts'])) {
                 $shortcuts['receipts'] = [
-                    'label' => 'Open busiest station receipts',
+                    'label' => $this->t('admin.stations.shortcuts.busiest_station_receipts'),
                     'url' => $this->generateUrl('ui_admin_receipt_list', ['station_id' => $stationId]),
                 ];
             }
 
             if (0 === $row['receiptCount'] && !isset($shortcuts['missing'])) {
                 $shortcuts['missing'] = [
-                    'label' => 'Open station with no receipts',
+                    'label' => $this->t('admin.stations.shortcuts.station_without_receipts'),
                     'url' => $this->generateUrl('ui_admin_station_show', ['id' => $stationId, 'return_to' => '/ui/admin/stations']),
                 ];
             }
@@ -236,5 +242,13 @@ final class AdminStationListController extends AbstractController
         }
 
         return array_values($options);
+    }
+
+    /**
+     * @param array<string, bool|float|int|string|Stringable|null> $parameters
+     */
+    private function t(string $key, array $parameters = []): string
+    {
+        return $this->translator->trans($key, $parameters);
     }
 }

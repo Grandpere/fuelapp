@@ -94,7 +94,7 @@ final class MaintenanceEventFormController extends AbstractController
                 }
 
                 $this->eventRepository->save($event);
-                $this->addFlash('success', null === $id ? 'Maintenance event created.' : 'Maintenance event updated.');
+                $this->addFlash('success', null === $id ? 'flash.maintenance.event_created' : 'flash.maintenance.event_updated');
 
                 return new RedirectResponse($backToListUrl, Response::HTTP_SEE_OTHER);
             }
@@ -182,40 +182,40 @@ final class MaintenanceEventFormController extends AbstractController
         $errors = [];
 
         if (!$this->isCsrfTokenValid('maintenance_event_form', $formData['_token'])) {
-            $errors[] = 'Jeton CSRF invalide.';
+            $errors[] = 'flash.csrf.invalid';
         }
 
         $vehicleId = trim($formData['vehicleId']);
         if (!Uuid::isValid($vehicleId) || !$this->vehicleRepository->belongsToOwner($vehicleId, $ownerId)) {
-            $errors[] = 'Vehicle not found.';
+            $errors[] = 'maintenance.validation.vehicle_not_found';
         }
 
         if (!in_array($formData['eventType'], array_map(static fn (MaintenanceEventType $type): string => $type->value, MaintenanceEventType::cases()), true)) {
-            $errors[] = 'Invalid event type.';
+            $errors[] = 'maintenance.validation.invalid_event_type';
         }
 
         $occurredAt = DateTimeImmutable::createFromFormat('Y-m-d\\TH:i', $formData['occurredAt']);
         if (false === $occurredAt) {
-            $errors[] = 'Invalid event date.';
+            $errors[] = 'maintenance.validation.invalid_event_date';
         }
 
         $odometer = $this->nullableInt($formData['odometerKilometers']);
         if ('' !== trim($formData['odometerKilometers']) && null === $odometer) {
-            $errors[] = 'Odometer must be an integer.';
+            $errors[] = 'maintenance.validation.odometer_integer';
         } elseif (null !== $odometer && $odometer < 0) {
-            $errors[] = 'Odometer must be non-negative.';
+            $errors[] = 'maintenance.validation.odometer_non_negative';
         }
 
         $totalCost = $this->nullableMoneyCents($formData['totalCostEuros']);
         if ('' !== trim($formData['totalCostEuros']) && null === $totalCost) {
-            $errors[] = 'Total cost must be a valid EUR amount, for example 189.90.';
+            $errors[] = 'maintenance.validation.total_cost_invalid';
         } elseif (null !== $totalCost && $totalCost < 0) {
-            $errors[] = 'Total cost must be non-negative.';
+            $errors[] = 'maintenance.validation.total_cost_non_negative';
         }
 
         $currencyCode = strtoupper(trim($formData['currencyCode']));
         if (3 !== strlen($currencyCode)) {
-            $errors[] = 'Currency code must contain exactly 3 letters.';
+            $errors[] = 'maintenance.validation.currency_code';
         }
 
         return array_values(array_unique($errors));

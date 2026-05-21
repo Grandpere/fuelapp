@@ -41,7 +41,7 @@ final class ImportJobDeleteWebController extends AbstractController
         }
 
         if (!$this->isCsrfTokenValid('ui_import_delete_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
             return $this->redirectToRoute('ui_import_index');
         }
@@ -52,7 +52,7 @@ final class ImportJobDeleteWebController extends AbstractController
 
         try {
             ($this->deleteImportJobHandler)(new DeleteImportJobCommand($id));
-            $this->addFlash('success', 'Import deleted.');
+            $this->addFlash('success', 'import.flash.deleted');
         } catch (InvalidArgumentException) {
             throw $this->createNotFoundException();
         }

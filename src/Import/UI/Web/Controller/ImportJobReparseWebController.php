@@ -45,7 +45,7 @@ final class ImportJobReparseWebController extends AbstractController
         );
 
         if (!$this->isCsrfTokenValid('ui_import_reparse_'.$id, (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', 'flash.csrf.invalid');
 
             return $this->redirectToRoute('ui_import_show', ['id' => $id, 'return_to' => $returnTo]);
         }
@@ -58,7 +58,7 @@ final class ImportJobReparseWebController extends AbstractController
         try {
             $this->importJobPayloadReparser->reparse($job);
             $this->importJobRepository->save($job);
-            $this->addFlash('success', 'Import payload reparsed with current parser rules.');
+            $this->addFlash('success', 'import.flash.reparsed');
         } catch (InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());
         }

@@ -193,16 +193,16 @@
 {% block body %}
     <main class="app-shell station-show-page">
         {% for message in app.flashes('success') %}
-            <div class="flash">{{ message }}</div>
+            <div class="flash">{{ message|trans }}</div>
         {% endfor %}
         {% for message in app.flashes('error') %}
-            <div class="flash flash-error">{{ message }}</div>
+            <div class="flash flash-error">{{ message|trans }}</div>
         {% endfor %}
 
         <header class="station-show-header">
             <div>
                 <h1 class="page-title">{{ station.name }}</h1>
-                <p class="muted section-lead">{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}. Use this page as the quick hub for receipts and analytics linked to this station.</p>
+                <p class="muted section-lead">{{ station.streetName }}, {{ station.postalCode }} {{ station.city }}. {{ 'station.workflow_hub'|trans }}</p>
             </div>
             <div class="station-show-actions">
                 <form class="favorite-toggle-form" method="post" action="{{ path('ui_station_toggle_favorite', {id: station.id.toString()}) }}">
@@ -210,34 +210,34 @@
                     <input type="hidden" name="_redirect" value="{{ path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl}) }}">
                     <button class="btn {{ isFavorite ? 'btn-primary' : 'btn-secondary' }} favorite-toggle-btn" type="submit">
                         <span class="favorite-toggle-icon" aria-hidden="true">{{ isFavorite ? '★' : '☆' }}</span>
-                        {{ isFavorite ? 'Favorite station' : 'Add favorite' }}
+                        {{ isFavorite ? 'station.favorite_station'|trans : 'station.add_favorite'|trans }}
                     </button>
                 </form>
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">Add receipt</a>
-                <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">View receipts</a>
-                <a class="btn btn-primary" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Open analytics</a>
-                <a class="btn btn-secondary" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl})}) }}">Edit station</a>
-                <a class="btn btn-secondary" href="{{ backToListUrl }}">Back</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">{{ 'receipt.form.action_create'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">{{ 'nav.receipts'|trans }}</a>
+                <a class="btn btn-primary" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">{{ 'nav.analytics'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ path('ui_station_edit', {id: station.id.toString(), redirect: path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl})}) }}">{{ 'action.edit'|trans }}</a>
+                <a class="btn btn-secondary" href="{{ backToListUrl }}">{{ 'common.back'|trans }}</a>
             </div>
         </header>
 
         <section class="station-kpi-grid">
             <article class="card-subtle station-kpi-card">
-                <div class="station-kpi-label">Receipts tracked</div>
+                <div class="station-kpi-label">{{ 'station.receipts_tracked'|trans }}</div>
                 <div class="station-kpi-value">{{ receiptCount }}</div>
             </article>
             <article class="card-subtle station-kpi-card">
-                <div class="station-kpi-label">Latest visit</div>
+                <div class="station-kpi-label">{{ 'station.latest_visit'|trans }}</div>
                 <div class="station-kpi-value">
                     {% if latestReceipt %}
                         {{ latestReceipt.issuedAt|date('d/m/Y') }}
                     {% else %}
-                        n/a
+                        {{ 'common.na'|trans }}
                     {% endif %}
                 </div>
             </article>
             <article class="card-subtle station-kpi-card">
-                <div class="station-kpi-label">Recent spend snapshot</div>
+                <div class="station-kpi-label">{{ 'station.recent_spend_snapshot'|trans }}</div>
                 <div class="station-kpi-value">{{ (recentFuelSpendCents / 100)|number_format(2, '.', ' ') }} EUR</div>
             </article>
         </section>
@@ -245,8 +245,8 @@
         <section class="station-grid">
             <section class="card station-panel">
                 <div class="station-panel-head">
-                    <h2>Latest receipts</h2>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">All receipts</a>
+                    <h2>{{ 'station.latest_receipts'|trans }}</h2>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">{{ 'nav.receipts'|trans }}</a>
                 </div>
                 {% if receiptRows is not empty %}
                     <div class="station-list">
@@ -254,10 +254,10 @@
                             <article class="card-subtle station-item">
                                 <div class="station-item-title">
                                     <strong>{{ row.issuedAt|date('d/m/Y H:i') }}</strong>
-                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: row.id, return_to: path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl})}) }}">Open receipt</a>
+                                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_show', {id: row.id, return_to: path('ui_station_show', {id: station.id.toString(), return_to: backToListUrl})}) }}">{{ 'receipt.action.open'|trans }}</a>
                                 </div>
                                 <div class="station-item-meta">
-                                    <span>Total: {{ (row.totalCents / 100)|number_format(2, '.', ' ') }} EUR</span>
+                                    <span>{{ 'analytics.chart_total_label'|trans }}: {{ (row.totalCents / 100)|number_format(2, '.', ' ') }} EUR</span>
                                     {% if row.odometerKilometers is not null %}<span>{{ row.odometerKilometers }} km</span>{% endif %}
                                     {% if row.fuelType %}<span>{{ row.fuelType|upper }}</span>{% endif %}
                                 </div>
@@ -266,10 +266,10 @@
                     </div>
                 {% else %}
                     <div class="station-empty">
-                        <p>No receipt linked to this station yet.</p>
+                        <p>{{ 'station.no_receipts_yet'|trans }}</p>
                         <div class="actions-wrap">
-                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">Add first receipt</a>
-                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">Open imports</a>
+                            <a class="btn btn-primary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">{{ 'station.empty_action_add_receipt'|trans }}</a>
+                            <a class="btn btn-secondary btn-compact" href="{{ path('ui_import_index') }}">{{ 'station.empty_action_open_imports'|trans }}</a>
                         </div>
                     </div>
                 {% endif %}
@@ -277,25 +277,25 @@
 
             <aside class="card station-panel">
                 <div class="station-panel-head">
-                    <h2>Station context</h2>
+                    <h2>{{ 'station.station_context'|trans }}</h2>
                 </div>
                 <div class="station-favorite-summary">
-                    <span class="pill favorite-pill">{{ isFavorite ? 'Favorite station' : 'Not in favorites yet' }}</span>
+                    <span class="pill favorite-pill">{{ isFavorite ? 'station.favorite_station'|trans : 'station.not_in_favorites'|trans }}</span>
                     {% if isFavorite %}
-                        <span class="muted compact-note">This station will stay easy to spot from your station index and analytics view.</span>
+                        <span class="muted compact-note">{{ 'station.favorite_hint'|trans }}</span>
                     {% endif %}
                 </div>
                 <div class="station-item-sub">{{ station.streetName }}</div>
                 <div class="station-item-sub">{{ station.postalCode }} {{ station.city }}</div>
                 {% if latestOdometer is not null %}
                     <div class="station-item-meta">
-                        <span>Latest odometer seen: {{ latestOdometer }} km</span>
+                        <span>{{ 'station.latest_odometer_seen'|trans({'%odometer%': latestOdometer}) }}</span>
                     </div>
                 {% endif %}
                 <div class="actions-wrap">
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">Add receipt</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">Receipt timeline</a>
-                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">Analytics</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_new', {station_id: station.id.toString()}) }}">{{ 'receipt.form.action_create'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_receipt_index', {station_id: station.id.toString()}) }}">{{ 'station.receipt_timeline'|trans }}</a>
+                    <a class="btn btn-secondary btn-compact" href="{{ path('ui_analytics_dashboard', {station_id: station.id.toString()}) }}">{{ 'nav.analytics'|trans }}</a>
                 </div>
             </aside>
         </section>
@@ -303,10 +303,10 @@
         <section class="card station-panel">
             <div class="station-panel-head">
                 <div>
-                    <h2>Public station candidates</h2>
-                    <p class="muted compact-note">Read-only matches from the public fuel station cache. Nothing is merged automatically.</p>
+                    <h2>{{ 'station.public_candidates'|trans }}</h2>
+                    <p class="muted compact-note">{{ 'station.public_candidates_lead'|trans }}</p>
                 </div>
-                <a class="btn btn-secondary btn-compact" href="{{ path('ui_public_fuel_station_map', {q: station.postalCode, available: '1'}) }}">Open fuel map</a>
+                <a class="btn btn-secondary btn-compact" href="{{ path('ui_public_fuel_station_map', {q: station.postalCode, available: '1'}) }}">{{ 'station.open_fuel_map'|trans }}</a>
             </div>
 
             {% if publicStationCandidates is not empty %}
@@ -321,8 +321,8 @@
                                 <span class="pill">{{ candidate.confidence }}</span>
                             </div>
                             <div class="station-item-meta">
-                                <span>Public id: {{ candidate.sourceId }}</span>
-                                {% if candidate.distanceMeters is not null %}<span>{{ candidate.distanceMeters }} m away</span>{% endif %}
+                                <span>{{ 'station.public_id'|trans({'%id%': candidate.sourceId}) }}</span>
+                                {% if candidate.distanceMeters is not null %}<span>{{ 'station.distance_away'|trans({'%distance%': candidate.distanceMeters}) }}</span>{% endif %}
                             </div>
                             <div class="station-public-fuels">
                                 {% for fuel, snapshot in candidate.fuels %}
@@ -337,7 +337,7 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="station-empty">No public station candidate found yet. This can happen before the sync runs or when the visited station has too little matching context.</div>
+                <div class="station-empty">{{ 'station.no_public_candidate'|trans }}</div>
             {% endif %}
         </section>
     </main>

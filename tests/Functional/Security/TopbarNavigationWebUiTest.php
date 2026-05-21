@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Security;
 
 use App\Admin\Infrastructure\Persistence\Doctrine\Entity\AdminAuditLogEntity;
+use App\UI\Web\Controller\SecurityController;
 use App\User\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -153,6 +154,19 @@ final class TopbarNavigationWebUiTest extends KernelTestCase
         );
         self::assertSame(Response::HTTP_FOUND, $switchResponse->getStatusCode());
         self::assertSame('http://localhost/ui/login', (string) $switchResponse->headers->get('Location'));
+    }
+
+    public function testLocaleSwitchWithoutSessionFallsBackToSafeRedirect(): void
+    {
+        $controller = static::getContainer()->get(SecurityController::class);
+        self::assertInstanceOf(SecurityController::class, $controller);
+
+        $request = Request::create('/ui/locale/en?return_to=%2Fui%2Flogin', 'GET');
+
+        $response = $controller->switchLocale($request, 'en');
+
+        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        self::assertSame('/ui/login', (string) $response->headers->get('Location'));
     }
 
     public function testAuthenticatedUserCanSwitchLocaleAndSeeEnglishTopbar(): void

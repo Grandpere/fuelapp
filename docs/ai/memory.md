@@ -674,3 +674,9 @@ Project memory for recurring pitfalls, decisions, and proven fixes.
 - Root cause: the same-origin check treated every leading slash as local even though `//host` is protocol-relative, and several controllers started storing translation keys as exception/error strings after calling `strtr()` on the key name instead of on translated text.
 - Fix: reject `//...` in the locale redirect guard, translate line-level validation messages at the point where `%index%` is known, and add functional coverage for the locale redirect plus user-facing line-numbered errors.
 - Prevention: treat any redirect target beginning with `//` as external even if it starts with `/`, and never interpolate placeholders on translation keys; call the translator with parameters before persisting or flashing a user-visible message.
+
+## 2026-05-22 - Public locale switch must tolerate requests without an attached session
+- Symptom: the public `/ui/locale/{locale}` endpoint wrote `ui_locale` directly into the request session and could throw when a request reached it without a started or attached session.
+- Root cause: the locale switch assumed the normal web-session middleware was always present, unlike the locale subscriber which already treated session access as optional.
+- Fix: guard the write with `Request::hasSession()` and cover the no-session path with a direct controller test that still expects the safe redirect target.
+- Prevention: public controllers should treat session access as optional unless the route contract explicitly guarantees a session and failing closed is acceptable.

@@ -74,7 +74,9 @@ final class SecurityController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        $request->getSession()->set(self::SESSION_LOCALE_KEY, $locale);
+        if ($request->hasSession()) {
+            $request->getSession()->set(self::SESSION_LOCALE_KEY, $locale);
+        }
 
         $target = $this->resolveLocaleRedirectTarget($request);
 
